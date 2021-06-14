@@ -1,49 +1,85 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-typescript" target="_blank" rel="noopener">typescript</a></li>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-vuex" target="_blank" rel="noopener">vuex</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
-  </div>
+  <div @dragover.prevent @drop.prevent="dropFiles" id="graph"></div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent } from "vue";
+import ForceGraph, {
+  ForceGraphGenericInstance,
+  ForceGraphInstance,
+} from "force-graph";
+import { OverviewNode, OverviewData } from "@/store/OverviewData";
+
+const { ipcRenderer } = require("electron");
 
 export default defineComponent({
-  name: 'HelloWorld',
-  props: {
-    msg: String,
+  name: "HelloWorld",
+
+  data(): {
+    overviewData: OverviewData;
+    graph: ForceGraphInstance | undefined;
+  } {
+    return {
+      overviewData: new OverviewData(),
+      graph: undefined,
+    };
+  },
+  methods: {
+    dropFiles(e: any) {
+      let droppedFiles = e.dataTransfer.files;
+      if (!droppedFiles) return;
+      // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+
+      ipcRenderer.send("file-drop", droppedFiles[0].path);
+    },
+  },
+  mounted() {
+    let vm = this;
+    ipcRenderer.on(
+      "files-added",
+      function (event: any, rootFile: OverviewNode) {
+        debugger;
+        if (vm.graph != undefined) {
+          vm.overviewData.nodes.push();
+          /**
+           * Füge die neuen Dateien/Ordner der OverviewData hinzu und aktualisiere den ForceGraph.
+           */
+          vm.graph.graphData(vm.overviewData);
+        }
+      }
+    );
+
+    console.log("start!");
+
+    // const N = 300;
+    // const gData = {
+    //   nodes: [...Array(N).keys()].map((i) => ({ id: i })),
+    //   links: [...Array(N).keys()]
+    //     .filter((id) => id)
+    //     .map((id) => ({
+    //       source: id,
+    //       target: Math.round(Math.random() * (id - 1)),
+    //     })),
+    // };
+
+    let div: HTMLElement | null = document.getElementById("graph");
+
+    if (div !== null) {
+      this.graph = ForceGraph()(div)
+        .linkDirectionalParticles(2)
+        .graphData(this.$data.overviewData);
+    }
   },
 });
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+#graph {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
 h3 {
   margin: 40px 0 0;
 }
