@@ -1,8 +1,9 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { ipcMain, app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
+import { OverviewNode } from './store/OverviewData'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -13,14 +14,14 @@ protocol.registerSchemesAsPrivileged([
 async function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1400,
+    height: 800,
     webPreferences: {
-      
+
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: (process.env
-          .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
+        .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
@@ -80,3 +81,51 @@ if (isDevelopment) {
     })
   }
 }
+
+const fs = require('fs');
+const path = require('path');
+const { webContents } = require('electron')
+
+ipcMain.on('file-drop', (event: any, arg: any) => {
+  debugger
+  console.log(arg) // prints "ping"
+  loadFiles(arg);
+})
+
+async function getFiles(dir: string, rootFile: OverviewNode) {
+  const files = fs.readdirSync(dir);
+  files.forEach((file: any) => {
+    const filePath = path.join(dir, file);
+    const fileStat = fs.lstatSync(filePath);
+
+    let fileChild: OverviewNode = new OverviewNode(filePath);
+    fileChild.isDirectory = fileStat.isDirectory();
+    fileChild.name = file;
+    fileChild.path = dir;
+
+    var fileSizeInBytes = fileStat.size;
+    // Convert the file size to megabytes (optional)
+    rootFile.size = Math.sqrt(fileSizeInBytes / (1024 *1024));
+    rootFile.children.push(fileChild);
+
+    if (fileStat.isDirectory()) {
+      getFiles(filePath, fileChild);
+    }
+  });
+}
+
+async function loadFiles(path: string) {
+  let rootFile: OverviewNode = new OverviewNode(path);
+  rootFile.name = "root";
+  rootFile.path = path;
+  getFiles(path, rootFile);
+
+  console.log(rootFile);
+
+
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('files-added', rootFile)
+  })
+
+}
+

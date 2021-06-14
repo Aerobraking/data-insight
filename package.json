@@ -13,6 +13,7 @@
   "main": "background.js",
   "dependencies": {
     "core-js": "^3.6.5",
+    "force-graph": "^1.41.1",
     "vue": "^3.0.0",
     "vuex": "^4.0.0-0"
   },
