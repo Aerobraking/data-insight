@@ -6,8 +6,8 @@ export class OverviewNode implements NodeObject {
     name: string = "";
     path: string = "";
     children: Array<OverviewNode> = [];
-    x: number = 0;
-    y: number = 0;
+    x?: number ;
+    y?: number ;
     radius: number = 0;
     size: number = 10;
     id: string | number;

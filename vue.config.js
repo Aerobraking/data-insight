@@ -1,4 +1,5 @@
 module.exports = {
+ // mode: 'production',
   configureWebpack: {
     devtool: 'source-map'
   },
