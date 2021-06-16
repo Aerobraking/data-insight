@@ -6,6 +6,7 @@ export class OverviewNode implements NodeObject {
     name: string = "";
     path: string = "";
     color: string = "";
+    hue:number=0;
     children: Array<OverviewNode> = [];
     parent: OverviewNode | undefined;
     x?: number;
@@ -21,6 +22,11 @@ export class OverviewNode implements NodeObject {
 
     constructor(id: string | number) {
         this.id = id;
+    }
+
+    public getHSL():string{
+        // hue, saturation, lightness
+        return `hsl(${this.hue}, 65%, ${70-this.depth*5}%)`;
     }
 
     public depthCalc(): number {

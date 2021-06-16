@@ -11,6 +11,15 @@
 <script lang="ts">
 const fs = require("fs");
 const path = require("path");
+const chokidar = require("chokidar");
+
+function removeItemOnce<T>(arr: Array<T>, value: T) {
+  var index = arr.indexOf(value);
+  if (index > -1) {
+    arr.splice(index, 1);
+  }
+  return arr;
+}
 
 import { defineComponent } from "vue";
 import ForceGraph, {
@@ -42,23 +51,107 @@ export default defineComponent({
 
   data(): {
     showFiles: boolean;
-    overviewData: OverviewData;
     graph: ForceGraphInstance | undefined;
+    watchReady: boolean;
+    listRootNodes: HierarchyNode<OverviewNode>[];
   } {
     return {
-      showFiles: true,
-      overviewData: new OverviewData(),
+      listRootNodes: [],
+      watchReady: false,
+      showFiles: false,
       graph: undefined,
     };
   },
   methods: {
-    dropFiles(e: any) {
-      let droppedFiles = e.dataTransfer.files;
-      if (!droppedFiles) return;
-      // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+    addFile(path: string) {
+      for (let r of this.listRootNodes) {
+        if (path.includes(r.data.path)) {
+          let pathRelative = path.replace(r.data.path, "");
 
-      function getFiles(dir: string, parent: OverviewNode) {
+          let pathArray = pathRelative.split("\\");
+          let parentNode: OverviewNode | undefined = r.data;
+
+          pathArray = pathArray.filter((p) => p.trim().length > 0);
+
+          for (let i = 0; i < pathArray.length - 1; i++) {
+            const element = pathArray[i];
+
+            if (parentNode != undefined) {
+              let node: OverviewNode | undefined = parentNode.children.find(
+                (n) => n.path.endsWith(element)
+              );
+
+              parentNode = node;
+            }
+          }
+
+          if (parentNode?.path.endsWith(path)) {
+            /**
+             * file already exists as node
+             */
+            return;
+          }
+
+          this.addData(parentNode, path);
+        }
+      }
+    },
+    removeFile(path: string) {
+      for (let r of this.listRootNodes) {
+        if (path.includes(r.data.path)) {
+          let pathRelative = path.replace(r.data.path, "");
+
+          let pathArray = pathRelative.split("\\");
+          pathArray = pathArray.filter((p) => p.trim().length > 0);
+          let currentNode: OverviewNode | undefined = r.data;
+          for (let i = 0; i < pathArray.length; i++) {
+            const element = pathArray[i];
+
+            if (currentNode != undefined) {
+              let node: OverviewNode | undefined = currentNode.children.find(
+                (n) => n.path.endsWith(element)
+              );
+
+              currentNode = node;
+              // if (i == pathArray.length - 1) {
+              // } else {
+              //   currentNode = node;
+              // }
+            }
+          }
+          if (currentNode != undefined) {
+            /**
+             * remove node
+             */
+            if (currentNode.parent != undefined) {
+              removeItemOnce(currentNode.parent.children, currentNode);
+            }
+            let a = globalData.nodes.find((n) => n.path === currentNode?.path);
+            removeItemOnce(globalData.nodes, a);
+
+            /**
+             * remove link
+             */
+            let link = globalData.links.find((l) => l.target == a);
+            if (link != undefined) {
+              removeItemOnce(globalData.links, link);
+            }
+          }
+
+          if (this.graph != undefined) {
+            this.graph.graphData(globalData);
+          }
+        }
+      }
+    },
+    removeFolder(path: string) {},
+
+    addFolder(path: string) {},
+    addData(parent: OverviewNode | undefined, pathRoot: string) {
+      function getFiles(dir: string, parent: OverviewNode, hue: number = 0) {
         const files = fs.readdirSync(dir);
+        let index = 0;
+
         files.forEach((file: any) => {
           const filePath = path.join(dir, file);
           const fileStat = fs.lstatSync(filePath);
@@ -66,9 +159,14 @@ export default defineComponent({
           let child: OverviewNode = new OverviewNode(filePath);
           child.isDirectory = fileStat.isDirectory();
           child.name = file;
-          child.path = dir;
+          child.path = filePath;
           child.parent = parent;
           child.depthCalc();
+
+          if (child.depth == 1 && child.isDirectory) {
+            hue = (360 / files.length) * index;
+          }
+          child.hue = hue;
 
           var fileSizeInBytes = fileStat.size;
           // Convert the file size to megabytes (optional)
@@ -76,20 +174,84 @@ export default defineComponent({
           parent.children.push(child);
 
           if (child.isDirectory) {
-            getFiles(filePath, child);
+            getFiles(filePath, child, hue);
           }
+          index++;
         });
       }
-      let rootFile: OverviewNode = new OverviewNode(droppedFiles[0].path);
-      rootFile.name = "root";
-      rootFile.path = droppedFiles[0].path;
-      getFiles(droppedFiles[0].path, rootFile);
+
+      let rootFile: OverviewNode = new OverviewNode(pathRoot);
+      if (parent != undefined) {
+        rootFile.parent = parent;
+      }
+
+      rootFile.name = pathRoot.split("\\")[pathRoot.split("\\").length - 1];
+      rootFile.path = pathRoot;
+      rootFile.depthCalc();
+      rootFile.isDirectory = fs.lstatSync(rootFile.path).isDirectory();
+
+      if (rootFile.isDirectory) {
+        getFiles(pathRoot, rootFile);
+      }
+
+      let vm = this;
+
+      /**
+       * füge file watching hinzu
+       */
+      if (parent == undefined) {
+        const watcher = chokidar.watch(rootFile.path, {
+          ignored: /(^|[\/\\])\../, // ignore dotfiles
+          persistent: true,
+          recursive: true,
+        });
+
+        vm.watchReady = false;
+        watcher
+          .on("add", (path: any) => {
+            if (vm.watchReady) {
+              this.addFile(path);
+              console.log("add file: " + path);
+            }
+          })
+          .on("change", (path: any) => {
+            console.log(path);
+          })
+          .on("unlink", (path: any) => {
+            if (vm.watchReady) {
+              this.removeFile(path);
+              console.log("remove file: " + path);
+            }
+          })
+          .on("addDir", (path: any) => {
+            if (vm.watchReady) {
+              this.addFile(path);
+              console.log("add Dir: " + path);
+            }
+          })
+          .on("ready", (path: any) => {
+            vm.watchReady = true;
+            console.log("READY");
+          })
+          .on("unlinkDir", (path: any) => {
+            console.log("remove Dir: " + path);
+            this.removeFile(path);
+          });
+      }
 
       if (this.graph != undefined) {
+        /**
+         * Wenn wir einen parent mitbekommen haben, nutzen wir den als root. Damit wird auch der link von diesem zum neuen child erstellt
+         */
         let rootNode: HierarchyNode<OverviewNode> =
           d3.hierarchy<OverviewNode>(rootFile);
 
+        if (parent == undefined) {
+          vm.listRootNodes.push(rootNode);
+        }
+
         let nodes: HierarchyNode<OverviewNode>[] = rootNode.descendants();
+
         let links: HierarchyLink<OverviewNode>[] = rootNode.links();
 
         let maxDepth: number = Math.max.apply(
@@ -98,15 +260,22 @@ export default defineComponent({
             return o.data.depth;
           })
         );
-        let vm = this;
-        for (let i = 0; i <= maxDepth; i++) {
-          (function (ind) {
+
+        /**
+         * wenn wir ein parent haben, starten wir bei der depth eins unter ihm, also der seiner children.
+         */
+        for (
+          let i = parent != undefined ? parent.depth + 1 : 0, j = 0;
+          i <= maxDepth;
+          i++, j++
+        ) {
+          (function (depth, index) {
             setTimeout(function () {
               let nodesSub: HierarchyNode<OverviewNode>[] = nodes.filter(
-                (o: HierarchyNode<OverviewNode>) => o.data.depth == i
+                (o: HierarchyNode<OverviewNode>) => o.data.depth == depth
               );
               let linksSub: HierarchyLink<OverviewNode>[] = links.filter(
-                (o: HierarchyLink<OverviewNode>) => o.target.depth == i
+                (o: HierarchyLink<OverviewNode>) => o.target.depth == depth
               );
 
               globalData.nodes.push(...nodesSub.map((n) => n.data));
@@ -117,12 +286,20 @@ export default defineComponent({
               let linksF: OverviewLink[] = [];
               linksSub.forEach((l: HierarchyLink<OverviewNode>) => {
                 let link = new OverviewLink();
-                link;
-                linksF.push({
-                  source: l.source.data,
-                  target: l.target.data,
-                });
+                link.source = l.source.data;
+                link.target = l.target.data;
+                linksF.push(link);
               });
+
+              /**
+               * Wenn wir nen parent haben, erstelle den link vom neuen child zu dem parent.
+               */
+              if (j == 0 && parent != undefined) {
+                linksF.push({
+                  source: parent,
+                  target: rootFile,
+                });
+              }
 
               globalData.links.push(...linksF);
               /**
@@ -131,10 +308,16 @@ export default defineComponent({
               if (vm.graph != undefined) {
                 vm.graph.graphData(globalData);
               }
-            }, 0 + 200 * ind);
-          })(i);
+            }, 0 + 300 + Math.pow(index + 5, 2) * 15);
+          })(i, j);
         }
       }
+    },
+    dropFiles(e: any) {
+      let droppedFiles = e.dataTransfer.files;
+      if (!droppedFiles) return;
+      // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
+      this.addData(undefined, droppedFiles[0].path);
       // ipcRenderer.send("file-drop", droppedFiles[0].path);
     },
     toggleShowFiles() {
@@ -162,7 +345,7 @@ export default defineComponent({
           2 * Math.PI,
           false
         );
-        ctx.fillStyle = "rgba(131, 220, 180, " + alpha + ")";
+        ctx.fillStyle = node.getHSL();
         ctx.fill();
       }
     },
@@ -172,34 +355,29 @@ export default defineComponent({
     ipcRenderer.on(
       "files-added",
       function (event: any, rootFile: OverviewNode) {
-        if (vm.graph != undefined) {
-          let rootNode: HierarchyNode<OverviewNode> =
-            d3.hierarchy<OverviewNode>(rootFile);
-
-          let links: HierarchyLink<OverviewNode>[] = rootNode.links();
-          let nodes: HierarchyNode<OverviewNode>[] = rootNode.descendants();
-
-          globalData.nodes.push(...nodes.map((n) => n.data));
-
-          console.log("anzahl nodes:");
-          console.log(globalData.nodes.length);
-
-          let linksF: OverviewLink[] = [];
-          links.forEach((l: HierarchyLink<OverviewNode>) => {
-            let link = new OverviewLink();
-            link;
-            linksF.push({
-              source: l.source.data,
-              target: l.target.data,
-            });
-          });
-
-          globalData.links.push(...linksF);
-          /**
-           * Füge die neuen Dateien/Ordner der OverviewData hinzu und aktualisiere den ForceGraph.
-           */
-          vm.graph.graphData(globalData);
-        }
+        // if (vm.graph != undefined) {
+        //   let rootNode: HierarchyNode<OverviewNode> =
+        //     d3.hierarchy<OverviewNode>(rootFile);
+        //   let links: HierarchyLink<OverviewNode>[] = rootNode.links();
+        //   let nodes: HierarchyNode<OverviewNode>[] = rootNode.descendants();
+        //   globalData.nodes.push(...nodes.map((n) => n.data));
+        //   console.log("anzahl nodes:");
+        //   console.log(globalData.nodes.length);
+        //   let linksF: OverviewLink[] = [];
+        //   links.forEach((l: HierarchyLink<OverviewNode>) => {
+        //     let link = new OverviewLink();
+        //     link;
+        //     linksF.push({
+        //       source: l.source.data,
+        //       target: l.target.data,
+        //     });
+        //   });
+        //   globalData.links.push(...linksF);
+        //   /**
+        //    * Füge die neuen Dateien/Ordner der OverviewData hinzu und aktualisiere den ForceGraph.
+        //    */
+        //   vm.graph.graphData(globalData);
+        // }
       }
     );
 
@@ -215,6 +393,7 @@ export default defineComponent({
       this.graph = ForceGraph()(div)
         // .linkDirectionalParticles(2)
         .linkWidth(2)
+       // .nodeLabel((n:OverviewNode)=>n.path)
         .minZoom(0.1)
         .maxZoom(10)
         .nodeVisibility(function (n: NodeObject) {
