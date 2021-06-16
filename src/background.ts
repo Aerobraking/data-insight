@@ -17,6 +17,8 @@ async function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
     height: 800,
+    x: 10,
+    y: 10,
     webPreferences: {
 
       // Use pluginOptions.nodeIntegration, leave this alone
@@ -92,26 +94,25 @@ ipcMain.on('file-drop', (event: any, arg: any) => {
   loadFiles(arg);
 })
 
-async function getFiles(dir: string, rootFile: OverviewNode) {
+async function getFiles(dir: string, parent: OverviewNode) {
   const files = fs.readdirSync(dir);
   files.forEach((file: any) => {
     const filePath = path.join(dir, file);
     const fileStat = fs.lstatSync(filePath);
 
-    let fileChild: OverviewNode = new OverviewNode(filePath);
-    fileChild.isDirectory = fileStat.isDirectory();
-    fileChild.name = file;
-    fileChild.path = dir;
+    let child: OverviewNode = new OverviewNode(filePath);
+    child.isDirectory = fileStat.isDirectory();
+    child.name = file;
+    child.path = dir;
+    child.parent = parent
+    child.depthCalc();
 
     var fileSizeInBytes = fileStat.size;
     // Convert the file size to megabytes (optional)
-    rootFile.size = Math.sqrt(fileSizeInBytes / (1024 * 1024));
-
-
-
-    if (fileChild.isDirectory) {
-      rootFile.children.push(fileChild);
-      getFiles(filePath, fileChild);
+    parent.size = Math.sqrt(fileSizeInBytes / (1024 * 1024));
+    parent.children.push(child);
+    if (child.isDirectory) {
+      getFiles(filePath, child);
     }
   });
 }

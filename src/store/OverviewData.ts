@@ -5,9 +5,12 @@ export class OverviewNode implements NodeObject {
     isDirectory: boolean = false;
     name: string = "";
     path: string = "";
+    color: string = "";
     children: Array<OverviewNode> = [];
-    x?: number ;
-    y?: number ;
+    parent: OverviewNode | undefined;
+    x?: number;
+    y?: number;
+    depth: number = 0;
     radius: number = 0;
     size: number = 10;
     id: string | number;
@@ -19,6 +22,19 @@ export class OverviewNode implements NodeObject {
     constructor(id: string | number) {
         this.id = id;
     }
+
+    public depthCalc(): number {
+        this.depth = 0;
+        if (this.parent != undefined) {
+            let p:OverviewNode = this;
+            while (p.parent != undefined) {
+                this.depth = this.depth + 1;
+                p = p.parent;
+            }
+        }
+        return this.depth;
+    }
+
 }
 
 export class OverviewLink implements LinkObject {
@@ -26,7 +42,7 @@ export class OverviewLink implements LinkObject {
     target?: string | number | OverviewNode;
 }
 
-export class OverviewData implements GraphData{
+export class OverviewData implements GraphData {
     nodes: OverviewNode[] = [];
     links: OverviewLink[] = [];
 }
