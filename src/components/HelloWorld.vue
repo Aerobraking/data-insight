@@ -1,5 +1,6 @@
 <template>
   <div
+    class="canvas-wrapper"
     v-on:keyup.enter="toggleShowFiles"
     @click.ctrl="toggleShowFiles"
     @dragover.prevent
@@ -41,9 +42,48 @@ import {
   SimulationNodeDatum,
   ZoomView,
 } from "d3";
+import * as _ from "underscore";
+
+function loadImages(sources: Array<string>, callback: Function) {
+  var images: Array<any> = [];
+  var loadedImages = 0;
+  var numImages = 0;
+  for (var src in sources) {
+    numImages++;
+  }
+  for (let src in sources) {
+    images[src] = new Image();
+    images[src].onload = function () {
+      if (++loadedImages >= numImages) {
+        callback(images);
+      }
+    };
+    images[src].src = sources[src];
+  }
+}
+var images: Array<any> = [];
+var imagesLoading: Array<any> = [];
+function loadImage(sources: any): HTMLImageElement | null {
+  if (images[sources] != undefined) {
+    console.log("bild ist schon im cache");
+    return images[sources];
+  }
+  if (imagesLoading[sources] != undefined) {
+    return null;
+  }
+
+  let img = new Image();
+  imagesLoading[sources] = img;
+  imagesLoading[sources].onload = function () {
+    images[sources] = img;
+  };
+
+  imagesLoading[sources].src = sources;
+  return null;
+}
 
 const { ipcRenderer } = require("electron");
-
+let counter = 0;
 const globalData: OverviewData = new OverviewData();
 
 export default defineComponent({
@@ -113,10 +153,6 @@ export default defineComponent({
               );
 
               currentNode = node;
-              // if (i == pathArray.length - 1) {
-              // } else {
-              //   currentNode = node;
-              // }
             }
           }
           if (currentNode != undefined) {
@@ -308,16 +344,23 @@ export default defineComponent({
               if (vm.graph != undefined) {
                 vm.graph.graphData(globalData);
               }
-            }, 0 + 300 + Math.pow(index + 5, 2) * 15);
+            }, 0 + 100 + Math.pow(index+ 3, 2) * 15);
           })(i, j);
         }
       }
     },
     dropFiles(e: any) {
-      let droppedFiles = e.dataTransfer.files;
+      let droppedFiles: Array<any> = e.dataTransfer.files;
       if (!droppedFiles) return;
       // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
-      this.addData(undefined, droppedFiles[0].path);
+      let index = 0;
+      let vm = this;
+      droppedFiles.forEach((f: any) => {
+        setTimeout(function () {
+          vm.addData(undefined, f.path);
+        }, index++ * 400);
+      });
+
       // ipcRenderer.send("file-drop", droppedFiles[0].path);
     },
     toggleShowFiles() {
@@ -329,59 +372,131 @@ export default defineComponent({
       globalScale: number
     ): void {
       if (node != undefined) {
-        const getColor = (n: OverviewNode) =>
-          "#" +
-          ((n.size * 1234567) % Math.pow(2, 24)).toString(16).padStart(6, "0");
-        let alpha = 1.0 - node.depth * 0.05;
-        // ctx.fillStyle = "rgba(131, 120, 100, " + alpha + ")";
-        // Draw wider nodes by 1px on shadow canvas for more precise hovering (due to boundary anti-aliasing)
-        const r = Math.sqrt(Math.max(0, node.children.length || 1)) * 4 + 0;
-        ctx.beginPath();
-        ctx.arc(
-          node.x != undefined ? node.x : 0,
-          node.y != undefined ? node.y : 0,
-          r,
-          0,
-          2 * Math.PI,
-          false
-        );
-        ctx.fillStyle = node.getHSL();
-        ctx.fill();
+        let viewportWidth: number = this.graph?.width()
+          ? this.graph.width()
+          : 0;
+        let viewportHeight: number = this.graph?.width()
+          ? this.graph.height()
+          : 0;
+
+        let x = -ctx.getTransform().e + viewportWidth / 2; // nach rechts draggen macht x kleiner, also -100 usw.
+        let y = -ctx.getTransform().f + viewportHeight / 2; // nach unten macht y kleiner, also -100 usw.
+
+        let nodeX = Math.round(node.getX()) * globalScale;
+        let nodeY = Math.round(node.getY()) * globalScale;
+        if (
+          nodeX > x - viewportWidth / 2 &&
+          nodeX < x + viewportWidth / 2 &&
+          nodeY > y - viewportHeight / 2 &&
+          nodeY < y + viewportHeight / 2
+        ) {
+          // Draw wider nodes by 1px on shadow canvas for more precise hovering (due to boundary anti-aliasing)
+          const r = Math.sqrt(Math.max(0, node.children.length || 1)) * 4 + 0;
+          ctx.beginPath();
+          ctx.arc(
+            node.x ? node.x : 0,
+            node.y ? node.y : 0,
+            r,
+            0,
+            2 * Math.PI,
+            false
+          );
+          ctx.fillStyle = node.getHSL();
+          ctx.fill();
+
+          if (
+            (node.name.endsWith("jpg") ||
+              node.name.endsWith("png") ||
+              node.name.endsWith("gif")) &&
+            globalScale > 2
+          ) {
+            console.log("scale: " + globalScale);
+
+            console.log();
+
+            let img: HTMLImageElement | null = loadImage("file://" + node.path);
+
+            const size = r * 2;
+            ctx.imageSmoothingEnabled = false;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(
+              node.x ? node.x : 0,
+              node.y ? node.y : 0,
+              r,
+              0,
+              2 * Math.PI,
+              false
+            );
+            ctx.closePath();
+            ctx.clip();
+
+            ctx.globalAlpha = Math.min((globalScale - 2) / 8, 1);
+
+            if (img != null) {
+              let w =
+                img.naturalHeight > img.naturalWidth
+                  ? size
+                  : size * (img.naturalWidth / img.naturalHeight);
+              let h =
+                img.naturalHeight > img.naturalWidth
+                  ? size * (img.naturalHeight / img.naturalWidth)
+                  : size;
+
+              ctx.drawImage(
+                img,
+                (node.x ? node.x : 0) - w / 2,
+                (node.y ? node.y : 0) - h / 2,
+                w,
+                h
+              );
+            }
+            ctx.globalAlpha = 1.0;
+
+            ctx.beginPath();
+            ctx.arc(
+              node.x ? node.x : 0,
+              node.y ? node.y : 0,
+              r,
+              0,
+              2 * Math.PI,
+              false
+            );
+            ctx.clip();
+            ctx.closePath();
+            ctx.restore();
+          }
+
+          if (
+            (node.isDirectory && globalScale > Math.min(node.depth, 4)) ||
+            (!node.isDirectory && globalScale > 8)
+          ) {
+            ctx.font = `${25 / globalScale}px Lato`;
+            ctx.fillText(
+              node.name,
+              node.x ? node.x + r + 3 : 0,
+              node.y ? node.y + 2 : 0
+            );
+          }
+        }
       }
     },
   },
   mounted() {
     let vm = this;
+    window.onresize = function () {
+      vm.graph?.width(
+        document.getElementsByClassName("canvas-wrapper")[0].clientWidth
+      );
+      vm.graph?.height(
+        document.getElementsByClassName("canvas-wrapper")[0].clientHeight
+      );
+    };
+
     ipcRenderer.on(
       "files-added",
-      function (event: any, rootFile: OverviewNode) {
-        // if (vm.graph != undefined) {
-        //   let rootNode: HierarchyNode<OverviewNode> =
-        //     d3.hierarchy<OverviewNode>(rootFile);
-        //   let links: HierarchyLink<OverviewNode>[] = rootNode.links();
-        //   let nodes: HierarchyNode<OverviewNode>[] = rootNode.descendants();
-        //   globalData.nodes.push(...nodes.map((n) => n.data));
-        //   console.log("anzahl nodes:");
-        //   console.log(globalData.nodes.length);
-        //   let linksF: OverviewLink[] = [];
-        //   links.forEach((l: HierarchyLink<OverviewNode>) => {
-        //     let link = new OverviewLink();
-        //     link;
-        //     linksF.push({
-        //       source: l.source.data,
-        //       target: l.target.data,
-        //     });
-        //   });
-        //   globalData.links.push(...linksF);
-        //   /**
-        //    * Füge die neuen Dateien/Ordner der OverviewData hinzu und aktualisiere den ForceGraph.
-        //    */
-        //   vm.graph.graphData(globalData);
-        // }
-      }
+      function (event: any, rootFile: OverviewNode) {}
     );
-
-    console.log("start!");
 
     let div: HTMLElement | null = document.getElementById("graph");
 
@@ -393,9 +508,20 @@ export default defineComponent({
       this.graph = ForceGraph()(div)
         // .linkDirectionalParticles(2)
         .linkWidth(2)
-       // .nodeLabel((n:OverviewNode)=>n.path)
+        // .nodeLabel((n:OverviewNode)=>n.path)
         .minZoom(0.1)
-        .maxZoom(10)
+        .maxZoom(20)
+        .warmupTicks(0)
+        //  .dagMode("radialout")
+        //.dagMode("td")
+        .dagNodeFilter(function (n: NodeObject) {
+          let node = n as OverviewNode;
+          return node.isDirectory;
+        })
+        .nodeLabel(function (n: NodeObject) {
+          let node = n as OverviewNode;
+          return node.path;
+        })
         .nodeVisibility(function (n: NodeObject) {
           let node = n as OverviewNode;
           return vm.showFiles || node.isDirectory;
@@ -421,7 +547,7 @@ export default defineComponent({
       // @ts-ignore: Unreachable code error
       // let force = this.graph.d3Force("link", null);
       // @ts-ignore: Unreachable code error
-      //this.graph.d3Force("center", null);
+      this.graph.d3Force("center", null);
       // @ts-ignore: Unreachable code error
       // let charge = this.graph.d3Force("charge", null);
       this.graph.d3Force("collision", d3.forceCollide(6));
@@ -429,7 +555,7 @@ export default defineComponent({
       let charge = this.graph.d3Force("charge");
       if (charge != null) {
         charge.distanceMax(1500);
-        charge.distanceMin(100);
+        // charge.distanceMin();
       }
       //  if (force != null) {
       //     // force.distance(function (l: any) {
@@ -447,6 +573,12 @@ export default defineComponent({
   margin: 0;
   padding: 0;
 }
+
+.canvas-wrapper {
+  width: 100%;
+  height: 100%;
+}
+
 #graph {
   position: absolute;
   width: 100%;

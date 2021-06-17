@@ -20,7 +20,7 @@ async function createWindow() {
     x: 10,
     y: 10,
     webPreferences: {
-
+      webSecurity: false,
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: (process.env
