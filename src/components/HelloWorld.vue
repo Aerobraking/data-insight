@@ -247,8 +247,8 @@ export default defineComponent({
       rootFile.name = pathRoot.split("\\")[pathRoot.split("\\").length - 1];
       rootFile.path = pathRoot;
       // fixes the position of the root node
-      rootFile.fx=0;
-      rootFile.fy=0;
+    //  rootFile.fx=0;
+     // rootFile.fy=0;
       rootFile.depthCalc();
       rootFile.isDirectory = fs.lstatSync(rootFile.path).isDirectory();
 
@@ -601,7 +601,9 @@ export default defineComponent({
       this.graph.d3Force("collision", d3.forceCollide(6));
 
       // prevents the simulation from beeing stopped.
-      this.graph.d3AlphaMin(0).d3AlphaDecay(1 - Math.pow(0.001, 1 / 300) ).d3AlphaDecay(0);
+      this.graph.d3AlphaMin(0)
+     // .d3AlphaDecay(1 - Math.pow(0.001, 1 / 300) )
+      .d3AlphaDecay(0);
 
       let charge = this.graph.d3Force("charge");
       if (charge != null) {
