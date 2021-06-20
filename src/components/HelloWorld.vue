@@ -1,7 +1,6 @@
 <template>
   <div
     class="canvas-wrapper"
-    v-on:keyup.enter="toggleShowFiles"
     @click.ctrl="toggleShowFiles"
     @dragover.prevent
     @drop.prevent="dropFiles"
@@ -12,7 +11,8 @@
 <script lang="ts">
 const fs = require("fs");
 const path = require("path");
-const chokidar = require("chokidar");
+// without "window.", the fsevent module can' be loaded on osx
+const chokidar = window.require("chokidar");
 
 function removeItemOnce<T>(arr: Array<T>, value: T) {
   var index = arr.indexOf(value);
@@ -88,8 +88,12 @@ const globalData: OverviewData = new OverviewData();
 
 export default defineComponent({
   name: "HelloWorld",
-
+  created: function () {
+    window.addEventListener("keyup", this.keyPressed);
+  },
   data(): {
+    showNames: boolean;
+    showImages: boolean;
     showFiles: boolean;
     graph: ForceGraphInstance | undefined;
     watchReady: boolean;
@@ -98,11 +102,28 @@ export default defineComponent({
     return {
       listRootNodes: [],
       watchReady: false,
+      showNames: false,
       showFiles: false,
+      showImages: false,
       graph: undefined,
     };
   },
   methods: {
+    keyPressed(e: KeyboardEvent) {
+      switch (e.key) {
+        case "i":
+          this.showImages = !this.showImages;
+          break;
+        case "f":
+          this.showFiles = !this.showFiles;
+          break;
+        case "n":
+          this.showNames = !this.showNames;
+          break;
+        default:
+          break;
+      }
+    },
     addFile(path: string) {
       for (let r of this.listRootNodes) {
         if (path.includes(r.data.path)) {
@@ -198,15 +219,17 @@ export default defineComponent({
           child.path = filePath;
           child.parent = parent;
           child.depthCalc();
-
+          if (!child.isDirectory) {
+            var fileSizeInBytes = fileStat.size;
+            child.size = Math.round(Math.sqrt(fileSizeInBytes / (1024 * 1024)));
+          }
           if (child.depth == 1 && child.isDirectory) {
             hue = (360 / files.length) * index;
           }
           child.hue = hue;
 
-          var fileSizeInBytes = fileStat.size;
           // Convert the file size to megabytes (optional)
-          parent.size = Math.sqrt(fileSizeInBytes / (1024 * 1024));
+
           parent.children.push(child);
 
           if (child.isDirectory) {
@@ -223,6 +246,9 @@ export default defineComponent({
 
       rootFile.name = pathRoot.split("\\")[pathRoot.split("\\").length - 1];
       rootFile.path = pathRoot;
+      // fixes the position of the root node
+      rootFile.fx=0;
+      rootFile.fy=0;
       rootFile.depthCalc();
       rootFile.isDirectory = fs.lstatSync(rootFile.path).isDirectory();
 
@@ -230,6 +256,25 @@ export default defineComponent({
         getFiles(pathRoot, rootFile);
       }
 
+      function calculateSize(root: OverviewNode): number {
+        let size = 0;
+        let folderFound = false;
+        root.children.forEach((child: OverviewNode) => {
+          if (child.isDirectory) {
+            size += calculateSize(child);
+            folderFound = true;
+          } else {
+            size += child.size;
+          }
+        });
+        if (root.isDirectory) {
+          root.size = size;
+        }
+
+        return size;
+      }
+
+      calculateSize(rootFile);
       let vm = this;
 
       /**
@@ -344,7 +389,7 @@ export default defineComponent({
               if (vm.graph != undefined) {
                 vm.graph.graphData(globalData);
               }
-            }, 0 + 100 + Math.pow(index+ 3, 2) * 15);
+            }, 0 + 100 + Math.pow(index + 3, 2) * 15);
           })(i, j);
         }
       }
@@ -391,7 +436,7 @@ export default defineComponent({
           nodeY < y + viewportHeight / 2
         ) {
           // Draw wider nodes by 1px on shadow canvas for more precise hovering (due to boundary anti-aliasing)
-          const r = Math.sqrt(Math.max(0, node.children.length || 1)) * 4 + 0;
+          const r = Math.sqrt(Math.max(0, node.size || 1)) * 1 + 0;
           ctx.beginPath();
           ctx.arc(
             node.x ? node.x : 0,
@@ -405,6 +450,7 @@ export default defineComponent({
           ctx.fill();
 
           if (
+            this.showImages &&
             (node.name.endsWith("jpg") ||
               node.name.endsWith("png") ||
               node.name.endsWith("gif")) &&
@@ -468,12 +514,14 @@ export default defineComponent({
           }
 
           if (
-            (node.isDirectory && globalScale > Math.min(node.depth, 4)) ||
+            ((this.showNames || node.depth == 0) &&
+              node.isDirectory &&
+              globalScale > Math.min(node.depth, 4)) ||
             (!node.isDirectory && globalScale > 8)
           ) {
             ctx.font = `${25 / globalScale}px Lato`;
             ctx.fillText(
-              node.name,
+              `${node.name}  ${node.size}mb`,
               node.x ? node.x + r + 3 : 0,
               node.y ? node.y + 2 : 0
             );
@@ -534,7 +582,7 @@ export default defineComponent({
         .backgroundColor("#333")
         // .cooldownTime(100)
         .nodeRelSize(4)
-        .nodeVal((n: any) => n.children.length)
+        .nodeVal((n: any) => n.size)
         .nodeCanvasObject(function (
           node: NodeObject,
           ctx: CanvasRenderingContext2D,
@@ -551,6 +599,9 @@ export default defineComponent({
       // @ts-ignore: Unreachable code error
       // let charge = this.graph.d3Force("charge", null);
       this.graph.d3Force("collision", d3.forceCollide(6));
+
+      // prevents the simulation from beeing stopped.
+      this.graph.d3AlphaMin(0).d3AlphaDecay(1 - Math.pow(0.001, 1 / 300) ).d3AlphaDecay(0);
 
       let charge = this.graph.d3Force("charge");
       if (charge != null) {
