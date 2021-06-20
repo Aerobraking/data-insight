@@ -13,10 +13,11 @@ npm run electron:serve
 ### Controls:
 
 Overview:
+```
 Key F:  Show/hide Files
 Key I:  Show/hide Images
 Key N:  Show/hide Names
-
+```
 
 ### Bei Problemen:
 
