@@ -2,18 +2,15 @@
 
 ## Project setup
 ```
-yarn install
+npm install
 ```
 
 ### Compiles and hot-reloads for development
 ```
-yarn serve
+npm run electron:serve
 ```
 
-### Compiles and minifies for production
-```
-yarn build
-```
+### Bei Problemen:
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+- Eventuell hilft es vue/cli zu installieren, wobei das eigentlich auch per "npm install" gemacht werden sollte:
+  npm install -g @vue/cli
