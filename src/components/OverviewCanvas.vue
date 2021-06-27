@@ -422,6 +422,7 @@ export default defineComponent({
         let nodeX = Math.round(node.getX()) * globalScale;
         let nodeY = Math.round(node.getY()) * globalScale;
         if (
+          true ||
           nodeX > x - viewportWidth / 2 &&
           nodeX < x + viewportWidth / 2 &&
           nodeY > y - viewportHeight / 2 &&
@@ -568,7 +569,7 @@ export default defineComponent({
           let t = n.target as TreeNode;
           return vm.showFiles || t.isDirectory();
         })
-        .backgroundColor("#333")
+        .backgroundColor("#555")
         // .cooldownTime(100)
         .nodeRelSize(4)
         .nodeVal((n: any) => n.size)
