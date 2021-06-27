@@ -3,7 +3,7 @@
 import { ipcMain, app, protocol, BrowserWindow } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
-import { OverviewNode } from './store/OverviewData'
+
 import { utcFormat } from 'd3'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -85,67 +85,67 @@ if (isDevelopment) {
   }
 }
 
-const fs = require('fs');
-const path = require('path');
-const { webContents } = require('electron')
+// const fs = require('fs');
+// const path = require('path');
+// const { webContents } = require('electron')
 
-ipcMain.on('file-drop', (event: any, arg: any) => {
-  console.log(arg) // prints "ping"
-  loadFiles(arg);
-})
+// ipcMain.on('file-drop', (event: any, arg: any) => {
+//   console.log(arg) // prints "ping"
+//   loadFiles(arg);
+// })
 
-async function getFiles(dir: string, parent: OverviewNode) {
-  const files = fs.readdirSync(dir);
-  files.forEach((file: any) => {
-    const filePath = path.join(dir, file);
-    const fileStat = fs.lstatSync(filePath);
+// async function getFiles(dir: string, parent: OverviewNode) {
+//   const files = fs.readdirSync(dir);
+//   files.forEach((file: any) => {
+//     const filePath = path.join(dir, file);
+//     const fileStat = fs.lstatSync(filePath);
 
-    let child: OverviewNode = new OverviewNode(filePath);
-    child.isDirectory = fileStat.isDirectory();
-    child.name = file;
-    child.path = dir;
-    child.parent = parent
-    child.depthCalc();
+//     let child: OverviewNode = new OverviewNode(filePath);
+//     child.isDirectory = fileStat.isDirectory();
+//     child.name = file;
+//     child.path = dir;
+//     child.parent = parent
+//     child.depthCalc();
 
-    var fileSizeInBytes = fileStat.size;
-    // Convert the file size to megabytes (optional)
-    parent.size = Math.sqrt(fileSizeInBytes / (1024 * 1024));
-    parent.children.push(child);
-    if (child.isDirectory) {
-      getFiles(filePath, child);
-    }
-  });
-}
+//     var fileSizeInBytes = fileStat.size;
+//     // Convert the file size to megabytes (optional)
+//     parent.size = Math.sqrt(fileSizeInBytes / (1024 * 1024));
+//     parent.children.push(child);
+//     if (child.isDirectory) {
+//       getFiles(filePath, child);
+//     }
+//   });
+// }
 
-function createDummyTreeData(node: OverviewNode, depthMax: number, depth?: number) {
-  if (depth == undefined) {
-    depth = 0;
-  }
-  for (let i = 0; i < 13 + Math.random() * 13; i++) {
-    let name: string = Math.random().toString(36).substring(7);
-    let child = new OverviewNode(name);
-    child.name = name;
-    child.path = name;
-    node.children.push(child);
-    if (depth < depthMax) {
-      createDummyTreeData(child, depthMax, ++depth);
-    }
-  }
-}
+// function createDummyTreeData(node: OverviewNode, depthMax: number, depth?: number) {
+//   if (depth == undefined) {
+//     depth = 0;
+//   }
+//   for (let i = 0; i < 13 + Math.random() * 13; i++) {
+//     let name: string = Math.random().toString(36).substring(7);
+//     let child = new OverviewNode(name);
+//     child.name = name;
+//     child.path = name;
+//     node.children.push(child);
+//     if (depth < depthMax) {
+//       createDummyTreeData(child, depthMax, ++depth);
+//     }
+//   }
+// }
 
-async function loadFiles(path: string) {
-  let rootFile: OverviewNode = new OverviewNode(path);
-  rootFile.name = "root";
-  rootFile.path = path;
-  getFiles(path, rootFile);
-  //createDummy(rootFile, 6);
+// async function loadFiles(path: string) {
+//   let rootFile: OverviewNode = new OverviewNode(path);
+//   rootFile.name = "root";
+//   rootFile.path = path;
+//   getFiles(path, rootFile);
+//   //createDummy(rootFile, 6);
 
-  console.log(rootFile);
+//   console.log(rootFile);
 
 
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('files-added', rootFile)
-  })
+//   webContents.getAllWebContents().forEach(wc => {
+//     wc.send('files-added', rootFile)
+//   })
 
-}
+// }
 

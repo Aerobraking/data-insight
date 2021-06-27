@@ -29,20 +29,11 @@ import ForceGraph, {
   LinkObject,
   NodeObject,
 } from "force-graph";
-import {
-  OverviewNode,
-  OverviewData,
-  OverviewLink,
-} from "../store/OverviewData";
+
+import { TreeNode, TreeLink, TreeStructure } from "../store/model/FileTree";
 import * as d3 from "d3";
-import {
-  D3DragEvent,
-  HierarchyLink,
-  HierarchyNode,
-  SimulationNodeDatum,
-  ZoomView,
-} from "d3";
 import * as _ from "underscore";
+import { AbstractNode } from "@/store/model/OverviewDataModel";
 
 function loadImages(sources: Array<string>, callback: Function) {
   var images: Array<any> = [];
@@ -82,12 +73,15 @@ function loadImage(sources: any): HTMLImageElement | null {
   return null;
 }
 
+let listRootNodes: Array<TreeNode> = [];
+
 const { ipcRenderer } = require("electron");
 let counter = 0;
-const globalData: OverviewData = new OverviewData();
+//const globalData: OverviewData = new OverviewData();
+const globalData: TreeStructure = new TreeStructure();
 
 export default defineComponent({
-  name: "HelloWorld",
+  name: "OverviewCanvas",
   created: function () {
     window.addEventListener("keyup", this.keyPressed);
   },
@@ -97,10 +91,8 @@ export default defineComponent({
     showFiles: boolean;
     graph: ForceGraphInstance | undefined;
     watchReady: boolean;
-    listRootNodes: HierarchyNode<OverviewNode>[];
   } {
     return {
-      listRootNodes: [],
       watchReady: false,
       showNames: false,
       showFiles: false,
@@ -125,12 +117,12 @@ export default defineComponent({
       }
     },
     addFile(path: string) {
-      for (let r of this.listRootNodes) {
-        if (path.includes(r.data.path)) {
-          let pathRelative = path.replace(r.data.path, "");
+      for (let r of listRootNodes) {
+        if (path.includes(r.getPath())) {
+          let pathRelative = path.replace(r.getPath(), "");
 
           let pathArray = pathRelative.split("\\");
-          let parentNode: OverviewNode | undefined = r.data;
+          let parentNode: TreeNode | undefined = r;
 
           pathArray = pathArray.filter((p) => p.trim().length > 0);
 
@@ -138,15 +130,15 @@ export default defineComponent({
             const element = pathArray[i];
 
             if (parentNode != undefined) {
-              let node: OverviewNode | undefined = parentNode.children.find(
-                (n) => n.path.endsWith(element)
+              let node: TreeNode | undefined = parentNode.children.find((n) =>
+                n.getPath().endsWith(element)
               );
 
               parentNode = node;
             }
           }
 
-          if (parentNode?.path.endsWith(path)) {
+          if (parentNode?.getPath().endsWith(path)) {
             /**
              * file already exists as node
              */
@@ -158,19 +150,21 @@ export default defineComponent({
       }
     },
     removeFile(path: string) {
-      for (let r of this.listRootNodes) {
-        if (path.includes(r.data.path)) {
-          let pathRelative = path.replace(r.data.path, "");
+      for (let i = 0; i < listRootNodes.length - 1; i++) {
+        let r: TreeNode = listRootNodes[i];
+
+        if (path.includes(r.getPath())) {
+          let pathRelative = path.replace(r.getPath(), "");
 
           let pathArray = pathRelative.split("\\");
           pathArray = pathArray.filter((p) => p.trim().length > 0);
-          let currentNode: OverviewNode | undefined = r.data;
+          let currentNode: any = r;
           for (let i = 0; i < pathArray.length; i++) {
             const element = pathArray[i];
 
             if (currentNode != undefined) {
-              let node: OverviewNode | undefined = currentNode.children.find(
-                (n) => n.path.endsWith(element)
+              let node: TreeNode | undefined = currentNode.children.find(
+                (n: TreeNode) => n.getPath().endsWith(element)
               );
 
               currentNode = node;
@@ -204,8 +198,8 @@ export default defineComponent({
     removeFolder(path: string) {},
 
     addFolder(path: string) {},
-    addData(parent: OverviewNode | undefined, pathRoot: string) {
-      function getFiles(dir: string, parent: OverviewNode, hue: number = 0) {
+    addData(parent: TreeNode | undefined, pathRoot: string) {
+      function getFiles(dir: string, parent: TreeNode, hue: number = 0) {
         const files = fs.readdirSync(dir);
         let index = 0;
 
@@ -213,8 +207,8 @@ export default defineComponent({
           const filePath = path.join(dir, file);
           const fileStat = fs.lstatSync(filePath);
 
-          let child: OverviewNode = new OverviewNode(filePath);
-          child.isDirectory = fileStat.isDirectory();
+          let child: TreeNode = new TreeNode(filePath);
+          child.setIsDirectory(fileStat.isDirectory());
           child.name = file;
           child.path = filePath;
           child.parent = parent;
@@ -232,14 +226,14 @@ export default defineComponent({
 
           parent.children.push(child);
 
-          if (child.isDirectory) {
+          if (child.isDirectory()) {
             getFiles(filePath, child, hue);
           }
           index++;
         });
       }
 
-      let rootFile: OverviewNode = new OverviewNode(pathRoot);
+      let rootFile: TreeNode = new TreeNode(pathRoot);
       if (parent != undefined) {
         rootFile.parent = parent;
       }
@@ -247,27 +241,27 @@ export default defineComponent({
       rootFile.name = pathRoot.split("\\")[pathRoot.split("\\").length - 1];
       rootFile.path = pathRoot;
       // fixes the position of the root node
-    //  rootFile.fx=0;
-     // rootFile.fy=0;
+      //  rootFile.fx=0;
+      // rootFile.fy=0;
       rootFile.depthCalc();
-      rootFile.isDirectory = fs.lstatSync(rootFile.path).isDirectory();
+      rootFile.setIsDirectory(fs.lstatSync(rootFile.path).isDirectory());
 
-      if (rootFile.isDirectory) {
+      if (rootFile.isDirectory()) {
         getFiles(pathRoot, rootFile);
       }
 
-      function calculateSize(root: OverviewNode): number {
+      function calculateSize(root: TreeNode): number {
         let size = 0;
         let folderFound = false;
-        root.children.forEach((child: OverviewNode) => {
-          if (child.isDirectory) {
+        root.children.forEach((child: TreeNode) => {
+          if (child.isDirectory()) {
             size += calculateSize(child);
             folderFound = true;
           } else {
             size += child.size;
           }
         });
-        if (root.isDirectory) {
+        if (root.isDirectory()) {
           root.size = size;
         }
 
@@ -324,21 +318,24 @@ export default defineComponent({
         /**
          * Wenn wir einen parent mitbekommen haben, nutzen wir den als root. Damit wird auch der link von diesem zum neuen child erstellt
          */
-        let rootNode: HierarchyNode<OverviewNode> =
-          d3.hierarchy<OverviewNode>(rootFile);
+        // let rootNode: HierarchyNode<TreeNode> =
+        //   d3.hierarchy<TreeNode>(rootFile);
 
-        if (parent == undefined) {
-          vm.listRootNodes.push(rootNode);
-        }
+        // if (parent == undefined) {
+        //   vm.listRootNodes.push(rootNode);
+        // }
 
-        let nodes: HierarchyNode<OverviewNode>[] = rootNode.descendants();
+        // let nodes: HierarchyNode<TreeNode>[] = rootNode.descendants();
 
-        let links: HierarchyLink<OverviewNode>[] = rootNode.links();
+        // let links: HierarchyLink<TreeNode>[] = rootNode.links();
+        let nodes: TreeNode[] = rootFile.descendants();
+
+        let links: TreeLink[] = rootFile.links();
 
         let maxDepth: number = Math.max.apply(
           Math,
-          nodes.map(function (o: HierarchyNode<OverviewNode>) {
-            return o.data.depth;
+          nodes.map(function (o: TreeNode) {
+            return o.depth;
           })
         );
 
@@ -352,23 +349,18 @@ export default defineComponent({
         ) {
           (function (depth, index) {
             setTimeout(function () {
-              let nodesSub: HierarchyNode<OverviewNode>[] = nodes.filter(
-                (o: HierarchyNode<OverviewNode>) => o.data.depth == depth
+              let nodesSub: TreeNode[] = nodes.filter(
+                (o: TreeNode) => o.depth == depth
               );
-              let linksSub: HierarchyLink<OverviewNode>[] = links.filter(
-                (o: HierarchyLink<OverviewNode>) => o.target.depth == depth
+              let linksSub: TreeLink[] = links.filter(
+                (o: TreeLink) => o.target.depth == depth
               );
 
-              globalData.nodes.push(...nodesSub.map((n) => n.data));
+              globalData.nodes.push(...nodesSub.map((n:TreeNode) => n));
 
-              console.log("anzahl nodes:");
-              console.log(globalData.nodes.length);
-
-              let linksF: OverviewLink[] = [];
-              linksSub.forEach((l: HierarchyLink<OverviewNode>) => {
-                let link = new OverviewLink();
-                link.source = l.source.data;
-                link.target = l.target.data;
+              let linksF: TreeLink[] = [];
+              linksSub.forEach((l: TreeLink) => {
+                let link = new TreeLink(l.source, l.target);
                 linksF.push(link);
               });
 
@@ -412,7 +404,7 @@ export default defineComponent({
       this.showFiles = !this.showFiles;
     },
     nodePaint(
-      node: OverviewNode,
+      node: TreeNode,
       ctx: CanvasRenderingContext2D,
       globalScale: number
     ): void {
@@ -451,9 +443,9 @@ export default defineComponent({
 
           if (
             this.showImages &&
-            (node.name.endsWith("jpg") ||
-              node.name.endsWith("png") ||
-              node.name.endsWith("gif")) &&
+            (node.getName().endsWith("jpg") ||
+              node.getName().endsWith("png") ||
+              node.getName().endsWith("gif")) &&
             globalScale > 2
           ) {
             console.log("scale: " + globalScale);
@@ -541,10 +533,7 @@ export default defineComponent({
       );
     };
 
-    ipcRenderer.on(
-      "files-added",
-      function (event: any, rootFile: OverviewNode) {}
-    );
+    ipcRenderer.on("files-added", function (event: any, rootFile: TreeNode) {});
 
     let div: HTMLElement | null = document.getElementById("graph");
 
@@ -556,28 +545,28 @@ export default defineComponent({
       this.graph = ForceGraph()(div)
         // .linkDirectionalParticles(2)
         .linkWidth(2)
-        // .nodeLabel((n:OverviewNode)=>n.path)
+        // .nodeLabel((n:TreeNode)=>n.path)
         .minZoom(0.1)
         .maxZoom(20)
         .warmupTicks(0)
         //  .dagMode("radialout")
         //.dagMode("td")
         .dagNodeFilter(function (n: NodeObject) {
-          let node = n as OverviewNode;
-          return node.isDirectory;
+          let node = n as TreeNode;
+          return node.isDirectory();
         })
         .nodeLabel(function (n: NodeObject) {
-          let node = n as OverviewNode;
-          return node.path;
+          let node = n as TreeNode;
+          return node.getPath();
         })
         .nodeVisibility(function (n: NodeObject) {
-          let node = n as OverviewNode;
-          return vm.showFiles || node.isDirectory;
+          let node = n as TreeNode;
+          return vm.showFiles || node.isDirectory();
         })
         .linkVisibility(function (n: LinkObject) {
-          let s = n.source as OverviewNode;
-          let t = n.target as OverviewNode;
-          return vm.showFiles || t.isDirectory;
+          let s = n.source as TreeNode;
+          let t = n.target as TreeNode;
+          return vm.showFiles || t.isDirectory();
         })
         .backgroundColor("#333")
         // .cooldownTime(100)
@@ -588,7 +577,7 @@ export default defineComponent({
           ctx: CanvasRenderingContext2D,
           globalScale: number
         ): void {
-          vm.nodePaint(node as OverviewNode, ctx, globalScale);
+          vm.nodePaint(node as TreeNode, ctx, globalScale);
         })
         .graphData(globalData);
 
@@ -601,9 +590,10 @@ export default defineComponent({
       this.graph.d3Force("collision", d3.forceCollide(6));
 
       // prevents the simulation from beeing stopped.
-      this.graph.d3AlphaMin(0)
-     // .d3AlphaDecay(1 - Math.pow(0.001, 1 / 300) )
-      .d3AlphaDecay(0);
+      this.graph
+        .d3AlphaMin(0)
+        // .d3AlphaDecay(1 - Math.pow(0.001, 1 / 300) )
+        .d3AlphaDecay(0);
 
       let charge = this.graph.d3Force("charge");
       if (charge != null) {
