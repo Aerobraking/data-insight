@@ -18,6 +18,7 @@
     "force-graph": "^1.41.1",
     "underscore": "^1.13.1",
     "vue": "^3.0.0",
+    "vue-panzoom": "^1.1.6",
     "vuex": "^4.0.0-0"
   },
   "devDependencies": {

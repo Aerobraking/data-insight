@@ -1,30 +1,28 @@
 <template>
-  <Tabs />
+  <div>
+    <OverviewCanvas model="model" />
+  </div>
 </template>
 
 <script lang="ts">
+import { Overview } from "@/store/model/DataModel";
 import { defineComponent } from "vue";
-import Tabs from "./components/app/Tabs.vue";
+import OverviewCanvas from "./OverviewCanvas.vue";
 
 export default defineComponent({
   name: "App",
   components: {
-    Tabs,
+    OverviewCanvas,
   },
-  computed: {
-    hello() {
-      this.$store.getters.doubledCounter;
-    },
+  props: {
+    model: Overview,
   },
+  computed: {},
 });
 </script>
 
 <style lang="scss">
-* {
-  user-select: none;
-}
 body {
-  user-select: none;
   margin: 0;
   padding: 0;
 }

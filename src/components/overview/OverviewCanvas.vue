@@ -1,10 +1,9 @@
 <template>
   <div
-    class="canvas-wrapper"
+    class="graph canvas-wrapper"
     @click.ctrl="toggleShowFiles"
     @dragover.prevent
     @drop.prevent="dropFiles"
-    id="graph"
   ></div>
 </template>
 
@@ -30,10 +29,11 @@ import ForceGraph, {
   NodeObject,
 } from "force-graph";
 
-import { TreeNode, TreeLink, TreeStructure } from "../store/model/FileTree";
+import { TreeNode, TreeLink, TreeStructure } from "../../store/model/FileTree";
 import * as d3 from "d3";
 import * as _ from "underscore";
 import { AbstractNode } from "@/store/model/OverviewDataModel";
+import { Overview } from "@/store/model/DataModel";
 
 function loadImages(sources: Array<string>, callback: Function) {
   var images: Array<any> = [];
@@ -84,6 +84,9 @@ export default defineComponent({
   name: "OverviewCanvas",
   created: function () {
     window.addEventListener("keyup", this.keyPressed);
+  },
+  props: {
+    model: Overview,
   },
   data(): {
     showNames: boolean;
@@ -356,7 +359,7 @@ export default defineComponent({
                 (o: TreeLink) => o.target.depth == depth
               );
 
-              globalData.nodes.push(...nodesSub.map((n:TreeNode) => n));
+              globalData.nodes.push(...nodesSub.map((n: TreeNode) => n));
 
               let linksF: TreeLink[] = [];
               linksSub.forEach((l: TreeLink) => {
@@ -423,10 +426,10 @@ export default defineComponent({
         let nodeY = Math.round(node.getY()) * globalScale;
         if (
           true ||
-          nodeX > x - viewportWidth / 2 &&
-          nodeX < x + viewportWidth / 2 &&
-          nodeY > y - viewportHeight / 2 &&
-          nodeY < y + viewportHeight / 2
+          (nodeX > x - viewportWidth / 2 &&
+            nodeX < x + viewportWidth / 2 &&
+            nodeY > y - viewportHeight / 2 &&
+            nodeY < y + viewportHeight / 2)
         ) {
           // Draw wider nodes by 1px on shadow canvas for more precise hovering (due to boundary anti-aliasing)
           const r = Math.sqrt(Math.max(0, node.size || 1)) * 1 + 0;
@@ -536,7 +539,8 @@ export default defineComponent({
 
     ipcRenderer.on("files-added", function (event: any, rootFile: TreeNode) {});
 
-    let div: HTMLElement | null = document.getElementById("graph");
+    // let div: HTMLElement | null =root.getElementsByClassName("canvas-wrapper")[0];
+    let div: HTMLElement = this.$el;
 
     if (div !== null) {
       interface test {
