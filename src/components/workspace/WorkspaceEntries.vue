@@ -2,11 +2,13 @@
 import { Workspace } from "../../store/model/DataModel";
 import { defineComponent } from "vue";
 import wsentry from "./WorkspaceEntry.vue";
+import wsentryfolderview from "./WorkspaceEntryFolderView.vue";
 
 export default defineComponent({
   name: "Nodes",
   components: {
     wsentry,
+    wsentryfolderview
   },
   props: {
     model: Workspace,

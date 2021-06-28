@@ -1,7 +1,7 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
 import { State } from '../state'
-import { View, Workspace, Overview, WorkspaceEntryFile } from '../model/DataModel'
+import { View, Workspace, Overview, WorkspaceEntryFile, WorkspaceEntry } from '../model/DataModel'
 
 export type Mutations<S = State> = {
   // als key für die methode nehmen wir die einzelnen enum types. und da wir die method eh nicht direkt aurufen ala setCounter() sondern per commit("setCounter", parameter ...)
@@ -12,7 +12,7 @@ export type Mutations<S = State> = {
   [MutationTypes.CREATE_OVERVIEW](state: S): void
   [MutationTypes.ADD_FILES](state: S, payload: {
     model: Workspace,
-    listFiles: Array<WorkspaceEntryFile>,
+    listFiles: Array<WorkspaceEntry>,
   }): void
 }
 
@@ -23,15 +23,18 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.SET_COUNTER](state, payload: number) {
     state.counter = payload
   },
+
   [MutationTypes.RESET_COUNTER](state, payload: number) {
     state.counter = payload
   },
+
   [MutationTypes.ADD_FILES](state, payload: {
     model: Workspace,
-    listFiles: Array<WorkspaceEntryFile>,
+    listFiles: Array<WorkspaceEntry>,
   }) {
     payload.model.entries.push(...payload.listFiles);
   },
+
   [MutationTypes.CREATE_WORKSPACE](state) {
     state.views.push(new Workspace());
     let lastIndex = state.views.length - 1;
@@ -42,6 +45,7 @@ export const mutations: MutationTree<State> & Mutations = {
       }
     );
   },
+
   [MutationTypes.CREATE_OVERVIEW](state) {
     state.views.push(new Overview());
     let lastIndex = state.views.length - 1;

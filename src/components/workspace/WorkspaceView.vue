@@ -3,7 +3,7 @@
   <div
     @keypress.capture.ctrl.stop="keyDownCtrl"
     @mouseup.capture.ctrl="dragMouseUp"
-    @mousedown.capture.ctrl="dragMouseDown"
+    @mousedown.capture="dragMouseDown"
     @mousemove.capture.ctrl.exact="dragMouseMove"
     @dragover="dragover"
     @dragleave="dragleave"
@@ -36,7 +36,12 @@
 
 
 <script lang="ts">
-import { Workspace, WorkspaceEntryFile } from "@/store/model/DataModel";
+import {
+  Workspace,
+  WorkspaceEntry,
+  WorkspaceEntryFile,
+  WorkspaceEntryFolderWindow,
+} from "@/store/model/DataModel";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import { defineComponent } from "vue";
 import wsentries from "./WorkspaceEntries.vue";
@@ -45,6 +50,8 @@ var counter = 0;
 // const test = d3.easeCubicInOut;
 var timesPerSecond = 30; // how many times to fire the event per second
 var wait = false;
+const fs = require("fs");
+const path = require("path");
 
 export default defineComponent({
   el: "#wrapper",
@@ -92,10 +99,15 @@ export default defineComponent({
       e.preventDefault();
       console.log(e.dataTransfer.files);
 
-      let listFiles: Array<WorkspaceEntryFile> = [];
+      let listFiles: Array<WorkspaceEntry> = [];
 
       e.dataTransfer.files.forEach((f: any) => {
-        listFiles.push(new WorkspaceEntryFile(f.path));
+        const fileStat = fs.lstatSync(f.path); 
+        if (fileStat.isDirectory()) {
+          listFiles.push(new WorkspaceEntryFolderWindow(f.path));
+        } else {
+          listFiles.push(new WorkspaceEntryFile(f.path));
+        }
       });
 
       // get drop position
@@ -209,10 +221,17 @@ export default defineComponent({
       //     });
       //   }
     },
-    dragMouseDown: function (e: MouseEvent) {
+    dragMouseDown: function (e: any) {
       this.mouseDownB = true;
       this.dragStartX = e.clientX;
-      this.dragStartY = e.clientY;
+      this.dragStartY = e.clientY; 
+
+        if (e.target!=undefined && e.target.classList.contains('draggable')) {
+          console.log(e.target);
+          
+        // Invoke startDrag by passing it the target element as "this":
+       // startDrag.call(evt.target, evt);
+    }
     },
     onPanStart(e: any) {
       this.$store.state;
