@@ -4,6 +4,10 @@
     class="ws-folder-window-wrapper draggable"
     v-bind:class="['mydiv, selectable', { selected: entry.isSelected }]"
   >
+    <div
+      @click.capture.exact="selectEntry"
+      class="ws-folder-window-bar-top"
+    ></div>
     <div class="form-group mt-4 mb-2">
       <input v-model="searchstring" class="" placeholder="Search ..." />
     </div>
@@ -52,6 +56,11 @@ export default defineComponent({
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
   },
   methods: {
+    selectEntry() {
+      console.log("adawdawd");
+
+      this.$el.classList.add("workspace-is-selected");
+    },
     folderBack() {
       if (this.entry != undefined) {
         this.entry.path = path.dirname(this.entry.path);
@@ -136,5 +145,15 @@ export default defineComponent({
 }
 table {
   background: #ffffff;
+}
+
+.ws-folder-window-bar-top {
+  width: 100%;
+  height: 25px;
+  background-color: #646464;
+}
+
+.workspace-is-selected {
+  border: 5px solid #661652;
 }
 </style>

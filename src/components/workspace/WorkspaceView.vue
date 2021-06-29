@@ -14,7 +14,6 @@
     <panZoom
       @init="panHappen"
       @pan="onPanStart"
-      @click.capture.exact="mouseDown"
       :options="{
         minZoom: 0.08,
         maxZoom: 6,
@@ -102,7 +101,7 @@ export default defineComponent({
       let listFiles: Array<WorkspaceEntry> = [];
 
       e.dataTransfer.files.forEach((f: any) => {
-        const fileStat = fs.lstatSync(f.path); 
+        const fileStat = fs.lstatSync(f.path);
         if (fileStat.isDirectory()) {
           listFiles.push(new WorkspaceEntryFolderWindow(f.path));
         } else {
@@ -181,6 +180,26 @@ export default defineComponent({
       xOffT /= this.panZoomInstance.getTransform().scale;
       yOffT /= this.panZoomInstance.getTransform().scale;
 
+      this.dragStartX = e.clientX;
+      this.dragStartY = e.clientY;
+
+      let objToDrag = document.getElementsByClassName("workspace-is-selected");
+
+      for (let index = 0; index < objToDrag.length; index++) {
+        const e: any = objToDrag[index];
+        let results: string = e.style.transform;
+        results = results
+          .replace("translate3d(", "")
+          .replace(")", "")
+          .replaceAll("px", "")
+          .replaceAll(" ", "");
+        let values: number[] = results.split(",").map(Number);
+        // "translate3d(267.5px, 175px, 0px)"
+        e.style.transform = `translate3d(${values[0] - xOffT}px, ${
+          values[1] - yOffT
+        }px,0px)`;
+      }
+
       // console.log("check: "+xOffT+" - "+ yOffT);
       //   if (Math.abs(xOffT) >= 1 || Math.abs(yOffT) >= 1) {
       //     this.$store.commit("moveSelectedOffset", {
@@ -205,12 +224,6 @@ export default defineComponent({
     dragMouseUp: function (e: MouseEvent) {
       this.mouseDownB = false;
 
-      var xOffT = this.dragStartX - e.clientX;
-      var yOffT = this.dragStartY - e.clientY;
-
-      xOffT /= this.panZoomInstance.getTransform().scale;
-      yOffT /= this.panZoomInstance.getTransform().scale;
-
       // console.log("check: "+xOffT+" - "+ yOffT);
       //   if (Math.abs(xOffT) >= 1 || Math.abs(yOffT) >= 1) {
       //     this.$store.dispatch("moveSelectedOffset", {
@@ -224,14 +237,14 @@ export default defineComponent({
     dragMouseDown: function (e: any) {
       this.mouseDownB = true;
       this.dragStartX = e.clientX;
-      this.dragStartY = e.clientY; 
+      this.dragStartY = e.clientY;
 
-        if (e.target!=undefined && e.target.classList.contains('draggable')) {
-          console.log(e.target);
-          
+      if (e.target != undefined && e.target.classList.contains("draggable")) {
+        console.log(e.target);
+
         // Invoke startDrag by passing it the target element as "this":
-       // startDrag.call(evt.target, evt);
-    }
+        // startDrag.call(evt.target, evt);
+      }
     },
     onPanStart(e: any) {
       this.$store.state;
@@ -277,5 +290,9 @@ export default defineComponent({
   height: 100%;
   overflow: hidden;
   outline: none;
+}
+
+.workspace-is-selected {
+  border: 5px #fffaaa;
 }
 </style>

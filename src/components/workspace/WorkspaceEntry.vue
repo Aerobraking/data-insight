@@ -1,8 +1,8 @@
 <template>
   <div
+    @click.capture.exact.prevent="selectEntry"
     v-on:dblclick="doubleClick"
     class="ws-entry-file-wrapper"
-    @click.prevent="clickStart"
     :style="{
       //  transform: 'translate(' + getX() + 'px, ' + getY() + 'px' + ')',
       //  transform: '-webkit-translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
@@ -33,6 +33,11 @@ export default defineComponent({
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
   },
   methods: {
+    selectEntry() {
+      console.log("adawdawd");
+
+      this.$el.classList.add("workspace-is-selected");
+    },
     doubleClick(e: MouseEvent) {
       e.preventDefault();
 
@@ -86,7 +91,7 @@ export default defineComponent({
   display: inline-block;
   background-color: #f1f1f1;
   border: 1px solid #15141a;
-  clear:both;
+  clear: both;
   color: rgba(61, 61, 61, 0.911);
 }
 .ws-entry-file-name {
@@ -99,5 +104,9 @@ export default defineComponent({
   border: 4px solid rgba(197, 41, 41, 0.911);
   // box-shadow: 0 0 4px 4px rgb(223, 73, 73);
   transition: none;
+}
+
+.workspace-is-selected {
+  border: 5px solid #661652;
 }
 </style>
