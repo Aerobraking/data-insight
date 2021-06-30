@@ -1,18 +1,18 @@
 <template>
   <div
-    @click.capture.exact.prevent="selectEntry"
+   @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
+    @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry-file-wrapper"
+    class="ws-entry ws-entry-file-wrapper"
     :style="{
-      //  transform: 'translate(' + getX() + 'px, ' + getY() + 'px' + ')',
-      //  transform: '-webkit-translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
       transform: 'translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
     }"
-    v-bind:class="['mydiv, selectable', { selected: entry.isSelected }]"
   >
     <div class="ws-entry-file-symbol"></div>
     <p class="ws-entry-file-name">{{ entry.name }}</p>
   </div>
+  
 </template>
 
 <script lang="ts">
@@ -32,12 +32,13 @@ export default defineComponent({
   mounted() {
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
   },
+  inject: ["entrySelected", "entrySelected"],
   methods: {
-    selectEntry() {
-      console.log("adawdawd");
-
-      this.$el.classList.add("workspace-is-selected");
+    entrySelectedLocal(type: "add" | "single" | "flip") {
+      // @ts-ignore: Unreachable code error
+      this.entrySelected(this.$el, type);
     },
+    
     doubleClick(e: MouseEvent) {
       e.preventDefault();
 
@@ -72,41 +73,42 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.workspace-is-selected {
+  border: 0px solid #f81fc2f8;
+  box-sizing: border-box;
+  background-color: #f81fc252;
+}
+
 .ws-entry-file-wrapper {
-  perspective: 1000;
   backface-visibility: hidden;
-  // display: table;
-  height: 300px;
-  width: 300px;
   will-change: transform;
   position: absolute;
   color: #f1f1f1;
+  padding: 10px;
+  width: 220px;
+  height: 180px;
 
-  // display: flex;
-  // justify-content: center;
-}
-.ws-entry-file-symbol {
-  height: 100px;
-  width: 100px;
-  display: inline-block;
-  background-color: #f1f1f1;
-  border: 1px solid #15141a;
-  clear: both;
-  color: rgba(61, 61, 61, 0.911);
-}
-.ws-entry-file-name {
-  display: inline-block;
-  // text-align: center;
-  // vertical-align: middle;
-  // display: table-cell;
-}
-.ws-entry-file-symbol.selected {
-  border: 4px solid rgba(197, 41, 41, 0.911);
-  // box-shadow: 0 0 4px 4px rgb(223, 73, 73);
-  transition: none;
-}
+  // border: 2px solid #ffffffce;
+  box-sizing: border-box;
 
-.workspace-is-selected {
-  border: 5px solid #661652;
+  p {
+    width: 200px;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ws-entry-file-symbol {
+    height: 100px;
+    width: 100px;
+    display: block;
+    background-color: #f1f1f1;
+    border: 1px solid #15141a;
+    clear: both;
+    color: rgba(61, 61, 61, 0.911);
+
+    margin: 0 auto;
+  }
 }
 </style>

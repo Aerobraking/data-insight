@@ -35,4 +35,13 @@ body {
   text-align: center;
   color: #2c3e50;
 }
+
+.vue-pan-zoom-scene {
+  outline: none;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  padding: 0;
+  margin: 0;
+}
 </style>

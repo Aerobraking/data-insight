@@ -1,13 +1,14 @@
 
 <template>
   <div
-    @keypress.capture.ctrl.stop="keyDownCtrl"
-    @mouseup.capture.ctrl="dragMouseUp"
-    @mousedown.capture="dragMouseDown"
-    @mousemove.capture.ctrl.exact="dragMouseMove"
+    v-on:keyup="keymonitor"
+    @mouseup="dragMouseUp"
+    @mousedown="dragMouseDown"
+    @mousemove="dragMouseMove"
     @dragover="dragover"
     @dragleave="dragleave"
     @drop="drop"
+    @click="clearSelection()"
     class="wrapper workspace"
   >
     <!-- Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
@@ -26,8 +27,11 @@
       }"
       selector=".zoomable"
     >
-      <div class="zoomable zoomPanel">
-        <wsentries :viewId="model.id" :model="model"></wsentries>
+      <div class="zoomable">
+        <div class="rectangle-selection"></div>
+        <keep-alive>
+          <wsentries :viewId="model.id" :model="model"></wsentries>
+        </keep-alive>
       </div>
     </panZoom>
   </div>
@@ -40,6 +44,7 @@ import {
   WorkspaceEntry,
   WorkspaceEntryFile,
   WorkspaceEntryFolderWindow,
+  WorkspaceEntryImage,
 } from "@/store/model/DataModel";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import { defineComponent } from "vue";
@@ -64,23 +69,64 @@ export default defineComponent({
   data(): {
     dragStartX: number;
     dragStartY: number;
+    dragMoveRelX: number;
+    dragMoveRelY: number;
     dragTempOffsetX: number;
     dragTempOffsetY: number;
     mouseDownB: boolean;
+    isSelectionEvent: boolean;
     panZoomInstance: any;
   } {
     return {
+      dragMoveRelX: 0,
+      dragMoveRelY: 0,
       dragStartX: 0,
       dragStartY: 0,
       dragTempOffsetX: 0,
       dragTempOffsetY: 0,
       mouseDownB: false,
+      isSelectionEvent: false,
       panZoomInstance: null,
     };
   },
 
   computed: {},
+  provide() {
+    return {
+      entrySelected: this.entrySelected,
+    };
+  },
   methods: {
+    keymonitor(e: KeyboardEvent) {
+      switch (e.key) {
+        case "a":
+          //  if (e.ctrlKey) {
+          console.log(e);
+          this.selectAll();
+          // }
+
+          break;
+
+        default:
+          break;
+      }
+    },
+    entrySelected(entry: any, type: "add" | "single" | "flip") {
+      console.log("type: " + type + Math.random());
+      switch (type) {
+        case "add":
+          entry.classList.add("workspace-is-selected");
+          break;
+        case "single":
+          this.clearSelection();
+          entry.classList.add("workspace-is-selected");
+          break;
+        case "flip":
+          // ctrl click on an entry
+          entry.classList.toggle("workspace-is-selected");
+          break;
+      }
+    },
     dragover(e: any) {
       e.preventDefault();
       // Add some visual fluff to show the user can drop its files
@@ -105,7 +151,11 @@ export default defineComponent({
         if (fileStat.isDirectory()) {
           listFiles.push(new WorkspaceEntryFolderWindow(f.path));
         } else {
-          listFiles.push(new WorkspaceEntryFile(f.path));
+          if (f.path.endsWith("jpg") || f.path.endsWith("jpeg")) {
+            listFiles.push(new WorkspaceEntryImage(f.path));
+          } else {
+            listFiles.push(new WorkspaceEntryFile(f.path));
+          }
         }
       });
 
@@ -113,12 +163,8 @@ export default defineComponent({
       var rect = this.$el.getBoundingClientRect();
       // var rect = { left: 0, top: 0 };
       // correct coordinates by using the scaling factor of the zooming.
-      var x =
-        (e.clientX - rect.left - this.panZoomInstance.getTransform().x) /
-        this.panZoomInstance.getTransform().scale; //x position within the element.
-      var y =
-        (e.clientY - rect.top - this.panZoomInstance.getTransform().y) /
-        this.panZoomInstance.getTransform().scale; //y position within the element.
+      var x = this.getPositionInWorkspace(e).x; //x position within the element.
+      var y = this.getPositionInWorkspace(e).y; //y position within the element.
 
       var payload = {
         model: <Workspace>this.model,
@@ -129,16 +175,48 @@ export default defineComponent({
       for (const e of listFiles) {
         e.x = x + offset;
         e.y = y;
-        offset += 250;
+        offset += e.width + 20;
       }
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
-    mouseDown: function (e: MouseEvent) {
-      console.log("mouseDown");
-      //   this.$store.dispatch("clearSelection", {
-      //     viewKey: this.workspace.key,
-      //   });
+    getPositionInWorkspace(e: any) {
+      // get drop position
+      var rect = this.$el.getBoundingClientRect();
+      // var rect = { left: 0, top: 0 };
+      // correct coordinates by using the scaling factor of the zooming.
+      var x =
+        (e.clientX - rect.left - this.panZoomInstance.getTransform().x) /
+        this.panZoomInstance.getTransform().scale; //x position within the element.
+      var y =
+        (e.clientY - rect.top - this.panZoomInstance.getTransform().y) /
+        this.panZoomInstance.getTransform().scale; //y position within the element.
+      return { x: x, y: y };
+    },
+    clearSelection: function () {
+      if (this.isSelectionEvent) {
+        this.isSelectionEvent = false;
+        return;
+      }
+      console.log("clear selection");
+
+      Array.from(this.getSelectedEntries()).forEach((el) =>
+        el.classList.remove("workspace-is-selected")
+      );
+    },
+    selectAll: function () {
+      console.log("selectAll");
+      let e: HTMLCollectionOf<Element> = this.getEntries();
+      let s: HTMLCollectionOf<Element> = this.getSelectedEntries();
+      if (e.length != s.length) {
+        Array.from(e).forEach((el) =>
+          el.classList.add("workspace-is-selected")
+        );
+      } else {
+        Array.from(e).forEach((el) =>
+          el.classList.toggle("workspace-is-selected")
+        );
+      }
     },
     getNodes() {
       return this.$props.model?.entries;
@@ -153,97 +231,152 @@ export default defineComponent({
         return false;
       });
     },
-    keyDownCtrl: function (e: KeyboardEvent) {
-      let cmd = e.code.toLowerCase();
-      //   if (cmd === "keya" || cmd === "keyd") {
-      //     this.$store.dispatch("selectAll", {
-      //       viewKey: this.workspace.key,
-      //     });
-      //     e.preventDefault();
-      //   }
-      //   if (cmd === "keye") {
-      //     console.log("undo button");
-
-      //     this.$store.dispatch("undoView", {
-      //       viewKey: this.workspace.key,
-      //     });
-      //   }
+    getSelectionRectangle: function (): Element {
+      return this.$el.querySelectorAll(".rectangle-selection")[0];
+    },
+    getSelectedEntries: function (): HTMLCollectionOf<Element> {
+      return this.$el.querySelectorAll(".workspace-is-selected");
+    },
+    getEntries: function (): HTMLCollectionOf<Element> {
+      return this.$el.querySelectorAll(".ws-entry");
+    },
+    getCoordinatesFromElement(e: any) {
+      let results: string = e.style.transform;
+      results = results
+        .replace("translate3d(", "")
+        .replace(")", "")
+        .replaceAll("px", "")
+        .replaceAll(" ", "");
+      let values: number[] = results.split(",").map(Number);
+      let w: number = parseInt(e.offsetWidth),
+        h: number = parseInt(e.offsetWidth);
+      return {
+        x: Math.round(values[0]),
+        y: Math.round(values[1]),
+        w: Math.round(w),
+        h: Math.round(h),
+        x2: Math.round(values[0] + w),
+        y2: Math.round(values[1] + h),
+      };
     },
     dragMouseMove: function (e: MouseEvent) {
-      if (!this.mouseDownB) {
-        return;
+      let comp = this;
+
+      function updateSelectionDrag() {
+        var xOffT = comp.dragMoveRelX - e.clientX;
+        var yOffT = comp.dragMoveRelY - e.clientY;
+
+        xOffT /= comp.panZoomInstance.getTransform().scale;
+        yOffT /= comp.panZoomInstance.getTransform().scale;
+
+        comp.dragMoveRelX = e.clientX;
+        comp.dragMoveRelY = e.clientY;
+
+        let objToDrag = comp.getSelectedEntries();
+
+        for (let index = 0; index < objToDrag.length; index++) {
+          const e: any = objToDrag[index];
+          let coord = comp.getCoordinatesFromElement(e);
+          e.style.transform = `translate3d(${coord.x - xOffT}px, ${
+            coord.y - yOffT
+          }px,0px)`;
+        }
       }
 
-      var xOffT = this.dragStartX - e.clientX;
-      var yOffT = this.dragStartY - e.clientY;
+      let selectionRectangle: any = comp.getSelectionRectangle();
 
-      xOffT /= this.panZoomInstance.getTransform().scale;
-      yOffT /= this.panZoomInstance.getTransform().scale;
+      function updateSelectionRectangle() {
+        let w = -1 * (comp.dragStartX - comp.getPositionInWorkspace(e).x);
+        let h = -1 * (comp.dragStartY - comp.getPositionInWorkspace(e).y);
 
-      this.dragStartX = e.clientX;
-      this.dragStartY = e.clientY;
+        let rectX = w < 0 ? comp.dragStartX + w : comp.dragStartX;
+        let rectY = h < 0 ? comp.dragStartY + h : comp.dragStartY;
 
-      let objToDrag = document.getElementsByClassName("workspace-is-selected");
-
-      for (let index = 0; index < objToDrag.length; index++) {
-        const e: any = objToDrag[index];
-        let results: string = e.style.transform;
-        results = results
-          .replace("translate3d(", "")
-          .replace(")", "")
-          .replaceAll("px", "")
-          .replaceAll(" ", "");
-        let values: number[] = results.split(",").map(Number);
-        // "translate3d(267.5px, 175px, 0px)"
-        e.style.transform = `translate3d(${values[0] - xOffT}px, ${
-          values[1] - yOffT
-        }px,0px)`;
+        selectionRectangle.style.transform = `translate3d(${rectX}px, ${rectY}px,0px)`;
+        selectionRectangle.style.width = Math.abs(w) + "px";
+        selectionRectangle.style.height = Math.abs(h) + "px";
       }
 
-      // console.log("check: "+xOffT+" - "+ yOffT);
-      //   if (Math.abs(xOffT) >= 1 || Math.abs(yOffT) >= 1) {
-      //     this.$store.commit("moveSelectedOffset", {
-      //       xOff: xOffT,
-      //       yOff: yOffT,
-      //       viewKey: this.workspace.key,
-      //       undoAction: false,
-      //     });
-      //   }
-
-      // if (!wait) {
-      //   // fire the event
-
-      //   // stop any further events
-      //   wait = true;
-      //   // after a fraction of a second, allow events again
-      //   setTimeout(function () {
-      //     wait = false;
-      //   }, 1000 / timesPerSecond);
-      // }
+      if (this.mouseDownB) {
+        if (e.ctrlKey) {
+          updateSelectionDrag();
+        }
+      } else {
+        if (selectionRectangle.style.visibility === "visible") {
+          this.isSelectionEvent = true;
+          updateSelectionRectangle();
+        }
+      }
     },
     dragMouseUp: function (e: MouseEvent) {
+      console.log("dragMouseUp");
+      let selectionRectangle: any = this.getSelectionRectangle();
+
+      if (this.mouseDownB) {
+        /**
+         * Selection drag
+         */
+      } else if (selectionRectangle.style.visibility === "visible") {
+        /**
+         * Selection rectangle
+         */
+
+        let coordRect = this.getCoordinatesFromElement(selectionRectangle);
+        let comp = this;
+        Array.from(this.getEntries()).forEach((el) => {
+          let coordEntry = comp.getCoordinatesFromElement(el);
+
+          function intersectRect(
+            r1: { x: number; y: number; x2: number; y2: number },
+            r2: { x: number; y: number; x2: number; y2: number }
+          ) {
+            return !(
+              r2.x > r1.x2 ||
+              r2.x2 < r1.x ||
+              r2.y > r1.y2 ||
+              r2.y2 < r1.y
+            );
+          }
+
+          if (intersectRect(coordRect, coordEntry)) {
+            el.classList.add("workspace-is-selected");
+          }
+        });
+
+        selectionRectangle.style.visibility = "hidden";
+      }
+
       this.mouseDownB = false;
-
-      // console.log("check: "+xOffT+" - "+ yOffT);
-      //   if (Math.abs(xOffT) >= 1 || Math.abs(yOffT) >= 1) {
-      //     this.$store.dispatch("moveSelectedOffset", {
-      //       xOff: xOffT,
-      //       yOff: yOffT,
-      //       viewKey: this.workspace.key,
-      //       undoAction: true,
-      //     });
-      //   }
     },
-    dragMouseDown: function (e: any) {
-      this.mouseDownB = true;
-      this.dragStartX = e.clientX;
-      this.dragStartY = e.clientY;
+    dragMouseDown: function (e: MouseEvent) {
+      this.mouseDownB = e.ctrlKey;
 
-      if (e.target != undefined && e.target.classList.contains("draggable")) {
+      if (e.ctrlKey) {
+        this.dragMoveRelX = e.clientX;
+        this.dragMoveRelY = e.clientY;
+      } else {
+        this.dragStartX = this.getPositionInWorkspace(e).x;
+        this.dragStartY = this.getPositionInWorkspace(e).y;
+
+        let selectionRectangle: any = this.getSelectionRectangle();
+        selectionRectangle.style.visibility = "visible";
+        selectionRectangle.style.transform = `translate3d(${this.dragStartX}px, ${this.dragStartY}px,0px)`;
+        selectionRectangle.style.width = "0px";
+        selectionRectangle.style.height = "0px";
+      }
+
+      if (
+        e.target != undefined &&
+        (<any>e.target).classList.contains("draggable")
+      ) {
         console.log(e.target);
 
         // Invoke startDrag by passing it the target element as "this":
         // startDrag.call(evt.target, evt);
+      }
+      if (this.mouseDownB) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
       }
     },
     onPanStart(e: any) {
@@ -266,14 +399,6 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-.zoomPanel {
-  width: 800px;
-  height: 800px;
-  left: 300px;
-  top: 300px;
-  outline: none;
-}
-
 .wrapper {
   width: 100%;
   height: 100%;
@@ -281,18 +406,22 @@ export default defineComponent({
   background-color: rgb(53, 53, 53);
   outline: none;
 }
-.vue-pan-zoom-item {
-  height: 100%;
-  outline: none;
+
+.rectangle-selection {
+  position: absolute;
+  width: 0px;
+  height: 0px;
+  transform: translate3d(0px, 0px, 0px);
+  background-color: rgba(57, 215, 255, 0.284);
+  z-index: 1000;
 }
 
 .vue-pan-zoom-scene {
-  height: 100%;
-  overflow: hidden;
   outline: none;
-}
-
-.workspace-is-selected {
-  border: 5px #fffaaa;
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  padding: 0;
+  margin: 0;
 }
 </style>

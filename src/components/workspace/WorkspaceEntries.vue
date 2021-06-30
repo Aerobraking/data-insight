@@ -3,12 +3,14 @@ import { Workspace } from "../../store/model/DataModel";
 import { defineComponent } from "vue";
 import wsentry from "./WorkspaceEntry.vue";
 import wsentryfolderview from "./WorkspaceEntryFolderView.vue";
+import wsentryimage from "./WorkspaceEntryImageView.vue";
 
 export default defineComponent({
   name: "Nodes",
   components: {
     wsentry,
-    wsentryfolderview
+    wsentryfolderview,
+    wsentryimage
   },
   props: {
     model: Workspace,
@@ -36,8 +38,7 @@ export default defineComponent({
       v-for="e in model.entries"
       :key="e.id"
       :entry="e"
-      :viewId="viewId"
-      class="mydiv select"
+      :viewId="viewId" 
       v-bind:is="e.componentname"
     >
     </component>
@@ -46,10 +47,5 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-#drag {
-  width: 200px;
-  height: 200px;
-  background-color: blueviolet;
-  position: absolute;
-}
+ 
 </style>

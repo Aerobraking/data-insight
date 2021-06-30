@@ -1,4 +1,6 @@
 import * as _ from "underscore";
+const fs = require("fs");
+const path = require("path");
 
 export abstract class View {
     id: number = 0;
@@ -19,8 +21,8 @@ export class WorkspaceEntry {
     isSelected: boolean = false;
     name: string = "";
     isResizable: boolean = false;
-    width: number = 100;
-    height: number = 100;
+    width: number = 220;
+    height: number = 180;
 }
 
 export class WorkspaceEntryFile extends WorkspaceEntry {
@@ -30,21 +32,37 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
         this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
         this.name = this.filename;
         this.id = Math.random() * 10000;
+        this.width = 150;
+        this.height = 150;
     }
 
     path: string;
     filename: string;
 }
 
-const fs = require("fs");
-const path = require("path");
+export class WorkspaceEntryImage extends WorkspaceEntry {
+    constructor(path: string) {
+        super("wsentryimage");
+       
+        this.path = path;
+        this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
+        this.name = this.filename;
+        this.id = Math.random() * 10000;
+        this.width = 600;
+        this.height = 600;
+    }
 
+    getURL():string{
+        return "file://"+this.path.replaceAll("\\","/");
+    }
+
+    path: string;
+    filename: string;
+}
 
 export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 
     public static viewid: string = "wsentryfolderview";
-
-
 
     constructor(path: string) {
         super("wsentryfolderview");
@@ -58,9 +76,6 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         this.height = 600;
     }
 
-    
-
-
     path: string;
     defaultPath: string;
     foldername: string;
@@ -69,7 +84,6 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 
 export class FolderWindowFile {
 
-
     constructor(path: string, isDirectory: boolean, size: number) {
         this.path = path;
         this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
@@ -77,14 +91,11 @@ export class FolderWindowFile {
         this.size = size;
     }
 
-
     path: string;
     filename: string;
     size: number;
     isDirectory: boolean;
 }
-
-
 
 export class Workspace extends View {
 
@@ -99,6 +110,7 @@ export class Workspace extends View {
     initialY: number = 1;
     entries: Array<WorkspaceEntry> = [];
 }
+
 export class StartScreen extends View {
 
     constructor(name: string = "New Workspace") {
@@ -110,7 +122,6 @@ export class StartScreen extends View {
 
 
 }
-
 
 export class Overview extends View {
 
