@@ -8,7 +8,7 @@
     @dragover="dragover"
     @dragleave="dragleave"
     @drop="drop"
-    @click="clearSelection()"
+    @click.stop
     class="wrapper workspace"
   >
     <!-- Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
@@ -16,7 +16,8 @@
       @init="panHappen"
       @pan="onPanStart"
       :options="{
-        minZoom: 0.08,
+        zoomDoubleClickSpeed: 1,
+        minZoom: 0.03,
         maxZoom: 6,
         bounds: false,
         initialX: model.initialX,
@@ -194,10 +195,10 @@ export default defineComponent({
       return { x: x, y: y };
     },
     clearSelection: function () {
-      if (this.isSelectionEvent) {
-        this.isSelectionEvent = false;
-        return;
-      }
+      // if (this.isSelectionEvent) {
+      //   this.isSelectionEvent = false;
+      //   return;
+      // }
       console.log("clear selection");
 
       Array.from(this.getSelectedEntries()).forEach((el) =>
@@ -224,6 +225,7 @@ export default defineComponent({
     panHappen: function (p: any, id: String) {
       p.setTransformOrigin(null);
       this.panZoomInstance = p;
+      p.set;
       p.on("panzoompan", function (e: any) {
         console.log(e);
       });
@@ -249,7 +251,7 @@ export default defineComponent({
         .replaceAll(" ", "");
       let values: number[] = results.split(",").map(Number);
       let w: number = parseInt(e.offsetWidth),
-        h: number = parseInt(e.offsetWidth);
+        h: number = parseInt(e.offsetHeight);
       return {
         x: Math.round(values[0]),
         y: Math.round(values[1]),
@@ -320,9 +322,11 @@ export default defineComponent({
         /**
          * Selection rectangle
          */
-
+      
         let coordRect = this.getCoordinatesFromElement(selectionRectangle);
         let comp = this;
+
+          this.clearSelection();
         Array.from(this.getEntries()).forEach((el) => {
           let coordEntry = comp.getCoordinatesFromElement(el);
 
@@ -330,6 +334,12 @@ export default defineComponent({
             r1: { x: number; y: number; x2: number; y2: number },
             r2: { x: number; y: number; x2: number; y2: number }
           ) {
+
+            let a:boolean =    r2.x > r1.x2 ;
+            let b:boolean =      r2.x2 < r1.x;
+            let c:boolean =   r2.y > r1.y2  ;
+            let d:boolean =    r2.y2 < r1.y;
+
             return !(
               r2.x > r1.x2 ||
               r2.x2 < r1.x ||
@@ -338,7 +348,7 @@ export default defineComponent({
             );
           }
 
-          if (intersectRect(coordRect, coordEntry)) {
+          if (intersectRect(coordEntry, coordRect)) {
             el.classList.add("workspace-is-selected");
           }
         });
