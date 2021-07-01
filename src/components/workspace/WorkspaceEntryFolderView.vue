@@ -9,7 +9,7 @@
   >
     <div
       @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
+      @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
       class="ws-folder-window-bar-top selectable-highlight"
     ></div>
     <div class="search-bar">
@@ -26,9 +26,9 @@
 
     <div class="viewport">
       <div v-show="showTiles" class="tile-wrapper">
-          <div class="tile" v-on:dblclick.stop.prevent="folderBack()">
-              <p>... {{ parentDir }}</p>
-          </div>
+        <div class="tile" v-on:dblclick.stop.prevent="folderBack()">
+          <p>... {{ parentDir }}</p>
+        </div>
         <keep-alive>
           <div
             class="tile"
@@ -92,7 +92,7 @@ export default defineComponent({
   mounted() {
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
   },
-   inject: ["entrySelected", "entrySelected"],
+  inject: ["entrySelected", "entrySelected"],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip") {
       // @ts-ignore: Unreachable code error
@@ -250,6 +250,8 @@ $black: 25px;
       p {
         align-self: flex-end;
         width: 100%;
+        // makes the scaled text smoother in the rendering
+        backface-visibility: hidden;
       }
     }
   }

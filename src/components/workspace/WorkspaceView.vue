@@ -29,7 +29,8 @@
       selector=".zoomable"
     >
       <div class="zoomable">
-        <div class="rectangle-selection"></div>
+      <div class="rectangle-selection"></div>
+    
         <keep-alive>
           <wsentries :viewId="model.id" :model="model"></wsentries>
         </keep-alive>
@@ -40,12 +41,14 @@
 
 
 <script lang="ts">
+//       <div class="position-zero"></div>
 import {
   Workspace,
   WorkspaceEntry,
   WorkspaceEntryFile,
   WorkspaceEntryFolderWindow,
   WorkspaceEntryImage,
+  WorkspaceEntryTextArea,
 } from "@/store/model/DataModel";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import { defineComponent } from "vue";
@@ -105,11 +108,40 @@ export default defineComponent({
           console.log(e);
           this.selectAll();
           // }
+          break;
+        case "t":
+          let listFiles: Array<WorkspaceEntry> = [];
+          let payload = {
+            model: <Workspace>this.model,
+            listFiles,
+          };
+          listFiles.push(new WorkspaceEntryTextArea());
+
+          this.$store.commit(MutationTypes.ADD_FILES, payload);
 
           break;
-
+        case "1":
+          this.panZoomInstance.smoothMoveTo(0, 0);
+          break;
+        case "2":
+          this.panZoomInstance.smoothMoveTo(100, 100);
+          break;
+        case "3":
+          this.panZoomInstance.smoothMoveTo(200, 200);
+          break;
+        case "4":
+          // this.panZoomInstance.smoothZoomAbs(0, 0, 1.0);
+          this.panZoomInstance.smoothMoveTo(0, 0);
+          break;
+        case "5":
+          //  this.panZoomInstance.smoothZoomAbs(100, 100, 1.0);
+          this.panZoomInstance.smoothMoveTo(100, 100);
+          break;
+        case "6":
+          //  this.panZoomInstance.smoothZoomAbs(200, 200, 1.0);
+          this.panZoomInstance.smoothMoveTo(200, 200);
+          break;
         default:
-          break;
       }
     },
     entrySelected(entry: any, type: "add" | "single" | "flip") {
@@ -172,12 +204,51 @@ export default defineComponent({
         listFiles,
       };
 
+      let tileCount = Math.ceil(Math.sqrt(listFiles.length)) - 1;
+      var offsetWMax = 0;
+      var offsetHMax = 0;
+      var offsetH = 0;
       var offset = 0;
-      for (const e of listFiles) {
+      let rowHeightMax = 0;
+      for (
+        let indexW = 0, indexH = 0;
+        indexW < listFiles.length;
+        indexW++, indexH++
+      ) {
+        const e = listFiles[indexW];
+
         e.x = x + offset;
-        e.y = y;
+        e.y = y + offsetH;
+
+        offsetWMax =
+          offsetWMax < offset + e.width ? offset + e.width : offsetWMax;
+        offsetHMax =
+          offsetHMax < offsetH + e.height ? offsetH + e.height : offsetHMax;
+
         offset += e.width + 20;
+
+        rowHeightMax = rowHeightMax < e.height ? e.height : rowHeightMax;
+
+        if (indexH > tileCount) {
+          offsetH += rowHeightMax;
+          offset = 0;
+          indexH = 0;
+        }
       }
+
+      let mX = x + offsetWMax / 2;
+      mX -= window.innerWidth / this.panZoomInstance.getTransform().scale / 2;
+      mX *= this.panZoomInstance.getTransform().scale;
+      mX *= -1;
+
+      let mY = y + offsetHMax / 2;
+      mY -= window.innerHeight / this.panZoomInstance.getTransform().scale / 2;
+      mY *= this.panZoomInstance.getTransform().scale;
+
+      mY *= -1;
+
+     // this.panZoomInstance.smoothMoveTo(mX, mY);
+      //   this.panZoomInstance.smoothZoomAbs(-mX, -mY, 1);
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
@@ -322,11 +393,11 @@ export default defineComponent({
         /**
          * Selection rectangle
          */
-      
+
         let coordRect = this.getCoordinatesFromElement(selectionRectangle);
         let comp = this;
 
-          this.clearSelection();
+        this.clearSelection();
         Array.from(this.getEntries()).forEach((el) => {
           let coordEntry = comp.getCoordinatesFromElement(el);
 
@@ -334,11 +405,10 @@ export default defineComponent({
             r1: { x: number; y: number; x2: number; y2: number },
             r2: { x: number; y: number; x2: number; y2: number }
           ) {
-
-            let a:boolean =    r2.x > r1.x2 ;
-            let b:boolean =      r2.x2 < r1.x;
-            let c:boolean =   r2.y > r1.y2  ;
-            let d:boolean =    r2.y2 < r1.y;
+            let a: boolean = r2.x > r1.x2;
+            let b: boolean = r2.x2 < r1.x;
+            let c: boolean = r2.y > r1.y2;
+            let d: boolean = r2.y2 < r1.y;
 
             return !(
               r2.x > r1.x2 ||
@@ -433,5 +503,12 @@ export default defineComponent({
   position: fixed;
   padding: 0;
   margin: 0;
+}
+.position-zero {
+  width: 100px;
+  height: 100px;
+  position: absolute;
+  background-color: yellow;
+  transform: translate3d(0, 0, 0);
 }
 </style>

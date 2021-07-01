@@ -11,7 +11,7 @@ export abstract class View {
 
 export class WorkspaceEntry {
     constructor(componentname: string) {
-        this.id = Math.random() * 10000;
+        this.id = Math.random() * 1000000;
         this.componentname = componentname;
     }
     componentname: string = "";
@@ -31,7 +31,6 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
         this.path = path;
         this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
         this.name = this.filename;
-        this.id = Math.random() * 10000;
         this.width = 150;
         this.height = 150;
     }
@@ -43,21 +42,30 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
 export class WorkspaceEntryImage extends WorkspaceEntry {
     constructor(path: string) {
         super("wsentryimage");
-       
+
         this.path = path;
         this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
         this.name = this.filename;
-        this.id = Math.random() * 10000;
         this.width = 600;
         this.height = 600;
     }
 
-    getURL():string{
-        return "file://"+this.path.replaceAll("\\","/");
+    getURL(): string {
+        return "file://" + this.path.replaceAll("\\", "/");
     }
 
     path: string;
     filename: string;
+}
+
+export class WorkspaceEntryTextArea extends WorkspaceEntry {
+    constructor(text: string = "") {
+        super("wsentrytextarea");
+        this.width = 400;
+        this.height = 250;
+    }
+
+    text: string = "";
 }
 
 export class WorkspaceEntryFolderWindow extends WorkspaceEntry {

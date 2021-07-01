@@ -2,6 +2,7 @@
 import { Workspace } from "../../store/model/DataModel";
 import { defineComponent } from "vue";
 import wsentry from "./WorkspaceEntry.vue";
+import wsentrytextarea from "./WorkspaceEntryTextarea.vue";
 import wsentryfolderview from "./WorkspaceEntryFolderView.vue";
 import wsentryimage from "./WorkspaceEntryImageView.vue";
 
@@ -10,7 +11,8 @@ export default defineComponent({
   components: {
     wsentry,
     wsentryfolderview,
-    wsentryimage
+    wsentryimage,
+    wsentrytextarea
   },
   props: {
     model: Workspace,
