@@ -15,6 +15,7 @@
     <panZoom
       @init="panHappen"
       @pan="onPanStart"
+      @zoom="onPanStart"
       :options="{
         zoomDoubleClickSpeed: 1,
         minZoom: 0.03,
@@ -29,8 +30,8 @@
       selector=".zoomable"
     >
       <div class="zoomable">
-      <div class="rectangle-selection"></div>
-    
+        <div class="rectangle-selection"></div>
+
         <keep-alive>
           <wsentries :viewId="model.id" :model="model"></wsentries>
         </keep-alive>
@@ -247,7 +248,7 @@ export default defineComponent({
 
       mY *= -1;
 
-     // this.panZoomInstance.smoothMoveTo(mX, mY);
+      // this.panZoomInstance.smoothMoveTo(mX, mY);
       //   this.panZoomInstance.smoothZoomAbs(-mX, -mY, 1);
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
@@ -460,7 +461,10 @@ export default defineComponent({
       }
     },
     onPanStart(e: any) {
-      this.$store.state;
+      this.$el.style.backgroundColor = switcher
+        ? "rgb(50, 50, 50)"
+        : "rgb(50, 50, 51)";
+      switcher = !switcher;
       // hide nodes die nicht visible sind
     },
     beforeWheelHandler(e: any) {
@@ -473,6 +477,8 @@ export default defineComponent({
     },
   },
 });
+
+var switcher = false;
 </script>
 
 

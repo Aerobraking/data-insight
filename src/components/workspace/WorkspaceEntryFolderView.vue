@@ -215,6 +215,7 @@ $black: 25px;
     padding: 10px;
     overflow-x: hidden;
     overflow-y: visible;
+ //   display: none;
     height: calc(100% - #{$black * 3+20});
   }
 

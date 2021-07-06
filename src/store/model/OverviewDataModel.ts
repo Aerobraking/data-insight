@@ -83,12 +83,24 @@ export abstract class AbstractNode<T> implements NodeObject {
         this.collectNodes(this, a);
         return a;
     }
+    parents(): Array<this> {
+        let a: Array<this> = [];
+        let p = this;
+        while (p.getParent() != undefined) {
+            a.push(p.getParent() as this);
+            p = p.getParent() as this;
+        }
+        return a;
+    }
 
     private collectNodes(node: AbstractNode<T>, a: Array<AbstractNode<T>>): void {
-        a.push(node);
+
+        if (node.isDirectory()) {
+            a.push(node);
+        }
+
         for (let i = 0; i < node.children.length; i++) {
             let c: AbstractNode<T> = node.children[i];
-            a.push(c);
             this.collectNodes(c, a);
         }
     }
@@ -96,15 +108,20 @@ export abstract class AbstractNode<T> implements NodeObject {
     private collectLinks(node: AbstractNode<T>, a: Array<OverviewLink<T>>): void {
         for (let i = 0; i < node.children.length; i++) {
             let c: AbstractNode<T> = node.children[i];
-            a.push({ source: node, target: c });
+            if (c.isDirectory()) {
+                a.push({ source: node, target: c });
+            }
             this.collectLinks(c, a);
         }
     }
-    public getHSL(): string {
-
+    public getHSL(alpha: number = 1, ligthness: number = 1): string {
+        let l = ligthness > 1 ? 95 : (95 - this.depth * 5);
         return this.depth == 0
             ? `hsl(0, 100%, 100%)`
-            : `hsl(${this.hue}, ${65 - (this.isDirectory() ? 0 : 55)}%, ${70 - this.depth * 3}%)`;
+            : `hsla(${0}, ${0}%, ${Math.max(20, l)}%, ${alpha})`;
+        // return this.depth == 0
+        //     ? `hsl(0, 100%, 100%)`
+        //     : `hsl(${this.hue}, ${65 - (this.isDirectory() ? 0 : 55)}%, ${70 - this.depth * 3}%)`;
     }
 
     public depthCalc(): number {

@@ -14,7 +14,9 @@ export class TreeNode extends AbstractNode<TreeNode> {
     constructor(path: string) {
         super();
         this.path = path;
+        this.id = path;
     }
+
 
     name?: string;
     path?: string;

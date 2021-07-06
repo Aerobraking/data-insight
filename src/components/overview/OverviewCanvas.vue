@@ -1,10 +1,26 @@
 <template>
-  <div
-    class="graph canvas-wrapper"
-    @click.ctrl="toggleShowFiles"
-    @dragover.prevent
-    @drop.prevent="dropFiles"
-  ></div>
+  <div class="foobar">
+    <input
+      class="canvas-breadcrumbs"
+      v-model="breadcumbs"
+      placeholder="Pfad..."
+    />
+    <input
+      type="search"
+      @input="searchUpdate"
+      class="canvas-search"
+      v-model="searchString"
+      placeholder="Suche..."
+    />
+
+    <div
+      @dblclick="openFolder"
+      class="graph canvas-wrapper"
+      @click.ctrl="toggleShowFiles"
+      @dragover.prevent
+      @drop.prevent="dropFiles"
+    ></div>
+  </div>
 </template>
 
 <script lang="ts">
@@ -12,6 +28,7 @@ const fs = require("fs");
 const path = require("path");
 // without "window.", the fsevent module can' be loaded on osx
 const chokidar = window.require("chokidar");
+const { shell } = require("electron"); // deconstructing assignment
 
 function removeItemOnce<T>(arr: Array<T>, value: T) {
   var index = arr.indexOf(value);
@@ -34,6 +51,7 @@ import * as d3 from "d3";
 import * as _ from "underscore";
 import { AbstractNode } from "@/store/model/OverviewDataModel";
 import { Overview } from "@/store/model/DataModel";
+import { forEach } from "underscore";
 
 function loadImages(sources: Array<string>, callback: Function) {
   var images: Array<any> = [];
@@ -79,6 +97,7 @@ const { ipcRenderer } = require("electron");
 let counter = 0;
 //const globalData: OverviewData = new OverviewData();
 const globalData: TreeStructure = new TreeStructure();
+const column = 950;
 
 export default defineComponent({
   name: "OverviewCanvas",
@@ -93,17 +112,50 @@ export default defineComponent({
     showImages: boolean;
     showFiles: boolean;
     graph: ForceGraphInstance | undefined;
+    nodeHovered: TreeNode | null;
+    nodeHoveredList: TreeNode[];
+    searchMatchList: string[];
     watchReady: boolean;
+    searchString: string;
+    breadcumbs: string;
   } {
     return {
+      searchString: "",
+      breadcumbs: "",
       watchReady: false,
       showNames: false,
       showFiles: false,
       showImages: false,
+      nodeHoveredList: [],
+      searchMatchList: [],
+      nodeHovered: null,
       graph: undefined,
     };
   },
   methods: {
+    searchUpdate() {
+      this.searchMatchList = [];
+
+      for (let index = 0; index < globalData.nodes.length; index++) {
+        const end: TreeNode = globalData.nodes[index];
+
+        if (
+          this.searchString.trim().length > 0 &&
+          end.getName().toLowerCase().includes(this.searchString.toLowerCase())
+        ) {
+          this.searchMatchList.push(end.getPath());
+          let path = end.parents();
+          for (let j = 0; j < path.length; j++) {
+            const element: TreeNode = path[j];
+            if (!this.searchMatchList.includes(element.getPath())) {
+              this.searchMatchList.push(element.getPath());
+            }
+          }
+        }
+      }
+
+      console.log("asdasd");
+    },
     keyPressed(e: KeyboardEvent) {
       switch (e.key) {
         case "i":
@@ -203,8 +255,14 @@ export default defineComponent({
     addFolder(path: string) {},
     addData(parent: TreeNode | undefined, pathRoot: string) {
       function getFiles(dir: string, parent: TreeNode, hue: number = 0) {
-        const files = fs.readdirSync(dir);
+        let files = fs.readdirSync(dir);
         let index = 0;
+
+        // files = files.filter((file: any) => {
+        //   const filePath = path.join(dir, file);
+        //   const fileStat = fs.lstatSync(filePath);
+        //   return fileStat.isDirectory();
+        // });
 
         files.forEach((file: any) => {
           const filePath = path.join(dir, file);
@@ -215,7 +273,10 @@ export default defineComponent({
           child.name = file;
           child.path = filePath;
           child.parent = parent;
+
           child.depthCalc();
+          child.x = child.depth * column;
+
           if (!child.isDirectory) {
             var fileSizeInBytes = fileStat.size;
             child.size = Math.round(Math.sqrt(fileSizeInBytes / (1024 * 1024)));
@@ -226,9 +287,7 @@ export default defineComponent({
           child.hue = hue;
 
           // Convert the file size to megabytes (optional)
-
           parent.children.push(child);
-
           if (child.isDirectory()) {
             getFiles(filePath, child, hue);
           }
@@ -321,16 +380,7 @@ export default defineComponent({
         /**
          * Wenn wir einen parent mitbekommen haben, nutzen wir den als root. Damit wird auch der link von diesem zum neuen child erstellt
          */
-        // let rootNode: HierarchyNode<TreeNode> =
-        //   d3.hierarchy<TreeNode>(rootFile);
 
-        // if (parent == undefined) {
-        //   vm.listRootNodes.push(rootNode);
-        // }
-
-        // let nodes: HierarchyNode<TreeNode>[] = rootNode.descendants();
-
-        // let links: HierarchyLink<TreeNode>[] = rootNode.links();
         let nodes: TreeNode[] = rootFile.descendants();
 
         let links: TreeLink[] = rootFile.links();
@@ -341,51 +391,67 @@ export default defineComponent({
             return o.depth;
           })
         );
-
+        let noTimedAdding = !true;
         /**
          * wenn wir ein parent haben, starten wir bei der depth eins unter ihm, also der seiner children.
          */
-        for (
-          let i = parent != undefined ? parent.depth + 1 : 0, j = 0;
-          i <= maxDepth;
-          i++, j++
-        ) {
-          (function (depth, index) {
-            setTimeout(function () {
-              let nodesSub: TreeNode[] = nodes.filter(
-                (o: TreeNode) => o.depth == depth
-              );
-              let linksSub: TreeLink[] = links.filter(
-                (o: TreeLink) => o.target.depth == depth
-              );
+        if (noTimedAdding) {
+          globalData.nodes.push(...nodes);
+          globalData.links.push(...links);
+          this.graph.graphData(globalData);
+          vm.updateForces();
+        } else {
+          for (
+            let i = parent != undefined ? parent.depth + 1 : 0, j = 0;
+            i <= maxDepth;
+            i++, j++
+          ) {
+            (function (depth, index) {
+              setTimeout(function () {
+                let nodesSub: TreeNode[] = nodes.filter(
+                  (o: TreeNode) => o.depth == depth
+                );
+                let linksSub: TreeLink[] = links.filter(
+                  (o: TreeLink) => o.target.depth == depth
+                );
 
-              globalData.nodes.push(...nodesSub.map((n: TreeNode) => n));
+                globalData.nodes.push(...nodesSub.map((n: TreeNode) => n));
 
-              let linksF: TreeLink[] = [];
-              linksSub.forEach((l: TreeLink) => {
-                let link = new TreeLink(l.source, l.target);
-                linksF.push(link);
-              });
-
-              /**
-               * Wenn wir nen parent haben, erstelle den link vom neuen child zu dem parent.
-               */
-              if (j == 0 && parent != undefined) {
-                linksF.push({
-                  source: parent,
-                  target: rootFile,
+                let linksF: TreeLink[] = [];
+                linksSub.forEach((l: TreeLink) => {
+                  let link = new TreeLink(l.source, l.target);
+                  linksF.push(link);
                 });
-              }
 
-              globalData.links.push(...linksF);
-              /**
-               * Füge die neuen Dateien/Ordner der OverviewData hinzu und aktualisiere den ForceGraph.
-               */
-              if (vm.graph != undefined) {
-                vm.graph.graphData(globalData);
-              }
-            }, 0 + 100 + Math.pow(index + 3, 2) * 15);
-          })(i, j);
+                /**
+                 * Wenn wir nen parent haben, erstelle den link vom neuen child zu dem parent.
+                 */
+                if (j == 0 && parent != undefined) {
+                  linksF.push({
+                    source: parent,
+                    target: rootFile,
+                  });
+                }
+
+                globalData.links.push(...linksF);
+                /**
+                 * Füge die neuen Dateien/Ordner der OverviewData hinzu und aktualisiere den ForceGraph.
+                 */
+                if (vm.graph != undefined) {
+                  vm.graph.graphData(globalData);
+                  vm.updateForces();
+                }
+              }, 500 * (index < 2 ? 0 : index));
+            })(i, j);
+          }
+        }
+      }
+    },
+    openFolder() {
+      if (this.nodeHovered != null) {
+        //shell.showItemInFolder('filepath') // Show the given file in a file manager. If possible, select the file.
+        if (this.nodeHovered.getPath() != undefined) {
+          shell.openPath(this.nodeHovered.getPath()); // Open the given file in the desktop's default manner.
         }
       }
     },
@@ -406,6 +472,70 @@ export default defineComponent({
     toggleShowFiles() {
       this.showFiles = !this.showFiles;
     },
+    updateForces: function () {
+      // @ts-ignore: Unreachable code error
+      let charge: any = this.graph.d3Force("charge");
+      if (charge != null) {
+        //   charge.distanceMax(2500);
+
+        charge.strength(function (d: any, i: number) {
+          return -(600 + d.size * 0.05) + (d.depth == 0 ? -2500 : 0); //d.size / 0.3;
+        });
+      }
+    },
+    linkPaint(link: TreeLink, ctx: CanvasRenderingContext2D) {
+      const start: TreeNode = link.source;
+      const end: TreeNode = link.target;
+
+      if (this.nodeHovered != null) {
+        if (!this.nodeHoveredList.includes(end)) {
+          ctx.strokeStyle = start.getHSL(0.1);
+        } else {
+          ctx.strokeStyle = start.getHSL(1, 10);
+        }
+      } else {
+        ctx.strokeStyle = start.getHSL();
+      }
+
+      if (
+        this.searchString.trim().length > 0 &&
+        !this.searchMatchList.includes(end.getPath())
+      ) {
+        ctx.strokeStyle = end.getHSL(0.1);
+      }
+
+      ctx.beginPath();
+      // ctx.moveTo(start.getX(), start.getY());
+      // ctx.lineTo(end.getX(), end.getY());
+      ctx.lineWidth = 1.5;
+
+      ctx.moveTo(start.getX(), start.getY());
+      let midY = (start.getY() + end.getY()) / 2;
+      let midX = (start.getX() + end.getX()) / 2;
+      // ctx.bezierCurveTo(start.getX(), midY, end.getX(), midY, end.getX(),end.getY());
+      ctx.bezierCurveTo(
+        midX,
+        start.getY(),
+        midX,
+        end.getY(),
+        end.getX(),
+        end.getY()
+      );
+      ctx.stroke();
+    },
+    tick() {
+      // @ts-ignore: Unreachable code error
+      this.graph.d3Force(
+        "y",
+        // @ts-ignore: Unreachable code error
+        d3
+          .forceY()
+          .y(function (d: any) {
+            return d.parent != undefined ? -d.parent.getY() : 0;
+          })
+          .strength(0.003)
+      );
+    },
     nodePaint(
       node: TreeNode,
       ctx: CanvasRenderingContext2D,
@@ -424,6 +554,7 @@ export default defineComponent({
 
         let nodeX = Math.round(node.getX()) * globalScale;
         let nodeY = Math.round(node.getY()) * globalScale;
+
         if (
           true ||
           (nodeX > x - viewportWidth / 2 &&
@@ -432,7 +563,9 @@ export default defineComponent({
             nodeY < y + viewportHeight / 2)
         ) {
           // Draw wider nodes by 1px on shadow canvas for more precise hovering (due to boundary anti-aliasing)
-          const r = Math.sqrt(Math.max(0, node.size || 1)) * 1 + 0;
+          let r = 10 + Math.sqrt(node.size / Math.PI) * 1.05;
+          r = node.depth == 0 ? 10 : r;
+
           ctx.beginPath();
           ctx.arc(
             node.x ? node.x : 0,
@@ -442,7 +575,28 @@ export default defineComponent({
             2 * Math.PI,
             false
           );
-          ctx.fillStyle = node.getHSL();
+
+          let show = true;
+
+          if (this.nodeHovered != null) {
+            show = this.nodeHoveredList.includes(node);
+            if (!show) {
+              ctx.fillStyle = node.getHSL(0.1);
+            } else {
+              ctx.fillStyle = node.getHSL(1, 10);
+            }
+          } else {
+            ctx.fillStyle = node.getHSL();
+          }
+
+          if (
+            this.searchString.trim().length > 0 &&
+            !this.searchMatchList.includes(node.getPath())
+          ) {
+            show = false;
+            ctx.fillStyle = node.getHSL(0.1);
+          }
+
           ctx.fill();
 
           if (
@@ -512,15 +666,30 @@ export default defineComponent({
           if (
             ((this.showNames || node.depth == 0) &&
               node.isDirectory &&
-              globalScale > Math.min(node.depth, 4)) ||
-            (!node.isDirectory && globalScale > 8)
+              show &&
+              globalScale > Math.min(node.depth / 10, 0.08)) ||
+            (!node.isDirectory && globalScale > 0.8)
           ) {
-            ctx.font = `${25 / globalScale}px Lato`;
-            ctx.fillText(
-              `${node.name}  ${node.size}mb`,
-              node.x ? node.x + r + 3 : 0,
-              node.y ? node.y + 2 : 0
-            );
+            let x = node.x ? node.x + 0 + (node.depth == 0 ? -20 : r + 25) : 0;
+            let y = node.y ? node.y + 2 : 0;
+
+            ctx.font = `${13 / globalScale}px Lato`;
+
+            if (node.depth > 0) {
+              ctx.fillStyle = "#00000066";
+              ctx.fillRect(
+                x - 4 / globalScale,
+                y - 14 / globalScale,
+                ctx.measureText(node.getName()).width + 8 / globalScale,
+                22 / globalScale
+              );
+            }
+
+            ctx.textAlign = node.depth == 0 ? "right" : "left";
+            ctx.fillStyle = "#fff";
+
+            ctx.fillText(`${node.name}  `, x, y);
+            //${node.size}mb
           }
         }
       }
@@ -539,8 +708,7 @@ export default defineComponent({
 
     ipcRenderer.on("files-added", function (event: any, rootFile: TreeNode) {});
 
-    // let div: HTMLElement | null =root.getElementsByClassName("canvas-wrapper")[0];
-    let div: HTMLElement = this.$el;
+    let div: HTMLElement = this.$el.getElementsByClassName("canvas-wrapper")[0];
 
     if (div !== null) {
       interface test {
@@ -549,13 +717,22 @@ export default defineComponent({
 
       this.graph = ForceGraph()(div)
         // .linkDirectionalParticles(2)
-        .linkWidth(2)
         // .nodeLabel((n:TreeNode)=>n.path)
-        .minZoom(0.1)
+        .minZoom(0.02)
         .maxZoom(20)
-        .warmupTicks(0)
+        .onNodeClick(function (n: NodeObject, e: MouseEvent) {})
+        .onNodeHover(function (n: NodeObject | null, nPrev: NodeObject | null) {
+          vm.nodeHovered = n as TreeNode;
+
+          if (vm.nodeHovered != n && n != null) {
+            let node = n as TreeNode;
+            vm.breadcumbs = node.getPath().replaceAll("\\", "  /  ");
+            vm.nodeHoveredList = [];
+            vm.nodeHoveredList.push(...node.descendants(), ...node.parents());
+          }
+        })
         //  .dagMode("radialout")
-        //.dagMode("td")
+        // .dagMode("lr")
         .dagNodeFilter(function (n: NodeObject) {
           let node = n as TreeNode;
           return node.isDirectory();
@@ -573,9 +750,11 @@ export default defineComponent({
           let t = n.target as TreeNode;
           return vm.showFiles || t.isDirectory();
         })
-        .backgroundColor("#555")
-        // .cooldownTime(100)
+        .onEngineTick(this.tick)
+        .backgroundColor("#111")
+        .nodeId("path")
         .nodeRelSize(4)
+        .cooldownTime(105 * 1000)
         .nodeVal((n: any) => n.size)
         .nodeCanvasObject(function (
           node: NodeObject,
@@ -584,32 +763,56 @@ export default defineComponent({
         ): void {
           vm.nodePaint(node as TreeNode, ctx, globalScale);
         })
+        .linkCanvasObject(function (
+          node: LinkObject,
+          ctx: CanvasRenderingContext2D
+        ): void {
+          vm.linkPaint(node as TreeLink, ctx);
+        })
         .graphData(globalData);
 
       // @ts-ignore: Unreachable code error
       // let force = this.graph.d3Force("link", null);
       // @ts-ignore: Unreachable code error
       this.graph.d3Force("center", null);
-      // @ts-ignore: Unreachable code error
-      // let charge = this.graph.d3Force("charge", null);
-      this.graph.d3Force("collision", d3.forceCollide(6));
+      // this.graph.d3Force("collision", null);
 
       // prevents the simulation from beeing stopped.
-      this.graph
-        .d3AlphaMin(0)
-        // .d3AlphaDecay(1 - Math.pow(0.001, 1 / 300) )
-        .d3AlphaDecay(0);
+      this.graph.d3AlphaMin(0).d3AlphaDecay(1 - Math.pow(0.001, 1 / 10000));
+      this.graph.d3AlphaMin(0).d3AlphaDecay(0.00528);
+      // .d3AlphaDecay(0);
 
-      let charge = this.graph.d3Force("charge");
-      if (charge != null) {
-        charge.distanceMax(1500);
-        // charge.distanceMin();
-      }
-      //  if (force != null) {
-      //     // force.distance(function (l: any) {
-      //     //   return 2;
-      //     // });
-      //   }
+      // @ts-ignore: Unreachable code error
+      this.graph.d3Force(
+        "x",
+        // @ts-ignore: Unreachable code error
+        d3
+          .forceX()
+          .x(function (d: any) {
+            return (d.depth + 0) * column;
+          })
+          .strength(2.5)
+      );
+
+      // @ts-ignore: Unreachable code error
+      this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
+
+      // @ts-ignore: Unreachable code error
+      this.graph.d3Force(
+        "y",
+        // @ts-ignore: Unreachable code error
+        d3
+          .forceY()
+          .y(function (d: any) {
+            return d.parent != undefined ? d.parent.getY() : 0;
+          })
+          .strength(0.015)
+      );
+
+      let link: any = this.graph.d3Force("link");
+      link.strength(function (link: TreeLink) {
+        return Math.min((link.source.depth + 0) * 0.1, 1.5);
+      });
     }
   },
 });
@@ -620,6 +823,29 @@ export default defineComponent({
 * {
   margin: 0;
   padding: 0;
+}
+
+.canvas-search {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 500px;
+  z-index: 4000;
+  top: 90px;
+}
+
+.canvas-breadcrumbs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 1900px;
+  z-index: 4000;
+  top: 60px;
+  text-align: left;
 }
 
 .canvas-wrapper {
