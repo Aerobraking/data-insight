@@ -513,8 +513,6 @@ export default defineComponent({
 
       if (this.layoutToggle) {
         incrementNumber(0, 1.5, (value) => {
-          
-
           // @ts-ignore: Unreachable code error
           this.graph.d3Force(
             "x",
@@ -779,7 +777,8 @@ export default defineComponent({
               node.isDirectory &&
               show &&
               globalScale > Math.min(node.depth / 10, 0.08)) ||
-            (!node.isDirectory && globalScale > 0.8)
+            (!node.isDirectory && globalScale > 0.8) ||
+            (this.searchString.trim().length>0 && show)
           ) {
             let x = node.x ? node.x + 0 + (node.depth == 0 ? -20 : r + 25) : 0;
             let y = node.y ? node.y + 2 : 0;
@@ -831,6 +830,7 @@ export default defineComponent({
         // .nodeLabel((n:TreeNode)=>n.path)
         .minZoom(0.02)
         .maxZoom(20)
+        .zoom(0.1)
         .onNodeClick(function (n: NodeObject, e: MouseEvent) {})
         .onNodeHover(function (n: NodeObject | null, nPrev: NodeObject | null) {
           vm.nodeHovered = n as TreeNode;
@@ -947,7 +947,7 @@ export default defineComponent({
   margin-right: auto;
   width: 500px;
   z-index: 4000;
-  top: 90px;
+  top: 76px;
 }
 
 .canvas-breadcrumbs {
@@ -958,8 +958,10 @@ export default defineComponent({
   margin-right: auto;
   width: 1900px;
   z-index: 4000;
-  top: 60px;
+  top: 45px;
   text-align: left;
+  background-color: rgb(36, 36, 36);
+  color: #fff;
 }
 
 .canvas-wrapper {
