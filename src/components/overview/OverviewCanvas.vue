@@ -91,6 +91,24 @@ function loadImage(sources: any): HTMLImageElement | null {
   return null;
 }
 
+function incrementNumber(
+  start: number,
+  end: number,
+  feedback: (value: number) => void,
+  numberValue: number = 0
+) {
+  numberValue++;
+
+  feedback((end - start) * (numberValue / 30));
+
+  if (numberValue < 30) {
+    var numberAnimation = setTimeout(function () {
+      incrementNumber(start, end, feedback, numberValue);
+    }, 30);
+  } else {
+    return;
+  }
+}
 let listRootNodes: Array<TreeNode> = [];
 
 const { ipcRenderer } = require("electron");
@@ -108,6 +126,7 @@ export default defineComponent({
     model: Overview,
   },
   data(): {
+    layoutToggle: boolean;
     showNames: boolean;
     showImages: boolean;
     showFiles: boolean;
@@ -123,7 +142,8 @@ export default defineComponent({
       searchString: "",
       breadcumbs: "",
       watchReady: false,
-      showNames: false,
+      layoutToggle: true,
+      showNames: true,
       showFiles: false,
       showImages: false,
       nodeHoveredList: [],
@@ -157,18 +177,23 @@ export default defineComponent({
       console.log("asdasd");
     },
     keyPressed(e: KeyboardEvent) {
-      switch (e.key) {
-        case "i":
-          this.showImages = !this.showImages;
-          break;
-        case "f":
-          this.showFiles = !this.showFiles;
-          break;
-        case "n":
-          this.showNames = !this.showNames;
-          break;
-        default:
-          break;
+      if (e.ctrlKey) {
+        switch (e.key) {
+          case "i":
+            this.showImages = !this.showImages;
+            break;
+          case "t":
+            this.toggleLayout();
+            break;
+          case "f":
+            this.showFiles = !this.showFiles;
+            break;
+          case "n":
+            this.showNames = !this.showNames;
+            break;
+          default:
+            break;
+        }
       }
     },
     addFile(path: string) {
@@ -483,18 +508,93 @@ export default defineComponent({
         });
       }
     },
+    toggleLayout: function () {
+      this.layoutToggle = !this.layoutToggle;
+
+      if (this.layoutToggle) {
+        incrementNumber(0, 1.5, (value) => {
+          
+
+          // @ts-ignore: Unreachable code error
+          this.graph.d3Force(
+            "x",
+            // @ts-ignore: Unreachable code error
+            d3
+              .forceX()
+              .x(function (d: any) {
+                return (d.depth + 0) * column;
+              })
+              .strength(value)
+          );
+        });
+
+        // @ts-ignore: Unreachable code error
+        this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
+
+        // @ts-ignore: Unreachable code error
+        this.graph.d3Force(
+          "y",
+          // @ts-ignore: Unreachable code error
+          d3
+            .forceY()
+            .y(function (d: any) {
+              return d.parent != undefined ? d.parent.getY() : 0;
+            })
+            .strength(0.015)
+        );
+      } else {
+        // @ts-ignore: Unreachable code error
+        this.graph.d3Force(
+          "x",
+          // @ts-ignore: Unreachable code error
+          d3
+            .forceX()
+            .x(function (d: any) {
+              return (d.depth + 0) * column;
+            })
+            .strength(2.5)
+            .strength(0)
+        );
+
+        // @ts-ignore: Unreachable code error
+        this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
+
+        // @ts-ignore: Unreachable code error
+        this.graph.d3Force(
+          "y",
+          // @ts-ignore: Unreachable code error
+          d3
+            .forceY()
+            .y(function (d: any) {
+              return d.parent != undefined ? d.parent.getY() : 0;
+            })
+            .strength(0.015)
+            .strength(0.0)
+        );
+      }
+
+      // @ts-ignore: Unreachable code error
+      let charge: any = this.graph.d3Force("charge");
+      if (charge != null) {
+        //   charge.distanceMax(2500);
+
+        charge.strength(function (d: any, i: number) {
+          return -(600 + d.size * 0.05) + (d.depth == 0 ? -2500 : 0); //d.size / 0.3;
+        });
+      }
+    },
     linkPaint(link: TreeLink, ctx: CanvasRenderingContext2D) {
       const start: TreeNode = link.source;
       const end: TreeNode = link.target;
 
       if (this.nodeHovered != null) {
         if (!this.nodeHoveredList.includes(end)) {
-          ctx.strokeStyle = start.getHSL(0.1);
+          ctx.strokeStyle = end.getHSL(0.1);
         } else {
-          ctx.strokeStyle = start.getHSL(1, 10);
+          ctx.strokeStyle = end.getHSL(1, 10);
         }
       } else {
-        ctx.strokeStyle = start.getHSL();
+        ctx.strokeStyle = end.getHSL();
       }
 
       if (
@@ -507,7 +607,7 @@ export default defineComponent({
       ctx.beginPath();
       // ctx.moveTo(start.getX(), start.getY());
       // ctx.lineTo(end.getX(), end.getY());
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.1 / (this.graph != undefined ? this.graph.zoom() : 1);
 
       ctx.moveTo(start.getX(), start.getY());
       let midY = (start.getY() + end.getY()) / 2;
@@ -565,6 +665,17 @@ export default defineComponent({
           // Draw wider nodes by 1px on shadow canvas for more precise hovering (due to boundary anti-aliasing)
           let r = 10 + Math.sqrt(node.size / Math.PI) * 1.05;
           r = node.depth == 0 ? 10 : r;
+
+          r =
+            node.depth > 0 &&
+            this.nodeHovered != null &&
+            node.getPath() === this.nodeHovered.getPath()
+              ? r * 1.5
+              : r;
+
+          r =
+            (r / (this.graph != undefined ? this.graph.zoom() : 1)) * 0.05 +
+            r * 0.95;
 
           ctx.beginPath();
           ctx.arc(
@@ -739,7 +850,8 @@ export default defineComponent({
         })
         .nodeLabel(function (n: NodeObject) {
           let node = n as TreeNode;
-          return node.getPath();
+          // return node.getPath();
+          return "";
         })
         .nodeVisibility(function (n: NodeObject) {
           let node = n as TreeNode;
@@ -755,7 +867,7 @@ export default defineComponent({
         .nodeId("path")
         .nodeRelSize(4)
         .cooldownTime(105 * 1000)
-        .nodeVal((n: any) => n.size)
+        .nodeVal((n: any) => n.size + 75)
         .nodeCanvasObject(function (
           node: NodeObject,
           ctx: CanvasRenderingContext2D,
@@ -792,6 +904,7 @@ export default defineComponent({
             return (d.depth + 0) * column;
           })
           .strength(2.5)
+          .strength(0)
       );
 
       // @ts-ignore: Unreachable code error
@@ -807,6 +920,7 @@ export default defineComponent({
             return d.parent != undefined ? d.parent.getY() : 0;
           })
           .strength(0.015)
+          .strength(0.0)
       );
 
       let link: any = this.graph.d3Force("link");

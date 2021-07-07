@@ -115,10 +115,10 @@ export abstract class AbstractNode<T> implements NodeObject {
         }
     }
     public getHSL(alpha: number = 1, ligthness: number = 1): string {
-        let l = ligthness > 1 ? 95 : (95 - this.depth * 5);
+        let l = ligthness > 1 ? 95 : (99 - this.depth * 10);
         return this.depth == 0
             ? `hsl(0, 100%, 100%)`
-            : `hsla(${0}, ${0}%, ${Math.max(20, l)}%, ${alpha})`;
+            : `hsla(${0}, ${0}%, ${Math.max(5, l)}%, ${alpha})`;
         // return this.depth == 0
         //     ? `hsl(0, 100%, 100%)`
         //     : `hsl(${this.hue}, ${65 - (this.isDirectory() ? 0 : 55)}%, ${70 - this.depth * 3}%)`;
