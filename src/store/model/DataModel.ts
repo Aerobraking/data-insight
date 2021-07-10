@@ -1,6 +1,4 @@
 import * as _ from "underscore";
-const fs = require("fs");
-const path = require("path");
 
 export abstract class View {
     id: number = 0;
@@ -56,6 +54,46 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
 
     path: string;
     filename: string;
+}
+
+export class WorkspaceEntryYoutube extends WorkspaceEntry {
+    constructor(url: string) {
+        super("wsentryyoutube");
+
+        this.videoId = WorkspaceEntryYoutube.getId(url);
+        this.url = url;
+        this.name = url;
+        this.width = 600;
+        this.height = 600;
+    }
+
+    static getId(url: string) {
+        var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        var match = url.match(regExp);
+
+        if (match && match[2].length == 11) {
+            return match[2];
+        } else {
+            return 'error';
+        }
+    }
+
+    getURL(): string {
+        return this.url;
+    }
+    getURLCookieFree(): string {
+        return this.url.replace("youtube.com", "youtube-nocookie.com");
+    }
+
+    getHtmlCode(): string {
+        return '<iframe  src="https://www.youtube-nocookie.com/embed/' + this.videoId + '" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        // return `<iframe width="1440" height="762" src="${this.getURLCookieFree()}"
+        // frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    }
+
+    videoId: string;
+    url: string;
+    name: string;
 }
 
 export class WorkspaceEntryTextArea extends WorkspaceEntry {
