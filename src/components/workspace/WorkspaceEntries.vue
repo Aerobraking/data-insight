@@ -5,6 +5,7 @@ import wsentry from "./WorkspaceEntry.vue";
 import wsentrytextarea from "./WorkspaceEntryTextarea.vue";
 import wsentryfolderview from "./WorkspaceEntryFolderView.vue";
 import wsentryimage from "./WorkspaceEntryImageView.vue";
+import wsentryyoutube from "./WorkspaceEntryYoutubeView.vue";
 
 export default defineComponent({
   name: "Nodes",
@@ -12,7 +13,8 @@ export default defineComponent({
     wsentry,
     wsentryfolderview,
     wsentryimage,
-    wsentrytextarea
+    wsentrytextarea,
+    wsentryyoutube,
   },
   props: {
     model: Workspace,

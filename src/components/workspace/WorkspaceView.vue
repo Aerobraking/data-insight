@@ -1,7 +1,9 @@
 
 <template>
   <div
-    v-on:keyup="keymonitor"
+    contenteditable="true"
+    @paste.stop="onpaste"
+    @keyup="keymonitor"
     @mouseup="dragMouseUp"
     @mousedown="dragMouseDown"
     @mousemove="dragMouseMove"
@@ -13,6 +15,7 @@
   >
     <!-- Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
     <panZoom
+      @paste="onpaste"
       @init="panHappen"
       @pan="onPanStart"
       @zoom="onPanStart"
@@ -50,6 +53,7 @@ import {
   WorkspaceEntryFolderWindow,
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
+  WorkspaceEntryYoutube,
 } from "@/store/model/DataModel";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import { defineComponent } from "vue";
@@ -81,8 +85,10 @@ export default defineComponent({
     mouseDownB: boolean;
     isSelectionEvent: boolean;
     panZoomInstance: any;
+    mousePositionLast: { x: number; y: number };
   } {
     return {
+      mousePositionLast: { x: 0, y: 0 },
       dragMoveRelX: 0,
       dragMoveRelY: 0,
       dragStartX: 0,
@@ -102,6 +108,29 @@ export default defineComponent({
     };
   },
   methods: {
+    onpaste(e: ClipboardEvent) {
+      console.log(e.clipboardData?.getData("text"));
+
+      e.preventDefault();
+      let text = e.clipboardData?.getData("text");
+
+      var mousePos = this.mousePositionLast;
+
+      if (text != undefined && text.includes("youtube.com")) {
+        let listFiles: Array<WorkspaceEntry> = [];
+        let payload = {
+          model: <Workspace>this.model,
+          listFiles,
+        };
+        listFiles.push(new WorkspaceEntryYoutube(text));
+
+        var mousePos = this.mousePositionLast;
+        listFiles[0].x = mousePos.x;
+        listFiles[0].y = mousePos.y;
+
+        this.$store.commit(MutationTypes.ADD_FILES, payload);
+      }
+    },
     keymonitor(e: KeyboardEvent) {
       switch (e.key) {
         case "a":
@@ -335,6 +364,8 @@ export default defineComponent({
     },
     dragMouseMove: function (e: MouseEvent) {
       let comp = this;
+
+      this.mousePositionLast = comp.getPositionInWorkspace(e);
 
       function updateSelectionDrag() {
         var xOffT = comp.dragMoveRelX - e.clientX;

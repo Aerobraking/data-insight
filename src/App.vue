@@ -44,4 +44,14 @@ body {
   padding: 0;
   margin: 0;
 }
+
+div .resizer {
+  width: 10px;
+  height: 10px;
+  background: blue;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  cursor: se-resize;
+}
 </style>

@@ -9,6 +9,7 @@
       type="search"
       @input="searchUpdate"
       class="canvas-search"
+      @paste="onpaste"
       v-model="searchString"
       placeholder="Suche..."
     />
@@ -153,6 +154,9 @@ export default defineComponent({
     };
   },
   methods: {
+        onpaste(e: ClipboardEvent) {
+      console.log(e.clipboardData?.getData("text"));
+    },
     searchUpdate() {
       this.searchMatchList = [];
 

@@ -1,7 +1,6 @@
 
 <template>
   <div class="tabs__header">
-   
     <a
       v-for="(view, index) in getViewList"
       @click="selectTab(index)"
@@ -13,7 +12,8 @@
     <a @click="createWorkspaceTab()"> +W </a>
     <a @click="createOverviewTab()"> +O </a>
   </div>
-  
+ 
+
   <keep-alive>
     <div
       v-for="(view, index) in getViewList"
