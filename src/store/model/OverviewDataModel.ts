@@ -1,5 +1,51 @@
 import { GraphData, NodeObject, LinkObject } from "force-graph";
 
+import { View } from "./DataModel";
+import * as _ from "underscore";
+import { randomNormal } from "d3";
+
+export class Overview extends View {
+
+    constructor(name: string = "New Overview") {
+        super();
+        this.name = name;
+        this.type = "overview";
+    }
+
+    initialZoom: number = 1;
+    initialX: number = 1;
+    initialY: number = 1;
+}
+
+enum BackgroundBehaviour {
+    NORMAL,
+    SLOWDOWN,
+    PAUSE,
+}
+
+export abstract class OverviewRenderSettings {
+    nodeSizeRelFacotor: number = 1;
+    showLeafs: boolean = true;
+
+
+
+    backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
+}
+
+
+/**
+ * 
+ * 
+ * What do we need:
+ * 
+ * Extend Overview for your implementation of an Overview. 
+ * 
+ * Create a Vue component for your overview Subclass. 
+ * 
+ * 
+ * 
+ */
+
 export abstract class TreeStructureHandler<T, N extends AbstractNode<T>> {
     abstract name: string;
     /**
@@ -9,27 +55,10 @@ export abstract class TreeStructureHandler<T, N extends AbstractNode<T>> {
 
     abstract startWatcher(): void;
 
-    abstract getImageForNode(node: N): void;
-
-    abstract rootAdded(path: string): void;
+    abstract reactToDrop(e: DragEvent): void;
 
 }
 
-
-export abstract class OverviewRenderSettings {
-    nodeSizeRelFacotor: number = 1;
-    showLeafs: boolean = true;
-}
-
-
-export abstract class OverviewLink<T> implements LinkObject {
-    constructor(source: AbstractNode<T>, target: AbstractNode<T>) {
-        this.source = source;
-        this.target = target;
-    }
-    source: AbstractNode<T>;
-    target: AbstractNode<T>;
-}
 
 
 /**
@@ -38,10 +67,12 @@ export abstract class OverviewLink<T> implements LinkObject {
 export interface OverviewRendererInterface<T, N extends AbstractNode<T>> {
     getNodeHSLString(node: N): string;
 
-    renderNode(node: N, listNodes: Array<N>): void;
-    renderLink(source: N, target: N, listNodes: Array<N>, listLinks: Array<OverviewLink<T>>): void;
+    renderNodes(listNodes: Array<N>): void;
+    renderLinks(listLinks: Array<OverviewLink<T>>, listNodes: Array<N>,): void;
 }
-
+/**
+ * The super class for any nodes you want to display in the Overview.
+ */
 export abstract class AbstractNode<T> implements NodeObject {
 
     children: Array<AbstractNode<T>> = [];
@@ -57,6 +88,7 @@ export abstract class AbstractNode<T> implements NodeObject {
     fx?: number | undefined;
     fy?: number | undefined;
     hue?: number;
+
     abstract getName(): string;
     abstract getPath(): string;
     abstract isDirectory(): boolean;
@@ -83,6 +115,7 @@ export abstract class AbstractNode<T> implements NodeObject {
         this.collectNodes(this, a);
         return a;
     }
+
     parents(): Array<this> {
         let a: Array<this> = [];
         let p = this;
@@ -154,5 +187,17 @@ export abstract class AbstractNode<T> implements NodeObject {
 }
 
 
-export abstract class AbstractNodeDir<T> extends AbstractNode<T> {
+/**
+ * Defines the Link between two AbstractNode instances. Extend it to use it with your AbstractNode subclass.
+ */
+export abstract class OverviewLink<T> implements LinkObject {
+    constructor(source: AbstractNode<T>, target: AbstractNode<T>) {
+        this.source = source;
+        this.target = target;
+    }
+
+    source: AbstractNode<T>;
+    target: AbstractNode<T>;
 }
+
+

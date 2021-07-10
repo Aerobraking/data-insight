@@ -35,8 +35,8 @@ import { defineComponent } from "vue";
 import Startscreen from "./StartScreen.vue";
 import workspaceview from "../workspace/WorkspaceView.vue";
 import overviewview from "../overview/OverviewView.vue";
-import { MutationTypes } from "@/store/mutations/mutation-types";
-import { View, Workspace } from "@/store/model/DataModel";
+import { MutationTypes } from "@/store/mutations/mutation-types"; 
+import { View } from "@/store/model/DataModel";
 
 export default defineComponent({
   el: "#wrapper",

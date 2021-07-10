@@ -19,7 +19,7 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryFile } from "../../store/model/DataModel";
+import { WorkspaceEntryFile } from "../../store/model/Workspace";
 export default defineComponent({
   name: "wsentry",
   data() {

@@ -1,7 +1,9 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
-import { State } from '../state'
-import { View, Workspace, Overview,  WorkspaceEntry } from '../model/DataModel'
+import { State } from '../state' 
+import { View } from '../model/DataModel'
+import { Overview } from '../model/OverviewDataModel'
+import { Workspace, WorkspaceEntry } from '../model/Workspace'
 
 export type Mutations<S = State> = {
   // als key für die methode nehmen wir die einzelnen enum types. und da wir die method eh nicht direkt aurufen ala setCounter() sondern per commit("setCounter", parameter ...)

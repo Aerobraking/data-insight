@@ -27,7 +27,7 @@ function htmlToElement(html: string) {
 }
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryYoutube } from "../../store/model/DataModel";
+import { WorkspaceEntryYoutube } from "../../store/model/Workspace";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {

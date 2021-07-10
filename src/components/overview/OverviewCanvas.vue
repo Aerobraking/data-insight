@@ -50,8 +50,7 @@ import ForceGraph, {
 import { TreeNode, TreeLink, TreeStructure } from "../../store/model/FileTree";
 import * as d3 from "d3";
 import * as _ from "underscore";
-import { AbstractNode } from "@/store/model/OverviewDataModel";
-import { Overview } from "@/store/model/DataModel";
+import { Overview } from "@/store/model/OverviewDataModel";
 import { forEach } from "underscore";
 
 function loadImages(sources: Array<string>, callback: Function) {
@@ -154,7 +153,7 @@ export default defineComponent({
     };
   },
   methods: {
-        onpaste(e: ClipboardEvent) {
+    onpaste(e: ClipboardEvent) {
       console.log(e.clipboardData?.getData("text"));
     },
     searchUpdate() {
@@ -484,17 +483,18 @@ export default defineComponent({
         }
       }
     },
-    dropFiles(e: any) {
-      let droppedFiles: Array<any> = e.dataTransfer.files;
+    dropFiles(e: DragEvent) { 
+      let droppedFiles: FileList | undefined = e.dataTransfer?.files;
       if (!droppedFiles) return;
       // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
       let index = 0;
       let vm = this;
-      droppedFiles.forEach((f: any) => {
+      for (let index = 0; index < droppedFiles.length; index++) {
+        const element: File = droppedFiles[index];
         setTimeout(function () {
-          vm.addData(undefined, f.path);
+          vm.addData(undefined, element.path);
         }, index++ * 400);
-      });
+      }
 
       // ipcRenderer.send("file-drop", droppedFiles[0].path);
     },
@@ -782,7 +782,7 @@ export default defineComponent({
               show &&
               globalScale > Math.min(node.depth / 10, 0.08)) ||
             (!node.isDirectory && globalScale > 0.8) ||
-            (this.searchString.trim().length>0 && show)
+            (this.searchString.trim().length > 0 && show)
           ) {
             let x = node.x ? node.x + 0 + (node.depth == 0 ? -20 : r + 25) : 0;
             let y = node.y ? node.y + 2 : 0;

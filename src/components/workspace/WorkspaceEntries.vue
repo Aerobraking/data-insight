@@ -1,8 +1,8 @@
 <script lang="ts">
-import { Workspace } from "../../store/model/DataModel";
+import { Workspace } from "../../store/model/Workspace";
 import { defineComponent } from "vue";
-import wsentry from "./WorkspaceEntry.vue";
-import wsentrytextarea from "./WorkspaceEntryTextarea.vue";
+import wsentry from "./WorkspaceEntryFileView.vue";
+import wsentrytextarea from "./WorkspaceEntryTextareaView.vue";
 import wsentryfolderview from "./WorkspaceEntryFolderView.vue";
 import wsentryimage from "./WorkspaceEntryImageView.vue";
 import wsentryyoutube from "./WorkspaceEntryYoutubeView.vue";

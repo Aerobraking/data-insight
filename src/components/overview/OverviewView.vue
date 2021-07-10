@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { Overview } from "@/store/model/DataModel";
+import { Overview } from "@/store/model/OverviewDataModel";
 import { defineComponent } from "vue";
 import OverviewCanvas from "./OverviewCanvas.vue";
 

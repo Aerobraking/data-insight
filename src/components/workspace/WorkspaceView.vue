@@ -54,7 +54,7 @@ import {
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
   WorkspaceEntryYoutube,
-} from "@/store/model/DataModel";
+} from "@/store/model/Workspace";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import { defineComponent } from "vue";
 import wsentries from "./WorkspaceEntries.vue";

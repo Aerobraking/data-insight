@@ -1,9 +1,12 @@
-import { Workspace, Overview, StartScreen } from "./model/DataModel";
+import { Overview } from "./model/OverviewDataModel"
+import { Workspace } from "./model/Workspace"
+
+ 
 
 
 export const state: {
     counter: number,
-    views: Array<Workspace | Overview | StartScreen>,
+    views: Array<Workspace | Overview>,
     selectedViewIndex: number
 } = {
     counter: 0,

@@ -16,7 +16,7 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryTextArea } from "../../store/model/DataModel";
+import { WorkspaceEntryTextArea } from "../../store/model/Workspace";
 export default defineComponent({
   name: "wsentrytextarea",
   data() {

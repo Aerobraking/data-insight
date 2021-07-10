@@ -74,7 +74,7 @@ import { defineComponent } from "vue";
 import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
-} from "../../store/model/DataModel";
+} from "../../store/model/Workspace";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
