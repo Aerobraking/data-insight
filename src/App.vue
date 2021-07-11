@@ -23,6 +23,8 @@ export default defineComponent({
 * {
   user-select: none;
 }
+
+
 body {
   user-select: none;
   margin: 0;

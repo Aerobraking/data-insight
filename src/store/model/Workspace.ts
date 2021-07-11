@@ -1,6 +1,7 @@
 
 import { View } from "./DataModel";
 import * as _ from "underscore";
+import { rgb } from "d3";
 
 export class Workspace extends View {
 
@@ -118,11 +119,11 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
 export class WorkspaceEntryFrame extends WorkspaceEntry {
     constructor(text: string = "") {
         super("wsentryframe");
-        this.width = 400;
-        this.height = 400;
+        this.width = 1400;
+        this.height = 1400;
     }
 
-    text: string = "";
+    color: string = "rgb(10,10,10)";
 }
 
 export class WorkspaceEntryFolderWindow extends WorkspaceEntry {

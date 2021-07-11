@@ -6,6 +6,7 @@ import wsentrytextarea from "./WorkspaceEntryTextareaView.vue";
 import wsentryfolderview from "./WorkspaceEntryFolderView.vue";
 import wsentryimage from "./WorkspaceEntryImageView.vue";
 import wsentryyoutube from "./WorkspaceEntryYoutubeView.vue";
+import wsentryframe from "./WorkspaceEntryFrame.vue";
 
 export default defineComponent({
   name: "Nodes",
@@ -15,6 +16,7 @@ export default defineComponent({
     wsentryimage,
     wsentrytextarea,
     wsentryyoutube,
+    wsentryframe,
   },
   props: {
     model: Workspace,
@@ -38,7 +40,7 @@ export default defineComponent({
  -->
 <template>
   <keep-alive>
-    <component
+    <component  class="ws-entry"
       v-for="e in model.entries"
       :key="e.id"
       :entry="e"

@@ -45,12 +45,35 @@
 
 
 <script lang="ts">
+function intersectRect(
+  r1: { x: number; y: number; x2: number; y2: number },
+  r2: { x: number; y: number; x2: number; y2: number }
+) {
+  let a: boolean = r2.x > r1.x2;
+  let b: boolean = r2.x2 < r1.x;
+  let c: boolean = r2.y > r1.y2;
+  let d: boolean = r2.y2 < r1.y;
+
+  return !(r2.x > r1.x2 || r2.x2 < r1.x || r2.y > r1.y2 || r2.y2 < r1.y);
+}
+function insideRect(
+  r1: { x: number; y: number; x2: number; y2: number },
+  r2: { x: number; y: number; x2: number; y2: number } // inside
+) {
+  let a: boolean = r2.x > r1.x2;
+  let b: boolean = r2.x2 < r1.x;
+  let c: boolean = r2.y > r1.y2;
+  let d: boolean = r2.y2 < r1.y;
+
+  return r2.x2 < r1.x2 && r2.x > r1.x && r2.y > r1.y && r2.y2 < r1.y2;
+}
 //       <div class="position-zero"></div>
 import {
   Workspace,
   WorkspaceEntry,
   WorkspaceEntryFile,
   WorkspaceEntryFolderWindow,
+  WorkspaceEntryFrame,
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
   WorkspaceEntryYoutube,
@@ -132,6 +155,7 @@ export default defineComponent({
       }
     },
     keymonitor(e: KeyboardEvent) {
+      let listFiles: Array<WorkspaceEntry> = [];
       switch (e.key) {
         case "a":
           //  if (e.ctrlKey) {
@@ -140,12 +164,29 @@ export default defineComponent({
           // }
           break;
         case "t":
-          let listFiles: Array<WorkspaceEntry> = [];
           let payload = {
             model: <Workspace>this.model,
             listFiles,
           };
-          listFiles.push(new WorkspaceEntryTextArea());
+
+          let area = new WorkspaceEntryTextArea();
+          area.x = this.mousePositionLast.x;
+          area.y = this.mousePositionLast.y;
+          listFiles.push(area);
+
+          this.$store.commit(MutationTypes.ADD_FILES, payload);
+
+          break;
+        case "f":
+          payload = {
+            model: <Workspace>this.model,
+            listFiles,
+          };
+
+          let frame = new WorkspaceEntryFrame();
+          frame.x = this.mousePositionLast.x;
+          frame.y = this.mousePositionLast.y;
+          listFiles.push(frame);
 
           this.$store.commit(MutationTypes.ADD_FILES, payload);
 
@@ -214,7 +255,11 @@ export default defineComponent({
         if (fileStat.isDirectory()) {
           listFiles.push(new WorkspaceEntryFolderWindow(f.path));
         } else {
-          if (f.path.endsWith("jpg") || f.path.endsWith("jpeg") || f.path.endsWith("png")) {
+          if (
+            f.path.endsWith("jpg") ||
+            f.path.endsWith("jpeg") ||
+            f.path.endsWith("png")
+          ) {
             listFiles.push(new WorkspaceEntryImage(f.path));
           } else {
             listFiles.push(new WorkspaceEntryFile(f.path));
@@ -362,6 +407,37 @@ export default defineComponent({
         y2: Math.round(values[1] + h),
       };
     },
+    dragMouseDown: function (e: MouseEvent) {
+      this.mouseDownB = e.ctrlKey;
+
+      if (e.ctrlKey) {
+        this.dragMoveRelX = e.clientX;
+        this.dragMoveRelY = e.clientY;
+      } else {
+        this.dragStartX = this.getPositionInWorkspace(e).x;
+        this.dragStartY = this.getPositionInWorkspace(e).y;
+
+        let selectionRectangle: any = this.getSelectionRectangle();
+        selectionRectangle.style.visibility = "visible";
+        selectionRectangle.style.transform = `translate3d(${this.dragStartX}px, ${this.dragStartY}px,0px)`;
+        selectionRectangle.style.width = "0px";
+        selectionRectangle.style.height = "0px";
+      }
+
+      if (
+        e.target != undefined &&
+        (<any>e.target).classList.contains("draggable")
+      ) {
+        console.log(e.target);
+
+        // Invoke startDrag by passing it the target element as "this":
+        // startDrag.call(evt.target, evt);
+      }
+      if (this.mouseDownB) {
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+      }
+    },
     dragMouseMove: function (e: MouseEvent) {
       let comp = this;
 
@@ -379,8 +455,38 @@ export default defineComponent({
 
         let objToDrag = comp.getSelectedEntries();
 
+        let listFrames: Element[] = [];
+
+        /**
+         * Collect entries that are inside frames.
+         */
         for (let index = 0; index < objToDrag.length; index++) {
           const e: any = objToDrag[index];
+          if (e.classList.contains("ws-entry-frame-wrapper")) {
+            let coordFrame = comp.getCoordinatesFromElement(e);
+
+            Array.from(comp.getEntries()).forEach((el) => {
+              let coordEntry = comp.getCoordinatesFromElement(el);
+
+              if (el != e && insideRect(coordFrame, coordEntry)) {
+                listFrames.push(el);
+              }
+            });
+          }
+        }
+
+        for (let index = 0; index < objToDrag.length; index++) {
+          const e: any = objToDrag[index];
+          let coord = comp.getCoordinatesFromElement(e);
+          e.style.transform = `translate3d(${coord.x - xOffT}px, ${
+            coord.y - yOffT
+          }px,0px)`;
+        }
+        /**
+         * Move stuff inside frames as well
+         */
+        for (let index = 0; index < listFrames.length; index++) {
+          const e: any = listFrames[index];
           let coord = comp.getCoordinatesFromElement(e);
           e.style.transform = `translate3d(${coord.x - xOffT}px, ${
             coord.y - yOffT
@@ -433,23 +539,6 @@ export default defineComponent({
         Array.from(this.getEntries()).forEach((el) => {
           let coordEntry = comp.getCoordinatesFromElement(el);
 
-          function intersectRect(
-            r1: { x: number; y: number; x2: number; y2: number },
-            r2: { x: number; y: number; x2: number; y2: number }
-          ) {
-            let a: boolean = r2.x > r1.x2;
-            let b: boolean = r2.x2 < r1.x;
-            let c: boolean = r2.y > r1.y2;
-            let d: boolean = r2.y2 < r1.y;
-
-            return !(
-              r2.x > r1.x2 ||
-              r2.x2 < r1.x ||
-              r2.y > r1.y2 ||
-              r2.y2 < r1.y
-            );
-          }
-
           if (intersectRect(coordEntry, coordRect)) {
             el.classList.add("workspace-is-selected");
           }
@@ -460,37 +549,7 @@ export default defineComponent({
 
       this.mouseDownB = false;
     },
-    dragMouseDown: function (e: MouseEvent) {
-      this.mouseDownB = e.ctrlKey;
 
-      if (e.ctrlKey) {
-        this.dragMoveRelX = e.clientX;
-        this.dragMoveRelY = e.clientY;
-      } else {
-        this.dragStartX = this.getPositionInWorkspace(e).x;
-        this.dragStartY = this.getPositionInWorkspace(e).y;
-
-        let selectionRectangle: any = this.getSelectionRectangle();
-        selectionRectangle.style.visibility = "visible";
-        selectionRectangle.style.transform = `translate3d(${this.dragStartX}px, ${this.dragStartY}px,0px)`;
-        selectionRectangle.style.width = "0px";
-        selectionRectangle.style.height = "0px";
-      }
-
-      if (
-        e.target != undefined &&
-        (<any>e.target).classList.contains("draggable")
-      ) {
-        console.log(e.target);
-
-        // Invoke startDrag by passing it the target element as "this":
-        // startDrag.call(evt.target, evt);
-      }
-      if (this.mouseDownB) {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
-      }
-    },
     onPanStart(e: any) {
       this.$el.style.backgroundColor = switcher
         ? "rgb(50, 50, 50)"
@@ -515,13 +574,21 @@ var switcher = false;
 
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style   lang="scss">
 .wrapper {
   width: 100%;
   height: 100%;
   position: absolute;
   background-color: rgb(53, 53, 53);
   outline: none;
+}
+
+
+.workspace-is-selected {
+  /* offset-x | offset-y | blur-radius | spread-radius | color */
+  box-shadow: 0px 0px 0px 6px #f81fc2;
+  background-color: #f81fc252;
+  resize: both;
 }
 
 .rectangle-selection {

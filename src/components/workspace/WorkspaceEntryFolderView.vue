@@ -5,7 +5,9 @@
     @mouseup.stop
     @mousemove.stop
     v-on:dblclick.stop.prevent=""
-    class="ws-entry ws-folder-window-wrapper"
+        :class="{ opaque: opaque }"
+    class="ws-folder-window-wrapper"
+
   >
     <div
       @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
@@ -16,6 +18,7 @@
       <button @click="openDefault">Default</button>
       <button @click="setDefault">Set Default</button>
       <button @click="showTiles = !showTiles">View</button>
+      <button @click="opaque = !opaque">Opaque</button>
       <input
         v-on:keyup.stop
         v-model="searchstring"
@@ -81,6 +84,7 @@ export default defineComponent({
   data() {
     return {
       showTiles: true,
+      opaque: true,
       searchstring: "",
       parentDir: "",
     };
@@ -192,9 +196,13 @@ export default defineComponent({
 <style scoped lang="scss">
 $black: 25px;
 
+ .opaque {
+    overflow: hidden;
+  }
+
+
 .ws-folder-window-wrapper {
   resize: both;
-  overflow: auto;
   height: 600px;
   width: 600px;
   min-width: 200px;
@@ -206,16 +214,17 @@ $black: 25px;
   background: #ffffff;
   border: 2px solid #949494;
   box-sizing: border-box;
-  border-radius: 4px;
+  border-radius: 0px;
   text-align: left;
   vertical-align: top;
-  overflow: hidden;
+  overflow: visible;
 
+ 
   .viewport {
     padding: 10px;
-    overflow-x: hidden;
+    overflow-x: visible;
     overflow-y: visible;
- //   display: none;
+    //   display: none;
     height: calc(100% - #{$black * 3+20});
   }
 
@@ -257,6 +266,7 @@ $black: 25px;
     }
   }
 }
+
 table {
   background: #ffffff;
 }
@@ -266,8 +276,7 @@ table {
   height: $black;
   background-color: #646464;
 }
-.selectable-highlight {
-}
+
 .workspace-is-selected {
   border: 2px solid #f81fc2;
   box-sizing: border-box;

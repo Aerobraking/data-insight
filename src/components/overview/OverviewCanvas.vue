@@ -113,7 +113,6 @@ let listRootNodes: Array<TreeNode> = [];
 
 const { ipcRenderer } = require("electron");
 let counter = 0;
-//const globalData: OverviewData = new OverviewData();
 const globalData: TreeStructure = new TreeStructure();
 const column = 950;
 
@@ -483,12 +482,30 @@ export default defineComponent({
         }
       }
     },
-    dropFiles(e: DragEvent) { 
+    dropFiles(e: DragEvent) {
       let droppedFiles: FileList | undefined = e.dataTransfer?.files;
       if (!droppedFiles) return;
       // this tip, convert FileList to array, credit: https://www.smashingmagazine.com/2018/01/drag-drop-file-uploader-vanilla-js/
       let index = 0;
       let vm = this;
+
+      
+      globalData.nodes.forEach((e: TreeNode) => {
+        e.parent = undefined;
+        e.children.forEach((c: TreeNode) => {
+          c.parent = undefined;
+        });
+      });
+
+      console.log(JSON.stringify(globalData));
+
+      const obj = JSON.parse(JSON.stringify(globalData));
+console.log();
+console.log();
+console.log();
+
+      console.log(obj);
+
       for (let index = 0; index < droppedFiles.length; index++) {
         const element: File = droppedFiles[index];
         setTimeout(function () {

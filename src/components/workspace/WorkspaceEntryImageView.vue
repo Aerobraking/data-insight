@@ -5,7 +5,7 @@
     @mousedown.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry ws-entry-image-wrapper"
+    class="ws-entry-image-wrapper"
   ></div>
 </template>
 

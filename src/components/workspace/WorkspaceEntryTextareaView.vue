@@ -5,7 +5,7 @@
     @mousedown.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry ws-entry-textarea-wrapper"
+    class="ws-entry-textarea-wrapper"
   >
     <textarea v-on:keyup.stop placeholder="Title"></textarea
     >

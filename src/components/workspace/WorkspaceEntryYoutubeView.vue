@@ -5,7 +5,7 @@
     @mousedown.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry ws-entry-youtube-wrapper"
+    class="ws-entry-youtube-wrapper"
   >
     <div class="inner-wrapper"></div>
   </div>

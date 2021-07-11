@@ -4,7 +4,7 @@
     @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry ws-entry-file-wrapper"
+    class="ws-entry-file-wrapper"
     :style="{
       transform: 'translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
     }"
