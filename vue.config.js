@@ -1,8 +1,14 @@
+const WorkerPlugin = require('worker-plugin');
+
 module.exports = {
- // mode: 'production',
+  // mode: 'production',
   configureWebpack: {
-    devtool: 'source-map'
+    devtool: 'source-map',
+    plugins: [
+      new WorkerPlugin()
+    ]
   },
+ 
   pluginOptions: {
     electronBuilder: {
       nodeIntegration: true,

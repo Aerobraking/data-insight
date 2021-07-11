@@ -1,6 +1,5 @@
 <template>
-  <div 
-  
+  <div
     @mousemove.stop
     @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.stop.exact="entrySelectedLocal('single')"
@@ -28,8 +27,33 @@ export default defineComponent({
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
     let comp = this;
     let path = this.entry?.getURL();
-    this.$el.style.backgroundImage = "url('" + this.entry?.getURL() + "')";
-    if (this.entry != undefined) {
+
+    const ImageLoaderWorker = new Worker("@/utils/imageloader", {
+      type: "module",
+    });
+    ImageLoaderWorker.onmessage = (event: any) => {
+      // Grab the message data from the event
+      const imageData = event.data;
+      console.log("bild antwort bekommen");
+
+      // Get the original element for this image
+      //const imageElement = document.querySelectorAll(`img[data-src='${imageData.imageURL}']`)
+
+      // We can use the `Blob` as an image source! We just need to convert it
+      // to an object URL first
+      const objectURL = URL.createObjectURL(imageData.blob);
+
+      // // Once the image is loaded, we'll want to do some extra cleanup
+      // imageElement.onload = () => {
+      //   // Let's remove the original `data-src` attribute to make sure we don't
+      //   // accidentally pass this image to the worker again in the future
+      //   imageElement.removeAttribute(‘data-src’)
+
+      //   // We'll also revoke the object URL now that it's been used to prevent the
+      //   // browser from maintaining unnecessary references
+      //   URL.revokeObjectURL(objectURL)
+      // }
+
       var img = new Image();
       img.onload = function () {
         let w = img.width;
@@ -40,13 +64,34 @@ export default defineComponent({
         comp.$el.style.width = w + "px";
         comp.$el.style.height = h + "px";
       };
-      img.src = this.entry.path;
-    }
+      img.src = objectURL;
+
+      comp.$el.style.backgroundImage = "url('" + objectURL + "')";
+      // imageElement.setAttribute('src', objectURL)
+    };
+
+    console.log("sende bild message");
+
+    ImageLoaderWorker.postMessage(path);
+
+    // this.$el.style.backgroundImage = "url('" + this.entry?.getURL() + "')";
+    // if (this.entry != undefined) {
+    //   var img = new Image();
+    //   img.onload = function () {
+    //     let w = img.width;
+    //     let h = img.height;
+    //     let scale = w / 600;
+    //     w /= scale;
+    //     h /= scale;
+    //     comp.$el.style.width = w + "px";
+    //     comp.$el.style.height = h + "px";
+    //   };
+    //   img.src = this.entry.path;
+    // }
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip") {
-      
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },
@@ -74,6 +119,7 @@ export default defineComponent({
 }
 
 .ws-entry-image-wrapper {
+  background: rgba(255, 255, 255, 0.3);
   resize: both;
   overflow: auto;
   backface-visibility: hidden;

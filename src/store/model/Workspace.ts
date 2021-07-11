@@ -96,7 +96,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
     }
 
     getHtmlCode(): string {
-        return '<iframe  src="https://www.youtube-nocookie.com/embed/' + this.videoId + '" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        return '<iframe  sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" src="https://www.youtube-nocookie.com/embed/' + this.videoId + '" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
         // return `<iframe width="1440" height="762" src="${this.getURLCookieFree()}"
         // frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
     }
@@ -111,6 +111,15 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
         super("wsentrytextarea");
         this.width = 400;
         this.height = 250;
+    }
+
+    text: string = "";
+}
+export class WorkspaceEntryFrame extends WorkspaceEntry {
+    constructor(text: string = "") {
+        super("wsentryframe");
+        this.width = 400;
+        this.height = 400;
     }
 
     text: string = "";

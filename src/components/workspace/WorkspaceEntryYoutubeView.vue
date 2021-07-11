@@ -37,19 +37,39 @@ export default defineComponent({
     entry: WorkspaceEntryYoutube,
     viewKey: Number,
   },
-  mounted() { 
+  mounted() {
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
     this.$el.style.width = this.entry?.width + "px";
     this.$el.style.height = this.entry?.height + "px";
 
     let comp = this;
-    let iframe = htmlToElement(
+    let iframe: any = htmlToElement(
       this.entry != undefined
         ? this.entry?.getHtmlCode()
         : "<div>Video not found.</div>"
     );
+    let c = this;
+
+    iframe.onload = function () {
+      // alert("myframe is loaded");
+
+     
+      // var iframeDocument =
+      //   iframe.contentDocument || iframe.contentWindow.document;
+
+      // let aTags = iframeDocument.getElementsByTagName("a");
+      // for (var i = 0; i < aTags.length; i++) {
+      //   aTags[i].setAttribute(
+      //     "onclick",
+      //     "require('shell').openExternal('" + aTags[i].href + "')"
+      //   );
+      //   aTags[i].href = "#";
+      // }
+    };
 
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
+
+    return false;
 
     resize(this.$el);
   },

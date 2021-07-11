@@ -214,7 +214,7 @@ export default defineComponent({
         if (fileStat.isDirectory()) {
           listFiles.push(new WorkspaceEntryFolderWindow(f.path));
         } else {
-          if (f.path.endsWith("jpg") || f.path.endsWith("jpeg")) {
+          if (f.path.endsWith("jpg") || f.path.endsWith("jpeg") || f.path.endsWith("png")) {
             listFiles.push(new WorkspaceEntryImage(f.path));
           } else {
             listFiles.push(new WorkspaceEntryFile(f.path));
