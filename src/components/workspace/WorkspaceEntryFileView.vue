@@ -74,9 +74,10 @@ export default defineComponent({
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .workspace-is-selected {
-  border: 0px solid #f81fc2f8;
-  box-sizing: border-box;
-  background-color: #f81fc252;
+  // border: 0px solid #f81fc2f8;
+  // box-sizing: border-box;
+  // background-color: #f81fc252;
+  // mix-blend-mode: luminosity;
 }
 
 .ws-entry-file-wrapper {

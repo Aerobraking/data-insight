@@ -34,7 +34,8 @@
     >
       <div class="zoomable">
         <div class="rectangle-selection"></div>
- 
+        <div class="rectangle-selection-wrapper"></div>
+
         <keep-alive>
           <wsentries :viewId="model.id" :model="model"></wsentries>
         </keep-alive>
@@ -59,9 +60,9 @@ import {
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
 import { defineComponent } from "vue";
-import wsentries from "./WorkspaceEntries.vue";    
+import wsentries from "./WorkspaceEntries.vue";
 
-const fs = require("fs"); 
+const fs = require("fs");
 const path = require("path");
 
 export default defineComponent({
@@ -201,6 +202,7 @@ export default defineComponent({
           entry.classList.toggle("workspace-is-selected");
           break;
       }
+      this.updateSelectionWrapper();
     },
     dragover(e: any) {
       e.preventDefault();
@@ -321,6 +323,7 @@ export default defineComponent({
       Array.from(this.getSelectedEntries()).forEach((el) =>
         el.classList.remove("workspace-is-selected")
       );
+      this.updateSelectionWrapper();
     },
     selectAll: function () {
       console.log("selectAll");
@@ -335,6 +338,7 @@ export default defineComponent({
           el.classList.toggle("workspace-is-selected")
         );
       }
+      this.updateSelectionWrapper();
     },
     getNodes() {
       return this.$props.model?.entries;
@@ -352,6 +356,9 @@ export default defineComponent({
     },
     getSelectionRectangle: function (): Element {
       return this.$el.querySelectorAll(".rectangle-selection")[0];
+    },
+    getSelectionWrapper: function (): Element {
+      return this.$el.querySelectorAll(".rectangle-selection-wrapper")[0];
     },
     getSelectedEntries: function (): HTMLCollectionOf<Element> {
       return this.$el.querySelectorAll(".workspace-is-selected");
@@ -387,6 +394,8 @@ export default defineComponent({
         this.dragSelection = Array.from(this.getSelectedEntries());
 
         WSUtils.Events.dragStarting(this.dragSelection, this);
+
+        this.dragSelection.push(this.getSelectionWrapper());
       } else {
         this.dragStart = this.getPositionInWorkspace(e);
 
@@ -410,6 +419,32 @@ export default defineComponent({
         e.stopImmediatePropagation();
         e.stopPropagation();
       }
+    },
+    updateSelectionWrapper() {
+      let selectionRectangle: any = this.getSelectionWrapper();
+
+      let x = Infinity,
+        y = Infinity,
+        x2 = -Infinity,
+        y2 = -Infinity;
+
+      Array.from(this.getSelectedEntries()).forEach((el) => {
+       
+        let coord = this.getCoordinatesFromElement(el);
+
+        x = x > coord.x ? coord.x : x;
+        y = y > coord.y ? coord.y : y;
+
+        x2 = x2 < coord.x2 ? coord.x2 : x2;
+        y2 = y2 < coord.y2 ? coord.y2 : y2;
+      });
+
+      selectionRectangle.style.transform = `translate3d(${x}px, ${y}px,0px)`;
+      selectionRectangle.style.width = Math.abs(x2 - x) + "px";
+      selectionRectangle.style.height = Math.abs(y2 - y) + "px";
+
+      selectionRectangle.style.visibility =
+        this.getSelectedEntries().length > 0 ? "visible" : "hidden";
     },
     dragMouseMove: function (e: MouseEvent) {
       let comp = this;
@@ -485,6 +520,8 @@ export default defineComponent({
           }
         });
 
+        this.updateSelectionWrapper();
+
         selectionRectangle.style.visibility = "hidden";
       }
 
@@ -526,9 +563,9 @@ var switcher = false;
 
 .workspace-is-selected {
   /* offset-x | offset-y | blur-radius | spread-radius | color */
-  box-shadow: 0px 0px 0px 6px #f81fc2;
-  background-color: #f81fc252;
-  resize: both;
+  // box-shadow: 0px 0px 0px 6px #f81fc2;
+  // background-color: #f81fc252;
+  // resize: both;
 }
 
 .rectangle-selection {
@@ -538,6 +575,20 @@ var switcher = false;
   transform: translate3d(0px, 0px, 0px);
   background-color: rgba(57, 215, 255, 0.284);
   z-index: 1000;
+}
+.ws-entry{
+  z-index: 100;
+}
+.rectangle-selection-wrapper {
+  position: absolute;
+  width: 0px;
+  height: 0px;
+  transform: translate3d(0px, 0px, 0px);
+  background-color: rgba(140, 228, 250, 0.452);
+  border: 2px solid  rgba(57, 215, 255, 0.76);
+  z-index: 10;
+  padding: 10px;
+  margin: -10px;
 }
 
 .vue-pan-zoom-scene {
