@@ -24,7 +24,6 @@ export default defineComponent({
   user-select: none;
 }
 
-
 body {
   user-select: none;
   margin: 0;
@@ -55,5 +54,9 @@ div .resizer {
   right: 0;
   bottom: 0;
   cursor: se-resize;
+}
+
+div .resizable-prevent-input {
+  pointer-events: none;
 }
 </style>

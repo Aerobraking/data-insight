@@ -68,8 +68,7 @@ export default defineComponent({
     };
 
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
-
-    return false;
+ 
 
     resize(this.$el);
   },
@@ -89,11 +88,7 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss">
-.workspace-is-selected {
-  /* offset-x | offset-y | blur-radius | spread-radius | color */
-  box-shadow: 0px 0px 0px 6px #f81fc2;
-  background-color: #f81fc252;
-}
+
 
 .ws-entry-youtube-wrapper {
   //  resize: both;
@@ -107,6 +102,13 @@ export default defineComponent({
   height: 180px;
   background-size: cover;
   box-sizing: border-box;
+
+.workspace-is-selected {
+  /* offset-x | offset-y | blur-radius | spread-radius | color */
+  box-shadow: 0px 0px 0px 6px #f81fc2;
+  background-color: #f81fc252;
+  resize: none;
+}
 
   .inner-wrapper {
     position: relative;

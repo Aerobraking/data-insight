@@ -34,7 +34,7 @@
     >
       <div class="zoomable">
         <div class="rectangle-selection"></div>
-
+ 
         <keep-alive>
           <wsentries :viewId="model.id" :model="model"></wsentries>
         </keep-alive>
@@ -45,28 +45,6 @@
 
 
 <script lang="ts">
-function intersectRect(
-  r1: { x: number; y: number; x2: number; y2: number },
-  r2: { x: number; y: number; x2: number; y2: number }
-) {
-  let a: boolean = r2.x > r1.x2;
-  let b: boolean = r2.x2 < r1.x;
-  let c: boolean = r2.y > r1.y2;
-  let d: boolean = r2.y2 < r1.y;
-
-  return !(r2.x > r1.x2 || r2.x2 < r1.x || r2.y > r1.y2 || r2.y2 < r1.y);
-}
-function insideRect(
-  r1: { x: number; y: number; x2: number; y2: number },
-  r2: { x: number; y: number; x2: number; y2: number } // inside
-) {
-  let a: boolean = r2.x > r1.x2;
-  let b: boolean = r2.x2 < r1.x;
-  let c: boolean = r2.y > r1.y2;
-  let d: boolean = r2.y2 < r1.y;
-
-  return r2.x2 < r1.x2 && r2.x > r1.x && r2.y > r1.y && r2.y2 < r1.y2;
-}
 //       <div class="position-zero"></div>
 import {
   Workspace,
@@ -79,14 +57,11 @@ import {
   WorkspaceEntryYoutube,
 } from "@/store/model/Workspace";
 import { MutationTypes } from "@/store/mutations/mutation-types";
+import * as WSUtils from "./WorkspaceUtils";
 import { defineComponent } from "vue";
-import wsentries from "./WorkspaceEntries.vue";
-// import * as d3 from "d3";
-var counter = 0;
-// const test = d3.easeCubicInOut;
-var timesPerSecond = 30; // how many times to fire the event per second
-var wait = false;
-const fs = require("fs");
+import wsentries from "./WorkspaceEntries.vue";    
+
+const fs = require("fs"); 
 const path = require("path");
 
 export default defineComponent({
@@ -99,28 +74,24 @@ export default defineComponent({
     model: Workspace,
   },
   data(): {
-    dragStartX: number;
-    dragStartY: number;
-    dragMoveRelX: number;
-    dragMoveRelY: number;
-    dragTempOffsetX: number;
-    dragTempOffsetY: number;
+    dragStart: { x: number; y: number };
+    dragMoveRel: { x: number; y: number };
+    dragTempOffset: { x: number; y: number };
     mouseDownB: boolean;
     isSelectionEvent: boolean;
     panZoomInstance: any;
     mousePositionLast: { x: number; y: number };
+    dragSelection: Element[];
   } {
     return {
       mousePositionLast: { x: 0, y: 0 },
-      dragMoveRelX: 0,
-      dragMoveRelY: 0,
-      dragStartX: 0,
-      dragStartY: 0,
-      dragTempOffsetX: 0,
-      dragTempOffsetY: 0,
+      dragMoveRel: { x: 0, y: 0 },
+      dragStart: { x: 0, y: 0 },
+      dragTempOffset: { x: 0, y: 0 },
       mouseDownB: false,
       isSelectionEvent: false,
       panZoomInstance: null,
+      dragSelection: [],
     };
   },
 
@@ -411,15 +382,17 @@ export default defineComponent({
       this.mouseDownB = e.ctrlKey;
 
       if (e.ctrlKey) {
-        this.dragMoveRelX = e.clientX;
-        this.dragMoveRelY = e.clientY;
+        this.dragMoveRel = { x: e.clientX, y: e.clientY };
+
+        this.dragSelection = Array.from(this.getSelectedEntries());
+
+        WSUtils.Events.dragStarting(this.dragSelection, this);
       } else {
-        this.dragStartX = this.getPositionInWorkspace(e).x;
-        this.dragStartY = this.getPositionInWorkspace(e).y;
+        this.dragStart = this.getPositionInWorkspace(e);
 
         let selectionRectangle: any = this.getSelectionRectangle();
         selectionRectangle.style.visibility = "visible";
-        selectionRectangle.style.transform = `translate3d(${this.dragStartX}px, ${this.dragStartY}px,0px)`;
+        selectionRectangle.style.transform = `translate3d(${this.dragStart.x}px, ${this.dragStart.y}px,0px)`;
         selectionRectangle.style.width = "0px";
         selectionRectangle.style.height = "0px";
       }
@@ -444,49 +417,17 @@ export default defineComponent({
       this.mousePositionLast = comp.getPositionInWorkspace(e);
 
       function updateSelectionDrag() {
-        var xOffT = comp.dragMoveRelX - e.clientX;
-        var yOffT = comp.dragMoveRelY - e.clientY;
+        var xOffT =
+          (comp.dragMoveRel.x - e.clientX) /
+          comp.panZoomInstance.getTransform().scale;
+        var yOffT =
+          (comp.dragMoveRel.y - e.clientY) /
+          comp.panZoomInstance.getTransform().scale;
 
-        xOffT /= comp.panZoomInstance.getTransform().scale;
-        yOffT /= comp.panZoomInstance.getTransform().scale;
+        comp.dragMoveRel = { x: e.clientX, y: e.clientY };
 
-        comp.dragMoveRelX = e.clientX;
-        comp.dragMoveRelY = e.clientY;
-
-        let objToDrag = comp.getSelectedEntries();
-
-        let listFrames: Element[] = [];
-
-        /**
-         * Collect entries that are inside frames.
-         */
-        for (let index = 0; index < objToDrag.length; index++) {
-          const e: any = objToDrag[index];
-          if (e.classList.contains("ws-entry-frame-wrapper")) {
-            let coordFrame = comp.getCoordinatesFromElement(e);
-
-            Array.from(comp.getEntries()).forEach((el) => {
-              let coordEntry = comp.getCoordinatesFromElement(el);
-
-              if (el != e && insideRect(coordFrame, coordEntry)) {
-                listFrames.push(el);
-              }
-            });
-          }
-        }
-
-        for (let index = 0; index < objToDrag.length; index++) {
-          const e: any = objToDrag[index];
-          let coord = comp.getCoordinatesFromElement(e);
-          e.style.transform = `translate3d(${coord.x - xOffT}px, ${
-            coord.y - yOffT
-          }px,0px)`;
-        }
-        /**
-         * Move stuff inside frames as well
-         */
-        for (let index = 0; index < listFrames.length; index++) {
-          const e: any = listFrames[index];
+        for (let index = 0; index < comp.dragSelection.length; index++) {
+          const e: any = comp.dragSelection[index];
           let coord = comp.getCoordinatesFromElement(e);
           e.style.transform = `translate3d(${coord.x - xOffT}px, ${
             coord.y - yOffT
@@ -497,11 +438,11 @@ export default defineComponent({
       let selectionRectangle: any = comp.getSelectionRectangle();
 
       function updateSelectionRectangle() {
-        let w = -1 * (comp.dragStartX - comp.getPositionInWorkspace(e).x);
-        let h = -1 * (comp.dragStartY - comp.getPositionInWorkspace(e).y);
+        let w = -1 * (comp.dragStart.x - comp.getPositionInWorkspace(e).x);
+        let h = -1 * (comp.dragStart.y - comp.getPositionInWorkspace(e).y);
 
-        let rectX = w < 0 ? comp.dragStartX + w : comp.dragStartX;
-        let rectY = h < 0 ? comp.dragStartY + h : comp.dragStartY;
+        let rectX = w < 0 ? comp.dragStart.x + w : comp.dragStart.x;
+        let rectY = h < 0 ? comp.dragStart.x + h : comp.dragStart.y;
 
         selectionRectangle.style.transform = `translate3d(${rectX}px, ${rectY}px,0px)`;
         selectionRectangle.style.width = Math.abs(w) + "px";
@@ -539,7 +480,7 @@ export default defineComponent({
         Array.from(this.getEntries()).forEach((el) => {
           let coordEntry = comp.getCoordinatesFromElement(el);
 
-          if (intersectRect(coordEntry, coordRect)) {
+          if (WSUtils.intersectRect(coordEntry, coordRect)) {
             el.classList.add("workspace-is-selected");
           }
         });
@@ -582,7 +523,6 @@ var switcher = false;
   background-color: rgb(53, 53, 53);
   outline: none;
 }
-
 
 .workspace-is-selected {
   /* offset-x | offset-y | blur-radius | spread-radius | color */

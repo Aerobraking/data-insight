@@ -1,5 +1,4 @@
-export enum ActionTypes {
-    GET_COUNTER = 'GET_COUNTER',
+export enum ActionTypes { 
     CREATE_WORKSPACE = 'CREATE_WORKSPACE',
   }
   

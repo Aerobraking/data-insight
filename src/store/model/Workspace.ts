@@ -29,7 +29,7 @@ export class WorkspaceEntry {
     id: number = 0;
     isSelected: boolean = false;
     name: string = "";
-    isResizable: boolean = false;
+    isResizable: boolean = false; 
     width: number = 220;
     height: number = 180;
 }

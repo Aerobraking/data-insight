@@ -14,6 +14,38 @@ const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
 import { WorkspaceEntryFrame } from "../../store/model/Workspace";
+import * as WSUtils from "./WorkspaceUtils";
+import { WorkspaceViewIfc } from "./WorkspaceUtils";
+import * as _ from "underscore";
+
+_.once(() => {
+  WSUtils.Events.registerCallback({
+    dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
+      let addToSelection: Element[] = [];
+
+      /**
+       * Collect entries that are inside frames.
+       */
+      for (let index = 0; index < selection.length; index++) {
+        const e: any = selection[index];
+        if (e.classList.contains("ws-entry-frame-wrapper")) {
+          let coordFrame = workspace.getCoordinatesFromElement(e);
+
+          Array.from(workspace.getEntries()).forEach((el) => {
+            let coordEntry = workspace.getCoordinatesFromElement(el);
+
+            if (el != e && WSUtils.insideRect(coordFrame, coordEntry)) {
+              addToSelection.push(el);
+            }
+          });
+        }
+      }
+
+      selection.push(...addToSelection); 
+    },
+  });
+})();
+
 export default defineComponent({
   name: "wsentryframe",
   data() {
@@ -44,8 +76,6 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-
-
 .ws-entry-frame-wrapper {
   overflow: auto;
   will-change: transform;
@@ -59,6 +89,6 @@ export default defineComponent({
   border: 1px solid #fff;
   border-radius: 0;
   padding: 0;
-  margin: 0; 
+  margin: 0;
 }
 </style>

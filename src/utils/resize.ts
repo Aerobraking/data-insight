@@ -1,6 +1,7 @@
-
+import * as WSUtils from "@/components/workspace/WorkspaceUtils";
 
 export let resizeClasseName = "resizable";
+export const classPreventInput = "resizable-prevent-input";
 
 
 export function resize(element: HTMLElement) {
@@ -33,6 +34,8 @@ export function resize(element: HTMLElement) {
         startHeight = parseInt(element.style.height.replace("px", ""));
         document.documentElement.addEventListener('mousemove', doDrag, false);
         document.documentElement.addEventListener('mouseup', stopDrag, false);
+
+        element.classList.add(classPreventInput);
     }
 
     function doDrag(e: MouseEvent) {
@@ -40,15 +43,17 @@ export function resize(element: HTMLElement) {
         let newWidth = (startWidth + e.clientX - startX),
             newHeight = (startHeight + e.clientY - startY);
 
-          
+
         scaledChild.style.transform = "scale(" + (newWidth / originalWidth) + "," + (newHeight / originalHeight) + ")";
 
         element.style.width = newWidth + 'px';
-        element.style.height = (originalHeight *  (newWidth / originalWidth)) + 'px';
+        element.style.height = (originalHeight * (newWidth / originalWidth)) + 'px';
     }
 
     function stopDrag(e: MouseEvent) {
         document.documentElement.removeEventListener('mousemove', doDrag, false); document.documentElement.removeEventListener('mouseup', stopDrag, false);
+
+        element.classList.remove(classPreventInput);
     }
 
 
