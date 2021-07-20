@@ -6,7 +6,7 @@
     @keyup="keymonitor"
     @mouseup="dragMouseUp"
     @mousedown="dragMouseDown"
-    @mousemove="dragMouseMove"
+    @mousemove.capture="dragMouseMove"
     @dragover="dragover"
     @dragleave="dragleave"
     @drop="drop"
@@ -14,6 +14,7 @@
     class="wrapper workspace"
   >
     <!-- Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
+    <canvas class="workspace-canvas"></canvas>
     <panZoom
       @paste="onpaste"
       @init="panHappen"
@@ -61,6 +62,8 @@ import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
 import { defineComponent } from "vue";
 import wsentries from "./WorkspaceEntries.vue";
+import { getCoordinatesFromElement, ResizerComplex } from "@/utils/resize";
+import { InsightFile } from "@/store/state";
 
 const fs = require("fs");
 const path = require("path");
@@ -82,9 +85,12 @@ export default defineComponent({
     isSelectionEvent: boolean;
     panZoomInstance: any;
     mousePositionLast: { x: number; y: number };
-    dragSelection: Element[];
+    dragSelection: HTMLElement[];
+    selectionWrapperResizer: ResizerComplex | null;
+    useCanvas: boolean;
   } {
     return {
+      useCanvas: false,
       mousePositionLast: { x: 0, y: 0 },
       dragMoveRel: { x: 0, y: 0 },
       dragStart: { x: 0, y: 0 },
@@ -93,9 +99,45 @@ export default defineComponent({
       isSelectionEvent: false,
       panZoomInstance: null,
       dragSelection: [],
+      selectionWrapperResizer: null,
     };
   },
+  mounted() {
+    this.selectionWrapperResizer = new ResizerComplex(
+      this.getSelectionWrapper(),
+      this,
+      () => {
+        this.getEntries().forEach((e) => {
+          e.classList.add("resizable-prevent-input");
+        });
+      },
+      () => {
+        this.drawCanvas();
+      },
+      () => {
+        this.getEntries().forEach((e) => {
+          e.classList.remove("resizable-prevent-input");
+        });
+      }
+    );
 
+    let vm = this;
+    window.onresize = function () {
+      vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
+      vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
+      vm.getCanvas().width = vm.$el.clientWidth;
+      vm.getCanvas().height = vm.$el.clientHeight;
+    };
+
+    vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
+    vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
+    vm.getCanvas().width = vm.$el.clientWidth;
+    vm.getCanvas().height = vm.$el.clientHeight;
+
+    this.$el.addEventListener("keyup", this.keyPressed);
+
+    this.drawCanvas();
+  },
   computed: {},
   provide() {
     return {
@@ -103,6 +145,80 @@ export default defineComponent({
     };
   },
   methods: {
+    keyPressed(e: KeyboardEvent) {
+      var fs = require("fs");
+
+      if (e.ctrlKey) {
+        switch (e.key) {
+          case "y":
+            let json = JSON.stringify(this.$store.state.loadedFile);
+
+            console.log();
+            fs.writeFileSync("C:\\OneDrive\\Desktop\\insight.in", json);
+
+            break;
+          case "x":
+            let jsonRead = fs.readFileSync(
+              "C:\\OneDrive\\Desktop\\insight.in",
+              "utf8"
+            );
+
+            let test: InsightFile = JSON.parse(jsonRead);
+
+            this.$store.commit(MutationTypes.LOAD_FILE, { insightFile: test });
+            break;
+        }
+      }
+    },
+    drawCanvas() {
+      let canvas: HTMLCanvasElement = this.getCanvas() as HTMLCanvasElement;
+
+      let context = canvas.getContext("2d");
+
+      if (context == null) {
+        return;
+      }
+
+      context.fillStyle = "rgb(53,53,53)";
+
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      if (this.useCanvas) {
+        context.save();
+
+        context.translate(
+          this.getCurrentTransform().x,
+          this.getCurrentTransform().y
+        );
+        context.scale(
+          this.getCurrentTransform().scale,
+          this.getCurrentTransform().scale
+        );
+
+        // scale the context
+
+        context.fillStyle = "rgb(0,100,0)";
+
+        context.fillRect(0, 0, 150, 100);
+
+        let w = canvas.width,
+          h = canvas.height;
+
+        context.beginPath();
+        for (let x = 0; x <= w; x += 260) {
+          context.moveTo(x, 0);
+          context.lineTo(x, h);
+          for (let y = 0; y <= h; y += 260) {
+            context.moveTo(0, y);
+            context.lineTo(w, y);
+          }
+        }
+        context.stroke();
+
+        context.restore();
+      }
+    },
     onpaste(e: ClipboardEvent) {
       console.log(e.clipboardData?.getData("text"));
 
@@ -188,20 +304,33 @@ export default defineComponent({
       }
     },
     entrySelected(entry: any, type: "add" | "single" | "flip") {
-      console.log("type: " + type + Math.random());
+      this.entriesSelected([entry], type);
+    },
+    entriesSelected(entries: HTMLElement[], type: "add" | "single" | "flip") {
+      console.log(
+        "type: " + type + " - " + entries.length + " " + Math.random()
+      );
       switch (type) {
-        case "add":
-          entry.classList.add("workspace-is-selected");
-          break;
         case "single":
-          this.clearSelection();
-          entry.classList.add("workspace-is-selected");
+          this.getEntries().forEach((e) =>
+            e.classList.remove("workspace-is-selected")
+          );
+        case "add":
+          entries.forEach((e) => e.classList.add("workspace-is-selected"));
           break;
         case "flip":
           // ctrl click on an entry
-          entry.classList.toggle("workspace-is-selected");
+          entries.forEach((e) => e.classList.toggle("workspace-is-selected"));
           break;
       }
+
+      this.dragSelection = Array.from(
+        this.getSelectedEntries()
+      ) as HTMLElement[];
+      WSUtils.Events.dragStarting(this.dragSelection, this);
+      this.selectionWrapperResizer?.setChildren(this.dragSelection);
+      this.dragSelection.push(this.getSelectionWrapper());
+
       this.updateSelectionWrapper();
     },
     dragover(e: any) {
@@ -318,27 +447,16 @@ export default defineComponent({
       //   this.isSelectionEvent = false;
       //   return;
       // }
-      console.log("clear selection");
-
-      Array.from(this.getSelectedEntries()).forEach((el) =>
-        el.classList.remove("workspace-is-selected")
-      );
-      this.updateSelectionWrapper();
+      this.entriesSelected([], "single");
     },
     selectAll: function () {
-      console.log("selectAll");
-      let e: HTMLCollectionOf<Element> = this.getEntries();
-      let s: HTMLCollectionOf<Element> = this.getSelectedEntries();
+      let e: HTMLElement[] = this.getEntries();
+      let s: HTMLElement[] = this.getSelectedEntries();
       if (e.length != s.length) {
-        Array.from(e).forEach((el) =>
-          el.classList.add("workspace-is-selected")
-        );
+        this.entriesSelected(e, "add");
       } else {
-        Array.from(e).forEach((el) =>
-          el.classList.toggle("workspace-is-selected")
-        );
+        this.entriesSelected(e, "flip");
       }
-      this.updateSelectionWrapper();
     },
     getNodes() {
       return this.$props.model?.entries;
@@ -357,33 +475,24 @@ export default defineComponent({
     getSelectionRectangle: function (): Element {
       return this.$el.querySelectorAll(".rectangle-selection")[0];
     },
-    getSelectionWrapper: function (): Element {
+    getCanvas: function (): HTMLCanvasElement {
+      return this.$el.querySelectorAll(".workspace-canvas")[0];
+    },
+    getSelectionWrapper: function (): HTMLElement {
       return this.$el.querySelectorAll(".rectangle-selection-wrapper")[0];
     },
-    getSelectedEntries: function (): HTMLCollectionOf<Element> {
-      return this.$el.querySelectorAll(".workspace-is-selected");
+    getSelectedEntries: function (): HTMLElement[] {
+      return Array.from(
+        this.$el.querySelectorAll(".workspace-is-selected")
+      ) as HTMLElement[];
     },
-    getEntries: function (): HTMLCollectionOf<Element> {
-      return this.$el.querySelectorAll(".ws-entry");
+    getEntries: function (): HTMLElement[] {
+      return Array.from(
+        this.$el.querySelectorAll(".ws-entry")
+      ) as HTMLElement[];
     },
     getCoordinatesFromElement(e: any) {
-      let results: string = e.style.transform;
-      results = results
-        .replace("translate3d(", "")
-        .replace(")", "")
-        .replaceAll("px", "")
-        .replaceAll(" ", "");
-      let values: number[] = results.split(",").map(Number);
-      let w: number = parseInt(e.offsetWidth),
-        h: number = parseInt(e.offsetHeight);
-      return {
-        x: Math.round(values[0]),
-        y: Math.round(values[1]),
-        w: Math.round(w),
-        h: Math.round(h),
-        x2: Math.round(values[0] + w),
-        y2: Math.round(values[1] + h),
-      };
+      return getCoordinatesFromElement(e);
     },
     dragMouseDown: function (e: MouseEvent) {
       this.mouseDownB = e.ctrlKey;
@@ -391,9 +500,13 @@ export default defineComponent({
       if (e.ctrlKey) {
         this.dragMoveRel = { x: e.clientX, y: e.clientY };
 
-        this.dragSelection = Array.from(this.getSelectedEntries());
+        this.dragSelection = Array.from(
+          this.getSelectedEntries()
+        ) as HTMLElement[];
 
         WSUtils.Events.dragStarting(this.dragSelection, this);
+
+        this.selectionWrapperResizer?.setChildren(this.dragSelection);
 
         this.dragSelection.push(this.getSelectionWrapper());
       } else {
@@ -429,7 +542,6 @@ export default defineComponent({
         y2 = -Infinity;
 
       Array.from(this.getSelectedEntries()).forEach((el) => {
-       
         let coord = this.getCoordinatesFromElement(el);
 
         x = x > coord.x ? coord.x : x;
@@ -445,6 +557,9 @@ export default defineComponent({
 
       selectionRectangle.style.visibility =
         this.getSelectedEntries().length > 0 ? "visible" : "hidden";
+    },
+    getCurrentTransform(): { scale: number; x: number; y: number } {
+      return this.panZoomInstance.getTransform();
     },
     dragMouseMove: function (e: MouseEvent) {
       let comp = this;
@@ -511,16 +626,18 @@ export default defineComponent({
         let coordRect = this.getCoordinatesFromElement(selectionRectangle);
         let comp = this;
 
-        this.clearSelection();
-        Array.from(this.getEntries()).forEach((el) => {
-          let coordEntry = comp.getCoordinatesFromElement(el);
+        let entriesInside: HTMLElement[] = [];
 
-          if (WSUtils.intersectRect(coordEntry, coordRect)) {
-            el.classList.add("workspace-is-selected");
-          }
-        });
+        entriesInside.push(
+          ...this.getEntries().filter((el) => {
+            return WSUtils.intersectRect(
+              comp.getCoordinatesFromElement(el),
+              coordRect
+            );
+          })
+        );
 
-        this.updateSelectionWrapper();
+        this.entriesSelected(entriesInside, "single");
 
         selectionRectangle.style.visibility = "hidden";
       }
@@ -529,10 +646,12 @@ export default defineComponent({
     },
 
     onPanStart(e: any) {
-      this.$el.style.backgroundColor = switcher
-        ? "rgb(50, 50, 50)"
-        : "rgb(50, 50, 51)";
-      switcher = !switcher;
+      // this.$el.style.backgroundColor = switcher
+      //   ? "rgb(50, 50, 50)"
+      //   : "rgb(50, 50, 51)";
+      // switcher = !switcher;
+
+      this.drawCanvas();
       // hide nodes die nicht visible sind
     },
     beforeWheelHandler(e: any) {
@@ -557,8 +676,15 @@ var switcher = false;
   width: 100%;
   height: 100%;
   position: absolute;
-  background-color: rgb(53, 53, 53);
+  background-color: rgba(53, 53, 53, 0);
   outline: none;
+
+  canvas {
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
 }
 
 .workspace-is-selected {
@@ -575,20 +701,58 @@ var switcher = false;
   transform: translate3d(0px, 0px, 0px);
   background-color: rgba(57, 215, 255, 0.284);
   z-index: 1000;
+
+  visibility: hidden;
 }
-.ws-entry{
+.ws-entry {
   z-index: 100;
 }
+
+@mixin theme() {
+  width: 15px;
+  height: 15px;
+  background: rgb(218, 218, 218);
+  position: absolute;
+  z-index: 5000;
+}
+
+div .resizer-top-right {
+  @include theme;
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+}
+div .resizer-bottom-right {
+  @include theme;
+  bottom: 0;
+  right: 0;
+  transform-origin: right bottom;
+  cursor: se-resize;
+}
+div .resizer-bottom-left {
+  @include theme;
+  bottom: 0;
+  left: 0;
+  cursor: ne-resize;
+}
+div .resizer-top-left {
+  @include theme;
+  top: 0;
+  left: 0;
+  cursor: se-resize;
+}
+
 .rectangle-selection-wrapper {
   position: absolute;
   width: 0px;
   height: 0px;
   transform: translate3d(0px, 0px, 0px);
-  background-color: rgba(140, 228, 250, 0.452);
-  border: 2px solid  rgba(57, 215, 255, 0.76);
-  z-index: 10;
+  background-color: rgba(140, 228, 250, 0.151);
+  border: 2px solid rgba(57, 215, 255, 0.76);
+  z-index: 4000;
   padding: 10px;
   margin: -10px;
+  visibility: hidden;
 }
 
 .vue-pan-zoom-scene {

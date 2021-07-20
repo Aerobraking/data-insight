@@ -5,9 +5,8 @@
     @mouseup.stop
     @mousemove.stop
     v-on:dblclick.stop.prevent=""
-        :class="{ opaque: opaque }"
+    :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
-
   >
     <div
       @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
@@ -196,10 +195,9 @@ export default defineComponent({
 <style scoped lang="scss">
 $black: 25px;
 
- .opaque {
-    overflow: hidden;
-  }
-
+.opaque {
+  overflow: hidden;
+}
 
 .ws-folder-window-wrapper {
   resize: both;
@@ -216,10 +214,8 @@ $black: 25px;
   box-sizing: border-box;
   border-radius: 0px;
   text-align: left;
-  vertical-align: top;
-  overflow: visible;
+  vertical-align: top; 
 
- 
   .viewport {
     padding: 10px;
     overflow-x: visible;

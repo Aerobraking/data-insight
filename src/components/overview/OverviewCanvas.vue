@@ -119,7 +119,7 @@ const column = 950;
 export default defineComponent({
   name: "OverviewCanvas",
   created: function () {
-    window.addEventListener("keyup", this.keyPressed);
+    this.$el.addEventListener("keyup", this.keyPressed);
   },
   props: {
     model: Overview,
@@ -141,7 +141,7 @@ export default defineComponent({
       searchString: "",
       breadcumbs: "",
       watchReady: false,
-      layoutToggle: true,
+      layoutToggle: false,
       showNames: true,
       showFiles: false,
       showImages: false,
@@ -281,7 +281,9 @@ export default defineComponent({
 
     addFolder(path: string) {},
     addData(parent: TreeNode | undefined, pathRoot: string) {
-      function getFiles(dir: string, parent: TreeNode, hue: number = 0) {
+
+
+      function getFiles(dir: string, parent: TreeNode, hue: number = 0,maxDepth:number=10) {
         let files = fs.readdirSync(dir);
         let index = 0;
 
@@ -290,6 +292,8 @@ export default defineComponent({
         //   const fileStat = fs.lstatSync(filePath);
         //   return fileStat.isDirectory();
         // });
+
+
 
         files.forEach((file: any) => {
           const filePath = path.join(dir, file);
@@ -303,6 +307,7 @@ export default defineComponent({
 
           child.depthCalc();
           child.x = child.depth * column;
+          child.y = (parent.y!=undefined? parent.y:0) + (1000/Math.pow(child.depth,2)) * index ;
 
           if (!child.isDirectory) {
             var fileSizeInBytes = fileStat.size;
@@ -315,12 +320,14 @@ export default defineComponent({
 
           // Convert the file size to megabytes (optional)
           parent.children.push(child);
-          if (child.isDirectory()) {
-            getFiles(filePath, child, hue);
+          if (child.isDirectory()&& child.depth<maxDepth) {
+            getFiles(filePath, child, hue,maxDepth);
           }
           index++;
         });
       }
+
+      let maxDepth=5;
 
       let rootFile: TreeNode = new TreeNode(pathRoot);
       if (parent != undefined) {
@@ -336,7 +343,7 @@ export default defineComponent({
       rootFile.setIsDirectory(fs.lstatSync(rootFile.path).isDirectory());
 
       if (rootFile.isDirectory()) {
-        getFiles(pathRoot, rootFile);
+        getFiles(pathRoot, rootFile,0,maxDepth);
       }
 
       function calculateSize(root: TreeNode): number {
@@ -532,10 +539,23 @@ console.log();
     toggleLayout: function () {
       this.layoutToggle = !this.layoutToggle;
 
-      if (this.layoutToggle) {
-        incrementNumber(0, 1.5, (value) => {
-          // @ts-ignore: Unreachable code error
-          this.graph.d3Force(
+      if (this.layoutToggle||true) {
+        // incrementNumber(0, 5.5, (value) => {
+        //   // @ts-ignore: Unreachable code error
+        //   this.graph.d3Force(
+        //     "x",
+        //     // @ts-ignore: Unreachable code error
+        //     d3
+        //       .forceX()
+        //       .x(function (d: any) {
+        //         return (d.depth + 0) * column;
+        //       })
+        //       .strength(value)
+        //   );
+        // });
+
+ // @ts-ignore: Unreachable code error
+         this.graph.d3Force(
             "x",
             // @ts-ignore: Unreachable code error
             d3
@@ -543,12 +563,11 @@ console.log();
               .x(function (d: any) {
                 return (d.depth + 0) * column;
               })
-              .strength(value)
+              .strength(5)
           );
-        });
 
         // @ts-ignore: Unreachable code error
-        this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
+       // this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
 
         // @ts-ignore: Unreachable code error
         this.graph.d3Force(
@@ -571,7 +590,7 @@ console.log();
             .x(function (d: any) {
               return (d.depth + 0) * column;
             })
-            .strength(2.5)
+            .strength(8.5)
             .strength(0)
         );
 
@@ -643,17 +662,17 @@ console.log();
       ctx.stroke();
     },
     tick() {
-      // @ts-ignore: Unreachable code error
-      this.graph.d3Force(
-        "y",
         // @ts-ignore: Unreachable code error
-        d3
-          .forceY()
-          .y(function (d: any) {
-            return d.parent != undefined ? -d.parent.getY() : 0;
-          })
-          .strength(0.003)
-      );
+        this.graph.d3Force(
+          "y",
+          // @ts-ignore: Unreachable code error
+          d3
+            .forceY()
+            .y(function (d: any) {
+              return d.parent != undefined ? d.parent.getY() : 0;
+            })
+            .strength(0.15)
+        );
     },
     nodePaint(
       node: TreeNode,

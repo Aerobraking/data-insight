@@ -58,7 +58,7 @@ export default defineComponent({
       });
     },
     getSelectedViewIndex() {
-      return this.$store.state.selectedViewIndex;
+      return this.$store.state.loadedFile.selectedViewIndex;
     },
   },
   methods: {
@@ -69,7 +69,7 @@ export default defineComponent({
       this.$store.commit(MutationTypes.CREATE_OVERVIEW);
     },
     selectTab(i: number) {
-      this.$store.state.selectedViewIndex = i;
+      this.$store.state.loadedFile.selectedViewIndex = i;
       this.$store.getters.getViewList.forEach((entry: View, index: Number) => {
         entry.isActive = index === i;
       });

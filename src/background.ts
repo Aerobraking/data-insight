@@ -6,7 +6,7 @@ import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 
 import { utcFormat } from 'd3'
 const isDevelopment = process.env.NODE_ENV !== 'production'
-
+app.disableHardwareAcceleration()
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }

@@ -5,15 +5,42 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
+import { MutationTypes } from "./store/mutations/mutation-types";
+import { InsightFile } from "./store/state";
 
 export default defineComponent({
   name: "App",
   components: {
     Tabs,
   },
-  computed: {
-    hello() {
-      this.$store.getters.doubledCounter;
+  computed: {},
+  mounted() {
+    document.addEventListener("keyup", this.keyPressed);
+  },
+  methods: {
+    keyPressed(e: KeyboardEvent) {
+      var fs = require("fs");
+
+      if (e.ctrlKey) {
+        switch (e.key) {
+          case "y":
+          
+
+            break;
+          case "x":
+            console.log("load");
+            
+            let jsonRead = fs.readFileSync(
+              "C:\\OneDrive\\Desktop\\insight.in",
+              "utf8"
+            );
+
+            let test: InsightFile = JSON.parse(jsonRead);
+
+            this.$store.commit(MutationTypes.LOAD_FILE, { insightFile: test });
+            break;
+        }
+      }
     },
   },
 });

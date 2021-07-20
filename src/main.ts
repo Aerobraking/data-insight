@@ -8,4 +8,4 @@ import wsentryframe from "./components/workspace/WorkspaceEntryFrame.vue";
 const app = createApp(App);
 app.use(store).use(panZoom).mount('#app');
 app.component('wsentryframe', wsentryframe);
- 
+    

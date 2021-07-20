@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
-import { State } from '../state' 
+import { InsightFile, State } from '../state'
 import { View } from '../model/DataModel'
 import { Overview } from '../model/OverviewDataModel'
 import { Workspace, WorkspaceEntry } from '../model/Workspace'
@@ -15,6 +15,9 @@ export type Mutations<S = State> = {
     model: Workspace,
     listFiles: Array<WorkspaceEntry>,
   }): void
+  [MutationTypes.LOAD_FILE](state: S, payload: {
+    insightFile: InsightFile
+  }): void
 }
 
 /**
@@ -28,12 +31,17 @@ export const mutations: MutationTree<State> & Mutations = {
   }) {
     payload.model.entries.push(...payload.listFiles);
   },
+  [MutationTypes.LOAD_FILE](state, payload: {
+    insightFile: InsightFile
+  }) {
+    state.loadedFile = payload.insightFile;
+  },
 
   [MutationTypes.CREATE_WORKSPACE](state) {
-    state.views.push(new Workspace());
-    let lastIndex = state.views.length - 1;
-    state.selectedViewIndex = lastIndex;
-    state.views.forEach(
+    state.loadedFile.views.push(new Workspace());
+    let lastIndex = state.loadedFile.views.length - 1;
+    state.loadedFile.selectedViewIndex = lastIndex;
+    state.loadedFile.views.forEach(
       (entry: View, index: Number) => {
         entry.isActive = index === lastIndex;
       }
@@ -41,14 +49,14 @@ export const mutations: MutationTree<State> & Mutations = {
   },
 
   [MutationTypes.CREATE_OVERVIEW](state) {
-    state.views.push(new Overview());
-    let lastIndex = state.views.length - 1;
-    state.selectedViewIndex = lastIndex;
-    state.views.forEach(
+    state.loadedFile.views.push(new Overview());
+    let lastIndex = state.loadedFile.views.length - 1;
+    state.loadedFile.selectedViewIndex = lastIndex;
+    state.loadedFile.views.forEach(
       (entry: View, index: Number) => {
         entry.isActive = index === lastIndex;
       }
     );
   },
 }
- 
+

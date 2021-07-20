@@ -1,18 +1,26 @@
 import { Overview } from "./model/OverviewDataModel"
 import { Workspace } from "./model/Workspace"
 
- 
 
-
-export const state: {
-    counter: number,
+export type InsightFile = {
     views: Array<Workspace | Overview>,
     selectedViewIndex: number
+}
+
+export const state: {
+    // views: Array<Workspace | Overview>,
+    // selectedViewIndex: number,
+    loadedFile: InsightFile
 } = {
-    counter: 0,
-    views: [
-       
-    ],
-    selectedViewIndex: 0
+    // views: [
+
+    // ],
+    // selectedViewIndex: 0,
+    loadedFile: {
+        views: [
+
+        ],
+        selectedViewIndex: 0
+    }
 }
 export type State = typeof state

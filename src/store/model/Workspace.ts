@@ -19,8 +19,9 @@ export class Workspace extends View {
 
 
 export class WorkspaceEntry {
-    constructor(componentname: string) {
+    constructor(componentname: string, isResizable: boolean) {
         this.id = Math.random() * 1000000;
+        this.isResizable = isResizable;
         this.componentname = componentname;
     }
     componentname: string = "";
@@ -29,14 +30,14 @@ export class WorkspaceEntry {
     id: number = 0;
     isSelected: boolean = false;
     name: string = "";
-    isResizable: boolean = false; 
+    isResizable: boolean = false;
     width: number = 220;
     height: number = 180;
 }
 
 export class WorkspaceEntryFile extends WorkspaceEntry {
     constructor(path: string) {
-        super("wsentry");
+        super("wsentry", false);
         this.path = path;
         this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
         this.name = this.filename;
@@ -50,7 +51,7 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
 
 export class WorkspaceEntryImage extends WorkspaceEntry {
     constructor(path: string) {
-        super("wsentryimage");
+        super("wsentryimage", true);
 
         this.path = path;
         this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
@@ -69,7 +70,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
 
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
     constructor(url: string) {
-        super("wsentryyoutube");
+        super("wsentryyoutube", true);
 
         this.videoId = WorkspaceEntryYoutube.getId(url);
         this.url = url;
@@ -109,7 +110,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
 
 export class WorkspaceEntryTextArea extends WorkspaceEntry {
     constructor(text: string = "") {
-        super("wsentrytextarea");
+        super("wsentrytextarea", true);
         this.width = 400;
         this.height = 250;
     }
@@ -118,7 +119,7 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
 }
 export class WorkspaceEntryFrame extends WorkspaceEntry {
     constructor(text: string = "") {
-        super("wsentryframe");
+        super("wsentryframe", true);
         this.width = 1400;
         this.height = 1400;
     }
@@ -131,7 +132,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
     public static viewid: string = "wsentryfolderview";
 
     constructor(path: string) {
-        super("wsentryfolderview");
+        super("wsentryfolderview", true);
         this.path = path;
         this.defaultPath = path;
         this.foldername = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";

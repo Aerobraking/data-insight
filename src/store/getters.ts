@@ -4,15 +4,13 @@ import { Workspace } from './model/Workspace'
 import { State } from './state'
 
 export type Getters = {
-  doubledCounter(state: State): number
+  
   getViewList(state: State): Array<Workspace|Overview>
 }
 
 export const getters: GetterTree<State, State> & Getters = {
-  doubledCounter: (state) => {
-    return state.counter * 2
-  },
+  
   getViewList: (state) => {
-    return state.views;
+    return state.loadedFile.views;
   },
 }

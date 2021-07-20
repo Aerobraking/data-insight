@@ -1,30 +1,4 @@
-export class Huhu {
-
-    private static _instance = new Huhu();
-    private constructor() {
-
-    }
-    static get instance() {
-        return this._instance;
-    }
-}
-
-
-
-
-const Ss: Huhu = {
-
-};
-
-
-export const foo = Huhu.instance;
-
-
-
-
-import { WorkspaceEntry } from "@/store/model/Workspace";
-
-
+ 
 export interface Listener {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void;
 }
@@ -39,11 +13,18 @@ export interface WorkspaceViewIfc {
         y2: number,
     };
 
+    getCurrentTransform(): { scale: number; x: number; y: number };
     getSelectionRectangle(): Element;
-    getSelectedEntries(): HTMLCollectionOf<Element>;
-    getEntries(): HTMLCollectionOf<Element>;
+    getSelectedEntries(): HTMLElement[];
+    getEntries(): HTMLElement[];
 }
 
+/**
+ * 
+ * @param r1 rectangle that is tested to be inside r2
+ * @param r2 
+ * @returns true if r1 is completly inside r2
+ */
 export function intersectRect(
     r1: { x: number; y: number; x2: number; y2: number },
     r2: { x: number; y: number; x2: number; y2: number }
@@ -73,16 +54,10 @@ export class Dispatcher {
 
 
     private static _instance = new Dispatcher();
-    private constructor() {
+    private constructor() { }
 
-    }
     static get instance() {
         return this._instance;
-    }
-
-
-    test(): void {
-
     }
 
     callbacks: Listener[] = [];
@@ -92,7 +67,6 @@ export class Dispatcher {
             c.dragStarting(selection, workspace);
         });
     }
-
 
     registerCallback(callback: Listener) {
         this.callbacks.push(callback);
@@ -104,7 +78,6 @@ export class Dispatcher {
             this.callbacks.splice(index, 1);
         }
     }
-
 
 }
 

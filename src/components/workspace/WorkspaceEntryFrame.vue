@@ -31,7 +31,7 @@ _.once(() => {
         if (e.classList.contains("ws-entry-frame-wrapper")) {
           let coordFrame = workspace.getCoordinatesFromElement(e);
 
-          Array.from(workspace.getEntries()).forEach((el) => {
+          workspace.getEntries().forEach((el) => {
             let coordEntry = workspace.getCoordinatesFromElement(el);
 
             if (el != e && WSUtils.insideRect(coordFrame, coordEntry)) {
@@ -41,7 +41,7 @@ _.once(() => {
         }
       }
 
-      selection.push(...addToSelection); 
+      selection.push(...addToSelection);
     },
   });
 })();
