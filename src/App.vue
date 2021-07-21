@@ -73,7 +73,7 @@ body {
   user-select: none;
   margin: 0;
   padding: 0;
-  background-color: rgb(53,53,53);
+  background-color: rgb(53, 53, 53);
 }
 #app {
   font-family: Lato, Avenir, Helvetica, Arial, sans-serif;

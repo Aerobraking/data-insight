@@ -64,7 +64,7 @@ import { defineComponent } from "vue";
 import wsentries from "./WorkspaceEntries.vue";
 import { getCoordinatesFromElement, ResizerComplex } from "@/utils/resize";
 import { InsightFile } from "@/store/state";
-import { serialize } from "class-transformer";
+import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
 
 const fs = require("fs");
@@ -368,6 +368,20 @@ export default defineComponent({
             f.path.endsWith("png")
           ) {
             listFiles.push(new WorkspaceEntryImage(f.path));
+          } else if (f.path.endsWith("ins")) {
+            let tabs: HTMLElement[] = Array.from(
+              document.querySelectorAll(".close-file-anim")
+            ) as HTMLElement[];
+
+            tabs.forEach((t) => {
+              t.classList.add("close-file");
+            });
+
+            let jsonRead = fs.readFileSync(f.path, "utf8");
+            let test: InsightFile = deserialize(InsightFile, jsonRead);
+            this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
+              insightFile: test,
+            });
           } else {
             listFiles.push(new WorkspaceEntryFile(f.path));
           }
@@ -705,11 +719,11 @@ var switcher = false;
 
   .close-file {
     opacity: 0;
-    transition: all 0.4s;
+    transition: all 0.25s;
   }
 
   .zoomable {
-    animation: fade-in 0.4s ease;
+    animation: fade-in 0.25s ease;
   }
 
   canvas {

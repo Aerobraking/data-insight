@@ -110,11 +110,11 @@ div.tabs__header a {
 .close-file {
   opacity: 0;
   transform: translateX(-250px);
-  transition: all 0.4s;
+  transition: all 0.25s;
 }
 
 .tab-entry {
-  animation: slide-up 0.4s ease;
+  animation: slide-up 0.25s ease;
 }
 
 @keyframes slide-up {

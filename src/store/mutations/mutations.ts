@@ -39,8 +39,8 @@ export const mutations: MutationTree<State> & Mutations = {
       state.loadedFile = new InsightFile();
       setTimeout(function () {
         state.loadedFile = payload.insightFile;
-      }, 50);
-    }, 400);
+      }, 20);
+    }, 250);
   },
 
   [MutationTypes.CREATE_WORKSPACE](state) {
