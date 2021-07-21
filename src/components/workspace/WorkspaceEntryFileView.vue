@@ -1,6 +1,7 @@
 <template>
   <div
-   @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
+    ref="el"
+    @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
     @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
@@ -12,7 +13,6 @@
     <div class="ws-entry-file-symbol"></div>
     <p class="ws-entry-file-name">{{ entry.name }}</p>
   </div>
-  
 </template>
 
 <script lang="ts">
@@ -20,10 +20,14 @@ const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
 import { WorkspaceEntryFile } from "../../store/model/Workspace";
+import { setupEntry } from "./WorkspaceUtils";
 export default defineComponent({
-  name: "wsentry",
+  name: "wsentryfile",
   data() {
     return {};
+  },
+  setup(props) {
+    return setupEntry(props);
   },
   props: {
     entry: WorkspaceEntryFile,
@@ -38,7 +42,7 @@ export default defineComponent({
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },
-    
+
     doubleClick(e: MouseEvent) {
       e.preventDefault();
 

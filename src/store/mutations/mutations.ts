@@ -15,7 +15,7 @@ export type Mutations<S = State> = {
     model: Workspace,
     listFiles: Array<WorkspaceEntry>,
   }): void
-  [MutationTypes.LOAD_FILE](state: S, payload: {
+  [MutationTypes.LOAD_INSIGHT_FILE](state: S, payload: {
     insightFile: InsightFile
   }): void
 }
@@ -31,10 +31,16 @@ export const mutations: MutationTree<State> & Mutations = {
   }) {
     payload.model.entries.push(...payload.listFiles);
   },
-  [MutationTypes.LOAD_FILE](state, payload: {
+  [MutationTypes.LOAD_INSIGHT_FILE](state, payload: {
     insightFile: InsightFile
   }) {
-    state.loadedFile = payload.insightFile;
+
+    setTimeout(function () {
+      state.loadedFile = new InsightFile();
+      setTimeout(function () {
+        state.loadedFile = payload.insightFile;
+      }, 50);
+    }, 400);
   },
 
   [MutationTypes.CREATE_WORKSPACE](state) {

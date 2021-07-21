@@ -1,22 +1,11 @@
 <script lang="ts">
 import { Workspace } from "../../store/model/Workspace";
-import { defineComponent } from "vue";
-import wsentry from "./WorkspaceEntryFileView.vue";
-import wsentrytextarea from "./WorkspaceEntryTextareaView.vue";
-import wsentryfolderview from "./WorkspaceEntryFolderView.vue";
-import wsentryimage from "./WorkspaceEntryImageView.vue";
-import wsentryyoutube from "./WorkspaceEntryYoutubeView.vue";
-// import wsentryframe from "./WorkspaceEntryFrame.vue";
+import { defineComponent } from "vue"; 
 
 export default defineComponent({
   name: "Nodes",
   components: {
-    wsentry,
-    wsentryfolderview,
-    wsentryimage,
-    wsentrytextarea,
-    wsentryyoutube,
-//    wsentryframe,
+ 
   },
   props: {
     model: Workspace,

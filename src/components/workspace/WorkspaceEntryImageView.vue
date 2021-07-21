@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="el"
     @mousemove.stop
     @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.stop.exact="entrySelectedLocal('single')"
@@ -14,10 +15,14 @@ const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../../store/model/Workspace";
+import { setupEntry } from "./WorkspaceUtils";
 export default defineComponent({
   name: "wsentryimage",
   data() {
     return {};
+  },
+  setup(props) {
+    return setupEntry(props);
   },
   props: {
     entry: WorkspaceEntryImage,
@@ -114,8 +119,8 @@ export default defineComponent({
 <style scoped lang="scss">
 .workspace-is-selected {
   /* offset-x | offset-y | blur-radius | spread-radius | color */
- // box-shadow: 0px 0px 0px 6px #f81fc2;
- // background-color: #f81fc252;
+  // box-shadow: 0px 0px 0px 6px #f81fc2;
+  // background-color: #f81fc252;
 }
 
 .ws-entry-image-wrapper {

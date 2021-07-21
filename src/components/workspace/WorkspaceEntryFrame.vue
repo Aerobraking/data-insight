@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="el"
     @mousemove.stop
     @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.stop.exact="entrySelectedLocal('single')"
@@ -10,12 +11,12 @@
 </template>
 
 <script lang="ts">
-const { shell } = require("electron"); // deconstructing assignment
+const { shell } = require("electron");
 
 import { defineComponent } from "vue";
 import { WorkspaceEntryFrame } from "../../store/model/Workspace";
 import * as WSUtils from "./WorkspaceUtils";
-import { WorkspaceViewIfc } from "./WorkspaceUtils";
+import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 import * as _ from "underscore";
 
 _.once(() => {
@@ -24,7 +25,7 @@ _.once(() => {
       let addToSelection: Element[] = [];
 
       /**
-       * Collect entries that are inside frames.
+       * Collect entries that are inside frames and not yet selected.
        */
       for (let index = 0; index < selection.length; index++) {
         const e: any = selection[index];
@@ -34,7 +35,7 @@ _.once(() => {
           workspace.getEntries().forEach((el) => {
             let coordEntry = workspace.getCoordinatesFromElement(el);
 
-            if (el != e && WSUtils.insideRect(coordFrame, coordEntry)) {
+            if (el != e && WSUtils.insideRect(coordFrame, coordEntry) && !selection.includes(el)) {
               addToSelection.push(el);
             }
           });
@@ -43,11 +44,15 @@ _.once(() => {
 
       selection.push(...addToSelection);
     },
+    prepareFileSaving(): void {},
   });
 })();
 
 export default defineComponent({
   name: "wsentryframe",
+  setup(props) {
+    return setupEntry(props);
+  },
   data() {
     return {};
   },
@@ -92,3 +97,5 @@ export default defineComponent({
   margin: 0;
 }
 </style>
+
+ 

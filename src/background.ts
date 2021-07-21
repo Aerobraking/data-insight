@@ -1,16 +1,64 @@
 'use strict'
 
-import { ipcMain, app, protocol, BrowserWindow } from 'electron'
+import { ipcMain, app, protocol, BrowserWindow, dialog, webContents } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
-
 import { utcFormat } from 'd3'
+import { InsightFile } from './store/state'
+var fs = require("fs");
+var path = require('path');
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 app.disableHardwareAcceleration()
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
+
+
+
+
+
+ipcMain.on('open-insight-file', (event: any, arg: any) => {
+  const files = dialog.showOpenDialogSync({
+    filters: [{ name: "Insight File Type", extensions: ["ins"] }],
+    properties: ["openFile", "openFile"],
+  });
+
+  if (!files) { return; }
+
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('insight-file-selected', files[0]);
+  })
+
+  console.log(files);
+})
+
+
+ipcMain.on('save-insight-file', (event: any, arg: string) => {
+
+  dialog.showSaveDialog({}).then((result) => {
+
+    if (result.canceled) { return; }
+
+    let filepath = result.filePath;
+    let ext = path.extname(filepath);
+
+    if (ext !== ".ins") {
+      filepath += ".ins";
+    }
+
+    fs.writeFile(filepath, arg, (err: any) => {
+      console.log(err);
+    });
+
+  }).catch((err) => {
+    console.log(err);
+  });
+
+  console.log("file saved");
+
+})
 
 async function createWindow() {
   // Create the browser window.
@@ -90,10 +138,7 @@ if (isDevelopment) {
 // const path = require('path');
 // const { webContents } = require('electron')
 
-// ipcMain.on('file-drop', (event: any, arg: any) => {
-//   console.log(arg) // prints "ping"
-//   loadFiles(arg);
-// })
+
 
 // async function getFiles(dir: string, parent: OverviewNode) {
 //   const files = fs.readdirSync(dir);

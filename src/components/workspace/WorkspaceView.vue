@@ -25,15 +25,15 @@
         minZoom: 0.03,
         maxZoom: 6,
         bounds: false,
-        initialX: model.initialX,
-        initialY: model.initialY,
-        initialZoom: model.initialZoom,
+        initialX: model.viewportTransform.x,
+        initialY: model.viewportTransform.y,
+        initialZoom: model.viewportTransform.scale,
         beforeWheel: beforeWheelHandler,
         beforeMouseDown: beforeMouseDownHandler,
       }"
       selector=".zoomable"
     >
-      <div class="zoomable">
+      <div class="zoomable close-file-anim">
         <div class="rectangle-selection"></div>
         <div class="rectangle-selection-wrapper"></div>
 
@@ -64,6 +64,8 @@ import { defineComponent } from "vue";
 import wsentries from "./WorkspaceEntries.vue";
 import { getCoordinatesFromElement, ResizerComplex } from "@/utils/resize";
 import { InsightFile } from "@/store/state";
+import { serialize } from "class-transformer";
+import _ from "underscore";
 
 const fs = require("fs");
 const path = require("path");
@@ -150,22 +152,25 @@ export default defineComponent({
 
       if (e.ctrlKey) {
         switch (e.key) {
-          case "y":
-            let json = JSON.stringify(this.$store.state.loadedFile);
+          case "k":
+            // console.log();
 
-            console.log();
-            fs.writeFileSync("C:\\OneDrive\\Desktop\\insight.in", json);
+            // let listEntries: HTMLElement[] = this.getEntries();
+
+            // for (let index = 0; index < listEntries.length; index++) {
+            //   const el: any = listEntries[index];
+
+            //   debugger;
+            //   let eVue = el.__vue_;
+            //   console.log(eVue);
+            // }
+
+            // let json = serialize(this.$store.state.loadedFile);
+
+            // fs.writeFileSync("C:\\OneDrive\\Desktop\\insight.in", json);
 
             break;
           case "x":
-            let jsonRead = fs.readFileSync(
-              "C:\\OneDrive\\Desktop\\insight.in",
-              "utf8"
-            );
-
-            let test: InsightFile = JSON.parse(jsonRead);
-
-            this.$store.commit(MutationTypes.LOAD_FILE, { insightFile: test });
             break;
         }
       }
@@ -561,6 +566,24 @@ export default defineComponent({
     getCurrentTransform(): { scale: number; x: number; y: number } {
       return this.panZoomInstance.getTransform();
     },
+    updateSelectionDrag: _.throttle((e: MouseEvent, comp: any) => {
+      var xOffT =
+        (comp.dragMoveRel.x - e.clientX) /
+        comp.panZoomInstance.getTransform().scale;
+      var yOffT =
+        (comp.dragMoveRel.y - e.clientY) /
+        comp.panZoomInstance.getTransform().scale;
+
+      comp.dragMoveRel = { x: e.clientX, y: e.clientY };
+
+      for (let index = 0; index < comp.dragSelection.length; index++) {
+        const e: any = comp.dragSelection[index];
+        let coord = comp.getCoordinatesFromElement(e);
+        e.style.transform = `translate3d(${coord.x - xOffT}px, ${
+          coord.y - yOffT
+        }px,0px)`;
+      }
+    }, 16),
     dragMouseMove: function (e: MouseEvent) {
       let comp = this;
 
@@ -601,7 +624,8 @@ export default defineComponent({
 
       if (this.mouseDownB) {
         if (e.ctrlKey) {
-          updateSelectionDrag();
+          // updateSelectionDrag();
+          this.updateSelectionDrag(e, this);
         }
       } else {
         if (selectionRectangle.style.visibility === "visible") {
@@ -609,6 +633,8 @@ export default defineComponent({
           updateSelectionRectangle();
         }
       }
+
+      this.drawCanvas();
     },
     dragMouseUp: function (e: MouseEvent) {
       console.log("dragMouseUp");
@@ -646,13 +672,11 @@ export default defineComponent({
     },
 
     onPanStart(e: any) {
-      // this.$el.style.backgroundColor = switcher
-      //   ? "rgb(50, 50, 50)"
-      //   : "rgb(50, 50, 51)";
-      // switcher = !switcher;
-
       this.drawCanvas();
-      // hide nodes die nicht visible sind
+
+      if (this.model != undefined) {
+        this.model.viewportTransform = this.getCurrentTransform();
+      }
     },
     beforeWheelHandler(e: any) {
       var shouldIgnore: boolean = !e.altKey;
@@ -671,7 +695,7 @@ var switcher = false;
 
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style   lang="scss">
+<style scoped  lang="scss">
 .wrapper {
   width: 100%;
   height: 100%;
@@ -679,11 +703,29 @@ var switcher = false;
   background-color: rgba(53, 53, 53, 0);
   outline: none;
 
+  .close-file {
+    opacity: 0;
+    transition: all 0.4s;
+  }
+
+  .zoomable {
+    animation: fade-in 0.4s ease;
+  }
+
   canvas {
     pointer-events: none;
     position: absolute;
     left: 0;
     top: 0;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 

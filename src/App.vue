@@ -3,10 +3,15 @@
 </template>
 
 <script lang="ts">
+import * as WSUtils from "./components/workspace/WorkspaceUtils";
+import { deserialize, plainToClass, serialize } from "class-transformer";
+import { ipcRenderer } from "electron";
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
+
+var fs = require("fs");
 
 export default defineComponent({
   name: "App",
@@ -15,29 +20,42 @@ export default defineComponent({
   },
   computed: {},
   mounted() {
-    document.addEventListener("keyup", this.keyPressed);
+    window.addEventListener("keyup", this.keyPressed, true);
+    const c = this;
+
+    ipcRenderer.on(
+      "insight-file-selected",
+      function (event: any, file: string) {
+        let tabs: HTMLElement[] = Array.from(
+          document.querySelectorAll(".close-file-anim")
+        ) as HTMLElement[];
+
+        tabs.forEach((t) => {
+          t.classList.add("close-file");
+        });
+
+        let jsonRead = fs.readFileSync(file, "utf8");
+        let test: InsightFile = deserialize(InsightFile, jsonRead);
+        c.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, { insightFile: test });
+      }
+    );
   },
   methods: {
     keyPressed(e: KeyboardEvent) {
-      var fs = require("fs");
-
       if (e.ctrlKey) {
         switch (e.key) {
-          case "y":
-          
-
+          case "o":
+            ipcRenderer.send("open-insight-file");
             break;
-          case "x":
-            console.log("load");
-            
-            let jsonRead = fs.readFileSync(
-              "C:\\OneDrive\\Desktop\\insight.in",
-              "utf8"
-            );
 
-            let test: InsightFile = JSON.parse(jsonRead);
+          case "y":
+            console.log("save");
+            WSUtils.Events.prepareFileSaving();
 
-            this.$store.commit(MutationTypes.LOAD_FILE, { insightFile: test });
+            let json = serialize(this.$store.state.loadedFile);
+
+            ipcRenderer.send("save-insight-file", json);
+
             break;
         }
       }
@@ -55,6 +73,7 @@ body {
   user-select: none;
   margin: 0;
   padding: 0;
+  background-color: rgb(53,53,53);
 }
 #app {
   font-family: Lato, Avenir, Helvetica, Arial, sans-serif;

@@ -81,8 +81,13 @@ export function getCoordinatesFromElement(e: any): ElementDimension {
         .replaceAll("px", "")
         .replaceAll(" ", "");
     let values: number[] = results.split(",").map(Number);
+
     let w: number = parseInt(e.offsetWidth),
         h: number = parseInt(e.offsetHeight);
+
+    w = w == NaN ? 0 : w;
+    h = h == NaN ? 0 : h;
+
     return {
         x: Math.round(values[0]),
         y: Math.round(values[1]),
@@ -133,7 +138,7 @@ export class ResizerComplex {
         console.log("setChildren: " + this.listChildren.length);
     }
 
-    constructor(element: HTMLElement, owner: ResizerComplexOwner, resizeStart: Function = () => { },resizeStep: Function = () => { }, resizeEnd: Function = () => { }) {
+    constructor(element: HTMLElement, owner: ResizerComplexOwner, resizeStart: Function = () => { }, resizeStep: Function = () => { }, resizeEnd: Function = () => { }) {
         this.elementSizeStart = getCoordinatesFromElement(element);
 
         this.resizeStep = resizeStep;

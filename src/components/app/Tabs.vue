@@ -1,7 +1,10 @@
 
 <template>
   <div class="tabs__header">
+    <a class="tab-create" @click="createWorkspaceTab()"> +W </a>
+    <a class="tab-create" @click="createOverviewTab()"> +O </a>
     <a
+      class="tab-entry close-file-anim"
       v-for="(view, index) in getViewList"
       @click="selectTab(index)"
       :key="view.key"
@@ -9,10 +12,7 @@
     >
       {{ view.name }}
     </a>
-    <a @click="createWorkspaceTab()"> +W </a>
-    <a @click="createOverviewTab()"> +O </a>
   </div>
- 
 
   <keep-alive>
     <div
@@ -35,7 +35,7 @@ import { defineComponent } from "vue";
 import Startscreen from "./StartScreen.vue";
 import workspaceview from "../workspace/WorkspaceView.vue";
 import overviewview from "../overview/OverviewView.vue";
-import { MutationTypes } from "@/store/mutations/mutation-types"; 
+import { MutationTypes } from "@/store/mutations/mutation-types";
 import { View } from "@/store/model/DataModel";
 
 export default defineComponent({
@@ -98,17 +98,47 @@ div.tabs__header a {
   text-align: left;
   padding: 10px 15px 0px 15px;
   border-radius: 5px;
-  margin: 5px 0 0 0;
-  margin-right: 5px;
+  margin: 5px 0px 0 6px;
+
   cursor: pointer;
   float: left;
-  background-color: rgb(100, 100, 100);
+  background-color: rgb(95, 95, 95);
+  white-space: nowrap;
+  border-bottom: 8px solid transparent;
 }
+
+.close-file {
+  opacity: 0;
+  transform: translateX(-250px);
+  transition: all 0.4s;
+}
+
+.tab-entry {
+  animation: slide-up 0.4s ease;
+}
+
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translateX(-250px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 div.tabs__header a.tab__selected {
   color: lavender;
   border-radius: 5px 5px 0 0;
-  border-bottom: 8px solid transparent;
+
   background-color: rgb(53, 53, 53);
+}
+div.tabs__header a.tab-create {
+  color: lavender;
+  border-radius: 5px 5px 0 0;
+  border-bottom: 8px solid transparent;
+  background-color: rgb(78, 78, 78);
 }
 .tab {
   display: inline-block;

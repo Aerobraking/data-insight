@@ -1,6 +1,38 @@
- 
+import { WorkspaceEntry } from "@/store/model/Workspace";
+import { ElementDimension, getCoordinatesFromElement } from "@/utils/resize";
+import {
+    onBeforeUnmount,
+    onMounted,
+    ref
+} from "vue";
+import * as WSUtils from "./WorkspaceUtils";
+
+export function setupEntry(props: any) {
+    const e: WorkspaceEntry = props.entry as WorkspaceEntry;
+    const el = ref(null);
+
+    let listener = {
+        dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void { },
+        prepareFileSaving(): void {
+            console.log(el.value); // <div>Hello Vue 3</div>
+            let coords: ElementDimension = getCoordinatesFromElement(el.value);
+            e.setDimensions(coords);
+        },
+    };
+
+    onMounted(() => {
+        WSUtils.Events.registerCallback(listener);
+    });
+    onBeforeUnmount(() => {
+        WSUtils.Events.unregisterCallback(listener);
+    });
+
+    return { el };
+}
+
 export interface Listener {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void;
+    prepareFileSaving(): void;
 }
 
 export interface WorkspaceViewIfc {
@@ -65,6 +97,11 @@ export class Dispatcher {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {
             c.dragStarting(selection, workspace);
+        });
+    }
+    prepareFileSaving(): void {
+        this.callbacks.forEach((c) => {
+            c.prepareFileSaving();
         });
     }
 

@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="el"
     @mousemove.stop
     @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.stop.exact="entrySelectedLocal('single')"
@@ -28,10 +29,14 @@ function htmlToElement(html: string) {
 
 import { defineComponent } from "vue";
 import { WorkspaceEntryYoutube } from "../../store/model/Workspace";
+import { setupEntry } from "./WorkspaceUtils";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {
     return {};
+  },
+  setup(props) {
+    return setupEntry(props);
   },
   props: {
     entry: WorkspaceEntryYoutube,
@@ -52,11 +57,8 @@ export default defineComponent({
 
     iframe.onload = function () {
       // alert("myframe is loaded");
-
-     
       // var iframeDocument =
       //   iframe.contentDocument || iframe.contentWindow.document;
-
       // let aTags = iframeDocument.getElementsByTagName("a");
       // for (var i = 0; i < aTags.length; i++) {
       //   aTags[i].setAttribute(
@@ -68,7 +70,6 @@ export default defineComponent({
     };
 
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
- 
 
     resize(this.$el);
   },
@@ -88,8 +89,6 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style lang="scss">
-
-
 .ws-entry-youtube-wrapper {
   //  resize: both;
   overflow: hidden;
@@ -103,12 +102,12 @@ export default defineComponent({
   background-size: cover;
   box-sizing: border-box;
 
-.workspace-is-selected {
-  /* offset-x | offset-y | blur-radius | spread-radius | color */
-  box-shadow: 0px 0px 0px 6px #f81fc2;
-  background-color: #f81fc252;
-  resize: none;
-}
+  .workspace-is-selected {
+    /* offset-x | offset-y | blur-radius | spread-radius | color */
+    box-shadow: 0px 0px 0px 6px #f81fc2;
+    background-color: #f81fc252;
+    resize: none;
+  }
 
   .inner-wrapper {
     position: relative;

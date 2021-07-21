@@ -1,21 +1,10 @@
 
 import { View } from "./DataModel";
-import * as _ from "underscore";
-import { rgb } from "d3";
+import * as _ from "underscore"; 
+import { Type } from "class-transformer";
+import { ElementDimension } from "@/utils/resize";
 
-export class Workspace extends View {
 
-    constructor(name: string = "New Workspace") {
-        super();
-        this.name = name;
-        this.type = "workspace";
-    }
-
-    initialZoom: number = 1;
-    initialX: number = 1;
-    initialY: number = 1;
-    entries: Array<WorkspaceEntry> = [];
-}
 
 
 export class WorkspaceEntry {
@@ -33,13 +22,22 @@ export class WorkspaceEntry {
     isResizable: boolean = false;
     width: number = 220;
     height: number = 180;
+
+    public setDimensions(d: ElementDimension) {
+        this.x = d.x;
+        this.y = d.y;
+        if (this.isResizable) {
+            this.width = d.w;
+            this.height = d.h;
+        }
+    }
 }
 
 export class WorkspaceEntryFile extends WorkspaceEntry {
     constructor(path: string) {
-        super("wsentry", false);
-        this.path = path;
-        this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
+        super("wsentryfile", false);
+        this.path = path != undefined ? path : "";
+        this.filename = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
         this.name = this.filename;
         this.width = 150;
         this.height = 150;
@@ -50,11 +48,11 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
 }
 
 export class WorkspaceEntryImage extends WorkspaceEntry {
-    constructor(path: string) {
+    constructor(path: string | undefined) {
         super("wsentryimage", true);
 
-        this.path = path;
-        this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
+        this.path = path != undefined ? path : "";
+        this.filename = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
         this.name = this.filename;
         this.width = 600;
         this.height = 600;
@@ -72,18 +70,18 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
     constructor(url: string) {
         super("wsentryyoutube", true);
 
-        this.videoId = WorkspaceEntryYoutube.getId(url);
         this.url = url;
         this.name = url;
         this.width = 600;
         this.height = 600;
     }
 
-    static getId(url: string) {
+    getId(): string {
         var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        var match = url.match(regExp);
+        var match = this.url.match(regExp);
 
         if (match && match[2].length == 11) {
+            this.videoId = match[2];
             return match[2];
         } else {
             return 'error';
@@ -98,12 +96,15 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
     }
 
     getHtmlCode(): string {
-        return '<iframe  sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" src="https://www.youtube-nocookie.com/embed/' + this.videoId + '" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
-        // return `<iframe width="1440" height="762" src="${this.getURLCookieFree()}"
-        // frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+        /**
+         * sandbox tags prevent opening any links to other websites.
+         */
+        return '<iframe  sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" '
+            + 'src="https://www.youtube-nocookie.com/embed/' + this.getId() + '" title="YouTube video player" frameborder="0" allow="accelerometer; '
+            + 'autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
     }
 
-    videoId: string;
+    private videoId: string | undefined;
     url: string;
     name: string;
 }
@@ -117,6 +118,7 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
 
     text: string = "";
 }
+
 export class WorkspaceEntryFrame extends WorkspaceEntry {
     constructor(text: string = "") {
         super("wsentryframe", true);
@@ -133,9 +135,9 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 
     constructor(path: string) {
         super("wsentryfolderview", true);
-        this.path = path;
-        this.defaultPath = path;
-        this.foldername = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
+        this.path = path != undefined ? path : "";
+        this.defaultPath = path != undefined ? path : "";
+        this.foldername = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
         this.name = this.foldername;
         this.id = Math.random() * 10000;
         this.sort = "asc";
@@ -164,3 +166,29 @@ export class FolderWindowFile {
     isDirectory: boolean;
 }
 
+export class Workspace extends View {
+
+    constructor(name: string = "New Workspace") {
+        super();
+        this.name = name;
+        this.type = "workspace";
+    }
+
+    viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.333 }
+
+    @Type(() => WorkspaceEntry, {
+        keepDiscriminatorProperty: true,
+        discriminator: {
+            property: 'componentname',
+            subTypes: [
+                { value: WorkspaceEntryFile, name: 'wsentryfile' },
+                { value: WorkspaceEntryImage, name: 'wsentryimage' },
+                { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' },
+                { value: WorkspaceEntryTextArea, name: 'wsentrytextarea' },
+                { value: WorkspaceEntryFolderWindow, name: 'wsentryfolderview' },
+                { value: WorkspaceEntryFrame, name: 'wsentryframe' },
+            ],
+        },
+    })
+    entries: Array<WorkspaceEntry> = [];
+}

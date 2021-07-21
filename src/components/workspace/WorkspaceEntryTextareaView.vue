@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="el"
     @mousemove.stop
     @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.stop.exact="entrySelectedLocal('single')"
@@ -7,8 +8,7 @@
     v-on:dblclick="doubleClick"
     class="ws-entry-textarea-wrapper"
   >
-    <textarea v-on:keyup.stop placeholder="Title"></textarea
-    >
+    <textarea v-on:keyup.stop placeholder="Title"></textarea>
   </div>
 </template>
 
@@ -17,10 +17,14 @@ const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
 import { WorkspaceEntryTextArea } from "../../store/model/Workspace";
+import { setupEntry } from "./WorkspaceUtils";
 export default defineComponent({
   name: "wsentrytextarea",
   data() {
     return {};
+  },
+  setup(props) {
+    return setupEntry(props);
   },
   props: {
     entry: WorkspaceEntryTextArea,

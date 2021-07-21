@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="el"
     @click.stop
     @mousedown.stop
     @mouseup.stop
@@ -77,6 +78,7 @@ import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
 } from "../../store/model/Workspace";
+import { setupEntry } from "./WorkspaceUtils";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
@@ -87,6 +89,9 @@ export default defineComponent({
       searchstring: "",
       parentDir: "",
     };
+  },
+  setup(props) {
+    return setupEntry(props);
   },
   props: {
     entry: WorkspaceEntryFolderWindow,
@@ -214,7 +219,7 @@ $black: 25px;
   box-sizing: border-box;
   border-radius: 0px;
   text-align: left;
-  vertical-align: top; 
+  vertical-align: top;
 
   .viewport {
     padding: 10px;
