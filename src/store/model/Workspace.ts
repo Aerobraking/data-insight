@@ -1,11 +1,8 @@
 
 import { View } from "./DataModel";
-import * as _ from "underscore"; 
+import * as _ from "underscore";
 import { Type } from "class-transformer";
 import { ElementDimension } from "@/utils/resize";
-
-
-
 
 export class WorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {

@@ -152,24 +152,6 @@ export default defineComponent({
 
       if (e.ctrlKey) {
         switch (e.key) {
-          case "k":
-            // console.log();
-
-            // let listEntries: HTMLElement[] = this.getEntries();
-
-            // for (let index = 0; index < listEntries.length; index++) {
-            //   const el: any = listEntries[index];
-
-            //   debugger;
-            //   let eVue = el.__vue_;
-            //   console.log(eVue);
-            // }
-
-            // let json = serialize(this.$store.state.loadedFile);
-
-            // fs.writeFileSync("C:\\OneDrive\\Desktop\\insight.in", json);
-
-            break;
           case "x":
             break;
         }
@@ -706,6 +688,56 @@ export default defineComponent({
 var switcher = false;
 </script>
 
+<style   lang="scss">
+
+@mixin theme() {
+  width: 15px;
+  height: 15px;
+  background: rgb(218, 218, 218);
+  position: absolute;
+  z-index: 5000;
+}
+
+div .resizer-top-right {
+  @include theme;
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+}
+div .resizer-bottom-right {
+  @include theme;
+  bottom: 0;
+  right: 0;
+  transform-origin: right bottom;
+  cursor: se-resize;
+}
+div .resizer-bottom-left {
+  @include theme;
+  bottom: 0;
+  left: 0;
+  cursor: ne-resize;
+}
+div .resizer-top-left {
+  @include theme;
+  top: 0;
+  left: 0;
+  cursor: se-resize;
+}
+
+.rectangle-selection-wrapper {
+  position: absolute;
+  width: 0px;
+  height: 0px;
+  transform: translate3d(0px, 0px, 0px);
+  background-color: rgba(140, 228, 250, 0.151);
+  border: 2px solid rgba(57, 215, 255, 0.76);
+  z-index: 4000;
+  padding: 10px;
+  margin: -10px;
+  visibility: hidden;
+}
+
+</style>
 
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
@@ -764,52 +796,6 @@ var switcher = false;
   z-index: 100;
 }
 
-@mixin theme() {
-  width: 15px;
-  height: 15px;
-  background: rgb(218, 218, 218);
-  position: absolute;
-  z-index: 5000;
-}
-
-div .resizer-top-right {
-  @include theme;
-  top: 0;
-  right: 0;
-  cursor: ne-resize;
-}
-div .resizer-bottom-right {
-  @include theme;
-  bottom: 0;
-  right: 0;
-  transform-origin: right bottom;
-  cursor: se-resize;
-}
-div .resizer-bottom-left {
-  @include theme;
-  bottom: 0;
-  left: 0;
-  cursor: ne-resize;
-}
-div .resizer-top-left {
-  @include theme;
-  top: 0;
-  left: 0;
-  cursor: se-resize;
-}
-
-.rectangle-selection-wrapper {
-  position: absolute;
-  width: 0px;
-  height: 0px;
-  transform: translate3d(0px, 0px, 0px);
-  background-color: rgba(140, 228, 250, 0.151);
-  border: 2px solid rgba(57, 215, 255, 0.76);
-  z-index: 4000;
-  padding: 10px;
-  margin: -10px;
-  visibility: hidden;
-}
 
 .vue-pan-zoom-scene {
   outline: none;

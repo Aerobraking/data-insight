@@ -1,1 +1,0 @@
-{"views":[{"id":0,"isActive":true,"name":"New Workspace","type":"workspace","initialZoom":1,"initialX":1,"initialY":1,"entries":[]}],"selectedViewIndex":0}
