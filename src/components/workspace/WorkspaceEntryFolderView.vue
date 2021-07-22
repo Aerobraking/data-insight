@@ -160,17 +160,24 @@ export default defineComponent({
       let c = this;
       if (this.entry != undefined) {
         const dir = this.entry.path;
-        fs.readdirSync(this.entry.path).forEach((file: any) => {
-          const filePath = path.join(dir, file);
-          const fileStat = fs.lstatSync(filePath);
-          list.push(
-            new FolderWindowFile(
-              filePath,
-              fileStat.isDirectory(),
-              fileStat.isFile ? fileStat.size : 0
-            )
-          );
-        });
+
+        try {
+          if (fs.existsSync(this.entry.path)) {
+            fs.readdirSync(this.entry.path).forEach((file: any) => {
+              const filePath = path.join(dir, file);
+              const fileStat = fs.lstatSync(filePath);
+              list.push(
+                new FolderWindowFile(
+                  filePath,
+                  fileStat.isDirectory(),
+                  fileStat.isFile ? fileStat.size : 0
+                )
+              );
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        }
       }
 
       list = list
