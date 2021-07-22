@@ -119,7 +119,7 @@ const column = 950;
 export default defineComponent({
   name: "OverviewCanvas",
   created: function () {
-    this.$el.addEventListener("keyup", this.keyPressed);
+  //  this.$el.addEventListener("keyup", this.keyPressed);
   },
   props: {
     model: Overview,
@@ -967,6 +967,8 @@ console.log();
       link.strength(function (link: TreeLink) {
         return Math.min((link.source.depth + 0) * 0.1, 1.5);
       });
+
+      this.toggleLayout();
     }
   },
 });
