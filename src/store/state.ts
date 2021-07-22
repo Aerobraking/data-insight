@@ -18,20 +18,21 @@ export class InsightFile {
     selectedViewIndex: number = 0;
 }
 
+export class UserSettings {
+    recentFiles: string[] = [];
+    loadLastFile: boolean = true;
+    loadedFilePath: string = "";
+}
+
 export const state: {
-    // views: Array<Workspace | Overview>,
-    // selectedViewIndex: number,
+
+    userSettings: UserSettings,
     loadedFile: InsightFile
+
 } = {
-    // views: [
 
-    // ],
-    // selectedViewIndex: 0,
-    loadedFile: {
-        views: [
+    userSettings: new UserSettings(),
+    loadedFile: new InsightFile(),
 
-        ],
-        selectedViewIndex: 0
-    }
 }
 export type State = typeof state
