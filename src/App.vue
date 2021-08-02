@@ -10,6 +10,7 @@ import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
+import { View } from "./store/model/DataModel";
 
 var fs = require("fs");
 
@@ -42,8 +43,52 @@ export default defineComponent({
   },
   methods: {
     keyPressed(e: KeyboardEvent) {
+      if (e.altKey) {
+        switch (e.key) {
+          case "1":
+          case "2":
+          case "3":
+          case "4":
+          case "5":
+          case "6":
+          case "7":
+          case "8":
+          case "9":
+            let i: number = +e.key;
+            i--;
+            if (i < this.$store.state.loadedFile.views.length) {
+              this.$store.state.loadedFile.selectedViewIndex = i;
+              this.$store.getters.getViewList.forEach(
+                (entry: View, index: Number) => {
+                  entry.isActive = index === i;
+                }
+              );
+            }
+            break;
+        }
+      }
       if (e.ctrlKey) {
         switch (e.key) {
+          case "1":
+          case "2":
+          case "3":
+          case "4":
+          case "5":
+          case "6":
+          case "7":
+          case "8":
+          case "9":
+            let i: number = +e.key;
+            i--;
+            if (i < this.$store.state.loadedFile.views.length) {
+              this.$store.state.loadedFile.selectedViewIndex = i;
+              this.$store.getters.getViewList.forEach(
+                (entry: View, index: Number) => {
+                  entry.isActive = index === i;
+                }
+              );
+            }
+            break;
           case "o":
             ipcRenderer.send("open-insight-file");
             break;
