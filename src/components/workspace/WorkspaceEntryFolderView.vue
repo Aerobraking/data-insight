@@ -207,11 +207,11 @@ export default defineComponent({
 <style scoped lang="scss">
 $black: 25px;
 
-.opaque {
-  overflow: hidden;
-}
-
 .ws-folder-window-wrapper {
+  table {
+    width: 100%;
+  }
+
   resize: both;
   height: 600px;
   width: 600px;
@@ -220,9 +220,9 @@ $black: 25px;
   // will-change: transform;
 
   position: absolute;
-  color: #646464;
-  background: #ffffff;
-  border: 2px solid #949494;
+  color: #f1f1f1;
+  background: #ffffff07;
+  border: 0px solid #949494;
   box-sizing: border-box;
   border-radius: 0px;
   text-align: left;
@@ -248,41 +248,52 @@ $black: 25px;
       border: 1px solid #949494;
     }
   }
+}
 
-  $tile-size: 150px;
+.opaque {
+  overflow: hidden;
+  color: #252525;
+  background: #ffffff;
+  border: 2px solid #949494;
+}
 
-  .tile-wrapper {
-    overflow-x: hidden;
-    overflow-y: visible;
-    display: grid;
-    grid-gap: 15px;
-    grid-template-columns: repeat(auto-fit, minmax($tile-size, 1fr));
+$tile-size: 150px;
 
-    .tile {
-      background: #e9e9e9;
-      height: $tile-size;
-      text-align: center;
-      vertical-align: bottom;
-      display: flex;
+.tile-wrapper {
+  overflow-x: hidden;
+  overflow-y: visible;
+  display: grid;
+  grid-gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax($tile-size, 1fr));
 
-      p {
-        align-self: flex-end;
-        width: 100%;
-        // makes the scaled text smoother in the rendering
-        backface-visibility: hidden;
-      }
+  .tile {
+    background: #c4262600;
+    height: $tile-size;
+    text-align: center;
+    vertical-align: bottom;
+    display: flex;
+
+    p {
+      align-self: flex-end;
+      width: 100%;
+      // makes the scaled text smoother in the rendering
+      backface-visibility: hidden;
+    }
+
+    .opaque {
+      background: #a8a8a8;
     }
   }
 }
 
-table {
-  background: #ffffff;
-}
-
-.ws-folder-window-bar-top {
+.ws-folder-window-wrapper .ws-folder-window-bar-top {
   width: 100%;
   height: $black;
-  background-color: #646464;
+  background-color: #c4262600;
+
+  .opaque {
+    background-color: #5a5a5a00;
+  }
 }
 
 .workspace-is-selected {
