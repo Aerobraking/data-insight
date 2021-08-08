@@ -689,7 +689,6 @@ var switcher = false;
 </script>
 
 <style   lang="scss">
-
 @mixin theme() {
   width: 15px;
   height: 15px;
@@ -737,6 +736,45 @@ div .resizer-top-left {
   visibility: hidden;
 }
 
+.ws-entry::after {
+  content: "Hello World Again";
+
+// content: "";
+border-radius: 5px;
+background: #000;
+width: 10px;
+height: 10px;
+position: absolute;
+left: 500px;
+margin-left: 1px;
+top: 20px;
+box-shadow: -5px 5px 0px #8f0222;
+z-index: 20;
+
+  // position: absolute;
+  // left: 0%;
+  // top: 0%;
+
+  // // makes the scaled text smoother in the rendering
+  // backface-visibility: hidden;
+  // resize: none;
+  // // width: 100%;
+  // // height: 100%;
+  // padding: 0;
+  // margin: 0;
+  // overflow: hidden;
+  // border: none;
+  // background-color: transparent;
+  // color: #f1f1f1;
+  // font-family: Arial, Helvetica, sans-serif;
+  // font-size: 80pt;
+  // outline: none;
+
+  // :focus {
+  //   border: none;
+  //   outline: none;
+  // }
+}
 </style>
 
 
@@ -795,7 +833,6 @@ div .resizer-top-left {
 .ws-entry {
   z-index: 100;
 }
-
 
 .vue-pan-zoom-scene {
   outline: none;

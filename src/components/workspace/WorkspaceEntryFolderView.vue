@@ -9,6 +9,7 @@
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
   >
+  
     <div
       @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
       @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
