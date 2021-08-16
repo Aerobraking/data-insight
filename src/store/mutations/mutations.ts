@@ -15,6 +15,10 @@ export type Mutations<S = State> = {
     model: Workspace,
     listFiles: Array<WorkspaceEntry>,
   }): void
+  [MutationTypes.REMOVE_ENTRIES](state: S, payload: {
+    model: Workspace,
+    listIndices: Array<Number>,
+  }): void
   [MutationTypes.LOAD_INSIGHT_FILE](state: S, payload: {
     insightFile: InsightFile
   }): void
@@ -30,6 +34,22 @@ export const mutations: MutationTree<State> & Mutations = {
     listFiles: Array<WorkspaceEntry>,
   }) {
     payload.model.entries.push(...payload.listFiles);
+  },
+  [MutationTypes.REMOVE_ENTRIES](state, payload: {
+    model: Workspace,
+    listIndices: Array<number>,
+  }) {
+
+    payload.listIndices.sort();
+    let offset = 0;
+    payload.listIndices.forEach(index => {
+      if (index > -1) {
+        payload.model.entries.splice(index - offset, 1);
+        offset++;
+      }
+    });
+
+
   },
   [MutationTypes.LOAD_INSIGHT_FILE](state, payload: {
     insightFile: InsightFile

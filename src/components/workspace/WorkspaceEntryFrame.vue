@@ -2,12 +2,18 @@
   <div
     ref="el"
     @mousemove.stop
-    @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.stop.exact="entrySelectedLocal('single')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
     class="ws-entry-frame-wrapper"
-  ></div>
+  >
+    <input
+      v-model="entry.displayname"
+      class="wsentry-displayname ws-entry-zoom-fixed"
+      placeholder=""
+    />
+  </div>
 </template>
 
 <script lang="ts">
@@ -18,9 +24,11 @@ import { WorkspaceEntryFrame } from "../../store/model/Workspace";
 import * as WSUtils from "./WorkspaceUtils";
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 import * as _ from "underscore";
+import { ElementDimension } from "@/utils/resize";
 
 _.once(() => {
   WSUtils.Events.registerCallback({
+    zoom(transform: ElementDimension): void {},
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
       let addToSelection: Element[] = [];
 
@@ -35,7 +43,11 @@ _.once(() => {
           workspace.getEntries().forEach((el) => {
             let coordEntry = workspace.getCoordinatesFromElement(el);
 
-            if (el != e && WSUtils.insideRect(coordFrame, coordEntry) && !selection.includes(el)) {
+            if (
+              el != e &&
+              WSUtils.insideRect(coordFrame, coordEntry) &&
+              !selection.includes(el)
+            ) {
               addToSelection.push(el);
             }
           });
@@ -82,8 +94,7 @@ export default defineComponent({
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .ws-entry-frame-wrapper {
-  overflow: auto;
-  will-change: transform;
+  // will-change: transform;
   position: absolute;
   padding: 10px;
   width: 800px;
@@ -95,6 +106,8 @@ export default defineComponent({
   border-radius: 0;
   padding: 0;
   margin: 0;
+  overflow: visible;
+  z-index: 10;
 }
 </style>
 

@@ -4,6 +4,7 @@
       class="canvas-breadcrumbs"
       v-model="breadcumbs"
       placeholder="Pfad..."
+      disabled
     />
     <input
       type="search"
@@ -13,8 +14,16 @@
       v-model="searchString"
       placeholder="Suche..."
     />
+    <button
+      class="showNames"
+    v-bind:class="{ active: showNames }"
+      @click="showNames = !showNames"
+    >
+      Show Names
+    </button>
 
     <div
+      @keyup="keyPressed"
       @dblclick="openFolder"
       class="graph canvas-wrapper"
       @click.ctrl="toggleShowFiles"
@@ -177,6 +186,7 @@ export default defineComponent({
       console.log("asdasd");
     },
     keyPressed(e: KeyboardEvent) {
+      console.log("asdasd");
       if (e.ctrlKey) {
         switch (e.key) {
           case "i":
@@ -293,6 +303,7 @@ export default defineComponent({
         //   const fileStat = fs.lstatSync(filePath);
         //   return fileStat.isDirectory();
         // });
+        let maxHeight = files.length * 50;
 
         files.forEach((file: any) => {
           const filePath = path.join(dir, file);
@@ -307,8 +318,9 @@ export default defineComponent({
           child.depthCalc();
           child.x = child.depth * column;
           child.y =
-            (parent.y != undefined ? parent.y : 0) +
-            (1000 / Math.pow(child.depth, 2)) * index;
+            (parent.y != undefined ? parent.y : 0) -
+            maxHeight / 2 +
+            (50 / Math.pow(Math.max(1, child.depth), 2)) * index;
 
           if (!child.isDirectory) {
             var fileSizeInBytes = fileStat.size;
@@ -443,6 +455,8 @@ export default defineComponent({
           ) {
             (function (depth, index) {
               setTimeout(function () {
+                console.log("start adding: " + depth);
+
                 let nodesSub: TreeNode[] = nodes.filter(
                   (o: TreeNode) => o.depth == depth
                 );
@@ -476,7 +490,7 @@ export default defineComponent({
                   vm.graph.graphData(globalData);
                   vm.updateForces();
                 }
-              }, 500 * (index < 2 ? 0 : index));
+              }, 1000 * (depth < 2 ? 0 : depth));
             })(i, j);
           }
         }
@@ -504,14 +518,14 @@ export default defineComponent({
         });
       });
 
-      console.log(JSON.stringify(globalData));
+      // console.log(JSON.stringify(globalData));
 
-      const obj = JSON.parse(JSON.stringify(globalData));
-      console.log();
-      console.log();
-      console.log();
+      // const obj = JSON.parse(JSON.stringify(globalData));
+      // console.log();
+      // console.log();
+      // console.log();
 
-      console.log(obj);
+      // console.log(obj);
 
       for (let index = 0; index < droppedFiles.length; index++) {
         const element: File = droppedFiles[index];
@@ -617,7 +631,7 @@ export default defineComponent({
         //   charge.distanceMax(2500);
 
         charge.strength(function (d: any, i: number) {
-          return -(600 + d.size * 0.05) + (d.depth == 0 ? -2500 : 0); //d.size / 0.3;
+          return -(600 + d.size * 250.5) + (d.depth == 0 ? -2500 : 0); //d.size / 0.3;
         });
       }
     },
@@ -708,7 +722,7 @@ export default defineComponent({
             node.depth > 0 &&
             this.nodeHovered != null &&
             node.getPath() === this.nodeHovered.getPath()
-              ? r * 1.5
+              ? r * 1.2
               : r;
 
           r =
@@ -869,7 +883,8 @@ export default defineComponent({
 
       this.graph = ForceGraph()(div)
         // .linkDirectionalParticles(2)
-        // .nodeLabel((n:TreeNode)=>n.path)
+        // .linkDirectionalParticleWidth(20)
+        // .linkDirectionalParticleColor("#ff9999")
         .minZoom(0.02)
         .maxZoom(20)
         .zoom(0.1)
@@ -884,15 +899,14 @@ export default defineComponent({
             vm.nodeHoveredList.push(...node.descendants(), ...node.parents());
           }
         })
-        //  .dagMode("radialout")
-        // .dagMode("lr")
+
         .dagNodeFilter(function (n: NodeObject) {
           let node = n as TreeNode;
           return node.isDirectory();
         })
         .nodeLabel(function (n: NodeObject) {
           let node = n as TreeNode;
-          // return node.getPath();
+
           return "";
         })
         .nodeVisibility(function (n: NodeObject) {
@@ -907,7 +921,7 @@ export default defineComponent({
         .onEngineTick(this.tick)
         .backgroundColor("#111")
         .nodeId("path")
-        .nodeRelSize(4)
+        .nodeRelSize(1)
         .cooldownTime(105 * 1000)
         .nodeVal((n: any) => n.size + 75)
         .nodeCanvasObject(function (
@@ -937,37 +951,37 @@ export default defineComponent({
       // .d3AlphaDecay(0);
 
       // @ts-ignore: Unreachable code error
-      this.graph.d3Force(
-        "x",
-        // @ts-ignore: Unreachable code error
-        d3
-          .forceX()
-          .x(function (d: any) {
-            return (d.depth + 0) * column;
-          })
-          .strength(2.5)
-          .strength(0)
-      );
+      // this.graph.d3Force(
+      //   "x",
+      //   // @ts-ignore: Unreachable code error
+      //   d3
+      //     .forceX()
+      //     .x(function (d: any) {
+      //       return (d.depth + 0) * column;
+      //     })
+      //     .strength(2.5)
+      //     .strength(0)
+      // );
 
-      // @ts-ignore: Unreachable code error
-      this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
+      // // @ts-ignore: Unreachable code error
+      // this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
 
-      // @ts-ignore: Unreachable code error
-      this.graph.d3Force(
-        "y",
-        // @ts-ignore: Unreachable code error
-        d3
-          .forceY()
-          .y(function (d: any) {
-            return d.parent != undefined ? d.parent.getY() : 0;
-          })
-          .strength(0.015)
-          .strength(0.0)
-      );
+      // // @ts-ignore: Unreachable code error
+      // this.graph.d3Force(
+      //   "y",
+      //   // @ts-ignore: Unreachable code error
+      //   d3
+      //     .forceY()
+      //     .y(function (d: any) {
+      //       return d.parent != undefined ? d.parent.getY() : 0;
+      //     })
+      //     .strength(0.015)
+      //     .strength(0.0)
+      // );
 
       let link: any = this.graph.d3Force("link");
       link.strength(function (link: TreeLink) {
-        return Math.min((link.source.depth + 0) * 0.1, 1.5);
+        return Math.min((link.source.depth + 0) * 0.01, 1.5);
       });
 
       this.toggleLayout();
@@ -983,6 +997,10 @@ export default defineComponent({
   padding: 0;
 }
 
+.active {
+  background-color: #42b983;
+}
+
 .canvas-search {
   position: absolute;
   left: 0;
@@ -994,7 +1012,17 @@ export default defineComponent({
   top: 76px;
 }
 
+.showNames {
+  position: absolute;
+  left: 10px;
+  z-index: 4000;
+  top: 76px;
+}
+
 .canvas-breadcrumbs {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-left: 10px;
   position: absolute;
   left: 0;
   right: 0;

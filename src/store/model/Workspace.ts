@@ -10,12 +10,13 @@ export class WorkspaceEntry {
         this.isResizable = isResizable;
         this.componentname = componentname;
     }
+
     componentname: string = "";
+    displayname: string = "";
     x: number = 0;
     y: number = 0;
     id: number = 0;
     isSelected: boolean = false;
-    name: string = "";
     isResizable: boolean = false;
     width: number = 220;
     height: number = 180;
@@ -40,6 +41,7 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
         this.height = 150;
     }
 
+    name:string;
     path: string;
     filename: string;
 }
@@ -59,6 +61,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         return "file://" + this.path.replaceAll("\\", "/");
     }
 
+    name:string;
     path: string;
     filename: string;
 }
@@ -142,6 +145,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         this.height = 600;
     }
 
+    name:string;
     path: string;
     defaultPath: string;
     foldername: string;

@@ -121,7 +121,7 @@ export class ResizerComplex {
     owner: ResizerComplexOwner | null = null;
     elementSizeStart: ElementDimension;
     element: HTMLElement;
-    divHandle: HTMLElement | null = null;
+
     listChildrenDimensions: ElementDimension[] = [];
     listChildren: HTMLElement[] = [];
     resizeStart: Function;
@@ -150,7 +150,7 @@ export class ResizerComplex {
         /**
          * Todo: Das muss bei allen ws entries passieren!
          */
-        //  element.classList.toggle(resizeClasseName);
+
 
 
         /**
@@ -158,22 +158,26 @@ export class ResizerComplex {
          */
         var resizer = document.createElement('div');
         resizer.className = 'resizer-top-right';
+        resizer.classList.add('ws-entry-zoom-fixed');
         element.appendChild(resizer);
         resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
         resizer = document.createElement('div');
         resizer.className = 'resizer-bottom-right';
+        resizer.classList.add('ws-entry-zoom-fixed');
         element.appendChild(resizer);
         resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
-        this.divHandle = resizer;
+
 
         resizer = document.createElement('div');
         resizer.className = 'resizer-bottom-left';
+        resizer.classList.add('ws-entry-zoom-fixed');
         element.appendChild(resizer);
         resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
         resizer = document.createElement('div');
         resizer.className = 'resizer-top-left';
+        resizer.classList.add('ws-entry-zoom-fixed');
         element.appendChild(resizer);
         resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
     }
@@ -214,10 +218,7 @@ export class ResizerComplex {
 
         this.element.style.width = newWidth + 'px';
         this.element.style.height = newHeight + 'px';
-
-        if (this.divHandle != null) {
-            this.divHandle.style.transform = "scale(" + (1 / scale) + "," + (1 / scale) + ")";
-        }
+ 
 
         /**
          * Calculate the scale factor
@@ -240,10 +241,14 @@ export class ResizerComplex {
                 this.elementSizeStart.x + ((dim.x - this.elementSizeStart.x) * scaleW),
                 this.elementSizeStart.y + ((dim.y - this.elementSizeStart.y) * scaleH)
             );
-            /**
-             * the width/height act as vectors that can be scaled directly
-             */
-            setSize(element, dim.w * scaleW, dim.h * scaleH);
+
+            if (!element.classList.contains("sizefixed")) {
+                /**
+                       * the width/height act as vectors that can be scaled directly
+                       */
+                setSize(element, dim.w * scaleW, dim.h * scaleH);
+            }
+
         }
 
         this.resizeStep();

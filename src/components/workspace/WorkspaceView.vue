@@ -1,8 +1,7 @@
 
 <template>
   <div
-    contenteditable="true"
-    @paste.stop="onpaste"
+    ref="roo"
     @keyup="keymonitor"
     @mouseup="dragMouseUp"
     @mousedown="dragMouseDown"
@@ -19,7 +18,7 @@
       @paste="onpaste"
       @init="panHappen"
       @pan="onPanStart"
-      @zoom="onPanStart"
+      @zoom="onZoom"
       :options="{
         zoomDoubleClickSpeed: 1,
         minZoom: 0.03,
@@ -38,10 +37,25 @@
         <div class="rectangle-selection-wrapper"></div>
 
         <keep-alive>
-          <wsentries :viewId="model.id" :model="model"></wsentries>
+          <component
+            class="ws-entry"
+            v-for="(e, ind) in model.entries"
+            :name="ind"
+            :key="e.id"
+            :entry="e"
+            :viewId="model.id"
+            v-bind:is="e.componentname"
+            ref="wsentry"
+          >
+          </component>
         </keep-alive>
       </div>
     </panZoom>
+
+    <wsentriesbookmarks
+      :model="model"
+      @bookmarkclicked="moveToEntry"
+    ></wsentriesbookmarks>
   </div>
 </template>
 
@@ -60,8 +74,8 @@ import {
 } from "@/store/model/Workspace";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
+import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import { defineComponent } from "vue";
-import wsentries from "./WorkspaceEntries.vue";
 import { getCoordinatesFromElement, ResizerComplex } from "@/utils/resize";
 import { InsightFile } from "@/store/state";
 import { deserialize, serialize } from "class-transformer";
@@ -74,7 +88,7 @@ export default defineComponent({
   el: "#wrapper",
   name: "WorkspaceView",
   components: {
-    wsentries,
+    wsentriesbookmarks,
   },
   props: {
     model: Workspace,
@@ -151,10 +165,6 @@ export default defineComponent({
       var fs = require("fs");
 
       if (e.ctrlKey) {
-        switch (e.key) {
-          case "x":
-            break;
-        }
       }
     },
     drawCanvas() {
@@ -232,14 +242,32 @@ export default defineComponent({
     keymonitor(e: KeyboardEvent) {
       let listFiles: Array<WorkspaceEntry> = [];
       switch (e.key) {
+        case "Delete":
+        case "delete":
+          let listIndices: number[] = [];
+
+          this.getSelectedEntries().forEach((element) => {
+            listIndices.push(Number(element.getAttribute("name")));
+          });
+
+          let payload = {
+            model: <Workspace>this.model,
+            listIndices,
+          };
+
+          this.$store.commit(MutationTypes.REMOVE_ENTRIES, payload);
+
+          this.clearSelection();
+
+          break;
         case "a":
-          //  if (e.ctrlKey) {
-          console.log(e);
-          this.selectAll();
-          // }
+          if (e.ctrlKey) {
+            console.log(e);
+            this.selectAll();
+          }
           break;
         case "t":
-          let payload = {
+          let p = {
             model: <Workspace>this.model,
             listFiles,
           };
@@ -249,11 +277,11 @@ export default defineComponent({
           area.y = this.mousePositionLast.y;
           listFiles.push(area);
 
-          this.$store.commit(MutationTypes.ADD_FILES, payload);
+          this.$store.commit(MutationTypes.ADD_FILES, p);
 
           break;
         case "f":
-          payload = {
+          p = {
             model: <Workspace>this.model,
             listFiles,
           };
@@ -263,31 +291,51 @@ export default defineComponent({
           frame.y = this.mousePositionLast.y;
           listFiles.push(frame);
 
-          this.$store.commit(MutationTypes.ADD_FILES, payload);
+          this.$store.commit(MutationTypes.ADD_FILES, p);
 
           break;
-        case "1":
-          this.panZoomInstance.smoothMoveTo(0, 0);
-          break;
-        case "2":
-          this.panZoomInstance.smoothMoveTo(100, 100);
-          break;
-        case "3":
-          this.panZoomInstance.smoothMoveTo(200, 200);
-          break;
-        case "4":
-          // this.panZoomInstance.smoothZoomAbs(0, 0, 1.0);
-          this.panZoomInstance.smoothMoveTo(0, 0);
-          break;
-        case "5":
-          //  this.panZoomInstance.smoothZoomAbs(100, 100, 1.0);
-          this.panZoomInstance.smoothMoveTo(100, 100);
-          break;
-        case "6":
-          //  this.panZoomInstance.smoothZoomAbs(200, 200, 1.0);
-          this.panZoomInstance.smoothMoveTo(200, 200);
-          break;
+
         default:
+      }
+    },
+    moveToEntry(payload: { index: number; zoom: boolean }) {
+      let entryToMoveTo: HTMLElement = this.getEntries()[payload.index];
+
+      let coordinates = this.getCoordinatesFromElement(entryToMoveTo);
+      console.log(coordinates);
+
+  //    this.entrySelected(entryToMoveTo, "single");
+
+      let rect: {
+        bottom: number;
+ 
+        left: number;
+        right: number;
+        top: number;
+        
+      } = {
+        left: coordinates.x,
+        right: coordinates.x2,
+        top: coordinates.y,
+        bottom: coordinates.y2,
+      };
+
+      let x =
+        (-coordinates.x - coordinates.w / 2) *
+          this.getCurrentTransform().scale +
+        this.$el.clientWidth / 2;
+      let y =
+        (-coordinates.y - coordinates.w / 2) *
+          this.getCurrentTransform().scale +
+        this.$el.clientHeight / 2;
+
+      if (payload.zoom) {
+        console.log("zoom");
+    this.panZoomInstance.moveTo(x, y);
+       // this.panZoomInstance.showRectangle(rect);
+      } else {
+      //       this.panZoomInstance.showRectangle(rect);
+         this.panZoomInstance.smoothMoveTo(x, y);
       }
     },
     entrySelected(entry: any, type: "add" | "single" | "flip") {
@@ -498,7 +546,7 @@ export default defineComponent({
     dragMouseDown: function (e: MouseEvent) {
       this.mouseDownB = e.ctrlKey;
 
-      if (e.ctrlKey) {
+      if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
         this.dragMoveRel = { x: e.clientX, y: e.clientY };
 
         this.dragSelection = Array.from(
@@ -510,28 +558,34 @@ export default defineComponent({
         this.selectionWrapperResizer?.setChildren(this.dragSelection);
 
         this.dragSelection.push(this.getSelectionWrapper());
-      } else {
-        this.dragStart = this.getPositionInWorkspace(e);
 
-        let selectionRectangle: any = this.getSelectionRectangle();
-        selectionRectangle.style.visibility = "visible";
-        selectionRectangle.style.transform = `translate3d(${this.dragStart.x}px, ${this.dragStart.y}px,0px)`;
-        selectionRectangle.style.width = "0px";
-        selectionRectangle.style.height = "0px";
+        return;
       }
 
-      if (
-        e.target != undefined &&
-        (<any>e.target).classList.contains("draggable")
-      ) {
-        console.log(e.target);
+      if (e.button == 0) {
+        if (!e.ctrlKey) {
+          this.dragStart = this.getPositionInWorkspace(e);
 
-        // Invoke startDrag by passing it the target element as "this":
-        // startDrag.call(evt.target, evt);
-      }
-      if (this.mouseDownB) {
-        e.stopImmediatePropagation();
-        e.stopPropagation();
+          let selectionRectangle: any = this.getSelectionRectangle();
+          selectionRectangle.style.visibility = "visible";
+          selectionRectangle.style.transform = `translate3d(${this.dragStart.x}px, ${this.dragStart.y}px,0px)`;
+          selectionRectangle.style.width = "0px";
+          selectionRectangle.style.height = "0px";
+        }
+
+        if (
+          e.target != undefined &&
+          (<any>e.target).classList.contains("draggable")
+        ) {
+          console.log(e.target);
+
+          // Invoke startDrag by passing it the target element as "this":
+          // startDrag.call(evt.target, evt);
+        }
+        if (this.mouseDownB) {
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+        }
       }
     },
     updateSelectionWrapper() {
@@ -620,7 +674,6 @@ export default defineComponent({
 
       if (this.mouseDownB) {
         if (e.ctrlKey) {
-          // updateSelectionDrag();
           this.updateSelectionDrag(e, this);
         }
       } else {
@@ -652,9 +705,9 @@ export default defineComponent({
 
         entriesInside.push(
           ...this.getEntries().filter((el) => {
-            return WSUtils.intersectRect(
-              comp.getCoordinatesFromElement(el),
-              coordRect
+            return WSUtils.insideRect(
+              coordRect,
+              comp.getCoordinatesFromElement(el)
             );
           })
         );
@@ -674,12 +727,30 @@ export default defineComponent({
         this.model.viewportTransform = this.getCurrentTransform();
       }
     },
+    onZoom(e: any) {
+      let zoomFixed: HTMLElement[] = Array.from(
+        this.$el.querySelectorAll(".ws-entry-zoom-fixed")
+      ) as HTMLElement[];
+
+      let t = this.getCurrentTransform();
+
+      for (let index = 0; index < zoomFixed.length; index++) {
+        const element: HTMLElement = zoomFixed[index];
+        let s = 1 / t.scale;
+        s = s < 1 ? 1 : s > 16 ? 16 : s;
+        element.style.transform = "scale(" + s + "," + s + ")";
+      }
+
+      this.onPanStart(e);
+    },
     beforeWheelHandler(e: any) {
       var shouldIgnore: boolean = !e.altKey;
-      return shouldIgnore;
+      return false && shouldIgnore;
     },
     beforeMouseDownHandler(e: any) {
-      var shouldIgnore: boolean = !e.altKey;
+      var shouldIgnore: boolean = !(e.altKey || e.button == 1);
+      console.log(shouldIgnore);
+
       return shouldIgnore;
     },
   },
@@ -689,10 +760,13 @@ var switcher = false;
 </script>
 
 <style   lang="scss">
+.ws-entry-zoom-fixed {
+}
+
 @mixin theme() {
   width: 15px;
   height: 15px;
-  background: rgb(218, 218, 218);
+  background: rgba(218, 218, 218, 0);
   position: absolute;
   z-index: 5000;
 }
@@ -736,45 +810,43 @@ div .resizer-top-left {
   visibility: hidden;
 }
 
-.ws-entry::after {
-  content: "Hello World Again";
+.wsentry-displayname {
+  transform-origin: left bottom;
+  position: absolute;
+  left: 0px;
+  margin-left: 1px;
+  top: -40px;
+  z-index: 20;
+  cursor: pointer;
 
-// content: "";
-border-radius: 5px;
-background: #000;
-width: 10px;
-height: 10px;
-position: absolute;
-left: 500px;
-margin-left: 1px;
-top: 20px;
-box-shadow: -5px 5px 0px #8f0222;
-z-index: 20;
-
-  // position: absolute;
-  // left: 0%;
-  // top: 0%;
-
-  // // makes the scaled text smoother in the rendering
-  // backface-visibility: hidden;
-  // resize: none;
-  // // width: 100%;
-  // // height: 100%;
-  // padding: 0;
-  // margin: 0;
-  // overflow: hidden;
-  // border: none;
-  // background-color: transparent;
-  // color: #f1f1f1;
-  // font-family: Arial, Helvetica, sans-serif;
-  // font-size: 80pt;
-  // outline: none;
-
-  // :focus {
-  //   border: none;
-  //   outline: none;
-  // }
+  background-color: transparent;
+  border: none;
+  color: rgb(230, 230, 230);
+  font-size: 25pt;
+  overflow: visible;
+  pointer-events: all;
+  outline: none;
+  transition: background-color 500ms linear;
+  input {
+    outline: none;
+    color: rgb(233, 214, 107);
+  }
+  &:hover {
+    background-color: rgba(102, 224, 255, 0.479);
+  }
 }
+
+// .ws-entry::after {
+//   content: "Hello World Again";
+
+//   width: 1000px;
+//   height: 10px;
+//   position: absolute;
+//   left: 5px;
+//   margin-left: 1px;
+//   top: -20px;
+//   z-index: 20;
+// }
 </style>
 
 

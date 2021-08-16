@@ -24,6 +24,10 @@ export default defineComponent({
     window.addEventListener("keyup", this.keyPressed, true);
     const c = this;
 
+    ipcRenderer.on("fire-file-save", function (event: any, file: string) {
+      c.saveFile();
+    });
+
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
@@ -42,6 +46,13 @@ export default defineComponent({
     );
   },
   methods: {
+    saveFile() {
+      WSUtils.Events.prepareFileSaving();
+
+      let json = serialize(this.$store.state.loadedFile);
+
+      ipcRenderer.send("save-insight-file", json);
+    },
     keyPressed(e: KeyboardEvent) {
       if (e.altKey) {
         switch (e.key) {
@@ -90,17 +101,38 @@ export default defineComponent({
             }
             break;
           case "o":
-            ipcRenderer.send("open-insight-file");
+            // ipcRenderer.send("open-insight-file");
             break;
 
-          case "y":
-            console.log("save");
-            WSUtils.Events.prepareFileSaving();
+          case "s":
+            // this.saveFile();
 
-            let json = serialize(this.$store.state.loadedFile);
-
-            ipcRenderer.send("save-insight-file", json);
-
+            break;
+        }
+      } else {
+        switch (e.key) {
+          case "Delete":
+          case "delete":
+            break;
+          case "1":
+          case "2":
+          case "3":
+          case "4":
+          case "5":
+          case "6":
+          case "7":
+          case "8":
+          case "9":
+            // let i: number = +e.key;
+            // i--;
+            // if (i < this.$store.state.loadedFile.views.length) {
+            //   this.$store.state.loadedFile.selectedViewIndex = i;
+            //   this.$store.getters.getViewList.forEach(
+            //     (entry: View, index: Number) => {
+            //       entry.isActive = index === i;
+            //     }
+            //   );
+            // }
             break;
         }
       }
@@ -115,11 +147,11 @@ export default defineComponent({
 }
 
 body {
-  user-select: none;
   margin: 0;
   padding: 0;
   background-color: rgb(53, 53, 53);
 }
+
 #app {
   font-family: Lato, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

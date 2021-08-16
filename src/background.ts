@@ -1,6 +1,6 @@
 'use strict'
 
-import { ipcMain, app, protocol, BrowserWindow, dialog, webContents } from 'electron'
+import { ipcMain, app, protocol, BrowserWindow, dialog, webContents, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import { utcFormat } from 'd3'
@@ -20,6 +20,10 @@ protocol.registerSchemesAsPrivileged([
 
 
 ipcMain.on('open-insight-file', (event: any, arg: any) => {
+  openFile();
+})
+
+function openFile() {
   const files = dialog.showOpenDialogSync({
     filters: [{ name: "Insight File Type", extensions: ["ins"] }],
     properties: ["openFile", "openFile"],
@@ -32,11 +36,18 @@ ipcMain.on('open-insight-file', (event: any, arg: any) => {
   })
 
   console.log(files);
-})
+}
 
 
 ipcMain.on('save-insight-file', (event: any, arg: string) => {
 
+
+
+  saveFile(arg);
+
+})
+
+function saveFile(arg: string) {
   dialog.showSaveDialog({}).then((result) => {
 
     if (result.canceled) { return; }
@@ -57,10 +68,19 @@ ipcMain.on('save-insight-file', (event: any, arg: string) => {
   });
 
   console.log("file saved");
+}
 
-})
+function fireFileSaveEvent(){
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('fire-file-save', "");
+  })
+
+}
 
 async function createWindow() {
+
+
+
   // Create the browser window.
   const win = new BrowserWindow({
     width: 1400,
@@ -77,6 +97,55 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
+
+
+  var menu = Menu.buildFromTemplate([
+    {
+      label: 'Menu',
+      submenu: [
+        {
+           role: "togglefullscreen",
+          accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
+          label: 'Fullscreen' 
+        },
+        {
+           
+          accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
+          label: 'Save as',
+          click() {
+            fireFileSaveEvent();
+          }
+        },
+         {
+         
+          accelerator: process.platform === 'darwin' ? 'Ctrl+O' : 'Ctrl+O',
+          label: 'Open',
+          click() {
+            openFile();
+          }
+        },
+        {
+          label: 'Reload Page',
+          click() {
+            win.reload()
+          }
+        },
+        {
+          label: 'Dev Tools',
+          click() {
+            win.webContents.openDevTools();
+          }
+        },
+        {
+          label: 'Exit',
+          click() {
+            app.quit()
+          }
+        }
+      ]
+    }
+  ])
+  Menu.setApplicationMenu(menu);
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode

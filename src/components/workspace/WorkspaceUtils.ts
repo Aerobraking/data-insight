@@ -9,19 +9,57 @@ import * as WSUtils from "./WorkspaceUtils";
 
 export function setupEntry(props: any) {
     const e: WorkspaceEntry = props.entry as WorkspaceEntry;
-    const el = ref(null);
+    // reference to the $el element
+    const el: any = ref(null);
 
     let listener = {
         dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void { },
+        /**
+         * Update the model coordinates with the current ones from the html view.
+         */
         prepareFileSaving(): void {
-            console.log(el.value); // <div>Hello Vue 3</div>
+
             let coords: ElementDimension = getCoordinatesFromElement(el.value);
             e.setDimensions(coords);
         },
+        zoom(transform: ElementDimension): void {
+
+        }
     };
 
     onMounted(() => {
         WSUtils.Events.registerCallback(listener);
+
+
+        if (true && el != null && el.value != null) {
+            var text: HTMLInputElement = el.value.getElementsByClassName("wsentry-displayname")[0];
+
+            if (text != undefined) {
+
+
+
+                text.readOnly = true;
+
+                const inputId = ref(e.displayname);
+                text.value = inputId.value;
+
+                text.addEventListener("mousedown", function (e: MouseEvent) {
+                    //e.preventDefault();
+                }, true);
+
+
+                text.addEventListener("dblclick", function (e: MouseEvent) {
+                    text.readOnly = false;
+                    e.preventDefault();
+                }, true);
+                text.addEventListener("focusout", function (e: FocusEvent) {
+                    text.readOnly = true;
+                    e.preventDefault();
+                }, true);
+
+                el.value.appendChild(text);
+            }
+        }
     });
     onBeforeUnmount(() => {
         WSUtils.Events.unregisterCallback(listener);
@@ -33,6 +71,7 @@ export function setupEntry(props: any) {
 export interface Listener {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void;
     prepareFileSaving(): void;
+    zoom(transform: ElementDimension): void;
 }
 
 export interface WorkspaceViewIfc {
@@ -69,9 +108,15 @@ export function intersectRect(
     return !(r2.x > r1.x2 || r2.x2 < r1.x || r2.y > r1.y2 || r2.y2 < r1.y);
 }
 
+/**
+ * Tests if r2 is inside r1
+ * @param r1 
+ * @param r2 
+ * @returns 
+ */
 export function insideRect(
-    r1: { x: number; y: number; x2: number; y2: number },
-    r2: { x: number; y: number; x2: number; y2: number } // inside
+    r1: { x: number; y: number; x2: number; y2: number }, // the outside one
+    r2: { x: number; y: number; x2: number; y2: number } // the inside one
 ) {
     let a: boolean = r2.x > r1.x2;
     let b: boolean = r2.x2 < r1.x;

@@ -2,12 +2,17 @@
   <div
     ref="el"
     @mousemove.stop
-    @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.stop.exact="entrySelectedLocal('single')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
     class="ws-entry-youtube-wrapper"
   >
+    <input
+      v-model="entry.displayname"
+      class="wsentry-displayname ws-entry-zoom-fixed"
+      placeholder="Name..."
+    />
     <div class="inner-wrapper"></div>
   </div>
 </template>
@@ -91,6 +96,7 @@ export default defineComponent({
 <style lang="scss">
 .ws-entry-youtube-wrapper {
   //  resize: both;
+   z-index: 100;
   overflow: hidden;
   backface-visibility: hidden;
   will-change: transform;

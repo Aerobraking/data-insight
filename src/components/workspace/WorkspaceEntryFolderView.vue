@@ -9,10 +9,16 @@
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
   >
-  
+    <input
+      v-model="entry.displayname"
+      class="wsentry-displayname ws-entry-zoom-fixed"
+      placeholder=""
+    />
     <div
-      @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
-      @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
+      @mousedown.left.ctrl.capture.prevent.stop.exact="
+        entrySelectedLocal('flip')
+      "
+      @mousedown.left.capture.prevent.stop.exact="entrySelectedLocal('single')"
       class="ws-folder-window-bar-top selectable-highlight"
     ></div>
     <div class="search-bar">
@@ -29,7 +35,7 @@
     </div>
 
     <div class="viewport">
-      <div v-show="showTiles" class="tile-wrapper">
+      <div :class="{ opaque: opaque }" v-show="showTiles" class="tile-wrapper">
         <div class="tile" v-on:dblclick.stop.prevent="folderBack()">
           <p>... {{ parentDir }}</p>
         </div>
@@ -212,7 +218,7 @@ $black: 25px;
   table {
     width: 100%;
   }
-
+  z-index: 100;
   resize: both;
   height: 600px;
   width: 600px;
@@ -231,8 +237,7 @@ $black: 25px;
 
   .viewport {
     padding: 10px;
-    overflow-x: visible;
-    overflow-y: visible;
+
     //   display: none;
     height: calc(100% - #{$black * 3+20});
   }
@@ -252,7 +257,6 @@ $black: 25px;
 }
 
 .opaque {
-  overflow: hidden;
   color: #252525;
   background: #ffffff;
   border: 2px solid #949494;
@@ -261,8 +265,8 @@ $black: 25px;
 $tile-size: 150px;
 
 .tile-wrapper {
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow: auto;
+  height: 100%;
   display: grid;
   grid-gap: 15px;
   grid-template-columns: repeat(auto-fit, minmax($tile-size, 1fr));

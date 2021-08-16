@@ -1,21 +1,32 @@
 <template>
   <div
     ref="el"
-    @mousedown.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.capture.prevent.stop.exact="entrySelectedLocal('single')"
-    @click.stop
-    v-on:dblclick="doubleClick"
-    class="ws-entry-file-wrapper"
+    class="ws-entry-file-wrapper sizefixed"
     :style="{
       transform: 'translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
     }"
   >
+    <input
+      @keydown.stop.prevent
+      @keyup.stop.prevent
+      @keypress.stop.prevent 
+      type="text"
+      v-model="entry.displayname"
+      class="wsentry-displayname ws-entry-zoom-fixed"
+      placeholder="Name..."
+    />
     <div class="ws-entry-file-symbol"></div>
     <p class="ws-entry-file-name">{{ entry.name }}</p>
   </div>
 </template>
 
 <script lang="ts">
+/*
+   @mousedown.left.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.capture.prevent.stop.exact="entrySelectedLocal('single')"
+ @click.stop
+    v-on:dblclick="doubleClick"
+*/
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
@@ -85,6 +96,7 @@ export default defineComponent({
 }
 
 .ws-entry-file-wrapper {
+   z-index: 100;
   backface-visibility: hidden;
   will-change: transform;
   position: absolute;

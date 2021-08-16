@@ -2,8 +2,8 @@
   <div
     ref="el"
     @mousemove.stop
-    @mousedown.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.stop.exact="entrySelectedLocal('single')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
     class="ws-entry-textarea-wrapper"
@@ -59,6 +59,7 @@ export default defineComponent({
 }
 
 .ws-entry-textarea-wrapper {
+    z-index: 100;
   overflow: auto;
   will-change: transform;
   position: absolute;
@@ -95,5 +96,4 @@ export default defineComponent({
     }
   }
 }
-
 </style>
