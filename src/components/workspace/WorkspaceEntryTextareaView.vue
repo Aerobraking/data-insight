@@ -8,7 +8,8 @@
     v-on:dblclick="doubleClick"
     class="ws-entry-textarea-wrapper"
   >
-    <textarea v-on:keyup.stop placeholder="Title"></textarea>
+    <textarea  v-model="entry.text"
+     v-on:keyup.stop placeholder="Title"></textarea>
   </div>
 </template>
 

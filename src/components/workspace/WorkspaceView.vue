@@ -306,6 +306,9 @@ export default defineComponent({
           if (e.repeat) {
             return;
           }
+          this.getEntries().forEach((e) => {
+            e.classList.toggle("resizable-prevent-input", true);
+          });
           this.spacePressed = true;
           this.showAll();
           break;
@@ -321,6 +324,9 @@ export default defineComponent({
               console.log(bound);
               this.panZoomInstance.smoothShowRectangle(bound);
             }
+            this.getEntries().forEach((e) => {
+              e.classList.toggle("resizable-prevent-input", false);
+            });
             this.spacePressed = false;
           }
 
@@ -720,6 +726,9 @@ export default defineComponent({
 
       if (this.spacePressed) {
         this.spacePressed = false;
+        this.getEntries().forEach((e) => {
+          e.classList.toggle("resizable-prevent-input", true);
+        });
         let rect: ClientRect = this.$el.getBoundingClientRect();
         let bound = this.getPanzoomRect({
           x: this.mousePositionLast.x - rect.width / 2,
@@ -935,6 +944,9 @@ export default defineComponent({
     },
     beforeWheelHandler(e: any) {
       this.spacePressed = false;
+      this.getEntries().forEach((e) => {
+        e.classList.toggle("resizable-prevent-input", false);
+      });
       var shouldIgnore: boolean = e.altKey;
       return shouldIgnore;
     },
