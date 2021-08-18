@@ -2,9 +2,10 @@
 <template>
   <div
     ref="roo"
+    @keydown="keydown"
     @keyup="keymonitor"
     @mouseup="dragMouseUp"
-    @mousedown="dragMouseDown"
+    @mousedown="mouseDown"
     @mousemove.capture="dragMouseMove"
     @dragover="dragover"
     @dragleave="dragleave"
@@ -44,6 +45,7 @@
             :key="e.id"
             :entry="e"
             :viewId="model.id"
+            :workspace="this"
             v-bind:is="e.componentname"
             ref="wsentry"
           >
@@ -51,17 +53,33 @@
         </keep-alive>
       </div>
     </panZoom>
-
+    <div class="ws-button-list">
+      <button @click="showAll">Show all</button>
+    </div>
     <wsentriesbookmarks
       :model="model"
       @bookmarkclicked="moveToEntry"
     ></wsentriesbookmarks>
+    <wssearchlist
+      v-if="searchActive"
+      :model="model"
+      :searchString="searchString"
+      @bookmarkclicked="moveToEntry"
+    ></wssearchlist>
+
+    <input
+      type="search"
+      @input="searchUpdate"
+      class="workspace-search"
+      @paste="onpaste"
+      v-model="searchString"
+      placeholder="Suche..."
+    />
   </div>
 </template>
 
 
 <script lang="ts">
-//       <div class="position-zero"></div>
 import {
   Workspace,
   WorkspaceEntry,
@@ -75,11 +93,17 @@ import {
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
+import wssearchlist from "./WorkspaceSeachList.vue";
 import { defineComponent } from "vue";
-import { getCoordinatesFromElement, ResizerComplex } from "@/utils/resize";
+import {
+  ElementDimension,
+  getCoordinatesFromElement,
+  ResizerComplex,
+} from "@/utils/resize";
 import { InsightFile } from "@/store/state";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
+import { WorkspaceViewIfc } from "./WorkspaceUtils";
 
 const fs = require("fs");
 const path = require("path");
@@ -89,11 +113,13 @@ export default defineComponent({
   name: "WorkspaceView",
   components: {
     wsentriesbookmarks,
+    wssearchlist,
   },
   props: {
     model: Workspace,
   },
   data(): {
+    searchString: string;
     dragStart: { x: number; y: number };
     dragMoveRel: { x: number; y: number };
     dragTempOffset: { x: number; y: number };
@@ -104,8 +130,11 @@ export default defineComponent({
     dragSelection: HTMLElement[];
     selectionWrapperResizer: ResizerComplex | null;
     useCanvas: boolean;
+    oldViewRect: ElementDimension | undefined;
+    spacePressed: boolean;
   } {
     return {
+      searchString: "",
       useCanvas: false,
       mousePositionLast: { x: 0, y: 0 },
       dragMoveRel: { x: 0, y: 0 },
@@ -116,6 +145,8 @@ export default defineComponent({
       panZoomInstance: null,
       dragSelection: [],
       selectionWrapperResizer: null,
+      oldViewRect: undefined,
+      spacePressed: false,
     };
   },
   mounted() {
@@ -154,13 +185,42 @@ export default defineComponent({
 
     this.drawCanvas();
   },
-  computed: {},
+  computed: {
+    searchActive(): boolean {
+      return this.searchString.trim().length > 0;
+    },
+  },
   provide() {
     return {
       entrySelected: this.entrySelected,
     };
   },
   methods: {
+    searchUpdate(): void {
+      let models = this.model ? this.model.entries : [];
+      let views = this.getEntries();
+
+      if (this.searchString.trim().length > 0) {
+        for (let index = 0; index < models.length; index++) {
+          const m = models[index];
+          const v = views[index];
+
+          let f: boolean = m.searchLogic(
+            this.searchString.trim().toLowerCase()
+          );
+
+          v.classList.toggle("search-not-found", !f);
+        }
+      } else {
+        for (let index = 0; index < models.length; index++) {
+          const v = views[index];
+          v.classList.toggle("search-not-found", false);
+        }
+      }
+    },
+    getWorkspaceIfc(): WorkspaceViewIfc {
+      return this;
+    },
     keyPressed(e: KeyboardEvent) {
       var fs = require("fs");
 
@@ -239,9 +299,32 @@ export default defineComponent({
         this.$store.commit(MutationTypes.ADD_FILES, payload);
       }
     },
+    keydown(e: KeyboardEvent) {
+      console.log(e.key);
+      switch (e.key) {
+        case " ":
+          if (e.repeat) {
+            return;
+          }
+          this.spacePressed = true;
+          this.showAll();
+          break;
+      }
+    },
     keymonitor(e: KeyboardEvent) {
       let listFiles: Array<WorkspaceEntry> = [];
       switch (e.key) {
+        case " ":
+          if (this.spacePressed) {
+            if (this.oldViewRect) {
+              let bound = this.getPanzoomRect(this.oldViewRect);
+              console.log(bound);
+              this.panZoomInstance.smoothShowRectangle(bound);
+            }
+            this.spacePressed = false;
+          }
+
+          break;
         case "Delete":
         case "delete":
           let listIndices: number[] = [];
@@ -294,9 +377,101 @@ export default defineComponent({
           this.$store.commit(MutationTypes.ADD_FILES, p);
 
           break;
+        case "y":
+          p = {
+            model: <Workspace>this.model,
+            listFiles,
+          };
 
+          let yt = new WorkspaceEntryYoutube();
+          yt.x = this.mousePositionLast.x;
+          yt.y = this.mousePositionLast.y;
+          listFiles.push(yt);
+
+          this.$store.commit(MutationTypes.ADD_FILES, p);
+
+          break;
         default:
       }
+    },
+    getBounds(entries: HTMLElement[]): ElementDimension {
+      let x = Infinity,
+        y = Infinity,
+        x2 = -Infinity,
+        y2 = -Infinity;
+
+      Array.from(entries).forEach((el) => {
+        let coord = this.getCoordinatesFromElement(el);
+
+        x = x > coord.x ? coord.x : x;
+        y = y > coord.y ? coord.y : y;
+
+        x2 = x2 < coord.x2 ? coord.x2 : x2;
+        y2 = y2 < coord.y2 ? coord.y2 : y2;
+      });
+
+      return {
+        x: x,
+        y: y,
+        w: x2 - x,
+        h: y2 - y,
+        x2: x2,
+        y2: y2,
+      };
+    },
+    showAll() {
+      let rect: ClientRect = this.$el.getBoundingClientRect();
+
+      let currenTransform = this.getCurrentTransform();
+
+      this.mousePositionLast = this.getPositionInWorkspace({
+        clientX: rect.left,
+        clientY: rect.top,
+      });
+
+      let oldView: ElementDimension = {
+        x: -currenTransform.x / this.getCurrentTransform().scale,
+        y: -currenTransform.y / this.getCurrentTransform().scale,
+        w: rect.width * (1 / currenTransform.scale),
+        h: rect.height * (1 / currenTransform.scale),
+        x2: 0,
+        y2: 0,
+      };
+
+      oldView.x2 = oldView.x + oldView.w;
+      oldView.y2 = oldView.y + oldView.h;
+
+      this.oldViewRect = oldView;
+      console.log(oldView);
+      console.log(this.getPanzoomRect(this.oldViewRect));
+
+      //  debugger;
+
+      let bound = this.getPanzoomRect(this.getBounds(this.getEntries()), 0.2);
+      this.panZoomInstance.smoothShowRectangle(bound);
+    },
+    getPanzoomRect(
+      coordinates: ElementDimension,
+      scaler: number = 0
+    ): {
+      bottom: number;
+      left: number;
+      right: number;
+      top: number;
+    } {
+      let rect: {
+        bottom: number;
+        left: number;
+        right: number;
+        top: number;
+      } = {
+        left: coordinates.x - scaler * coordinates.w,
+        right: coordinates.x2 + scaler * coordinates.w,
+        top: coordinates.y - scaler * coordinates.h,
+        bottom: coordinates.y2 + scaler * coordinates.h,
+      };
+
+      return rect;
     },
     moveToEntry(payload: { index: number; zoom: boolean }) {
       let entryToMoveTo: HTMLElement = this.getEntries()[payload.index];
@@ -304,20 +479,20 @@ export default defineComponent({
       let coordinates = this.getCoordinatesFromElement(entryToMoveTo);
       console.log(coordinates);
 
-  //    this.entrySelected(entryToMoveTo, "single");
+      //    this.entrySelected(entryToMoveTo, "single");
+
+      let scaler = 0.25;
 
       let rect: {
         bottom: number;
- 
         left: number;
         right: number;
         top: number;
-        
       } = {
-        left: coordinates.x,
-        right: coordinates.x2,
-        top: coordinates.y,
-        bottom: coordinates.y2,
+        left: coordinates.x - scaler * coordinates.w,
+        right: coordinates.x2 + scaler * coordinates.w,
+        top: coordinates.y - scaler * coordinates.h,
+        bottom: coordinates.y2 + scaler * coordinates.h,
       };
 
       let x =
@@ -330,12 +505,9 @@ export default defineComponent({
         this.$el.clientHeight / 2;
 
       if (payload.zoom) {
-        console.log("zoom");
-    this.panZoomInstance.moveTo(x, y);
-       // this.panZoomInstance.showRectangle(rect);
+        this.panZoomInstance.smoothShowRectangle(rect);
       } else {
-      //       this.panZoomInstance.showRectangle(rect);
-         this.panZoomInstance.smoothMoveTo(x, y);
+        this.panZoomInstance.smoothMoveTo(x, y);
       }
     },
     entrySelected(entry: any, type: "add" | "single" | "flip") {
@@ -345,6 +517,7 @@ export default defineComponent({
       console.log(
         "type: " + type + " - " + entries.length + " " + Math.random()
       );
+
       switch (type) {
         case "single":
           this.getEntries().forEach((e) =>
@@ -478,10 +651,9 @@ export default defineComponent({
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
-    getPositionInWorkspace(e: any) {
-      // get drop position
+    getPositionInWorkspace(e: { clientX: number; clientY: number }) {
       var rect = this.$el.getBoundingClientRect();
-      // var rect = { left: 0, top: 0 };
+
       // correct coordinates by using the scaling factor of the zooming.
       var x =
         (e.clientX - rect.left - this.panZoomInstance.getTransform().x) /
@@ -540,11 +712,27 @@ export default defineComponent({
         this.$el.querySelectorAll(".ws-entry")
       ) as HTMLElement[];
     },
-    getCoordinatesFromElement(e: any) {
+    getCoordinatesFromElement(e: any): ElementDimension {
       return getCoordinatesFromElement(e);
     },
-    dragMouseDown: function (e: MouseEvent) {
+    mouseDown: function (e: MouseEvent) {
       this.mouseDownB = e.ctrlKey;
+
+      if (this.spacePressed) {
+        this.spacePressed = false;
+        let rect: ClientRect = this.$el.getBoundingClientRect();
+        let bound = this.getPanzoomRect({
+          x: this.mousePositionLast.x - rect.width / 2,
+          y: this.mousePositionLast.y - rect.height / 2,
+          x2: this.mousePositionLast.x + rect.width / 2,
+          y2: this.mousePositionLast.y + rect.height / 2,
+          w: rect.width,
+          h: rect.height,
+        });
+        this.panZoomInstance.smoothShowRectangle(bound);
+
+        return;
+      }
 
       if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
         this.dragMoveRel = { x: e.clientX, y: e.clientY };
@@ -665,7 +853,7 @@ export default defineComponent({
         let h = -1 * (comp.dragStart.y - comp.getPositionInWorkspace(e).y);
 
         let rectX = w < 0 ? comp.dragStart.x + w : comp.dragStart.x;
-        let rectY = h < 0 ? comp.dragStart.x + h : comp.dragStart.y;
+        let rectY = h < 0 ? comp.dragStart.y + h : comp.dragStart.y;
 
         selectionRectangle.style.transform = `translate3d(${rectX}px, ${rectY}px,0px)`;
         selectionRectangle.style.width = Math.abs(w) + "px";
@@ -742,10 +930,13 @@ export default defineComponent({
       }
 
       this.onPanStart(e);
+
+      WSUtils.Events.zoom(this);
     },
     beforeWheelHandler(e: any) {
-      var shouldIgnore: boolean = !e.altKey;
-      return false && shouldIgnore;
+      this.spacePressed = false;
+      var shouldIgnore: boolean = e.altKey;
+      return shouldIgnore;
     },
     beforeMouseDownHandler(e: any) {
       var shouldIgnore: boolean = !(e.altKey || e.button == 1);
@@ -760,7 +951,29 @@ var switcher = false;
 </script>
 
 <style   lang="scss">
+.search-not-found {
+  opacity: 0.05;
+  // transition: opacity 0.5s ease-in-out;
+}
+
+.workspace-search {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 500px;
+  z-index: 4000;
+  top: 45px;
+}
+
 .ws-entry-zoom-fixed {
+}
+
+.ws-button-list {
+  position: absolute;
+  left: 10px;
+  top: 70px;
 }
 
 @mixin theme() {
@@ -835,18 +1048,6 @@ div .resizer-top-left {
     background-color: rgba(102, 224, 255, 0.479);
   }
 }
-
-// .ws-entry::after {
-//   content: "Hello World Again";
-
-//   width: 1000px;
-//   height: 10px;
-//   position: absolute;
-//   left: 5px;
-//   margin-left: 1px;
-//   top: -20px;
-//   z-index: 20;
-// }
 </style>
 
 
@@ -904,6 +1105,7 @@ div .resizer-top-left {
 }
 .ws-entry {
   z-index: 100;
+  transition: opacity 0.3s ease-in-out;
 }
 
 .vue-pan-zoom-scene {

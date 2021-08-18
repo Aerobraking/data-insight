@@ -35,7 +35,12 @@
     </div>
 
     <div class="viewport">
-      <div :class="{ opaque: opaque }" v-show="showTiles" class="tile-wrapper">
+      <div
+        @wheel="scrolling"
+        :class="{ opaque: opaque }"
+        v-show="showTiles"
+        class="tile-wrapper"
+      >
         <div class="tile" v-on:dblclick.stop.prevent="folderBack()">
           <p>... {{ parentDir }}</p>
         </div>
@@ -85,7 +90,7 @@ import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
 } from "../../store/model/Workspace";
-import { setupEntry } from "./WorkspaceUtils";
+import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
@@ -103,12 +108,23 @@ export default defineComponent({
   props: {
     entry: WorkspaceEntryFolderWindow,
     viewKey: Number,
+    workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
+    scrolling(e: WheelEvent) {
+      /**
+       * Todo: disable scrolling when zoom factor is too small
+       */
+      // console.log(this.workspace  );
+      
+      // if (this.workspace && this.workspace?.getCurrentTransform().scale > 4) {
+      //   e.stopPropagation();
+      // }
+    },
     entrySelectedLocal(type: "add" | "single" | "flip") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);

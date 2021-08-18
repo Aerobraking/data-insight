@@ -11,7 +11,7 @@
     <input
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
-      placeholder="Name..."
+      placeholder=""
     />
     <div class="inner-wrapper"></div>
   </div>
@@ -53,27 +53,14 @@ export default defineComponent({
     this.$el.style.height = this.entry?.height + "px";
 
     let comp = this;
+
     let iframe: any = htmlToElement(
       this.entry != undefined
         ? this.entry?.getHtmlCode()
         : "<div>Video not found.</div>"
     );
     let c = this;
-
-    iframe.onload = function () {
-      // alert("myframe is loaded");
-      // var iframeDocument =
-      //   iframe.contentDocument || iframe.contentWindow.document;
-      // let aTags = iframeDocument.getElementsByTagName("a");
-      // for (var i = 0; i < aTags.length; i++) {
-      //   aTags[i].setAttribute(
-      //     "onclick",
-      //     "require('shell').openExternal('" + aTags[i].href + "')"
-      //   );
-      //   aTags[i].href = "#";
-      // }
-    };
-
+ 
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
 
     resize(this.$el);

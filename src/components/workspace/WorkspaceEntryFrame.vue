@@ -28,7 +28,7 @@ import { ElementDimension } from "@/utils/resize";
 
 _.once(() => {
   WSUtils.Events.registerCallback({
-    zoom(transform: ElementDimension): void {},
+    zoom(transform: { x: number; y: number; scale: number }): void {},
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
       let addToSelection: Element[] = [];
 
@@ -63,7 +63,17 @@ _.once(() => {
 export default defineComponent({
   name: "wsentryframe",
   setup(props) {
-    return setupEntry(props);
+    return setupEntry(props, {
+      dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {},
+      /**
+       * Update the model coordinates with the current ones from the html view.
+       */
+      prepareFileSaving(): void {},
+      zoom(
+        transform: { x: number; y: number; scale: number },
+        workspace: WorkspaceViewIfc
+      ): void {},
+    });
   },
   data() {
     return {};
@@ -71,6 +81,7 @@ export default defineComponent({
   props: {
     entry: WorkspaceEntryFrame,
     viewKey: Number,
+    workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;

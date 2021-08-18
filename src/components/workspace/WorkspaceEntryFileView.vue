@@ -13,7 +13,7 @@
       type="text"
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
-      placeholder="Name..."
+      placeholder=""
     />
     <div class="ws-entry-file-symbol"></div>
     <p class="ws-entry-file-name">{{ entry.name }}</p>

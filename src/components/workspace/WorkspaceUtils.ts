@@ -7,8 +7,10 @@ import {
 } from "vue";
 import * as WSUtils from "./WorkspaceUtils";
 
-export function setupEntry(props: any) {
+export function setupEntry(props: any, wsListener: Listener | undefined = undefined) {
+    
     const e: WorkspaceEntry = props.entry as WorkspaceEntry;
+
     // reference to the $el element
     const el: any = ref(null);
 
@@ -22,21 +24,21 @@ export function setupEntry(props: any) {
             let coords: ElementDimension = getCoordinatesFromElement(el.value);
             e.setDimensions(coords);
         },
-        zoom(transform: ElementDimension): void {
+        zoom(transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc): void {
 
         }
     };
 
     onMounted(() => {
+        if (wsListener != undefined) {
+            WSUtils.Events.registerCallback(wsListener);
+        }
         WSUtils.Events.registerCallback(listener);
-
 
         if (true && el != null && el.value != null) {
             var text: HTMLInputElement = el.value.getElementsByClassName("wsentry-displayname")[0];
 
             if (text != undefined) {
-
-
 
                 text.readOnly = true;
 
@@ -62,6 +64,9 @@ export function setupEntry(props: any) {
         }
     });
     onBeforeUnmount(() => {
+        if (wsListener != undefined) {
+            WSUtils.Events.unregisterCallback(wsListener);
+        }
         WSUtils.Events.unregisterCallback(listener);
     });
 
@@ -71,7 +76,7 @@ export function setupEntry(props: any) {
 export interface Listener {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void;
     prepareFileSaving(): void;
-    zoom(transform: ElementDimension): void;
+    zoom(transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc): void;
 }
 
 export interface WorkspaceViewIfc {
@@ -142,6 +147,11 @@ export class Dispatcher {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {
             c.dragStarting(selection, workspace);
+        });
+    }
+    zoom(workspace: WorkspaceViewIfc): void {
+        this.callbacks.forEach((c) => {
+            c.zoom(workspace.getCurrentTransform(), workspace);
         });
     }
     prepareFileSaving(): void {

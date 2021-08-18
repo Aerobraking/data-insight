@@ -29,6 +29,10 @@ export class WorkspaceEntry {
             this.height = d.h;
         }
     }
+
+    public searchLogic(input: string): boolean {
+        return this.displayname.toLowerCase().includes(input.toLocaleLowerCase());
+    }
 }
 
 export class WorkspaceEntryFile extends WorkspaceEntry {
@@ -41,9 +45,17 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
         this.height = 150;
     }
 
-    name:string;
+    name: string;
     path: string;
     filename: string;
+
+    public searchLogic(input: string): boolean {
+        let found: boolean = super.searchLogic(input);
+
+        found = found || this.filename.toLocaleLowerCase().includes(input);
+
+        return found;
+    }
 }
 
 export class WorkspaceEntryImage extends WorkspaceEntry {
@@ -57,17 +69,24 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         this.height = 600;
     }
 
+
+    public searchLogic(input: string): boolean {
+        let found: boolean = super.searchLogic(input);
+        found = found || this.filename.toLocaleLowerCase().includes(input);
+        return found;
+    }
+
     getURL(): string {
         return "file://" + this.path.replaceAll("\\", "/");
     }
 
-    name:string;
+    name: string;
     path: string;
     filename: string;
 }
 
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
-    constructor(url: string) {
+    constructor(url: string = "") {
         super("wsentryyoutube", true);
 
         this.url = url;
@@ -76,7 +95,9 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
         this.height = 600;
     }
 
-    getId(): string {
+
+
+    getId(): string | null {
         var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         var match = this.url.match(regExp);
 
@@ -84,7 +105,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
             this.videoId = match[2];
             return match[2];
         } else {
-            return 'error';
+            return null;
         }
     }
 
@@ -117,6 +138,12 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
     }
 
     text: string = "";
+
+    public searchLogic(input: string): boolean {
+        let found: boolean = super.searchLogic(input);
+        found = found || this.text.toLocaleLowerCase().includes(input);
+        return found;
+    }
 }
 
 export class WorkspaceEntryFrame extends WorkspaceEntry {
@@ -145,7 +172,14 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         this.height = 600;
     }
 
-    name:string;
+
+    public searchLogic(input: string): boolean {
+        let found: boolean = super.searchLogic(input);
+        found = found || this.foldername.toLocaleLowerCase().includes(input);
+        return found;
+    }
+
+    name: string;
     path: string;
     defaultPath: string;
     foldername: string;

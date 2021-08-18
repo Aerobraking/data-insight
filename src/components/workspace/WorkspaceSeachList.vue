@@ -3,10 +3,11 @@ import { Workspace, WorkspaceEntry } from "../../store/model/Workspace";
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: "wsentriesbookmarks",
+  name: "wssearchlist",
   components: {},
   props: {
     model: Workspace,
+    searchString: String,
     viewId: Number,
   },
   data(): {
@@ -37,10 +38,11 @@ export default defineComponent({
     },
   },
   computed: {
-    nonEmptyNames: function (): WorkspaceEntry[] {
-      return this.model != undefined
+    listFound: function (): WorkspaceEntry[] {
+      let c = this;
+      return c.searchString && c.searchString.trim().length > 0 && this.model
         ? this.model?.entries.filter(function (number) {
-            return number.displayname.length > 0;
+            return number.searchLogic(c.searchString ? c.searchString : "");
           })
         : [];
     },
@@ -59,14 +61,14 @@ export default defineComponent({
  -->
 <template>
   <div class="bookmarks">
-    <h3>Bookmarks</h3>
+    <h3>Searchlist</h3>
     <keep-alive>
       <a
         @mousedown.left.stop
         @mouseup.stop
         @click.stop="goToEntry"
         class="ws-entry-bookmark"
-        v-for="e in nonEmptyNames"
+        v-for="e in listFound"
         :name="model.entries.indexOf(e)"
         :key="e.id"
         :entry="e"
@@ -82,7 +84,7 @@ export default defineComponent({
 <style scoped lang="scss">
 .bookmarks {
   position: absolute;
-  left: 10px;
+  left: 300px;
   top: 20%;
 
   a {
