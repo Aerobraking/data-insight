@@ -89,6 +89,8 @@ export default defineComponent({
   inject: ["entrySelected", "entrySelected"],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip") {
+      console.log("entrySelectedLocal");
+      
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },
@@ -113,7 +115,7 @@ export default defineComponent({
   background-size: cover;
   box-sizing: border-box;
   background-color: #ffd4d43b;
-  border: 1px solid #fff;
+  border: 0px solid #fff;
   border-radius: 0;
   padding: 0;
   margin: 0;

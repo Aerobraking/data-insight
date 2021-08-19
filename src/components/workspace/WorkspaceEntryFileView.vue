@@ -1,5 +1,7 @@
 <template>
   <div
+    @mousedown.left.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.capture.prevent.stop.exact="entrySelectedLocal('single')"
     ref="el"
     class="ws-entry-file-wrapper sizefixed"
     :style="{
@@ -9,7 +11,7 @@
     <input
       @keydown.stop.prevent
       @keyup.stop.prevent
-      @keypress.stop.prevent 
+      @keypress.stop.prevent
       type="text"
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
@@ -88,15 +90,8 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-.workspace-is-selected {
-  // border: 0px solid #f81fc2f8;
-  // box-sizing: border-box;
-  // background-color: #f81fc252;
-  // mix-blend-mode: luminosity;
-}
-
 .ws-entry-file-wrapper {
-   z-index: 100;
+  z-index: 100;
   backface-visibility: hidden;
   will-change: transform;
   position: absolute;

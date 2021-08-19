@@ -3,10 +3,10 @@
   <div
     ref="roo"
     @keydown="keydown"
-    @keyup="keymonitor"
-    @mouseup="dragMouseUp"
+    @keyup="keyup"
+    @mouseup="mouseup"
     @mousedown="mouseDown"
-    @mousemove.capture="dragMouseMove"
+    @mousemove.capture="mousemove"
     @dragover="dragover"
     @dragleave="dragleave"
     @drop="drop"
@@ -15,8 +15,9 @@
   >
     <!-- Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
     <canvas class="workspace-canvas"></canvas>
+
     <panZoom
-      @paste="onpaste"
+      @paste="onPaste"
       @init="panHappen"
       @pan="onPanStart"
       @zoom="onZoom"
@@ -53,9 +54,11 @@
         </keep-alive>
       </div>
     </panZoom>
+
     <div class="ws-button-list">
       <button @click="showAll">Show all</button>
     </div>
+
     <wsentriesbookmarks
       :model="model"
       @bookmarkclicked="moveToEntry"
@@ -71,7 +74,7 @@
       type="search"
       @input="searchUpdate"
       class="workspace-search"
-      @paste="onpaste"
+      @paste="onPaste"
       v-model="searchString"
       placeholder="Suche..."
     />
@@ -96,6 +99,7 @@ import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
 import { defineComponent } from "vue";
 import {
+  editElementDimension,
   ElementDimension,
   getCoordinatesFromElement,
   ResizerComplex,
@@ -123,7 +127,7 @@ export default defineComponent({
     dragStart: { x: number; y: number };
     dragMoveRel: { x: number; y: number };
     dragTempOffset: { x: number; y: number };
-    mouseDownB: boolean;
+    selectionDragActive: boolean;
     isSelectionEvent: boolean;
     panZoomInstance: any;
     mousePositionLast: { x: number; y: number };
@@ -135,12 +139,12 @@ export default defineComponent({
   } {
     return {
       searchString: "",
-      useCanvas: false,
+      useCanvas: true,
       mousePositionLast: { x: 0, y: 0 },
       dragMoveRel: { x: 0, y: 0 },
       dragStart: { x: 0, y: 0 },
       dragTempOffset: { x: 0, y: 0 },
-      mouseDownB: false,
+      selectionDragActive: false,
       isSelectionEvent: false,
       panZoomInstance: null,
       dragSelection: [],
@@ -236,10 +240,17 @@ export default defineComponent({
         return;
       }
 
-      context.fillStyle = "rgb(53,53,53)";
+      let b = Math.min(
+        Math.max(15, 50 * (this.getCurrentTransform().scale * 10)),
+        90
+      );
+      b = 70;
+      context.fillStyle = "rgb(" + b + "," + b + "," + b + ")";
 
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillRect(0, 0, canvas.width, canvas.height);
+
+      b = 200;
 
       if (this.useCanvas) {
         context.save();
@@ -253,30 +264,32 @@ export default defineComponent({
           this.getCurrentTransform().scale
         );
 
-        // scale the context
-
-        context.fillStyle = "rgb(0,100,0)";
-
-        context.fillRect(0, 0, 150, 100);
-
-        let w = canvas.width,
-          h = canvas.height;
-
-        context.beginPath();
-        for (let x = 0; x <= w; x += 260) {
-          context.moveTo(x, 0);
-          context.lineTo(x, h);
-          for (let y = 0; y <= h; y += 260) {
-            context.moveTo(0, y);
-            context.lineTo(w, y);
-          }
-        }
-        context.stroke();
-
         context.restore();
+
+        let currentC = this.getCurrentTransform();
+
+        context.strokeStyle = "rgb(57, 215, 255)";
+        context.lineWidth = 2;
+
+        for (let e of this.getSelectedEntries()) {
+          let c = this.getCoordinatesFromElement(e);
+
+          c.x = c.x * currentC.scale + currentC.x;
+          c.x2 = c.x2 * currentC.scale + currentC.x;
+
+          c.y = c.y * currentC.scale + currentC.y;
+          c.y2 = c.y2 * currentC.scale + currentC.y;
+
+          c.w = c.w * currentC.scale;
+          c.h = c.h * currentC.scale;
+
+          var rect = e.getBoundingClientRect();
+
+          context.strokeRect(c.x - 4, c.y - 4, c.w + 8, c.h + 8);
+        }
       }
     },
-    onpaste(e: ClipboardEvent) {
+    onPaste(e: ClipboardEvent) {
       console.log(e.clipboardData?.getData("text"));
 
       e.preventDefault();
@@ -300,7 +313,34 @@ export default defineComponent({
       }
     },
     keydown(e: KeyboardEvent) {
-      console.log(e.key);
+      if (e.altKey) {
+        switch (e.key) {
+          case "1":
+          case "2":
+          case "3":
+          case "4":
+          case "5":
+          case "6":
+          case "7":
+          case "8":
+          case "9":
+            if (this.model) {
+              let index = 0,
+                indexModel = 0;
+
+              for (let entry of this.model?.entries) {
+                index = entry.displayname.length > 0 ? index + 1 : index;
+                if (index === Number(e.key)) {
+                  this.moveToEntry({ zoom: false, index: indexModel });
+                  break;
+                }
+                indexModel++;
+              }
+            }
+            break;
+        }
+      }
+
       switch (e.key) {
         case " ":
           if (e.repeat) {
@@ -314,7 +354,7 @@ export default defineComponent({
           break;
       }
     },
-    keymonitor(e: KeyboardEvent) {
+    keyup(e: KeyboardEvent) {
       let listFiles: Array<WorkspaceEntry> = [];
       switch (e.key) {
         case " ":
@@ -399,6 +439,8 @@ export default defineComponent({
           break;
         default:
       }
+
+      this.drawCanvas();
     },
     getBounds(entries: HTMLElement[]): ElementDimension {
       let x = Infinity,
@@ -448,10 +490,6 @@ export default defineComponent({
       oldView.y2 = oldView.y + oldView.h;
 
       this.oldViewRect = oldView;
-      console.log(oldView);
-      console.log(this.getPanzoomRect(this.oldViewRect));
-
-      //  debugger;
 
       let bound = this.getPanzoomRect(this.getBounds(this.getEntries()), 0.2);
       this.panZoomInstance.smoothShowRectangle(bound);
@@ -484,8 +522,6 @@ export default defineComponent({
 
       let coordinates = this.getCoordinatesFromElement(entryToMoveTo);
       console.log(coordinates);
-
-      //    this.entrySelected(entryToMoveTo, "single");
 
       let scaler = 0.25;
 
@@ -722,12 +758,12 @@ export default defineComponent({
       return getCoordinatesFromElement(e);
     },
     mouseDown: function (e: MouseEvent) {
-      this.mouseDownB = e.ctrlKey;
+      this.selectionDragActive = e.ctrlKey && e.button==0;
 
       if (this.spacePressed) {
         this.spacePressed = false;
         this.getEntries().forEach((e) => {
-          e.classList.toggle("resizable-prevent-input", true);
+          e.classList.toggle("resizable-prevent-input", false);
         });
         let rect: ClientRect = this.$el.getBoundingClientRect();
         let bound = this.getPanzoomRect({
@@ -744,6 +780,9 @@ export default defineComponent({
       }
 
       if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
+        /**
+         * Start dragging of the current selection with left mouse button + ctrl or
+         */
         this.dragMoveRel = { x: e.clientX, y: e.clientY };
 
         this.dragSelection = Array.from(
@@ -755,6 +794,8 @@ export default defineComponent({
         this.selectionWrapperResizer?.setChildren(this.dragSelection);
 
         this.dragSelection.push(this.getSelectionWrapper());
+
+        this.preventInput(true);
 
         return;
       }
@@ -770,16 +811,7 @@ export default defineComponent({
           selectionRectangle.style.height = "0px";
         }
 
-        if (
-          e.target != undefined &&
-          (<any>e.target).classList.contains("draggable")
-        ) {
-          console.log(e.target);
-
-          // Invoke startDrag by passing it the target element as "this":
-          // startDrag.call(evt.target, evt);
-        }
-        if (this.mouseDownB) {
+        if (this.selectionDragActive) {
           e.stopImmediatePropagation();
           e.stopPropagation();
         }
@@ -809,6 +841,8 @@ export default defineComponent({
 
       selectionRectangle.style.visibility =
         this.getSelectedEntries().length > 0 ? "visible" : "hidden";
+
+      this.drawCanvas();
     },
     getCurrentTransform(): { scale: number; x: number; y: number } {
       return this.panZoomInstance.getTransform();
@@ -831,7 +865,7 @@ export default defineComponent({
         }px,0px)`;
       }
     }, 16),
-    dragMouseMove: function (e: MouseEvent) {
+    mousemove: function (e: MouseEvent) {
       let comp = this;
 
       this.mousePositionLast = comp.getPositionInWorkspace(e);
@@ -869,7 +903,7 @@ export default defineComponent({
         selectionRectangle.style.height = Math.abs(h) + "px";
       }
 
-      if (this.mouseDownB) {
+      if (this.selectionDragActive) {
         if (e.ctrlKey) {
           this.updateSelectionDrag(e, this);
         }
@@ -882,17 +916,19 @@ export default defineComponent({
 
       this.drawCanvas();
     },
-    dragMouseUp: function (e: MouseEvent) {
+    mouseup: function (e: MouseEvent) {
       console.log("dragMouseUp");
       let selectionRectangle: any = this.getSelectionRectangle();
 
-      if (this.mouseDownB) {
+      if (this.selectionDragActive) {
+        this.preventInput(false);
+
         /**
-         * Selection drag
-         */
+         * end dragging of the selected entries
+         * */
       } else if (selectionRectangle.style.visibility === "visible") {
         /**
-         * Selection rectangle
+         * Selection rectangle, check which entries are inside it and make same as the selection.
          */
 
         let coordRect = this.getCoordinatesFromElement(selectionRectangle);
@@ -914,7 +950,7 @@ export default defineComponent({
         selectionRectangle.style.visibility = "hidden";
       }
 
-      this.mouseDownB = false;
+      this.selectionDragActive = false;
     },
 
     onPanStart(e: any) {
@@ -949,6 +985,11 @@ export default defineComponent({
       });
       var shouldIgnore: boolean = e.altKey;
       return shouldIgnore;
+    },
+    preventInput(prevent: boolean) {
+      this.getEntries().forEach((e) => {
+        e.classList.toggle("resizable-prevent-input", prevent);
+      });
     },
     beforeMouseDownHandler(e: any) {
       var shouldIgnore: boolean = !(e.altKey || e.button == 1);
@@ -994,6 +1035,7 @@ var switcher = false;
   background: rgba(218, 218, 218, 0);
   position: absolute;
   z-index: 5000;
+  pointer-events: all;
 }
 
 div .resizer-top-right {
@@ -1027,12 +1069,13 @@ div .resizer-top-left {
   width: 0px;
   height: 0px;
   transform: translate3d(0px, 0px, 0px);
-  background-color: rgba(140, 228, 250, 0.151);
-  border: 2px solid rgba(57, 215, 255, 0.76);
+  border: 2px solid rgba(57, 215, 255, 1);
   z-index: 4000;
   padding: 10px;
   margin: -10px;
   visibility: hidden;
+
+  pointer-events: none;
 }
 
 .wsentry-displayname {
@@ -1049,7 +1092,7 @@ div .resizer-top-left {
   color: rgb(230, 230, 230);
   font-size: 25pt;
   overflow: visible;
-  pointer-events: all;
+  //pointer-events: all;
   outline: none;
   transition: background-color 500ms linear;
   input {
@@ -1096,13 +1139,6 @@ div .resizer-top-left {
   100% {
     opacity: 1;
   }
-}
-
-.workspace-is-selected {
-  /* offset-x | offset-y | blur-radius | spread-radius | color */
-  // box-shadow: 0px 0px 0px 6px #f81fc2;
-  // background-color: #f81fc252;
-  // resize: both;
 }
 
 .rectangle-selection {

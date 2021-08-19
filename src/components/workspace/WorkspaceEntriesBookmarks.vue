@@ -66,13 +66,13 @@ export default defineComponent({
         @mouseup.stop
         @click.stop="goToEntry"
         class="ws-entry-bookmark"
-        v-for="e in nonEmptyNames"
+        v-for="e,ind in nonEmptyNames"
         :name="model.entries.indexOf(e)"
         :key="e.id"
         :entry="e"
         :viewId="model.id"
       >
-        {{ e.displayname }}
+        {{(ind+1) + ". "+ e.displayname }}
       </a>
     </keep-alive>
   </div>

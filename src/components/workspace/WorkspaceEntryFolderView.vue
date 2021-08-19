@@ -36,7 +36,7 @@
 
     <div class="viewport">
       <div
-        @wheel="scrolling"
+       
         :class="{ opaque: opaque }"
         v-show="showTiles"
         class="tile-wrapper"

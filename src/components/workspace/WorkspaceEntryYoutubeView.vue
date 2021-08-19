@@ -96,10 +96,8 @@ export default defineComponent({
   box-sizing: border-box;
 
   .workspace-is-selected {
-    /* offset-x | offset-y | blur-radius | spread-radius | color */
-    box-shadow: 0px 0px 0px 6px #f81fc2;
-    background-color: #f81fc252;
-    resize: none;
+   // background-color: #f81fc252;
+  //  resize: none;
   }
 
   .inner-wrapper {
