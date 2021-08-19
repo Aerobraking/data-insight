@@ -4,6 +4,10 @@ import * as _ from "underscore";
 import { Type } from "class-transformer";
 import { ElementDimension } from "@/utils/resize";
 
+const fs = require("fs");
+const path = require("path");
+const chokidar = window.require("chokidar");
+
 export class WorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {
         this.id = Math.random() * 1000000;
@@ -170,6 +174,17 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         this.sort = "asc";
         this.width = 600;
         this.height = 600;
+
+
+        var targetObj = {};
+        var targetProxy = new Proxy<String>(this.path, {
+            set: function (target: String, key, value) {
+                target = value;
+                return true;
+            }
+
+        });
+
     }
 
 
@@ -179,6 +194,46 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         return found;
     }
 
+    private updateFileList(): void {
+        this.fileList = [];
+
+        let c = this;
+
+        const dir = this.path;
+
+        try {
+            if (fs.existsSync(this.path)) {
+                fs.readdirSync(this.path).forEach((file: any) => {
+                    const filePath = path.join(dir, file);
+                    const fileStat = fs.lstatSync(filePath);
+                    this.fileList.push(
+                        new FolderWindowFile(
+                            filePath,
+                            fileStat.isDirectory(),
+                            fileStat.isFile ? fileStat.size : 0
+                        )
+                    );
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            this.fileList = [];
+        }
+
+        console.log("length: " + this.fileList.length);
+
+    }
+
+    public getFileList(): Array<FolderWindowFile> {
+
+        this.updateFileList();
+
+        return this.fileList;
+
+    }
+
+
+    fileList: Array<FolderWindowFile> = [];
     name: string;
     path: string;
     defaultPath: string;

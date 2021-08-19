@@ -35,12 +35,7 @@
     </div>
 
     <div class="viewport">
-      <div
-       
-        :class="{ opaque: opaque }"
-        v-show="showTiles"
-        class="tile-wrapper"
-      >
+      <div :class="{ opaque: opaque }" v-show="showTiles" class="tile-wrapper">
         <div class="tile" v-on:dblclick.stop.prevent="folderBack()">
           <p>... {{ parentDir }}</p>
         </div>
@@ -83,8 +78,10 @@
 <script lang="ts">
 const { shell } = require("electron"); // deconstructing assignment
 
+import * as watcher from "./../../utils/WatchSystem";
 const fs = require("fs");
 const path = require("path");
+const chokidar = window.require("chokidar");
 import { defineComponent } from "vue";
 import {
   FolderWindowFile,
@@ -94,33 +91,57 @@ import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
-  data() {
+  data(): {
+    showTiles: boolean;
+    opaque: boolean;
+    searchstring: string;
+    parentDir: string;
+    list: Array<FolderWindowFile>;
+  } {
     return {
       showTiles: true,
       opaque: true,
       searchstring: "",
       parentDir: "",
+      list: [],
     };
   },
   setup(props) {
     return setupEntry(props);
   },
   props: {
-    entry: WorkspaceEntryFolderWindow,
+    entry: {
+      type: WorkspaceEntryFolderWindow,
+      required: true,
+    },
     viewKey: Number,
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
     this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+
+    this.updateFileList();
+
+    watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
   inject: ["entrySelected", "entrySelected"],
+  watch: {
+    // whenever question changes, this function will run
+    "entry.path": function (newPath: string, oldPath: string) { 
+      watcher.FileSystemWatcher.unregisterPath(oldPath, this.watcherEvent);
+      watcher.FileSystemWatcher.registerPath(newPath, this.watcherEvent);
+      this.updateFileList();
+    },
+  },
   methods: {
+    watcherEvent() { 
+      this.updateFileList();
+    },
     scrolling(e: WheelEvent) {
       /**
        * Todo: disable scrolling when zoom factor is too small
        */
-      // console.log(this.workspace  );
-      
+    
       // if (this.workspace && this.workspace?.getCurrentTransform().scale > 4) {
       //   e.stopPropagation();
       // }
@@ -137,6 +158,31 @@ export default defineComponent({
     setDefault() {
       if (this.$props.entry != undefined) {
         this.$props.entry.defaultPath = this.$props.entry?.path;
+      }
+    },
+    updateFileList(): void {
+      this.list = [];
+      let c = this;
+      if (this.entry != undefined) {
+        const dir = this.entry.path;
+
+        try {
+          if (fs.existsSync(this.entry.path)) {
+            fs.readdirSync(this.entry.path).forEach((file: any) => {
+              const filePath = path.join(dir, file);
+              const fileStat = fs.lstatSync(filePath);
+              this.list.push(
+                new FolderWindowFile(
+                  filePath,
+                  fileStat.isDirectory(),
+                  fileStat.isFile ? fileStat.size : 0
+                )
+              );
+            });
+          }
+        } catch (err) {
+          console.error(err);
+        }
       }
     },
     selectEntry(select: "add" | "rem" | "flip") {
@@ -174,36 +220,10 @@ export default defineComponent({
       }
     },
   },
-  watch: {
-    firstName: function (val) {},
-  },
+
   computed: {
     getFileList(): Array<FolderWindowFile> {
-      let list: Array<FolderWindowFile> = [];
-      let c = this;
-      if (this.entry != undefined) {
-        const dir = this.entry.path;
-
-        try {
-          if (fs.existsSync(this.entry.path)) {
-            fs.readdirSync(this.entry.path).forEach((file: any) => {
-              const filePath = path.join(dir, file);
-              const fileStat = fs.lstatSync(filePath);
-              list.push(
-                new FolderWindowFile(
-                  filePath,
-                  fileStat.isDirectory(),
-                  fileStat.isFile ? fileStat.size : 0
-                )
-              );
-            });
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }
-
-      list = list
+      this.list
         .sort((a: FolderWindowFile, b: FolderWindowFile) => {
           if (a.isDirectory === b.isDirectory) {
             return a.filename.localeCompare(b.filename);
@@ -211,14 +231,14 @@ export default defineComponent({
           return a.isDirectory ? -1 : 1;
         })
         .filter((f: FolderWindowFile) => {
-          return c.searchstring.length < 1
+          return this.searchstring.length < 1
             ? true
             : f.filename
                 .toLowerCase()
                 .includes(this.searchstring.toLowerCase());
         });
 
-      return list;
+      return this.list;
     },
   },
 
