@@ -12,7 +12,7 @@
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       @dblclick="enableEditor"
     >
-    <p>Double click to enable</p>
+      <p>Double click to enable</p>
     </div>
 
     <input
@@ -119,15 +119,15 @@ export default defineComponent({
 }
 </style>
 <style scoped lang="scss">
-.editor-enabler {  
+.editor-enabler {
   position: absolute;
   width: 100%;
   height: 100%;
   z-index: 500;
   background: rgba(255, 255, 255, 0.151);
 
-  p{
-        bottom: 150px;
+  p {
+    bottom: 150px;
     position: absolute;
     color: black;
     text-align: center;
@@ -144,8 +144,8 @@ export default defineComponent({
 
 .workspace-is-selected {
   /* offset-x | offset-y | blur-radius | spread-radius | color */
- // box-shadow: 0px 0px 0px 6px #f81fc2;
- // background-color: #f81fc252;
+  // box-shadow: 0px 0px 0px 6px #f81fc2;
+  // background-color: #f81fc252;
 }
 
 .ws-entry-textarea-wrapper {

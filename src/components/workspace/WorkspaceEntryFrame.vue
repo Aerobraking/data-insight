@@ -5,10 +5,11 @@
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
-    v-on:dblclick="doubleClick"
+   
     class="ws-entry-frame-wrapper"
   >
     <input
+    
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
       placeholder=""

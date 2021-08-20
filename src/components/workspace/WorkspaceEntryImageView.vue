@@ -9,9 +9,13 @@
     class="ws-entry-image-wrapper"
   >
     <input
+      v-on:dblclick.stop
+      keydown.capture.stop
+      keyup.capture.stop
+      keypressed.capture.stop
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
-      placeholder=""
+      placeholder=""  
     />
   </div>
 </template>

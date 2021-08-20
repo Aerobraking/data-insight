@@ -1,6 +1,6 @@
 
 <template>
-  <div class="tabs__header">
+  <div class="tabs-header">
     <a class="tab-create" @click="createWorkspaceTab()"> +W </a>
     <a class="tab-create" @click="createOverviewTab()"> +O </a>
     <a
@@ -8,29 +8,32 @@
       v-for="(view, index) in getViewList"
       @click="selectTab(index)"
       :key="view.key"
-      :class="{ tab__selected: index == getSelectedViewIndex }"
+      :class="{ 'tab-selected': index == getSelectedViewIndex }"
     >
       {{ view.name }}
     </a>
   </div>
 
   <keep-alive>
-    <div
+    <workspaceview
       v-for="(view, index) in getViewList"
       @click="selectTab(index)"
       :key="view.key"
       v-show="view.isActive"
+      :model="view"
     >
-      <workspaceview :model="view" v-if="view.type === 'workspace'">
-      </workspaceview>
-      <overviewview :model="view" v-else-if="view.type === 'overview'">
-      </overviewview>
-    </div>
+   
+   
+    </workspaceview>
   </keep-alive>
 </template>
 
 
 <script lang="ts">
+/*
+   <overviewview :model="view" v-else-if="view.type === 'overview'">
+      </overviewview>
+*/
 import { defineComponent } from "vue";
 import Startscreen from "./StartScreen.vue";
 import workspaceview from "../workspace/WorkspaceView.vue";
@@ -85,16 +88,17 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-div.tabs__header {
+div.tabs-header {
   display: block;
   margin: 0 0 0 0px;
   padding: 0;
   z-index: 100;
   background-color: rgb(100, 100, 100);
-  position: absolute;
+  position: relative;
   width: 100%;
-}
-div.tabs__header a {
+  height:42px;
+
+  a {
   text-align: left;
   padding: 10px 15px 0px 15px;
   border-radius: 5px;
@@ -106,6 +110,7 @@ div.tabs__header a {
   white-space: nowrap;
   border-bottom: 8px solid transparent;
 }
+} 
 
 .close-file {
   opacity: 0;
@@ -128,13 +133,13 @@ div.tabs__header a {
   }
 }
 
-div.tabs__header a.tab__selected {
+div.tabs-header a.tab-selected {
   color: lavender;
   border-radius: 5px 5px 0 0;
 
   background-color: rgb(53, 53, 53);
 }
-div.tabs__header a.tab-create {
+div.tabs-header a.tab-create {
   color: lavender;
   border-radius: 5px 5px 0 0;
   border-bottom: 8px solid transparent;

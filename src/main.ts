@@ -17,7 +17,7 @@ app.use(store).use(panZoom).mount('#app');
 app.component('wsentryfile', wsentryfile);
 app.component('wsentrytextarea', wsentrytextarea);
 app.component('wsentryframe', wsentryframe);
-app.component('wsentryfolderview', wsentryfolderview);
+app.component('wsentryfolder', wsentryfolderview);
 app.component('wsentryimage', wsentryimage);
 app.component('wsentryyoutube', wsentryyoutube); 
     

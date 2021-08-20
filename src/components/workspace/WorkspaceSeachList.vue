@@ -18,12 +18,12 @@ export default defineComponent({
     };
   },
   methods: {
-    goToEntry(event: any) {
+    goToEntry(zoom: boolean, event: any) {
       if (!this.clickTimer) {
         this.clickTimer = setTimeout(() => {
           this.$emit("bookmarkclicked", {
-            index: event.target.getAttribute("name"),
-            zoom: false,
+            id: event.target.getAttribute("name"),
+            zoom: zoom,
           });
           this.clickTimer = null;
         }, 5); //tolerance in ms
@@ -31,8 +31,8 @@ export default defineComponent({
         clearTimeout(this.clickTimer);
         this.clickTimer = null;
         this.$emit("bookmarkclicked", {
-          index: event.target.getAttribute("name"),
-          zoom: true,
+          id: event.target.getAttribute("name"),
+          zoom: zoom,
         });
       }
     },
@@ -60,47 +60,64 @@ export default defineComponent({
  
  -->
 <template>
-  <div class="bookmarks">
-    <h3>Searchlist</h3>
+  <table>
     <keep-alive>
-      <a
+      <tr
         @mousedown.left.stop
         @mouseup.stop
-        @click.stop="goToEntry"
-        class="ws-entry-bookmark"
+        @click="goToEntry(false, $event)"
+        @dblclick="goToEntry(true, $event)"
+        class="search-result-row"
         v-for="e in listFound"
-        :name="model.entries.indexOf(e)"
+        :name="e.id"
         :key="e.id"
         :entry="e"
         :viewId="model.id"
       >
-        {{ e.displayname }}
-      </a>
+        <td>{{ e.typename }}</td>
+        <td>{{ e.searchResultString() }}</td>
+        <td>{{ e.displayname }}</td>
+      </tr>
     </keep-alive>
-  </div>
+  </table>
 </template>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-.bookmarks {
-  position: absolute;
-  left: 300px;
-  top: 20%;
-
-  a {
-    user-select: none;
-  }
-  h3 {
-    margin: 0;
-    padding: 0;
-    color: #bbb;
-    text-align: left;
+table {
+  td {
+    width: 100%;
     pointer-events: none;
   }
+  td:nth-child(1) {
+    text-align: left;
+    width: 10%;
+  }
+  td:nth-child(2) {
+    text-align: left;
+  }
+  td:nth-child(3) {
+    text-align: right;
+    color: #aaa;
+  }
+  tr {
+    min-height: 0;
+    margin: 0;
+    padding: 10px;
+  }
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #444;
+  white-space: nowrap;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  border-spacing: 0;
+  border: none;
 }
 
-.ws-entry-bookmark {
-  color: #fff;
+.search-result-row {
+  user-select: none;
   cursor: pointer;
   display: table;
   padding-top: 10px;
@@ -108,5 +125,10 @@ export default defineComponent({
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  transition: background-color 0.3s;
+}
+
+.search-result-row:hover {
+  background: #ccc;
 }
 </style>

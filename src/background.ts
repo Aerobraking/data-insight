@@ -1,6 +1,6 @@
 'use strict'
 
-import { ipcMain, app, protocol, BrowserWindow, dialog, webContents, Menu } from 'electron'
+import { ipcMain, app, protocol, BrowserWindow, dialog, webContents, Menu, nativeImage } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import { utcFormat } from 'd3'
@@ -18,6 +18,22 @@ protocol.registerSchemesAsPrivileged([
 
 
 
+ipcMain.on('ondragstart', (event:any, filePaths: string[]) => {
+
+
+  filePaths.forEach(function (e: string, index: number, theArray: string[]) {
+    filePaths[index] = e.replaceAll("\\\\", "/");
+    filePaths[index] = e.replaceAll("\\", "/");
+  });
+
+  console.log("start file drag: ");
+  console.log(filePaths);
+
+  event.sender.startDrag({
+    files: filePaths,
+    icon: "C:/OneDrive/Fotografie/Export/2015-05-02-18-26-01.jpg"
+  })
+})
 
 ipcMain.on('open-insight-file', (event: any, arg: any) => {
   openFile();
@@ -70,7 +86,7 @@ function saveFile(arg: string) {
   console.log("file saved");
 }
 
-function fireFileSaveEvent(){
+function fireFileSaveEvent() {
   webContents.getAllWebContents().forEach(wc => {
     wc.send('fire-file-save', "");
   })
@@ -104,20 +120,20 @@ async function createWindow() {
       label: 'Menu',
       submenu: [
         {
-           role: "togglefullscreen",
+          role: "togglefullscreen",
           accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
-          label: 'Fullscreen' 
+          label: 'Fullscreen'
         },
         {
-           
+
           accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
           label: 'Save as',
           click() {
             fireFileSaveEvent();
           }
         },
-         {
-         
+        {
+
           accelerator: process.platform === 'darwin' ? 'Ctrl+O' : 'Ctrl+O',
           label: 'Open',
           click() {
@@ -157,6 +173,7 @@ async function createWindow() {
     win.loadURL('app://./index.html')
   }
 }
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {

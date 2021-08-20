@@ -7,13 +7,13 @@
     @mouseup="mouseup"
     @mousedown="mouseDown"
     @mousemove.capture="mousemove"
+    @click.stop
     @dragover="dragover"
     @dragleave="dragleave"
     @drop="drop"
-    @click.stop
-    class="wrapper workspace"
+    class="wrapper"
   >
-    <!-- Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
+    <!--   @mousedown.exact="mouseDown"  startFileDrag Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
     <canvas class="workspace-canvas"></canvas>
 
     <panZoom
@@ -41,8 +41,8 @@
         <keep-alive>
           <component
             class="ws-entry"
-            v-for="(e, ind) in model.entries"
-            :name="ind"
+            v-for="e in model.entries"
+            :name="e.id"
             :key="e.id"
             :entry="e"
             :viewId="model.id"
@@ -63,26 +63,29 @@
       :model="model"
       @bookmarkclicked="moveToEntry"
     ></wsentriesbookmarks>
-    <wssearchlist
-      v-if="searchActive"
-      :model="model"
-      :searchString="searchString"
-      @bookmarkclicked="moveToEntry"
-    ></wssearchlist>
 
-    <input
-      type="search"
-      @input="searchUpdate"
-      class="workspace-search"
-      @paste="onPaste"
-      v-model="searchString"
-      placeholder="Suche..."
-    />
+    <div class="workspace-search">
+      <input
+        type="search"
+        @input="searchUpdate"
+        @paste="onPaste"
+        v-model="searchString"
+        placeholder="Suche..."
+      />
+      <wssearchlist
+        class="search-results"
+        v-if="searchActive"
+        :model="model"
+        :searchString="searchString"
+        @bookmarkclicked="moveToEntry"
+      ></wssearchlist>
+    </div>
   </div>
 </template>
 
 
 <script lang="ts">
+import { ipcRenderer } from "electron";
 import {
   Workspace,
   WorkspaceEntry,
@@ -517,39 +520,51 @@ export default defineComponent({
 
       return rect;
     },
-    moveToEntry(payload: { index: number; zoom: boolean }) {
-      let entryToMoveTo: HTMLElement = this.getEntries()[payload.index];
+    moveToEntry(
+      payload: { index: any; zoom: boolean } | { id: any; zoom: boolean }
+    ) {
+      let p: any = payload;
 
-      let coordinates = this.getCoordinatesFromElement(entryToMoveTo);
-      console.log(coordinates);
+      let entry: HTMLElement | null = null;
 
-      let scaler = 0.25;
+      if (p.index != undefined) {
+      }
 
-      let rect: {
-        bottom: number;
-        left: number;
-        right: number;
-        top: number;
-      } = {
-        left: coordinates.x - scaler * coordinates.w,
-        right: coordinates.x2 + scaler * coordinates.w,
-        top: coordinates.y - scaler * coordinates.h,
-        bottom: coordinates.y2 + scaler * coordinates.h,
-      };
+      if (p.id != undefined) {
+        entry = this.getViewByID(Number(p.id));
+      }
 
-      let x =
-        (-coordinates.x - coordinates.w / 2) *
-          this.getCurrentTransform().scale +
-        this.$el.clientWidth / 2;
-      let y =
-        (-coordinates.y - coordinates.w / 2) *
-          this.getCurrentTransform().scale +
-        this.$el.clientHeight / 2;
+      if (entry != null) {
+        let coordinates = this.getCoordinatesFromElement(entry);
 
-      if (payload.zoom) {
-        this.panZoomInstance.smoothShowRectangle(rect);
-      } else {
-        this.panZoomInstance.smoothMoveTo(x, y);
+        let scaler = 0.25;
+
+        let rect: {
+          bottom: number;
+          left: number;
+          right: number;
+          top: number;
+        } = {
+          left: coordinates.x - scaler * coordinates.w,
+          right: coordinates.x2 + scaler * coordinates.w,
+          top: coordinates.y - scaler * coordinates.h,
+          bottom: coordinates.y2 + scaler * coordinates.h,
+        };
+
+        let x =
+          (-coordinates.x - coordinates.w / 2) *
+            this.getCurrentTransform().scale +
+          this.$el.clientWidth / 2;
+        let y =
+          (-coordinates.y - coordinates.w / 2) *
+            this.getCurrentTransform().scale +
+          this.$el.clientHeight / 2;
+
+        if (payload.zoom) {
+          this.panZoomInstance.smoothShowRectangle(rect);
+        } else {
+          this.panZoomInstance.smoothMoveTo(x, y);
+        }
       }
     },
     entrySelected(entry: any, type: "add" | "single" | "flip") {
@@ -754,11 +769,58 @@ export default defineComponent({
         this.$el.querySelectorAll(".ws-entry")
       ) as HTMLElement[];
     },
+    getModelEntriesFromView: function (
+      listViews: HTMLElement[]
+    ): WorkspaceEntry[] {
+      let list: WorkspaceEntry[] = [];
+
+      for (let index = 0; index < listViews.length; index++) {
+        const v = listViews[index];
+        let id = Number(v.getAttribute("name"));
+        let e = this.model?.entries.find((e) => e.id === id);
+        if (e != undefined) {
+          list.push(e);
+        }
+      }
+
+      return list;
+    },
+    getViewByID: function (id: Number): HTMLElement | null {
+      let list: WorkspaceEntry[] = [];
+
+      for (let index = 0; index < this.getEntries().length; index++) {
+        const v = this.getEntries()[index];
+        let idv = Number(v.getAttribute("name"));
+        if (idv === id) {
+          return v;
+        }
+      }
+
+      return null;
+    },
     getCoordinatesFromElement(e: any): ElementDimension {
       return getCoordinatesFromElement(e);
     },
+    startFileDrag: function (e: MouseEvent) {
+      e.preventDefault();
+
+      let list = this.getModelEntriesFromView(this.getSelectedEntries());
+      let listFilesToDrag: string[] = [];
+
+      for (let index = 0; index < list.length; index++) {
+        const e = list[index];
+        listFilesToDrag.push(...e.getFilesForDragging());
+      }
+
+      console.log("send files to drag");
+      console.log(listFilesToDrag);
+
+      if (listFilesToDrag.length > 0) {
+        ipcRenderer.send("ondragstart", listFilesToDrag);
+      }
+    },
     mouseDown: function (e: MouseEvent) {
-      this.selectionDragActive = e.ctrlKey && e.button==0;
+      this.selectionDragActive = e.ctrlKey && e.button == 0;
 
       if (this.spacePressed) {
         this.spacePressed = false;
@@ -1007,17 +1069,35 @@ var switcher = false;
 .search-not-found {
   opacity: 0.05;
   // transition: opacity 0.5s ease-in-out;
-}
+} 
 
 .workspace-search {
   position: absolute;
-  left: 0;
-  right: 0;
-  margin-left: auto;
-  margin-right: auto;
-  width: 500px;
-  z-index: 4000;
-  top: 45px;
+  border: none;
+  background: #fff;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  width: 100%;
+  z-index: 4000; 
+  input {
+    background: #eee;
+    left: 25%;
+    width: 50%;
+    height: 25px;
+    border: none;
+    outline: none;
+    border-left: 1px solid #aaa;
+    border-right: 1px solid #aaa;
+  }
+  .search-results {
+    background: #fff;
+    position: absolute;
+    top: 100%;
+    left: 25%;
+    width: 50%;
+    color: #333;
+    overflow: hidden;
+  }
 }
 
 .ws-entry-zoom-fixed {
@@ -1109,9 +1189,11 @@ div .resizer-top-left {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped  lang="scss">
 .wrapper {
-  width: 100%;
-  height: 100%;
-  position: absolute;
+  overflow: hidden;
+  flex: 1 !important;
+  width: 100%; 
+  height: initial !important;
+  position: relative;
   background-color: rgba(53, 53, 53, 0);
   outline: none;
 

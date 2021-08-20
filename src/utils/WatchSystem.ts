@@ -24,11 +24,11 @@ export class Watcher {
         this.watcher
             .on("ready", (path: any) => {
 
-                console.log("READY");
+                // console.log("READY");
 
                 this.watcher.on("add", (path: any) => {
                     this.callUpdate(path);
-                    console.log("add file: " + path);
+                    //  console.log("add file: " + path);
                 })
                     .on("change", (path: any) => {
                         this.callUpdate(path);

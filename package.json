@@ -13,6 +13,7 @@
   "main": "background.js",
   "dependencies": {
     "@tinymce/tinymce-vue": "^4.0.4",
+    "@viselect/vanilla": "^3.0.0-beta.9",
     "chokidar": "^3.5.2",
     "class-transformer": "^0.4.0",
     "core-js": "^3.16.0",

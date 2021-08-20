@@ -21,7 +21,7 @@ export default defineComponent({
       if (!this.clickTimer) {
         this.clickTimer = setTimeout(() => {
           this.$emit("bookmarkclicked", {
-            index: event.target.getAttribute("name"),
+            id: event.target.getAttribute("name"),
             zoom: false,
           });
           this.clickTimer = null;
@@ -30,7 +30,7 @@ export default defineComponent({
         clearTimeout(this.clickTimer);
         this.clickTimer = null;
         this.$emit("bookmarkclicked", {
-          index: event.target.getAttribute("name"),
+          id: event.target.getAttribute("name"),
           zoom: true,
         });
       }
@@ -66,13 +66,13 @@ export default defineComponent({
         @mouseup.stop
         @click.stop="goToEntry"
         class="ws-entry-bookmark"
-        v-for="e,ind in nonEmptyNames"
-        :name="model.entries.indexOf(e)"
+        v-for="(e, ind) in nonEmptyNames"
+        :name="e.id"
         :key="e.id"
         :entry="e"
         :viewId="model.id"
       >
-        {{(ind+1) + ". "+ e.displayname }}
+        {{ ind + 1 + ". " + e.displayname }}
       </a>
     </keep-alive>
   </div>

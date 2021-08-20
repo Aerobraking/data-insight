@@ -1,11 +1,11 @@
 <template>
   <div
     ref="el"
-    @click.stop
-    @mousedown.stop
     @mouseup.stop
+    @mousedown.stop
     @mousemove.stop
-    v-on:dblclick.stop.prevent=""
+    @click.stop
+    v-on:dblclick.stop=""
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
   >
@@ -35,20 +35,24 @@
     </div>
 
     <div class="viewport">
-      <div :class="{ opaque: opaque }" v-show="showTiles" class="tile-wrapper">
-        <div class="tile" v-on:dblclick.stop.prevent="folderBack()">
-          <p>... {{ parentDir }}</p>
+      <div
+        v-show="showTiles"
+        class="tile-wrapper container green"
+        :class="{ opaque: opaque }"
+        :options="{ selectables: '.selectable' }"
+        :on-move="onMove"
+        :on-start="onStart"
+      >
+        <div
+          v-for="file in getFileList"
+          class="tile selectable"
+          :class="{ selected: selected.has(file.filename) }"
+          :key="file.filename"
+          :data-key="file.filename"
+          v-on:dblclick.stop="folderOpen(file)"
+        >
+          <p>{{ file.filename }}</p>
         </div>
-        <keep-alive>
-          <div
-            class="tile"
-            v-for="file in getFileList"
-            :key="file.filename"
-            v-on:dblclick.stop.prevent="folderOpen(file)"
-          >
-            <p>{{ file.filename }}</p>
-          </div>
-        </keep-alive>
       </div>
 
       <table v-show="!showTiles">
@@ -76,8 +80,15 @@
 </template>
 
 <script lang="ts">
-const { shell } = require("electron"); // deconstructing assignment
+/*
+ @click.stop
+    @mousedown.stop
+    @mouseup.stop
+    @mousemove.stop
 
+*/
+const { shell } = require("electron"); // deconstructing assignment
+import SelectionArea from "@viselect/vanilla"; 
 import * as watcher from "./../../utils/WatchSystem";
 const fs = require("fs");
 const path = require("path");
@@ -97,6 +108,7 @@ export default defineComponent({
     searchstring: string;
     parentDir: string;
     list: Array<FolderWindowFile>;
+    selected: Set<any>;
   } {
     return {
       showTiles: true,
@@ -104,6 +116,7 @@ export default defineComponent({
       searchstring: "",
       parentDir: "",
       list: [],
+      selected: new Set(),
     };
   },
   setup(props) {
@@ -123,25 +136,29 @@ export default defineComponent({
     this.updateFileList();
 
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
+
+  
   },
   inject: ["entrySelected", "entrySelected"],
   watch: {
     // whenever question changes, this function will run
-    "entry.path": function (newPath: string, oldPath: string) { 
+    "entry.path": function (newPath: string, oldPath: string) {
       watcher.FileSystemWatcher.unregisterPath(oldPath, this.watcherEvent);
       watcher.FileSystemWatcher.registerPath(newPath, this.watcherEvent);
       this.updateFileList();
     },
   },
   methods: {
-    watcherEvent() { 
+    
+
+    
+    watcherEvent() {
       this.updateFileList();
     },
     scrolling(e: WheelEvent) {
       /**
        * Todo: disable scrolling when zoom factor is too small
        */
-    
       // if (this.workspace && this.workspace?.getCurrentTransform().scale > 4) {
       //   e.stopPropagation();
       // }
@@ -249,6 +266,17 @@ export default defineComponent({
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 $black: 25px;
+
+.container {
+  user-select: none;
+  pointer-events: all;
+}
+
+.selection-area {
+  background: rgba(46, 115, 252, 0.11);
+  border: 2px solid rgba(98, 155, 255, 0.81);
+  border-radius: 0.1em;
+}
 
 .ws-folder-window-wrapper {
   table {

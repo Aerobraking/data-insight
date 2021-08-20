@@ -10,11 +10,15 @@ const chokidar = window.require("chokidar");
 
 export class WorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {
-        this.id = Math.random() * 1000000;
+        this.id = Math.floor(Math.random() * 1000000000000);
         this.isResizable = isResizable;
         this.componentname = componentname;
+
+        this.typename = this.componentname.replaceAll("wsentry", "");
+        this.typename = this.typename.charAt(0).toUpperCase() + this.typename.slice(1);
     }
 
+    typename: string = "";
     componentname: string = "";
     displayname: string = "";
     x: number = 0;
@@ -34,8 +38,16 @@ export class WorkspaceEntry {
         }
     }
 
+    public searchResultString(): string {
+        return " - ";
+    }
+
     public searchLogic(input: string): boolean {
         return this.displayname.toLowerCase().includes(input.toLocaleLowerCase());
+    }
+
+    public getFilesForDragging(): string[] {
+        return [];
     }
 }
 
@@ -52,6 +64,14 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
     name: string;
     path: string;
     filename: string;
+
+    public searchResultString(): string {
+        return this.filename;
+    }
+
+    public getFilesForDragging(): string[] {
+        return [this.path];
+    }
 
     public searchLogic(input: string): boolean {
         let found: boolean = super.searchLogic(input);
@@ -73,6 +93,13 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         this.height = 600;
     }
 
+    public searchResultString(): string {
+        return this.filename;
+    }
+
+    public getFilesForDragging(): string[] {
+        return [this.path];
+    }
 
     public searchLogic(input: string): boolean {
         let found: boolean = super.searchLogic(input);
@@ -99,7 +126,9 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
         this.height = 600;
     }
 
-
+    public searchResultString(): string {
+        return this.name;
+    }
 
     getId(): string | null {
         var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -141,6 +170,10 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
         this.height = 250;
     }
 
+    public searchResultString(): string {
+        return "Found inside text";
+    }
+
     text: string = "";
 
     public searchLogic(input: string): boolean {
@@ -157,34 +190,34 @@ export class WorkspaceEntryFrame extends WorkspaceEntry {
         this.height = 1400;
     }
 
+    public searchResultString(): string {
+        return "Found inside Name";
+    }
+
+
     color: string = "rgb(10,10,10)";
 }
 
 export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 
-    public static viewid: string = "wsentryfolderview";
+    public static viewid: string = "wsentryfolder";
 
     constructor(path: string) {
-        super("wsentryfolderview", true);
+        super("wsentryfolder", true);
         this.path = path != undefined ? path : "";
         this.defaultPath = path != undefined ? path : "";
         this.foldername = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
         this.name = this.foldername;
-        this.id = Math.random() * 10000;
+
         this.sort = "asc";
         this.width = 600;
         this.height = 600;
 
+    }
 
-        var targetObj = {};
-        var targetProxy = new Proxy<String>(this.path, {
-            set: function (target: String, key, value) {
-                target = value;
-                return true;
-            }
-
-        });
-
+    
+    public searchResultString(): string {
+        return this.foldername;
     }
 
 
@@ -275,7 +308,7 @@ export class Workspace extends View {
                 { value: WorkspaceEntryImage, name: 'wsentryimage' },
                 { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' },
                 { value: WorkspaceEntryTextArea, name: 'wsentrytextarea' },
-                { value: WorkspaceEntryFolderWindow, name: 'wsentryfolderview' },
+                { value: WorkspaceEntryFolderWindow, name: 'wsentryfolder' },
                 { value: WorkspaceEntryFrame, name: 'wsentryframe' },
             ],
         },

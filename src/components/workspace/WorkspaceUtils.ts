@@ -8,7 +8,7 @@ import {
 import * as WSUtils from "./WorkspaceUtils";
 
 export function setupEntry(props: any, wsListener: Listener | undefined = undefined) {
-    
+
     const e: WorkspaceEntry = props.entry as WorkspaceEntry;
 
     // reference to the $el element
@@ -49,6 +49,16 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
                     //e.preventDefault();
                 }, true);
 
+
+                // text.addEventListener("keypress", function (e: KeyboardEvent) {
+                //      e.preventDefault();
+                // }, true);
+                // text.addEventListener("keyup", function (e: KeyboardEvent) {
+                //     e.preventDefault();
+                // }, true);
+                // text.addEventListener("keydown", function (e: KeyboardEvent) {
+                //     e.preventDefault();
+                // }, true);
 
                 text.addEventListener("dblclick", function (e: MouseEvent) {
                     text.readOnly = false;
