@@ -92,9 +92,12 @@ table {
   td:nth-child(1) {
     text-align: left;
     width: 10%;
+    font-size: 12px;
+    vertical-align: center;
   }
   td:nth-child(2) {
     text-align: left;
+    font-weight: bold;
   }
   td:nth-child(3) {
     text-align: right;

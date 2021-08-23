@@ -34,6 +34,7 @@ const { shell } = require("electron"); // deconstructing assignment
 import { defineComponent } from "vue";
 import { WorkspaceEntryFile } from "../../store/model/Workspace";
 import { setupEntry } from "./WorkspaceUtils";
+import * as icons from "./../../utils/IconHandler";
 export default defineComponent({
   name: "wsentryfile",
   data() {
@@ -43,11 +44,25 @@ export default defineComponent({
     return setupEntry(props);
   },
   props: {
-    entry: WorkspaceEntryFile,
+    entry: {
+      type: WorkspaceEntryFile,
+      required: true,
+    },
     viewKey: Number,
   },
   mounted() {
-    this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+    let c: any = this.$el;
+    this.$el.style.transform = `translate3d(${this.$props.entry.x}px, ${this.$props.entry.y}px,0px)`;
+
+    icons.IconHandler.registerPath(this.entry.path, (url: string) => {
+      var img = new Image();
+
+      img.src = url;
+
+      c.getElementsByClassName(
+        "ws-entry-file-symbol"
+      )[0].style.backgroundImage = "url('" + img.src + "')";
+    });
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
@@ -60,9 +75,9 @@ export default defineComponent({
       e.preventDefault();
 
       //shell.showItemInFolder('filepath') // Show the given file in a file manager. If possible, select the file.
-      if (this.$props.entry?.path != undefined) {
-        shell.openPath(this.$props.entry?.path); // Open the given file in the desktop's default manner.
-      }
+      
+        shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.
+    
     },
     clickStart(e: MouseEvent) {
       // this.$store.dispatch("setIsSelected", {
@@ -92,8 +107,7 @@ export default defineComponent({
 <style scoped lang="scss">
 .ws-entry-file-wrapper {
   z-index: 100;
-  backface-visibility: hidden;
-  will-change: transform;
+  // will-change: transform;
   position: absolute;
   color: #f1f1f1;
   padding: 10px;
@@ -109,17 +123,21 @@ export default defineComponent({
     white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding: 0;
+    margin: 0;
+    margin-top: 6px;
+    color:rgb(231, 231, 231);
   }
 
   .ws-entry-file-symbol {
-    height: 100px;
-    width: 100px;
+    height: 70px;
+    width: 70px;
     display: block;
-    background-color: #f1f1f1;
-    border: 1px solid #15141a;
+    background-size: cover;
+    background-color: #f1f1f100;
+    border: none;
     clear: both;
-    color: rgba(61, 61, 61, 0.911);
-
+    border: none;
     margin: 0 auto;
   }
 }

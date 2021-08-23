@@ -1,19 +1,41 @@
 <script lang="ts">
+const message: string[] = [
+  "vue.draggable",
+  "draggable",
+  "component",
+  "for",
+  "vue.js 2.0",
+  "based",
+  "on",
+  "Sortablejs",
+];
+
 import { Workspace, WorkspaceEntry } from "../../store/model/Workspace";
 import { defineComponent } from "vue";
-
+import draggable from "vuedraggable";
 export default defineComponent({
   name: "wsentriesbookmarks",
-  components: {},
+  components: {
+    draggable,
+  },
   props: {
-    model: Workspace,
+    model: {
+      type: Workspace,
+      required: true,
+    },
     viewId: Number,
   },
   data(): {
     clickTimer: any;
+    drag: boolean;
+    list: any[];
   } {
     return {
+      list: message.map((name: string, index: number) => {
+        return { name, order: index + 1 };
+      }),
       clickTimer: null,
+      drag: false,
     };
   },
   methods: {
@@ -37,12 +59,22 @@ export default defineComponent({
     },
   },
   computed: {
-    nonEmptyNames: function (): WorkspaceEntry[] {
-      return this.model != undefined
-        ? this.model?.entries.filter(function (number) {
-            return number.displayname.length > 0;
-          })
-        : [];
+    myList: {
+      get(): any {
+        return this.model.entries;
+      },
+      set(value: any) {
+        this.model.entries = value;
+        console.log(this.model.entries);
+      },
+    },
+    dragOptions() {
+      return {
+        animation: 200,
+        group: "description",
+        disabled: false,
+        ghostClass: "ghost",
+      };
     },
   },
 });
@@ -60,21 +92,31 @@ export default defineComponent({
 <template>
   <div class="bookmarks">
     <h3>Bookmarks</h3>
-    <keep-alive>
-      <a
-        @mousedown.left.stop
-        @mouseup.stop
-        @click.stop="goToEntry"
-        class="ws-entry-bookmark"
-        v-for="(e, ind) in nonEmptyNames"
-        :name="e.id"
-        :key="e.id"
-        :entry="e"
-        :viewId="model.id"
-      >
-        {{ ind + 1 + ". " + e.displayname }}
-      </a>
-    </keep-alive>
+
+    <draggable
+      v-model="myList"
+      @start="drag = true"
+      @end="drag = false"
+      item-key="order"
+      v-bind="dragOptions"
+      tag="transition-group"
+    >
+      <template #item="{ element }">
+        <a
+          @mousedown.left.stop
+          @mouseup.stop
+          @click.stop="goToEntry"
+          class="ws-entry-bookmark"
+          :name="element.id"
+          :key="element.order"
+          :entry="element"
+          :viewId="model.id"
+          v-show="element.displayname.length > 0"
+        >
+          {{ element.displayname }}
+        </a>
+      </template>
+    </draggable>
   </div>
 </template>
 
@@ -99,12 +141,13 @@ export default defineComponent({
 
 .ws-entry-bookmark {
   color: #fff;
-  cursor: pointer;
+  cursor: grab;
   display: table;
   padding-top: 10px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  text-shadow: rgb(0, 0, 0) 0px 0 15px,rgb(0, 0, 0) 0px 0 4px;
 }
 </style>

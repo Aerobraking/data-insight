@@ -14,8 +14,7 @@ export class InsightFile {
             ],
         },
     })
-    views: Array<Workspace | Overview> = [];
-    selectedViewIndex: number = 0;
+    views: Array<Workspace | Overview> = []; 
 }
 
 export class UserSettings {

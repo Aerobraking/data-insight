@@ -59,6 +59,10 @@
       <button @click="showAll">Show all</button>
     </div>
 
+    <div class="overview overview-hover" @dblclick.capture="openOverview">
+      <OverviewCanvas class="resizable-prevent-input" :model="model" />
+    </div>
+
     <wsentriesbookmarks
       :model="model"
       @bookmarkclicked="moveToEntry"
@@ -66,6 +70,9 @@
 
     <div class="workspace-search">
       <input
+        @focus="searchfocusSet(true)"
+        @blur="searchfocusSet(false)"
+        class="workspace-search-input"
         type="search"
         @input="searchUpdate"
         @paste="onPaste"
@@ -98,6 +105,7 @@ import {
 } from "@/store/model/Workspace";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
+import OverviewCanvas from "./../overview/OverviewCanvas.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
 import { defineComponent } from "vue";
@@ -121,9 +129,13 @@ export default defineComponent({
   components: {
     wsentriesbookmarks,
     wssearchlist,
+    OverviewCanvas,
   },
   props: {
-    model: Workspace,
+    model: {
+      type: Workspace,
+      required: true,
+    },
   },
   data(): {
     searchString: string;
@@ -131,6 +143,7 @@ export default defineComponent({
     dragMoveRel: { x: number; y: number };
     dragTempOffset: { x: number; y: number };
     selectionDragActive: boolean;
+    searchfocus: boolean;
     isSelectionEvent: boolean;
     panZoomInstance: any;
     mousePositionLast: { x: number; y: number };
@@ -147,6 +160,7 @@ export default defineComponent({
       dragMoveRel: { x: 0, y: 0 },
       dragStart: { x: 0, y: 0 },
       dragTempOffset: { x: 0, y: 0 },
+      searchfocus: false,
       selectionDragActive: false,
       isSelectionEvent: false,
       panZoomInstance: null,
@@ -194,7 +208,7 @@ export default defineComponent({
   },
   computed: {
     searchActive(): boolean {
-      return this.searchString.trim().length > 0;
+      return this.searchString.trim().length > 0 && this.searchfocus;
     },
   },
   provide() {
@@ -203,8 +217,30 @@ export default defineComponent({
     };
   },
   methods: {
+    searchfocusSet(f: boolean): void {
+      if (f) {
+        this.searchfocus = true;
+      } else {
+        setTimeout(() => {
+          this.searchfocus = false;
+        }, 400);
+      }
+    },
+    openOverview(e: MouseEvent): void {
+      console.log("openOverview");
+
+      let div: HTMLElement = e.target as HTMLElement;
+      div.classList.toggle("open");
+      if (div.classList.contains("open")) {
+        div.classList.remove("overview-hover");
+      } else {
+        setTimeout(() => {
+          div.classList.add("overview-hover");
+        }, 500);
+      }
+    },
     searchUpdate(): void {
-      let models = this.model ? this.model.entries : [];
+      let models = this.model.entries;
       let views = this.getEntries();
 
       if (this.searchString.trim().length > 0) {
@@ -331,7 +367,7 @@ export default defineComponent({
               let index = 0,
                 indexModel = 0;
 
-              for (let entry of this.model?.entries) {
+              for (let entry of this.model.entries) {
                 index = entry.displayname.length > 0 ? index + 1 : index;
                 if (index === Number(e.key)) {
                   this.moveToEntry({ zoom: false, index: indexModel });
@@ -561,7 +597,10 @@ export default defineComponent({
           this.$el.clientHeight / 2;
 
         if (payload.zoom) {
-          this.panZoomInstance.smoothShowRectangle(rect);
+          this.panZoomInstance.setMaxZoom(1);
+          this.panZoomInstance.smoothShowRectangle(rect).then((f: boolean) => {
+            // this.panZoomInstance.smoothZoomAbs(this.getCurrentTransform().x, this.getCurrentTransform().y, 1);
+          });
         } else {
           this.panZoomInstance.smoothMoveTo(x, y);
         }
@@ -777,7 +816,7 @@ export default defineComponent({
       for (let index = 0; index < listViews.length; index++) {
         const v = listViews[index];
         let id = Number(v.getAttribute("name"));
-        let e = this.model?.entries.find((e) => e.id === id);
+        let e = this.model.entries.find((e) => e.id === id);
         if (e != undefined) {
           list.push(e);
         }
@@ -1066,10 +1105,45 @@ var switcher = false;
 </script>
 
 <style   lang="scss">
+.overview {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  margin: 50px;
+  height: 100px;
+  width: 100px;
+  background: #222;
+  transition: all 0.6s;
+  transition-timing-function: cubic-bezier(0.58, -0.315, 0.285, 1.65);
+  overflow: hidden;
+  z-index: 8000;
+}
+.overview-hover {
+  &:hover {
+    height: 180px;
+    width: 180px;
+    margin: 40px;
+  }
+}
+
+.open {
+  right: 0px;
+  top: 0px;
+  margin: 0px;
+  width: 100%;
+  height: 100%;
+
+  &:hover {
+    width: 100%;
+    height: 100%;
+    margin: 0px;
+  }
+}
+
 .search-not-found {
   opacity: 0.05;
-  // transition: opacity 0.5s ease-in-out;
-} 
+  pointer-events: none;
+}
 
 .workspace-search {
   position: absolute;
@@ -1078,7 +1152,7 @@ var switcher = false;
   padding-top: 2px;
   padding-bottom: 2px;
   width: 100%;
-  z-index: 4000; 
+  z-index: 4000;
   input {
     background: #eee;
     left: 25%;
@@ -1191,7 +1265,7 @@ div .resizer-top-left {
 .wrapper {
   overflow: hidden;
   flex: 1 !important;
-  width: 100%; 
+  width: 100%;
   height: initial !important;
   position: relative;
   background-color: rgba(53, 53, 53, 0);

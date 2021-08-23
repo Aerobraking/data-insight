@@ -54,7 +54,6 @@ export default defineComponent({
       ipcRenderer.send("save-insight-file", json);
     },
     keyPressed(e: KeyboardEvent) {
-     
       if (e.ctrlKey) {
         switch (e.key) {
           case "1":
@@ -69,7 +68,6 @@ export default defineComponent({
             let i: number = +e.key;
             i--;
             if (i < this.$store.state.loadedFile.views.length) {
-              this.$store.state.loadedFile.selectedViewIndex = i;
               this.$store.getters.getViewList.forEach(
                 (entry: View, index: Number) => {
                   entry.isActive = index === i;
@@ -103,7 +101,7 @@ export default defineComponent({
             // let i: number = +e.key;
             // i--;
             // if (i < this.$store.state.loadedFile.views.length) {
-            //   this.$store.state.loadedFile.selectedViewIndex = i;
+           
             //   this.$store.getters.getViewList.forEach(
             //     (entry: View, index: Number) => {
             //       entry.isActive = index === i;
@@ -130,14 +128,13 @@ body {
 }
 
 #app {
-   display: flex;
-    flex-flow: column;
+  display: flex;
+  flex-flow: column;
   font-family: Lato, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
+  -moz-osx-font-smoothing: grayscale; 
   color: #2c3e50;
-  height:100%;
+  height: 100%;
   width: 100%;
   position: absolute;
 }

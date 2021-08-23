@@ -3,6 +3,7 @@ import { View } from "./DataModel";
 import * as _ from "underscore";
 import { Type } from "class-transformer";
 import { ElementDimension } from "@/utils/resize";
+import { Overview } from "./OverviewDataModel";
 
 const fs = require("fs");
 const path = require("path");
@@ -18,6 +19,7 @@ export class WorkspaceEntry {
         this.typename = this.typename.charAt(0).toUpperCase() + this.typename.slice(1);
     }
 
+    order: number = 0;
     typename: string = "";
     componentname: string = "";
     displayname: string = "";
@@ -215,14 +217,24 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 
     }
 
-    
+
     public searchResultString(): string {
+
+
         return this.foldername;
     }
 
 
     public searchLogic(input: string): boolean {
         let found: boolean = super.searchLogic(input);
+
+        for (let index = 0; index < this.fileList.length; index++) {
+            const f = this.fileList[index];
+            if (f.filename.toLowerCase().includes(input)) {
+                return true;
+            }
+        }
+
         found = found || this.foldername.toLocaleLowerCase().includes(input);
         return found;
     }
@@ -281,8 +293,10 @@ export class FolderWindowFile {
         this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
         this.isDirectory = isDirectory;
         this.size = size;
+        this.id = Math.floor(Math.random() * 1000000000000);
     }
 
+    id: number;
     path: string;
     filename: string;
     size: number;
@@ -297,6 +311,7 @@ export class Workspace extends View {
         this.type = "workspace";
     }
 
+    overview: Overview = new Overview();
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.333 }
 
     @Type(() => WorkspaceEntry, {

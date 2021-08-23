@@ -22,6 +22,7 @@
       class="ws-folder-window-bar-top selectable-highlight"
     ></div>
     <div class="search-bar">
+      <button @click="folderBack">Go Up</button>
       <button @click="openDefault">Default</button>
       <button @click="setDefault">Set Default</button>
       <button @click="showTiles = !showTiles">View</button>
@@ -34,28 +35,33 @@
       />
     </div>
 
-    <div class="viewport">
+    <div class="viewport" :class="{ opaque: opaque }">
       <div
         v-show="showTiles"
         class="tile-wrapper container green"
-        :class="{ opaque: opaque }"
         :options="{ selectables: '.selectable' }"
-        :on-move="onMove"
-        :on-start="onStart"
       >
-        <div
-          v-for="file in getFileList"
-          class="tile selectable"
-          :class="{ selected: selected.has(file.filename) }"
-          :key="file.filename"
-          :data-key="file.filename"
-          v-on:dblclick.stop="folderOpen(file)"
-        >
-          <p>{{ file.filename }}</p>
-        </div>
+        <keep-alive>
+          <wsfolderfile
+            v-for="file in getFileList"
+            :entry="file"
+            class="tile selectable"
+            @dblclick="folderOpen(file)"
+            :key="file.id"
+            :name="file.id"
+          >
+          </wsfolderfile>
+        </keep-alive>
       </div>
+    </div>
+  </div>
+</template>
 
-      <table v-show="!showTiles">
+<script lang="ts">
+/*
+
+
+   <table v-show="!showTiles">
         <tbody>
           <tr class="clickable" v-on:dblclick.stop.prevent="folderBack()">
             <td class="icon-row"></td>
@@ -75,12 +81,7 @@
           </keep-alive>
         </tbody>
       </table>
-    </div>
-  </div>
-</template>
 
-<script lang="ts">
-/*
  @click.stop
     @mousedown.stop
     @mouseup.stop
@@ -88,11 +89,12 @@
 
 */
 const { shell } = require("electron"); // deconstructing assignment
-import SelectionArea from "@viselect/vanilla"; 
+import SelectionArea from "@viselect/vanilla";
 import * as watcher from "./../../utils/WatchSystem";
 const fs = require("fs");
 const path = require("path");
 const chokidar = window.require("chokidar");
+import wsfolderfile from "./FolderFileView.vue";
 import { defineComponent } from "vue";
 import {
   FolderWindowFile,
@@ -100,8 +102,68 @@ import {
 } from "../../store/model/Workspace";
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 
+function processLargeArrayAsync(
+  array: any[],
+  fn: (context: any, item: any, index: number, array: any[]) => void,
+  chunk: number | undefined = undefined,
+  context: any | undefined = undefined
+) {
+  context = context || window;
+  chunk = chunk || 50;
+  var index = 0;
+  function doChunk() {
+    var cnt = chunk || 50;
+    while (cnt-- && index < array.length) {
+      // callback called with args (value, index, array)
+      fn.call(context, context, array[index], index, array);
+      ++index;
+    }
+    if (index < array.length) {
+      // set Timeout for async iteration
+      setTimeout(doChunk, 1);
+    }
+  }
+  doChunk();
+}
+
+function readFiles(
+  dir: string,
+  processFile: (filepath: string, name: string, ext: string, stat: any) => void
+) {
+  // read directory
+  fs.readdir(dir, (error: any, fileNames: any) => {
+    if (error) throw error;
+
+    fileNames.forEach((filename: any) => {
+      // get current file name
+      const name = path.parse(filename).name;
+      // get current file extension
+      const ext = path.parse(filename).ext;
+      // get current file path
+      const filepath = path.resolve(dir, filename);
+
+      // get information about the file
+      fs.stat(filepath, function (error: any, stat: any) {
+        if (error) throw error;
+
+        // check if the current path is a file or a folder
+        const isFile = stat.isFile();
+
+        // exclude folders
+        if (isFile) {
+          // callback, do something with the file
+          processFile(filepath, name, ext, stat);
+        }
+      });
+    });
+  });
+}
+
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
+  components: {
+    wsfolderfile,
+  },
   data(): {
     showTiles: boolean;
     opaque: boolean;
@@ -136,8 +198,6 @@ export default defineComponent({
     this.updateFileList();
 
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
-
-  
   },
   inject: ["entrySelected", "entrySelected"],
   watch: {
@@ -149,9 +209,6 @@ export default defineComponent({
     },
   },
   methods: {
-    
-
-    
     watcherEvent() {
       this.updateFileList();
     },
@@ -180,27 +237,63 @@ export default defineComponent({
     updateFileList(): void {
       this.list = [];
       let c = this;
-      if (this.entry != undefined) {
-        const dir = this.entry.path;
 
-        try {
-          if (fs.existsSync(this.entry.path)) {
-            fs.readdirSync(this.entry.path).forEach((file: any) => {
-              const filePath = path.join(dir, file);
-              const fileStat = fs.lstatSync(filePath);
-              this.list.push(
-                new FolderWindowFile(
-                  filePath,
-                  fileStat.isDirectory(),
-                  fileStat.isFile ? fileStat.size : 0
-                )
-              );
-            });
-          }
-        } catch (err) {
-          console.error(err);
+      const dir = this.entry.path;
+
+      // readFiles(
+      //   dir,
+      //   (filepath: string, name: string, ext: string, stat: any) => {
+      //     console.log("add file");
+          
+      //     this.list.push(
+      //       new FolderWindowFile(
+      //         filepath,
+      //         stat.isDirectory(),
+      //         stat.isFile ? stat.size : 0
+      //       )
+      //     );
+      //   }
+      // );
+
+      // try {
+      //   processLargeArrayAsync(
+      //     fs.readdirSync(this.entry.path),
+      //     (context: any, item: any, index: number, array: any[]) => {
+      //       const filePath = path.join(dir, item);
+      //       const fileStat = fs.lstatSync(filePath);
+      //       console.log(filePath);
+
+      //       this.list.push(
+      //         new FolderWindowFile(
+      //           filePath,
+      //           fileStat.isDirectory(),
+      //           fileStat.isFile ? fileStat.size : 0
+      //         )
+      //       );
+      //     }
+      //   );
+      // } catch (err) {
+      //   console.error(err);
+      // }
+
+      try {
+        if (fs.existsSync(this.entry.path)) {
+          fs.readdirSync(this.entry.path).forEach((file: any) => {
+            const filePath = path.join(dir, file);
+            const fileStat = fs.lstatSync(filePath);
+            this.list.push(
+              new FolderWindowFile(
+                filePath,
+                fileStat.isDirectory(),
+                fileStat.isFile ? fileStat.size : 0
+              )
+            );
+          });
         }
+      } catch (err) {
+        console.error(err);
       }
+      this.entry.fileList = this.list;
     },
     selectEntry(select: "add" | "rem" | "flip") {
       switch (select) {
@@ -301,7 +394,8 @@ $black: 25px;
 
   .viewport {
     padding: 10px;
-
+    overflow-y: auto;
+    overflow-x: hidden;
     //   display: none;
     height: calc(100% - #{$black * 3+20});
   }
@@ -329,25 +423,21 @@ $black: 25px;
 $tile-size: 150px;
 
 .tile-wrapper {
-  overflow: auto;
   height: 100%;
   display: grid;
   grid-gap: 15px;
   grid-template-columns: repeat(auto-fit, minmax($tile-size, 1fr));
 
   .tile {
-    background: #c4262600;
-    height: $tile-size;
-    text-align: center;
-    vertical-align: bottom;
-    display: flex;
-
-    p {
-      align-self: flex-end;
-      width: 100%;
-      // makes the scaled text smoother in the rendering
-      backface-visibility: hidden;
-    }
+    // background: #c4262600;
+    // height: $tile-size;
+    // text-align: center;
+    // p {
+    //   align-self: flex-end;
+    //   width: 100%;
+    //   // makes the scaled text smoother in the rendering
+    //   backface-visibility: hidden;
+    // }
 
     .opaque {
       background: #a8a8a8;

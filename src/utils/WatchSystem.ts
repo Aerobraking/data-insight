@@ -62,11 +62,7 @@ export class Watcher {
     static get instance() {
         return this._instance;
     }
-
-
-
-
-
+   
     registerPath(path: string, callback: () => void) {
 
         let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
@@ -75,16 +71,12 @@ export class Watcher {
         if (listCallbacks == undefined) {
             listCallbacks = [];
             this.watcher.add(path);
-
             this.hash.set(path, listCallbacks);
-
-
-
         }
 
         listCallbacks.push(callback);
 
-        console.log(this.hash);
+        // console.log(this.hash);
     }
 
     unregisterPath(path: string, callback: () => void) {
@@ -104,7 +96,7 @@ export class Watcher {
             }
         }
 
-        console.log(this.hash);
+        // console.log(this.hash);
 
     }
 

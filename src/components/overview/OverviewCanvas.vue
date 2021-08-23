@@ -1,5 +1,5 @@
 <template>
-  <div class="foobar">
+  <div>
     <input
       class="canvas-breadcrumbs"
       v-model="breadcumbs"
@@ -16,7 +16,7 @@
     />
     <button
       class="showNames"
-    v-bind:class="{ active: showNames }"
+      v-bind:class="{ active: showNames }"
       @click="showNames = !showNames"
     >
       Show Names
@@ -61,6 +61,7 @@ import * as d3 from "d3";
 import * as _ from "underscore";
 import { Overview } from "@/store/model/OverviewDataModel";
 import { forEach } from "underscore";
+import { Workspace } from "@/store/model/Workspace";
 
 function loadImages(sources: Array<string>, callback: Function) {
   var images: Array<any> = [];
@@ -129,7 +130,7 @@ export default defineComponent({
   name: "OverviewCanvas",
   created: function () {},
   props: {
-    model: Overview,
+    model: Workspace,
   },
   data(): {
     layoutToggle: boolean;

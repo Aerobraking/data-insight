@@ -15,7 +15,7 @@
       keypressed.capture.stop
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
-      placeholder=""  
+      placeholder=""
     />
   </div>
 </template>
@@ -35,7 +35,10 @@ export default defineComponent({
     return setupEntry(props);
   },
   props: {
-    entry: WorkspaceEntryImage,
+    entry: {
+      type: WorkspaceEntryImage,
+      required: true,
+    },
     viewKey: Number,
   },
   mounted() {
@@ -114,9 +117,8 @@ export default defineComponent({
       e.preventDefault();
 
       //shell.showItemInFolder('filepath') // Show the given file in a file manager. If possible, select the file.
-      if (this.$props.entry?.path != undefined) {
-        shell.openPath(this.$props.entry?.path); // Open the given file in the desktop's default manner.
-      }
+
+      shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.
     },
     clickStart(e: MouseEvent) {},
   },
@@ -127,11 +129,9 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
- 
-
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
-   z-index: 90;
+  z-index: 90;
   background: rgba(255, 255, 255, 0.3);
 
   backface-visibility: hidden;
