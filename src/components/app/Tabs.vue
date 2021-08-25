@@ -14,13 +14,12 @@
       v-bind="dragOptions"
       tag="transition-group"
     >
-      <template #item="{ element ,index}">
+      <template #item="{ element, index }">
         <div
           class="tab-entry close-file-anim"
           :key="element.key"
           :class="{ 'tab-selected': element.isActive }"
           @click="selectTab(index)"
-     
         >
           <input
             @dblclick.self="edit"
@@ -104,7 +103,7 @@ export default defineComponent({
         group: "description",
         disabled: false,
         ghostClass: "ghost",
-        direction: "horizontal",  
+        direction: "horizontal",
       };
     },
   },
@@ -197,6 +196,7 @@ div.tabs-header {
   color: #fff;
   width: 10px !important;
   input {
+    user-select: none;
     pointer-events: none;
     text-align: center !important;
   }

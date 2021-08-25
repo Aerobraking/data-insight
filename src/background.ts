@@ -16,10 +16,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 
-
-
-ipcMain.on('ondragstart', (event:any, filePaths: string[]) => {
-
+ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
 
   filePaths.forEach(function (e: string, index: number, theArray: string[]) {
     filePaths[index] = e.replaceAll("\\\\", "/");
@@ -56,11 +53,7 @@ function openFile() {
 
 
 ipcMain.on('save-insight-file', (event: any, arg: string) => {
-
-
-
   saveFile(arg);
-
 })
 
 function saveFile(arg: string) {
@@ -90,13 +83,14 @@ function fireFileSaveEvent() {
   webContents.getAllWebContents().forEach(wc => {
     wc.send('fire-file-save', "");
   })
-
+}
+function fireNewFileEvent() {
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('fire-new-file', "");
+  })
 }
 
 async function createWindow() {
-
-
-
   // Create the browser window.
   const win = new BrowserWindow({
     width: 1400,
@@ -126,7 +120,13 @@ async function createWindow() {
           label: 'Fullscreen'
         },
         {
-
+          accelerator: process.platform === 'darwin' ? 'Ctrl+N' : 'Ctrl+N',
+          label: 'New File',
+          click() {
+            fireNewFileEvent();
+          }
+        },
+        {
           accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
           label: 'Save as',
           click() {
@@ -134,7 +134,6 @@ async function createWindow() {
           }
         },
         {
-
           accelerator: process.platform === 'darwin' ? 'Ctrl+O' : 'Ctrl+O',
           label: 'Open',
           click() {

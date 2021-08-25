@@ -28,24 +28,33 @@ export default defineComponent({
       c.saveFile();
     });
 
+    ipcRenderer.on("fire-new-file", function (event: any, file: string) {
+      c.loadInsightFile(new InsightFile());
+    });
+
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
-        let tabs: HTMLElement[] = Array.from(
-          document.querySelectorAll(".close-file-anim")
-        ) as HTMLElement[];
-
-        tabs.forEach((t) => {
-          t.classList.add("close-file");
-        });
-
         let jsonRead = fs.readFileSync(file, "utf8");
         let test: InsightFile = deserialize(InsightFile, jsonRead);
-        c.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, { insightFile: test });
+        c.loadInsightFile(test);
       }
     );
   },
   methods: {
+    loadInsightFile(file: InsightFile) {
+      let tabs: HTMLElement[] = Array.from(
+        document.querySelectorAll(".close-file-anim")
+      ) as HTMLElement[];
+
+      tabs.forEach((t) => {
+        t.classList.add("close-file");
+      });
+
+      this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
+        insightFile: file,
+      });
+    },
     saveFile() {
       WSUtils.Events.prepareFileSaving();
 
