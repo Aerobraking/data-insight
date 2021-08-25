@@ -1,11 +1,10 @@
 
 <template>
   <div
-    ref="roo"
     @keydown="keydown"
     @keyup="keyup"
     @mouseup="mouseup"
-    @mousedown="mouseDown"
+    @mousedown="mousedown"
     @mousemove.capture="mousemove"
     @click.stop
     @dragover="dragover"
@@ -60,7 +59,7 @@
     </div>
 
     <div class="overview overview-hover" @dblclick.capture="openOverview">
-      <OverviewCanvas class="resizable-prevent-input" :model="model" />
+      <OverviewCanvas class="prevent-input" :model="model" />
     </div>
 
     <wsentriesbookmarks
@@ -104,6 +103,8 @@ import {
   WorkspaceEntryYoutube,
 } from "@/store/model/Workspace";
 import { MutationTypes } from "@/store/mutations/mutation-types";
+import WorkspacePlugin from "./Plugins/AbstractPlugin";
+import ReArrange from "./Plugins/Rearrange";
 import * as WSUtils from "./WorkspaceUtils";
 import OverviewCanvas from "./../overview/OverviewCanvas.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
@@ -118,7 +119,8 @@ import {
 import { InsightFile } from "@/store/state";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
-import { WorkspaceViewIfc } from "./WorkspaceUtils"; 
+import { WorkspaceViewIfc } from "./WorkspaceUtils";
+import AbstractPlugin from "./Plugins/AbstractPlugin";
 const fs = require("fs");
 const path = require("path");
 
@@ -137,6 +139,7 @@ export default defineComponent({
     },
   },
   data(): {
+    activePlugin: WorkspacePlugin | null;
     searchString: string;
     dragStart: { x: number; y: number };
     dragMoveRel: { x: number; y: number };
@@ -151,8 +154,11 @@ export default defineComponent({
     useCanvas: boolean;
     oldViewRect: ElementDimension | undefined;
     spacePressed: boolean;
+    highlightSelection: boolean;
   } {
     return {
+      highlightSelection: true,
+      activePlugin: null,
       searchString: "",
       useCanvas: true,
       mousePositionLast: { x: 0, y: 0 },
@@ -169,13 +175,18 @@ export default defineComponent({
       spacePressed: false,
     };
   },
+  watch: {
+    highlightSelection(newValue: boolean, oldValue: boolean) {
+      this.updateSelectionWrapper();
+    },
+  },
   mounted() {
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),
       this,
       () => {
         this.getEntries().forEach((e) => {
-          e.classList.add("resizable-prevent-input");
+          e.classList.add("prevent-input");
         });
       },
       () => {
@@ -183,7 +194,7 @@ export default defineComponent({
       },
       () => {
         this.getEntries().forEach((e) => {
-          e.classList.remove("resizable-prevent-input");
+          e.classList.remove("prevent-input");
         });
       }
     );
@@ -201,7 +212,7 @@ export default defineComponent({
     vm.getCanvas().width = vm.$el.clientWidth;
     vm.getCanvas().height = vm.$el.clientHeight;
 
-    this.$el.addEventListener("keyup", this.keyPressed);
+    // this.$el.addEventListener("keyup", this.keyPressed);
 
     this.drawCanvas();
   },
@@ -263,12 +274,6 @@ export default defineComponent({
     getWorkspaceIfc(): WorkspaceViewIfc {
       return this;
     },
-    keyPressed(e: KeyboardEvent) {
-      var fs = require("fs");
-
-      if (e.ctrlKey) {
-      }
-    },
     drawCanvas() {
       let canvas: HTMLCanvasElement = this.getCanvas() as HTMLCanvasElement;
 
@@ -283,7 +288,7 @@ export default defineComponent({
         90
       );
       b = 70;
-      context.fillStyle = "rgb(" + b + "," + b + "," + b + ")";
+      context.fillStyle = "rgb(" + b + "," + b + "," + (b + 15) + ")";
 
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillRect(0, 0, canvas.width, canvas.height);
@@ -323,7 +328,9 @@ export default defineComponent({
 
           var rect = e.getBoundingClientRect();
 
-          context.strokeRect(c.x - 4, c.y - 4, c.w + 8, c.h + 8);
+          if (this.highlightSelection) {
+            context.strokeRect(c.x - 4, c.y - 4, c.w + 8, c.h + 8);
+          }
         }
       }
     },
@@ -351,6 +358,18 @@ export default defineComponent({
       }
     },
     keydown(e: KeyboardEvent) {
+      if (
+        e.key == "Escape" &&
+        this.activePlugin &&
+        this.activePlugin.cancel()
+      ) {
+     this.cancelPlugin();
+      }
+
+      if (this.activePlugin && this.activePlugin.keydown(e)) {
+        return;
+      }
+
       if (e.altKey) {
         switch (e.key) {
           case "1":
@@ -385,25 +404,31 @@ export default defineComponent({
             return;
           }
           this.getEntries().forEach((e) => {
-            e.classList.toggle("resizable-prevent-input", true);
+            e.classList.toggle("prevent-input", true);
           });
           this.spacePressed = true;
           this.showAll();
           break;
       }
     },
+
     keyup(e: KeyboardEvent) {
+      if (this.activePlugin && this.activePlugin.keyup(e)) {
+        return;
+      }
+
       let listFiles: Array<WorkspaceEntry> = [];
       switch (e.key) {
+        case "r":
+          this.startPlugin(new ReArrange(this));
         case " ":
           if (this.spacePressed) {
             if (this.oldViewRect) {
               let bound = this.getPanzoomRect(this.oldViewRect);
-              console.log(bound);
               this.panZoomInstance.smoothShowRectangle(bound);
             }
             this.getEntries().forEach((e) => {
-              e.classList.toggle("resizable-prevent-input", false);
+              e.classList.toggle("prevent-input", false);
             });
             this.spacePressed = false;
           }
@@ -458,6 +483,29 @@ export default defineComponent({
           frame.y = this.mousePositionLast.y;
           listFiles.push(frame);
 
+          if (this.getSelectedEntries().length > 0) {
+            let x = Infinity,
+              y = Infinity,
+              x2 = -Infinity,
+              y2 = -Infinity;
+
+            Array.from(this.getSelectedEntries()).forEach((el) => {
+              let coord = this.getCoordinatesFromElement(el);
+
+              x = x > coord.x ? coord.x : x;
+              y = y > coord.y ? coord.y : y;
+
+              x2 = x2 < coord.x2 ? coord.x2 : x2;
+              y2 = y2 < coord.y2 ? coord.y2 : y2;
+            });
+
+            let padding = 80;
+            frame.x = x - padding;
+            frame.y = y - padding;
+            frame.width = Math.abs(x2 - x) + padding * 2;
+            frame.height = Math.abs(y2 - y) + padding * 2;
+          }
+
           this.$store.commit(MutationTypes.ADD_FILES, p);
 
           break;
@@ -479,6 +527,299 @@ export default defineComponent({
       }
 
       this.drawCanvas();
+    },
+    mousedown: function (e: MouseEvent) {
+      if (this.activePlugin && this.activePlugin.mousedown(e)) {
+        return;
+      }
+      this.selectionDragActive = e.ctrlKey && e.button == 0;
+
+      if (this.spacePressed) {
+        this.spacePressed = false;
+        this.getEntries().forEach((e) => {
+          e.classList.toggle("prevent-input", false);
+        });
+        let rect: ClientRect = this.$el.getBoundingClientRect();
+        let bound = this.getPanzoomRect({
+          x: this.mousePositionLast.x - rect.width / 2,
+          y: this.mousePositionLast.y - rect.height / 2,
+          x2: this.mousePositionLast.x + rect.width / 2,
+          y2: this.mousePositionLast.y + rect.height / 2,
+          w: rect.width,
+          h: rect.height,
+        });
+        this.panZoomInstance.smoothShowRectangle(bound);
+
+        return;
+      }
+
+      if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
+        /**
+         * Start dragging of the current selection with left mouse button + ctrl or
+         */
+        this.dragMoveRel = { x: e.clientX, y: e.clientY };
+
+        this.dragSelection = Array.from(
+          this.getSelectedEntries()
+        ) as HTMLElement[];
+
+        WSUtils.Events.dragStarting(this.dragSelection, this);
+
+        this.selectionWrapperResizer?.setChildren(this.dragSelection);
+
+        this.dragSelection.push(this.getSelectionWrapper());
+
+        this.preventInput(true);
+
+        return;
+      }
+
+      if (e.button == 0) {
+        if (!e.ctrlKey) {
+          this.dragStart = this.getPositionInWorkspace(e);
+
+          let selectionRectangle: any = this.getSelectionRectangle();
+          selectionRectangle.style.visibility = "visible";
+          selectionRectangle.style.transform = `translate3d(${this.dragStart.x}px, ${this.dragStart.y}px,0px)`;
+          selectionRectangle.style.width = "0px";
+          selectionRectangle.style.height = "0px";
+        }
+
+        if (this.selectionDragActive) {
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+        }
+      }
+    },
+    mousemove: function (e: MouseEvent) {
+      if (this.activePlugin && this.activePlugin.mousemove(e)) {
+        return;
+      }
+      let comp = this;
+
+      this.mousePositionLast = comp.getPositionInWorkspace(e);
+
+      function updateSelectionDrag() {
+        var xOffT =
+          (comp.dragMoveRel.x - e.clientX) /
+          comp.panZoomInstance.getTransform().scale;
+        var yOffT =
+          (comp.dragMoveRel.y - e.clientY) /
+          comp.panZoomInstance.getTransform().scale;
+
+        comp.dragMoveRel = { x: e.clientX, y: e.clientY };
+
+        for (let index = 0; index < comp.dragSelection.length; index++) {
+          const e: any = comp.dragSelection[index];
+          let coord = comp.getCoordinatesFromElement(e);
+          e.style.transform = `translate3d(${coord.x - xOffT}px, ${
+            coord.y - yOffT
+          }px, 0px)`;
+        }
+      }
+
+      let selectionRectangle: any = comp.getSelectionRectangle();
+
+      function updateSelectionRectangle() {
+        let w = -1 * (comp.dragStart.x - comp.getPositionInWorkspace(e).x);
+        let h = -1 * (comp.dragStart.y - comp.getPositionInWorkspace(e).y);
+
+        let rectX = w < 0 ? comp.dragStart.x + w : comp.dragStart.x;
+        let rectY = h < 0 ? comp.dragStart.y + h : comp.dragStart.y;
+
+        selectionRectangle.style.transform = `translate3d(${rectX}px, ${rectY}px,0px)`;
+        selectionRectangle.style.width = Math.abs(w) + "px";
+        selectionRectangle.style.height = Math.abs(h) + "px";
+      }
+
+      if (this.selectionDragActive) {
+        if (e.ctrlKey) {
+          this.updateSelectionDrag(e, this);
+        }
+      } else {
+        if (selectionRectangle.style.visibility === "visible") {
+          this.isSelectionEvent = true;
+          updateSelectionRectangle();
+        }
+      }
+
+      this.drawCanvas();
+    },
+    mouseup: function (e: MouseEvent) {
+      if (this.activePlugin && this.activePlugin.mouseup(e)) {
+        return;
+      }
+      let selectionRectangle: any = this.getSelectionRectangle();
+
+      if (this.selectionDragActive) {
+        this.preventInput(false);
+
+        /**
+         * end dragging of the selected entries
+         * */
+      } else if (selectionRectangle.style.visibility === "visible") {
+        /**
+         * Selection rectangle, check which entries are inside it and make same as the selection.
+         */
+
+        let coordRect = this.getCoordinatesFromElement(selectionRectangle);
+        let comp = this;
+
+        let entriesInside: HTMLElement[] = [];
+
+        entriesInside.push(
+          ...this.getEntries().filter((el) => {
+            return WSUtils.insideRect(
+              coordRect,
+              comp.getCoordinatesFromElement(el)
+            );
+          })
+        );
+
+        this.entriesSelected(entriesInside, "single");
+
+        selectionRectangle.style.visibility = "hidden";
+      }
+
+      this.selectionDragActive = false;
+    },
+    beforeWheelHandler(e: any) {
+      if (this.activePlugin && this.activePlugin.mouseWheel(e)) {
+        return true;
+      }
+      this.spacePressed = false;
+      this.getEntries().forEach((e) => {
+        e.classList.toggle("prevent-input", false);
+      });
+      var shouldIgnore: boolean = e.altKey;
+      return shouldIgnore;
+    },
+    beforeMouseDownHandler(e: any) {
+      if (this.activePlugin && this.activePlugin.mousedownPan(e)) {
+        return true;
+      }
+      var shouldIgnore: boolean = !(e.altKey || e.button == 1);
+      console.log(shouldIgnore);
+      return shouldIgnore;
+    },
+    dragover(e: any) {
+      if (this.activePlugin && this.activePlugin.dragover(e)) {
+        return;
+      }
+      e.preventDefault();
+      // Add some visual fluff to show the user can drop its files
+      // if (!e.currentTarget.classList.contains("bg-green-300")) {
+      //   e.currentTarget.classList.remove("bg-gray-100");
+      //   e.currentTarget.classList.add("bg-green-300");
+      // }
+    },
+    dragleave(e: any) {
+      if (this.activePlugin && this.activePlugin.dragleave(e)) {
+        return;
+      }
+      // Clean up
+      // e.currentTarget.classList.add("bg-gray-100");
+      // e.currentTarget.classList.remove("bg-green-300");
+    },
+    drop(e: any) {
+      if (this.activePlugin && this.activePlugin.drop(e)) {
+        return;
+      }
+      e.preventDefault();
+      console.log(e.dataTransfer.files);
+
+      let listFiles: Array<WorkspaceEntry> = [];
+
+      e.dataTransfer.files.forEach((f: any) => {
+        const fileStat = fs.lstatSync(f.path);
+        if (fileStat.isDirectory()) {
+          listFiles.push(new WorkspaceEntryFolderWindow(f.path));
+        } else {
+          if (
+            f.path.endsWith("jpg") ||
+            f.path.endsWith("jpeg") ||
+            f.path.endsWith("png")
+          ) {
+            listFiles.push(new WorkspaceEntryImage(f.path));
+          } else if (f.path.endsWith("ins")) {
+            let tabs: HTMLElement[] = Array.from(
+              document.querySelectorAll(".close-file-anim")
+            ) as HTMLElement[];
+
+            tabs.forEach((t) => {
+              t.classList.add("close-file");
+            });
+
+            let jsonRead = fs.readFileSync(f.path, "utf8");
+            let test: InsightFile = deserialize(InsightFile, jsonRead);
+            this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
+              insightFile: test,
+            });
+          } else {
+            listFiles.push(new WorkspaceEntryFile(f.path));
+          }
+        }
+      });
+
+      // get drop position
+      var rect = this.$el.getBoundingClientRect();
+      // var rect = { left: 0, top: 0 };
+      // correct coordinates by using the scaling factor of the zooming.
+      var x = this.getPositionInWorkspace(e).x; //x position within the element.
+      var y = this.getPositionInWorkspace(e).y; //y position within the element.
+
+      var payload = {
+        model: <Workspace>this.model,
+        listFiles,
+      };
+
+      let tileCount = Math.ceil(Math.sqrt(listFiles.length)) - 1;
+      var offsetWMax = 0;
+      var offsetHMax = 0;
+      var offsetH = 0;
+      var offset = 0;
+      let rowHeightMax = 0;
+      for (
+        let indexW = 0, indexH = 0;
+        indexW < listFiles.length;
+        indexW++, indexH++
+      ) {
+        const e = listFiles[indexW];
+
+        e.x = x + offset;
+        e.y = y + offsetH;
+
+        offsetWMax =
+          offsetWMax < offset + e.width ? offset + e.width : offsetWMax;
+        offsetHMax =
+          offsetHMax < offsetH + e.height ? offsetH + e.height : offsetHMax;
+
+        offset += e.width + 20;
+
+        rowHeightMax = rowHeightMax < e.height ? e.height : rowHeightMax;
+
+        if (indexH > tileCount) {
+          offsetH += rowHeightMax;
+          offset = 0;
+          indexH = 0;
+        }
+      }
+
+      let mX = x + offsetWMax / 2;
+      mX -= window.innerWidth / this.panZoomInstance.getTransform().scale / 2;
+      mX *= this.panZoomInstance.getTransform().scale;
+      mX *= -1;
+
+      let mY = y + offsetHMax / 2;
+      mY -= window.innerHeight / this.panZoomInstance.getTransform().scale / 2;
+      mY *= this.panZoomInstance.getTransform().scale;
+
+      mY *= -1;
+
+      // this.panZoomInstance.smoothMoveTo(mX, mY);
+      //   this.panZoomInstance.smoothZoomAbs(-mX, -mY, 1);
+
+      this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
     getBounds(entries: HTMLElement[]): ElementDimension {
       let x = Infinity,
@@ -636,115 +977,21 @@ export default defineComponent({
 
       this.updateSelectionWrapper();
     },
-    dragover(e: any) {
-      e.preventDefault();
-      // Add some visual fluff to show the user can drop its files
-      if (!e.currentTarget.classList.contains("bg-green-300")) {
-        e.currentTarget.classList.remove("bg-gray-100");
-        e.currentTarget.classList.add("bg-green-300");
-      }
+    startPlugin(p: AbstractPlugin): void {
+      this.activePlugin = new ReArrange(this);
+      WSUtils.Events.pluginStarted(this.activePlugin.isModal());
     },
-    dragleave(e: any) {
-      // Clean up
-      e.currentTarget.classList.add("bg-gray-100");
-      e.currentTarget.classList.remove("bg-green-300");
+    cancelPlugin(): void {
+        WSUtils.Events.pluginStarted(false);
+        // cancel the active plugin when it allowes it
+        this.activePlugin = null;
     },
-    drop(e: any) {
-      e.preventDefault();
-      console.log(e.dataTransfer.files);
-
-      let listFiles: Array<WorkspaceEntry> = [];
-
-      e.dataTransfer.files.forEach((f: any) => {
-        const fileStat = fs.lstatSync(f.path);
-        if (fileStat.isDirectory()) {
-          listFiles.push(new WorkspaceEntryFolderWindow(f.path));
-        } else {
-          if (
-            f.path.endsWith("jpg") ||
-            f.path.endsWith("jpeg") ||
-            f.path.endsWith("png")
-          ) {
-            listFiles.push(new WorkspaceEntryImage(f.path));
-          } else if (f.path.endsWith("ins")) {
-            let tabs: HTMLElement[] = Array.from(
-              document.querySelectorAll(".close-file-anim")
-            ) as HTMLElement[];
-
-            tabs.forEach((t) => {
-              t.classList.add("close-file");
-            });
-
-            let jsonRead = fs.readFileSync(f.path, "utf8");
-            let test: InsightFile = deserialize(InsightFile, jsonRead);
-            this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
-              insightFile: test,
-            });
-          } else {
-            listFiles.push(new WorkspaceEntryFile(f.path));
-          }
-        }
-      });
-
-      // get drop position
-      var rect = this.$el.getBoundingClientRect();
-      // var rect = { left: 0, top: 0 };
-      // correct coordinates by using the scaling factor of the zooming.
-      var x = this.getPositionInWorkspace(e).x; //x position within the element.
-      var y = this.getPositionInWorkspace(e).y; //y position within the element.
-
-      var payload = {
-        model: <Workspace>this.model,
-        listFiles,
-      };
-
-      let tileCount = Math.ceil(Math.sqrt(listFiles.length)) - 1;
-      var offsetWMax = 0;
-      var offsetHMax = 0;
-      var offsetH = 0;
-      var offset = 0;
-      let rowHeightMax = 0;
-      for (
-        let indexW = 0, indexH = 0;
-        indexW < listFiles.length;
-        indexW++, indexH++
-      ) {
-        const e = listFiles[indexW];
-
-        e.x = x + offset;
-        e.y = y + offsetH;
-
-        offsetWMax =
-          offsetWMax < offset + e.width ? offset + e.width : offsetWMax;
-        offsetHMax =
-          offsetHMax < offsetH + e.height ? offsetH + e.height : offsetHMax;
-
-        offset += e.width + 20;
-
-        rowHeightMax = rowHeightMax < e.height ? e.height : rowHeightMax;
-
-        if (indexH > tileCount) {
-          offsetH += rowHeightMax;
-          offset = 0;
-          indexH = 0;
-        }
+    finishPlugin(): void {
+      if (this.activePlugin) {
+        this.activePlugin.finish();
+        WSUtils.Events.pluginStarted(false);
       }
-
-      let mX = x + offsetWMax / 2;
-      mX -= window.innerWidth / this.panZoomInstance.getTransform().scale / 2;
-      mX *= this.panZoomInstance.getTransform().scale;
-      mX *= -1;
-
-      let mY = y + offsetHMax / 2;
-      mY -= window.innerHeight / this.panZoomInstance.getTransform().scale / 2;
-      mY *= this.panZoomInstance.getTransform().scale;
-
-      mY *= -1;
-
-      // this.panZoomInstance.smoothMoveTo(mX, mY);
-      //   this.panZoomInstance.smoothZoomAbs(-mX, -mY, 1);
-
-      this.$store.commit(MutationTypes.ADD_FILES, payload);
+      this.activePlugin = null;
     },
     getPositionInWorkspace(e: { clientX: number; clientY: number }) {
       var rect = this.$el.getBoundingClientRect();
@@ -807,6 +1054,11 @@ export default defineComponent({
         this.$el.querySelectorAll(".ws-entry")
       ) as HTMLElement[];
     },
+    getUnselectedEntries(): HTMLElement[] {
+      return Array.from(
+        this.$el.querySelectorAll(".ws-entry:not(.workspace-is-selected)")
+      ) as HTMLElement[];
+    },
     getModelEntriesFromView: function (
       listViews: HTMLElement[]
     ): WorkspaceEntry[] {
@@ -857,66 +1109,7 @@ export default defineComponent({
         ipcRenderer.send("ondragstart", listFilesToDrag);
       }
     },
-    mouseDown: function (e: MouseEvent) {
-      this.selectionDragActive = e.ctrlKey && e.button == 0;
 
-      if (this.spacePressed) {
-        this.spacePressed = false;
-        this.getEntries().forEach((e) => {
-          e.classList.toggle("resizable-prevent-input", false);
-        });
-        let rect: ClientRect = this.$el.getBoundingClientRect();
-        let bound = this.getPanzoomRect({
-          x: this.mousePositionLast.x - rect.width / 2,
-          y: this.mousePositionLast.y - rect.height / 2,
-          x2: this.mousePositionLast.x + rect.width / 2,
-          y2: this.mousePositionLast.y + rect.height / 2,
-          w: rect.width,
-          h: rect.height,
-        });
-        this.panZoomInstance.smoothShowRectangle(bound);
-
-        return;
-      }
-
-      if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
-        /**
-         * Start dragging of the current selection with left mouse button + ctrl or
-         */
-        this.dragMoveRel = { x: e.clientX, y: e.clientY };
-
-        this.dragSelection = Array.from(
-          this.getSelectedEntries()
-        ) as HTMLElement[];
-
-        WSUtils.Events.dragStarting(this.dragSelection, this);
-
-        this.selectionWrapperResizer?.setChildren(this.dragSelection);
-
-        this.dragSelection.push(this.getSelectionWrapper());
-
-        this.preventInput(true);
-
-        return;
-      }
-
-      if (e.button == 0) {
-        if (!e.ctrlKey) {
-          this.dragStart = this.getPositionInWorkspace(e);
-
-          let selectionRectangle: any = this.getSelectionRectangle();
-          selectionRectangle.style.visibility = "visible";
-          selectionRectangle.style.transform = `translate3d(${this.dragStart.x}px, ${this.dragStart.y}px,0px)`;
-          selectionRectangle.style.width = "0px";
-          selectionRectangle.style.height = "0px";
-        }
-
-        if (this.selectionDragActive) {
-          e.stopImmediatePropagation();
-          e.stopPropagation();
-        }
-      }
-    },
     updateSelectionWrapper() {
       let selectionRectangle: any = this.getSelectionWrapper();
 
@@ -940,7 +1133,9 @@ export default defineComponent({
       selectionRectangle.style.height = Math.abs(y2 - y) + "px";
 
       selectionRectangle.style.visibility =
-        this.getSelectedEntries().length > 0 ? "visible" : "hidden";
+        this.getSelectedEntries().length > 0 && this.highlightSelection
+          ? "visible"
+          : "hidden";
 
       this.drawCanvas();
     },
@@ -965,93 +1160,6 @@ export default defineComponent({
         }px,0px)`;
       }
     }, 16),
-    mousemove: function (e: MouseEvent) {
-      let comp = this;
-
-      this.mousePositionLast = comp.getPositionInWorkspace(e);
-
-      function updateSelectionDrag() {
-        var xOffT =
-          (comp.dragMoveRel.x - e.clientX) /
-          comp.panZoomInstance.getTransform().scale;
-        var yOffT =
-          (comp.dragMoveRel.y - e.clientY) /
-          comp.panZoomInstance.getTransform().scale;
-
-        comp.dragMoveRel = { x: e.clientX, y: e.clientY };
-
-        for (let index = 0; index < comp.dragSelection.length; index++) {
-          const e: any = comp.dragSelection[index];
-          let coord = comp.getCoordinatesFromElement(e);
-          e.style.transform = `translate3d(${coord.x - xOffT}px, ${
-            coord.y - yOffT
-          }px,0px)`;
-        }
-      }
-
-      let selectionRectangle: any = comp.getSelectionRectangle();
-
-      function updateSelectionRectangle() {
-        let w = -1 * (comp.dragStart.x - comp.getPositionInWorkspace(e).x);
-        let h = -1 * (comp.dragStart.y - comp.getPositionInWorkspace(e).y);
-
-        let rectX = w < 0 ? comp.dragStart.x + w : comp.dragStart.x;
-        let rectY = h < 0 ? comp.dragStart.y + h : comp.dragStart.y;
-
-        selectionRectangle.style.transform = `translate3d(${rectX}px, ${rectY}px,0px)`;
-        selectionRectangle.style.width = Math.abs(w) + "px";
-        selectionRectangle.style.height = Math.abs(h) + "px";
-      }
-
-      if (this.selectionDragActive) {
-        if (e.ctrlKey) {
-          this.updateSelectionDrag(e, this);
-        }
-      } else {
-        if (selectionRectangle.style.visibility === "visible") {
-          this.isSelectionEvent = true;
-          updateSelectionRectangle();
-        }
-      }
-
-      this.drawCanvas();
-    },
-    mouseup: function (e: MouseEvent) {
-      console.log("dragMouseUp");
-      let selectionRectangle: any = this.getSelectionRectangle();
-
-      if (this.selectionDragActive) {
-        this.preventInput(false);
-
-        /**
-         * end dragging of the selected entries
-         * */
-      } else if (selectionRectangle.style.visibility === "visible") {
-        /**
-         * Selection rectangle, check which entries are inside it and make same as the selection.
-         */
-
-        let coordRect = this.getCoordinatesFromElement(selectionRectangle);
-        let comp = this;
-
-        let entriesInside: HTMLElement[] = [];
-
-        entriesInside.push(
-          ...this.getEntries().filter((el) => {
-            return WSUtils.insideRect(
-              coordRect,
-              comp.getCoordinatesFromElement(el)
-            );
-          })
-        );
-
-        this.entriesSelected(entriesInside, "single");
-
-        selectionRectangle.style.visibility = "hidden";
-      }
-
-      this.selectionDragActive = false;
-    },
 
     onPanStart(e: any) {
       this.drawCanvas();
@@ -1078,24 +1186,11 @@ export default defineComponent({
 
       WSUtils.Events.zoom(this);
     },
-    beforeWheelHandler(e: any) {
-      this.spacePressed = false;
-      this.getEntries().forEach((e) => {
-        e.classList.toggle("resizable-prevent-input", false);
-      });
-      var shouldIgnore: boolean = e.altKey;
-      return shouldIgnore;
-    },
-    preventInput(prevent: boolean) {
-      this.getEntries().forEach((e) => {
-        e.classList.toggle("resizable-prevent-input", prevent);
-      });
-    },
-    beforeMouseDownHandler(e: any) {
-      var shouldIgnore: boolean = !(e.altKey || e.button == 1);
-      console.log(shouldIgnore);
 
-      return shouldIgnore;
+    preventInput(prevent: boolean): void {
+      this.getEntries().forEach((e) => {
+        e.classList.toggle("prevent-input", prevent);
+      });
     },
   },
 });
@@ -1161,6 +1256,7 @@ var switcher = false;
     outline: none;
     border-left: 1px solid #aaa;
     border-right: 1px solid #aaa;
+    position: relative;
   }
   .search-results {
     background: #fff;

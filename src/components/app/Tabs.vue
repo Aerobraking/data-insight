@@ -7,7 +7,7 @@
 
     <!-- <a class="tab-create" @click="createOverviewTab()"> +O </a> -->
     <draggable
-      v-model="getlist"
+      :list="getlist"
       @start="drag = true"
       @end="drag = false"
       item-key="order"
@@ -65,6 +65,22 @@ import { MutationTypes } from "@/store/mutations/mutation-types";
 import { View } from "@/store/model/DataModel";
 import { MouseWheelInputEvent } from "electron";
 import draggable from "vuedraggable";
+import _ from "underscore";
+import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
+import * as WSUtils from "./../workspace/WorkspaceUtils";
+
+_.once(() => {
+  WSUtils.Events.registerCallback({
+    zoom(transform: { x: number; y: number; scale: number }): void {},
+    dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {},
+    prepareFileSaving(): void {},
+    pluginStarted(modal: boolean): void {
+      document
+        .getElementById("tabs")
+        ?.classList.toggle("prevent-input", modal);
+    },
+  });
+})();
 
 export default defineComponent({
   el: "#tabs",

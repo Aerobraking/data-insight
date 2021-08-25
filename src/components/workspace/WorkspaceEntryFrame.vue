@@ -5,11 +5,9 @@
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
-   
     class="ws-entry-frame-wrapper"
   >
     <input
-    
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
       placeholder=""
@@ -58,6 +56,7 @@ _.once(() => {
       selection.push(...addToSelection);
     },
     prepareFileSaving(): void {},
+    pluginStarted(modal: boolean): void {},
   });
 })();
 
@@ -74,6 +73,7 @@ export default defineComponent({
         transform: { x: number; y: number; scale: number },
         workspace: WorkspaceViewIfc
       ): void {},
+      pluginStarted(modal: boolean): void {},
     });
   },
   data() {
@@ -85,13 +85,13 @@ export default defineComponent({
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
-    this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+     //this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip") {
       console.log("entrySelectedLocal");
-      
+
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },

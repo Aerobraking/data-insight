@@ -183,7 +183,7 @@ div .resizer {
   cursor: se-resize;
 }
 
-div .resizable-prevent-input {
+div .prevent-input {
   pointer-events: none;
 }
 </style>

@@ -26,7 +26,11 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
         },
         zoom(transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc): void {
 
+        },
+        pluginStarted(modal: boolean): void {
+
         }
+
     };
 
     onMounted(() => {
@@ -36,6 +40,14 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
         WSUtils.Events.registerCallback(listener);
 
         if (true && el != null && el.value != null) {
+ 
+            el.value.style.transform = `translate3d(${e.x}px, ${e.y}px,0px)`;
+
+            if (e.isResizable) {
+                el.value.style.width = e.width + "px";
+                el.value.style.height = e.height + "px";
+            }
+
             var text: HTMLInputElement = el.value.getElementsByClassName("wsentry-displayname")[0];
 
             if (text != undefined) {
@@ -87,22 +99,21 @@ export interface Listener {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void;
     prepareFileSaving(): void;
     zoom(transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc): void;
+    pluginStarted(modal: boolean): void;
 }
 
 export interface WorkspaceViewIfc {
-    getCoordinatesFromElement(e: any): {
-        x: number,
-        y: number,
-        w: number,
-        h: number,
-        x2: number,
-        y2: number,
-    };
-
+    getCoordinatesFromElement(e: any): ElementDimension;
+    getPositionInWorkspace(e: { clientX: number; clientY: number }): { x: number, y: number };
     getCurrentTransform(): { scale: number; x: number; y: number };
     getSelectionRectangle(): Element;
     getSelectedEntries(): HTMLElement[];
+    getUnselectedEntries(): HTMLElement[];
     getEntries(): HTMLElement[];
+    finishPlugin(): void;
+    preventInput(prevent: boolean): void;
+    highlightSelection: boolean;
+    updateSelectionWrapper(): void;
 }
 
 /**
@@ -153,6 +164,12 @@ export class Dispatcher {
     }
 
     callbacks: Listener[] = [];
+
+    pluginStarted(modal: boolean): void {
+        this.callbacks.forEach((c) => {
+            c.pluginStarted(modal);
+        });
+    }
 
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {

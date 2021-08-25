@@ -193,7 +193,7 @@ export default defineComponent({
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
-    this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+    // this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
 
     this.updateFileList();
 

@@ -195,8 +195,7 @@ export class WorkspaceEntryFrame extends WorkspaceEntry {
     public searchResultString(): string {
         return "Found inside Name";
     }
-
-
+ 
     color: string = "rgb(10,10,10)";
 }
 

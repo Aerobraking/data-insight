@@ -1,5 +1,5 @@
 export let resizeClasseName = "resizable";
-export const classPreventInput = "resizable-prevent-input";
+export const classPreventInput = "prevent-input";
 
 export function resize(element: HTMLElement) {
 

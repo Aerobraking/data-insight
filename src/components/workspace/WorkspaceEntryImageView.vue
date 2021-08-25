@@ -42,7 +42,7 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-    this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+   //  this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
     let comp = this;
     let path = this.entry?.getURL();
 
@@ -79,8 +79,8 @@ export default defineComponent({
         let scale = w / 600;
         w /= scale;
         h /= scale;
-        comp.$el.style.width = w + "px";
-        comp.$el.style.height = h + "px";
+      //  comp.$el.style.width = w + "px";
+      //  comp.$el.style.height = h + "px";
       };
       img.src = objectURL;
 

@@ -52,7 +52,8 @@ export default defineComponent({
   },
   mounted() {
     let c: any = this.$el;
-    this.$el.style.transform = `translate3d(${this.$props.entry.x}px, ${this.$props.entry.y}px,0px)`;
+    // this.$el.style.transform = `translate3d(${this.$props.entry.x}px, ${this.$props.entry.y}px,0px)`;
+ 
 
     icons.IconHandler.registerPath(this.entry.path, (url: string) => {
       var img = new Image();
@@ -75,9 +76,8 @@ export default defineComponent({
       e.preventDefault();
 
       //shell.showItemInFolder('filepath') // Show the given file in a file manager. If possible, select the file.
-      
-        shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.
-    
+
+      shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.
     },
     clickStart(e: MouseEvent) {
       // this.$store.dispatch("setIsSelected", {
@@ -126,7 +126,7 @@ export default defineComponent({
     padding: 0;
     margin: 0;
     margin-top: 6px;
-    color:rgb(231, 231, 231);
+    color: rgb(231, 231, 231);
   }
 
   .ws-entry-file-symbol {
