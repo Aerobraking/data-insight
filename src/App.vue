@@ -56,6 +56,22 @@ export default defineComponent({
     keyPressed(e: KeyboardEvent) {
       if (e.ctrlKey) {
         switch (e.key) {
+          case "Tab":
+            let listSize = this.$store.getters.getViewList.length;
+            if (listSize == 0) return;
+            let activeIndex = this.$store.getters.getActiveWorkspaceIndex;
+
+            activeIndex = e.shiftKey ? --activeIndex : ++activeIndex;
+            activeIndex =
+              activeIndex > listSize - 1
+                ? 0
+                : activeIndex < 0
+                ? listSize - 1
+                : activeIndex;
+            this.$store.commit(MutationTypes.SELECT_WORKSPACE, {
+              index: activeIndex,
+            });
+            break;
           case "1":
           case "2":
           case "3":
@@ -101,7 +117,7 @@ export default defineComponent({
             // let i: number = +e.key;
             // i--;
             // if (i < this.$store.state.loadedFile.views.length) {
-           
+
             //   this.$store.getters.getViewList.forEach(
             //     (entry: View, index: Number) => {
             //       entry.isActive = index === i;
@@ -132,7 +148,7 @@ body {
   flex-flow: column;
   font-family: Lato, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale; 
+  -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   height: 100%;
   width: 100%;
