@@ -1,39 +1,48 @@
 
 <template>
   <div id="tabs" class="tabs-header" @mousewheel="scrollList">
-    <div class="tab-entry tab-create"  @click="createWorkspaceTab()">
-  
-       <input
-        
-        readonly="true"
-        value="+" 
-      />
+    <div class="tab-entry tab-create" @click="createWorkspaceTab()">
+      <input readonly="true" value="+" />
     </div>
 
     <!-- <a class="tab-create" @click="createOverviewTab()"> +O </a> -->
-    <div
-      class="tab-entry close-file-anim"
-      v-for="(view, index) in getViewList"
-      :key="view.key"
-      :class="{ 'tab-selected': view.isActive }"
-      @click="selectTab(index)"
+    <draggable
+      v-model="getlist"
+      @start="drag = true"
+      @end="drag = false"
+      item-key="order"
+      v-bind="dragOptions"
+      tag="transition-group"
     >
-      <input
-        @dblclick.self="edit"
-        v-on:keyup.enter="editFinish"
-        @blur="editFinish"
-        readonly="true"
-        v-model="view.name"
-      />
-      <a class="delete" v-show="view.isActive" @click.self="deleteTab(index)"
-        >X</a
-      >
-    </div>
+      <template #item="{ element ,index}">
+        <div
+          class="tab-entry close-file-anim"
+          :key="element.key"
+          :class="{ 'tab-selected': element.isActive }"
+          @click="selectTab(index)"
+     
+        >
+          <input
+            @dblclick.self="edit"
+            v-on:keyup.enter="editFinish"
+            @blur="editFinish"
+            readonly="true"
+            v-model="element.name"
+          />
+          <a
+            class="delete"
+            v-show="element.isActive"
+            @click.self="deleteTab(index)"
+            >X</a
+          >
+        </div>
+      </template>
+    </draggable>
   </div>
 
   <keep-alive>
     <workspaceview
-      v-for="(view, index) in getViewList"
+      v-for="(view, index) in getlist"
       @click="selectTab(index)"
       :key="view.key"
       v-show="view.isActive"
@@ -56,11 +65,13 @@ import overviewview from "../overview/OverviewView.vue";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import { View } from "@/store/model/DataModel";
 import { MouseWheelInputEvent } from "electron";
+import draggable from "vuedraggable";
 
 export default defineComponent({
   el: "#tabs",
   name: "Tabs",
   components: {
+    draggable,
     workspaceview,
     overviewview,
     Startscreen,
@@ -68,13 +79,33 @@ export default defineComponent({
   data(): {} {
     return {
       selectedIndex: 0,
+      drag: false,
     };
   },
   computed: {
+    getlist: {
+      get(): any {
+        // @ts-ignore: Unreachable code error
+        return this.$store.getters.getViewList;
+      },
+      set(value: any) {
+        // @ts-ignore: Unreachable code error
+        this.$store.commit(MutationTypes.SORT_WORKSPACES, {
+          listWorkspaces: value,
+        });
+      },
+    },
     getViewList() {
-      return this.$store.getters.getViewList.filter((v) => {
-        return v.type != "startscreen";
-      });
+      return this.$store.getters.getViewList;
+    },
+    dragOptions() {
+      return {
+        animation: 150,
+        group: "description",
+        disabled: false,
+        ghostClass: "ghost",
+        direction: "horizontal",  
+      };
     },
   },
   methods: {
@@ -163,13 +194,12 @@ div.tabs-header {
 }
 
 .tab-create {
-  
   color: #fff;
-width:10px !important;
-input{
-  pointer-events: none;
-  text-align: center !important;
-}
+  width: 10px !important;
+  input {
+    pointer-events: none;
+    text-align: center !important;
+  }
 }
 
 .tab-entry {
@@ -193,6 +223,7 @@ input{
   }
 
   input {
+    user-select: none;
     cursor: pointer;
     position: relative;
     display: inline;

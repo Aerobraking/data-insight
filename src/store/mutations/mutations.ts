@@ -17,6 +17,9 @@ export type Mutations<S = State> = {
     model: Workspace,
     listFiles: Array<WorkspaceEntry>,
   }): void
+  [MutationTypes.SORT_WORKSPACES](state: S, payload: {
+    listWorkspaces: Array<Workspace>,
+  }): void
   [MutationTypes.REMOVE_ENTRIES](state: S, payload: {
     model: Workspace,
     listIndices: Array<Number>,
@@ -63,20 +66,25 @@ export const mutations: MutationTree<State> & Mutations = {
     });
 
   },
+  [MutationTypes.SORT_WORKSPACES](state, payload: {
+    listWorkspaces: Array<Workspace>,
+  }) {
+    state.loadedFile.views = payload.listWorkspaces;
+  },
   [MutationTypes.DELETE_WORKSPACE](state, payload: {
     index: number,
   }) {
 
-   let activeindex = state.loadedFile.views.findIndex(x => x.isActive);
-    let l = activeindex == payload.index ? state.loadedFile.views.length-1 : -1;
+    let activeindex = state.loadedFile.views.findIndex(x => x.isActive);
+    let l = activeindex == payload.index ? state.loadedFile.views.length - 1 : -1;
 
     state.loadedFile.views.splice(payload.index, 1);
 
     // select next workspace that is open
- 
+
     if (l > 0) {
       let indexToSelect = payload.index > l - 1 ? l - 1 : payload.index;
-    
+
       state.loadedFile.views.forEach((entry: View, index: Number) => {
         entry.isActive = index === indexToSelect;
       });
@@ -84,7 +92,7 @@ export const mutations: MutationTree<State> & Mutations = {
   },
   [MutationTypes.SELECT_WORKSPACE](state, payload: {
     index: number,
-  }) { 
+  }) {
     state.loadedFile.views.forEach((entry: View, index: Number) => {
       entry.isActive = index === payload.index;
     });
@@ -103,7 +111,7 @@ export const mutations: MutationTree<State> & Mutations = {
 
   [MutationTypes.CREATE_WORKSPACE](state) {
     state.loadedFile.views.push(new Workspace());
-    let lastIndex = state.loadedFile.views.length - 1; 
+    let lastIndex = state.loadedFile.views.length - 1;
     state.loadedFile.views.forEach(
       (entry: View, index: Number) => {
         entry.isActive = index === lastIndex;
@@ -112,13 +120,13 @@ export const mutations: MutationTree<State> & Mutations = {
   },
 
   [MutationTypes.CREATE_OVERVIEW](state) {
-    state.loadedFile.views.push(new Overview());
-    let lastIndex = state.loadedFile.views.length - 1;
-    state.loadedFile.views.forEach(
-      (entry: View, index: Number) => {
-        entry.isActive = index === lastIndex;
-      }
-    );
+    // state.loadedFile.views.push(new Overview());
+    // let lastIndex = state.loadedFile.views.length - 1;
+    // state.loadedFile.views.forEach(
+    //   (entry: View, index: Number) => {
+    //     entry.isActive = index === lastIndex;
+    //   }
+    // );
   },
 }
 

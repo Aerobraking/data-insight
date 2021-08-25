@@ -118,8 +118,7 @@ import {
 import { InsightFile } from "@/store/state";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
-import { WorkspaceViewIfc } from "./WorkspaceUtils";
-
+import { WorkspaceViewIfc } from "./WorkspaceUtils"; 
 const fs = require("fs");
 const path = require("path");
 

@@ -13,10 +13,13 @@ const message: string[] = [
 import { Workspace, WorkspaceEntry } from "../../store/model/Workspace";
 import { defineComponent } from "vue";
 import draggable from "vuedraggable";
+import overviewview from "../overview/OverviewView.vue";
+
 export default defineComponent({
   name: "wsentriesbookmarks",
   components: {
     draggable,
+    overviewview,
   },
   props: {
     model: {
@@ -27,13 +30,9 @@ export default defineComponent({
   },
   data(): {
     clickTimer: any;
-    drag: boolean;
-    list: any[];
+    drag: boolean; 
   } {
-    return {
-      list: message.map((name: string, index: number) => {
-        return { name, order: index + 1 };
-      }),
+    return { 
       clickTimer: null,
       drag: false,
     };
@@ -64,13 +63,12 @@ export default defineComponent({
         return this.model.entries;
       },
       set(value: any) {
-        this.model.entries = value;
-        console.log(this.model.entries);
+        this.model.entries = value; 
       },
     },
     dragOptions() {
       return {
-        animation: 200,
+        animation: 150,
         group: "description",
         disabled: false,
         ghostClass: "ghost",
