@@ -21,6 +21,8 @@ export default defineComponent({
   },
   computed: {},
   mounted() {
+  
+
     window.addEventListener("keyup", this.keyPressed, true);
     const c = this;
 

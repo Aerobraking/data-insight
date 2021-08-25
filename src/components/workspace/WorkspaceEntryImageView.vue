@@ -1,7 +1,7 @@
 <template>
   <div
     ref="el"
-    @mousemove.stop
+     
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
@@ -23,6 +23,7 @@
 <script lang="ts">
 const { shell } = require("electron"); // deconstructing assignment
 
+import * as cache from "./../../utils/ImageCache";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../../store/model/Workspace";
 import { setupEntry } from "./WorkspaceUtils";
@@ -42,56 +43,52 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-   //  this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+    //  this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
     let comp = this;
     let path = this.entry?.getURL();
 
-    const ImageLoaderWorker = new Worker("@/utils/imageloader", {
-      type: "module",
-    });
-    ImageLoaderWorker.onmessage = (event: any) => {
-      // Grab the message data from the event
-      const imageData = event.data;
-      console.log("bild antwort bekommen");
+    if (true) {
+      cache.ImageCache.registerPath(
+        path,
+        (url: string, type: "small" | "medium" | "original") => {
+          comp.$el.style.backgroundImage = url;
+        }
+      );
+    } else {
+      
+      const ImageLoaderWorker = new Worker("@/utils/imageloader", {
+        type: "module",
+      });
+      ImageLoaderWorker.onmessage = (event: any) => {
+        // Grab the message data from the event
+        const imageData = event.data;
+        console.log("bild antwort bekommen");
 
-      // Get the original element for this image
-      //const imageElement = document.querySelectorAll(`img[data-src='${imageData.imageURL}']`)
+        // We can use the `Blob` as an image source! We just need to convert it
+        // to an object URL first
+        const objectURL = URL.createObjectURL(imageData.blob);
 
-      // We can use the `Blob` as an image source! We just need to convert it
-      // to an object URL first
-      const objectURL = URL.createObjectURL(imageData.blob);
+        var img = new Image();
+        img.onload = function () {
+          let w = img.width;
+          let h = img.height;
+          let scale = w / 600;
+          w /= scale;
+          h /= scale;
+          //  comp.$el.style.width = w + "px";
+          //  comp.$el.style.height = h + "px";
+        };
+        img.src = objectURL;
 
-      // // Once the image is loaded, we'll want to do some extra cleanup
-      // imageElement.onload = () => {
-      //   // Let's remove the original `data-src` attribute to make sure we don't
-      //   // accidentally pass this image to the worker again in the future
-      //   imageElement.removeAttribute(‘data-src’)
+        comp.$el.style.backgroundImage = "url('" + objectURL + "')";
+        // imageElement.setAttribute('src', objectURL)
 
-      //   // We'll also revoke the object URL now that it's been used to prevent the
-      //   // browser from maintaining unnecessary references
-      //   URL.revokeObjectURL(objectURL)
-      // }
-
-      var img = new Image();
-      img.onload = function () {
-        let w = img.width;
-        let h = img.height;
-        let scale = w / 600;
-        w /= scale;
-        h /= scale;
-      //  comp.$el.style.width = w + "px";
-      //  comp.$el.style.height = h + "px";
+        ImageLoaderWorker.terminate();
       };
-      img.src = objectURL;
 
-      comp.$el.style.backgroundImage = "url('" + objectURL + "')";
-      // imageElement.setAttribute('src', objectURL)
-    };
+      ImageLoaderWorker.postMessage(path);
 
-    console.log("sende bild message");
-
-    ImageLoaderWorker.postMessage(path);
-
+    }
     // this.$el.style.backgroundImage = "url('" + this.entry?.getURL() + "')";
     // if (this.entry != undefined) {
     //   var img = new Image();

@@ -8,8 +8,7 @@ import { InsightFile } from './store/state'
 var fs = require("fs");
 var path = require('path');
 
-const isDevelopment = process.env.NODE_ENV !== 'production'
-app.disableHardwareAcceleration()
+const isDevelopment = process.env.NODE_ENV !== 'production' 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }

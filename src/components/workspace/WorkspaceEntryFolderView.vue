@@ -2,8 +2,7 @@
   <div
     ref="el"
     @mouseup.stop
-    @mousedown.stop
-    @mousemove.stop
+    @mousedown.stop 
     @click.stop
     v-on:dblclick.stop=""
     :class="{ opaque: opaque }"

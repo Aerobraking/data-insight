@@ -1,7 +1,6 @@
 <template>
   <div
-    ref="el"
-    @mousemove.stop
+    ref="el" 
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop

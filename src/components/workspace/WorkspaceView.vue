@@ -11,8 +11,7 @@
     @dragleave="dragleave"
     @drop="drop"
     class="wrapper"
-  >
-    <!--   @mousedown.exact="mouseDown"  startFileDrag Ohne selector hat es nicht funktioniert, weil er dann passendes dom element findet -->
+  > 
     <canvas class="workspace-canvas"></canvas>
 
     <panZoom
@@ -363,7 +362,7 @@ export default defineComponent({
         this.activePlugin &&
         this.activePlugin.cancel()
       ) {
-     this.cancelPlugin();
+        this.cancelPlugin();
       }
 
       if (this.activePlugin && this.activePlugin.keydown(e)) {
@@ -411,7 +410,6 @@ export default defineComponent({
           break;
       }
     },
-
     keyup(e: KeyboardEvent) {
       if (this.activePlugin && this.activePlugin.keyup(e)) {
         return;
@@ -420,7 +418,10 @@ export default defineComponent({
       let listFiles: Array<WorkspaceEntry> = [];
       switch (e.key) {
         case "r":
-          this.startPlugin(new ReArrange(this));
+          if (this.getSelectedEntries().length > 1) {
+            this.startPlugin(new ReArrange(this));
+          }
+          break;
         case " ":
           if (this.spacePressed) {
             if (this.oldViewRect) {
@@ -950,10 +951,6 @@ export default defineComponent({
       this.entriesSelected([entry], type);
     },
     entriesSelected(entries: HTMLElement[], type: "add" | "single" | "flip") {
-      console.log(
-        "type: " + type + " - " + entries.length + " " + Math.random()
-      );
-
       switch (type) {
         case "single":
           this.getEntries().forEach((e) =>
@@ -975,16 +972,30 @@ export default defineComponent({
       this.selectionWrapperResizer?.setChildren(this.dragSelection);
       this.dragSelection.push(this.getSelectionWrapper());
 
+      document
+        .querySelectorAll(".workspace-is-selected .wsentry-displayname")
+        .forEach((e) => {
+          e.classList.toggle("prevent-input", false);
+        });
+
+      document
+        .querySelectorAll(
+          "div.ws-entry:not(.workspace-is-selected) .wsentry-displayname"
+        )
+        .forEach((e) => {
+          e.classList.toggle("prevent-input", true);
+        });
+
       this.updateSelectionWrapper();
     },
     startPlugin(p: AbstractPlugin): void {
-      this.activePlugin = new ReArrange(this);
+      this.activePlugin = p;
       WSUtils.Events.pluginStarted(this.activePlugin.isModal());
     },
     cancelPlugin(): void {
-        WSUtils.Events.pluginStarted(false);
-        // cancel the active plugin when it allowes it
-        this.activePlugin = null;
+      WSUtils.Events.pluginStarted(false);
+      // cancel the active plugin when it allowes it
+      this.activePlugin = null;
     },
     finishPlugin(): void {
       if (this.activePlugin) {

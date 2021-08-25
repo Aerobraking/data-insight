@@ -1,7 +1,6 @@
 <template>
   <div
-    ref="el"
-    @mousemove.stop
+    ref="el" 
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
@@ -94,11 +93,7 @@ export default defineComponent({
   height: 180px;
   background-size: cover;
   box-sizing: border-box;
-
-  .workspace-is-selected {
-   // background-color: #f81fc252;
-  //  resize: none;
-  }
+ 
 
   .inner-wrapper {
     position: relative;

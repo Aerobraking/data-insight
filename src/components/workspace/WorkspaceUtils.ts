@@ -40,7 +40,7 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
         WSUtils.Events.registerCallback(listener);
 
         if (true && el != null && el.value != null) {
- 
+
             el.value.style.transform = `translate3d(${e.x}px, ${e.y}px,0px)`;
 
             if (e.isResizable) {
@@ -51,6 +51,8 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
             var text: HTMLInputElement = el.value.getElementsByClassName("wsentry-displayname")[0];
 
             if (text != undefined) {
+
+                text.classList.toggle("prevent-input", true);
 
                 text.readOnly = true;
 
