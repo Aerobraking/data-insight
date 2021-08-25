@@ -1,7 +1,6 @@
 <template>
   <div
     ref="el"
-     
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
@@ -55,7 +54,6 @@ export default defineComponent({
         }
       );
     } else {
-      
       const ImageLoaderWorker = new Worker("@/utils/imageloader", {
         type: "module",
       });
@@ -80,6 +78,8 @@ export default defineComponent({
         };
         img.src = objectURL;
 
+     //   comp.$el.appendChild(img);
+
         comp.$el.style.backgroundImage = "url('" + objectURL + "')";
         // imageElement.setAttribute('src', objectURL)
 
@@ -87,7 +87,6 @@ export default defineComponent({
       };
 
       ImageLoaderWorker.postMessage(path);
-
     }
     // this.$el.style.backgroundImage = "url('" + this.entry?.getURL() + "')";
     // if (this.entry != undefined) {
@@ -130,9 +129,8 @@ export default defineComponent({
   // images are behind the normal stuff to use them as a background
   z-index: 90;
   background: rgba(255, 255, 255, 0.3);
-
-  backface-visibility: hidden;
-  will-change: transform;
+  // backface-visibility: hidden;
+  // will-change: transform;
   position: absolute;
   color: #f1f1f1;
   padding: 10px;
@@ -140,5 +138,11 @@ export default defineComponent({
   height: 180px;
   background-size: cover;
   box-sizing: border-box;
+
+  img {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+  }
 }
 </style>

@@ -7,7 +7,7 @@
 
     <!-- <a class="tab-create" @click="createOverviewTab()"> +O </a> -->
     <draggable
-      :list="getlist"
+      v-model="getlist" 
       @start="drag = true"
       @end="drag = false"
       item-key="order"

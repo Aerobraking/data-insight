@@ -84,8 +84,8 @@ export default defineComponent({
   //  resize: both;
    z-index: 100;
   overflow: hidden;
-  backface-visibility: hidden;
-  will-change: transform;
+  // backface-visibility: hidden;
+  // will-change: transform;
   position: absolute;
   color: #f1f1f1;
   padding: 10px;

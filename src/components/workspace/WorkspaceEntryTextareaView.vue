@@ -150,7 +150,7 @@ export default defineComponent({
   // pointer-events: none;
   z-index: 100;
   overflow: visible;
-  will-change: transform;
+ // will-change: transform;
   position: absolute;
   color: #f1f1f1;
   padding: 10px;

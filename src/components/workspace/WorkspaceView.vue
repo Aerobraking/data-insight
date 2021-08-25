@@ -11,7 +11,7 @@
     @dragleave="dragleave"
     @drop="drop"
     class="wrapper"
-  > 
+  >
     <canvas class="workspace-canvas"></canvas>
 
     <panZoom
@@ -22,7 +22,7 @@
       :options="{
         zoomDoubleClickSpeed: 1,
         minZoom: 0.03,
-        maxZoom: 6,
+        maxZoom: 2,
         bounds: false,
         initialX: model.viewportTransform.x,
         initialY: model.viewportTransform.y,
@@ -274,6 +274,9 @@ export default defineComponent({
       return this;
     },
     drawCanvas() {
+      if (!true && true && !false) {
+        return;
+      }
       let canvas: HTMLCanvasElement = this.getCanvas() as HTMLCanvasElement;
 
       let context = canvas.getContext("2d");

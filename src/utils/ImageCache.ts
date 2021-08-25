@@ -1,7 +1,7 @@
 
 
 export const smallSize: number = 32;
-export const mediumlSize: number = 256;
+export const mediumlSize: number = 32;
 
 export class Cache {
 

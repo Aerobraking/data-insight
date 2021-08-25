@@ -7,7 +7,7 @@ var ctxMedium: OffscreenCanvasRenderingContext2D | null = null;
 var path: string;
 
 const small=32;
-const medium=256;
+const medium=32;
 
 addEventListener('message', async function (e: MessageEvent) {
    

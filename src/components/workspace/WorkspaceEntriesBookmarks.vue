@@ -30,20 +30,20 @@ export default defineComponent({
   },
   data(): {
     clickTimer: any;
-    drag: boolean; 
+    drag: boolean;
   } {
-    return { 
+    return {
       clickTimer: null,
       drag: false,
     };
   },
   methods: {
-    goToEntry(event: any) {
+    goToEntry(zoom: boolean, event: any) {
       if (!this.clickTimer) {
         this.clickTimer = setTimeout(() => {
           this.$emit("bookmarkclicked", {
             id: event.target.getAttribute("name"),
-            zoom: false,
+            zoom: zoom,
           });
           this.clickTimer = null;
         }, 5); //tolerance in ms
@@ -52,7 +52,7 @@ export default defineComponent({
         this.clickTimer = null;
         this.$emit("bookmarkclicked", {
           id: event.target.getAttribute("name"),
-          zoom: true,
+          zoom: zoom,
         });
       }
     },
@@ -63,7 +63,7 @@ export default defineComponent({
         return this.model.entries;
       },
       set(value: any) {
-        this.model.entries = value; 
+        this.model.entries = value;
       },
     },
     dragOptions() {
@@ -103,7 +103,8 @@ export default defineComponent({
         <a
           @mousedown.left.stop
           @mouseup.stop
-          @click.stop="goToEntry"
+          @click.stop="goToEntry(false, $event)"
+          @dblclick.stop="goToEntry(true, $event)"
           class="ws-entry-bookmark"
           :name="element.id"
           :key="element.order"
@@ -146,6 +147,6 @@ export default defineComponent({
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  text-shadow: rgb(0, 0, 0) 0px 0 15px,rgb(0, 0, 0) 0px 0 4px;
+  text-shadow: rgb(0, 0, 0) 0px 0 15px, rgb(0, 0, 0) 0px 0 4px;
 }
 </style>
