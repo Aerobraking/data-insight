@@ -24,21 +24,21 @@ export default defineComponent({
     let el: any = this.$el;
 
     if (cache.isImageTypeSupported(this.entry.path)) {
-      cache.ImageCache.registerPath(
-       this.entry.path,
-        (url: string, type: "small" | "medium" | "original") => {
+      cache.ImageCache.registerPath(this.entry.path, {
+        callback: (url: string, type: "small" | "medium" | "original") => {
           if (type == "small") {
-           el.getElementsByClassName(
+            el.getElementsByClassName(
               "folder-file-symbol"
             )[0].style.backgroundImage = url;
           }
-        }
-      );
+        },
+        callbackSize: (dim: cache.ImageDim) => {},
+      });
     } else {
       icons.IconHandler.registerPath(this.entry.path, (url: string) => {
         var img = new Image();
         img.src = url;
-       el.getElementsByClassName(
+        el.getElementsByClassName(
           "folder-file-symbol"
         )[0].style.backgroundImage = "url('" + img.src + "')";
       });
@@ -76,7 +76,7 @@ export default defineComponent({
   .folder-file-symbol {
     height: 75px;
     width: 75px;
-    display: block; 
+    display: block;
     background-size: cover;
     background-color: #f1f1f100;
     border: none;

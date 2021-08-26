@@ -1,11 +1,11 @@
- 
+
 
 
 var canvasSmall: OffscreenCanvas;
 var ctxSmall: OffscreenCanvasRenderingContext2D | null = null;
 var canvasMedium: OffscreenCanvas;
 var ctxMedium: OffscreenCanvasRenderingContext2D | null = null;
-var path: string;
+
 
 const small = 64;
 const medium = 256;
@@ -22,20 +22,19 @@ const medium = 256;
  * @param {Number} maxHeight maximum available height
  * @return {Object} { width, height }
  */
-function calculateAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: number, maxHeight: number = maxWidth): { width: number, height: number } {
+function calculateAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: number, maxHeight: number = maxWidth): { width: number, height: number, ratio: number } {
 
     var ratio: number = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
 
-    return { width: srcWidth * ratio, height: srcHeight * ratio };
+    return { width: srcWidth * ratio, height: srcHeight * ratio, ratio: srcHeight / srcWidth };
 }
 
 addEventListener('message', async function (e: MessageEvent) {
 
-    if (e.data.msg == "init") {
-
-    }
 
     if (e.data.msg == "create") {
+ 
+
 
         const response = await fetch(e.data.path)
 
@@ -44,9 +43,17 @@ addEventListener('message', async function (e: MessageEvent) {
 
         await createImageBitmap(blob).then(bitmap => {
 
-
             let smallSize = calculateAspectRatioFit(bitmap.width, bitmap.height, small);
             let mediumSize = calculateAspectRatioFit(bitmap.width, bitmap.height, medium);
+
+            // @ts-ignore: Unreachable code error
+            postMessage({
+                type: "size",
+                path: e.data.path,
+                width: bitmap.width,
+                height: bitmap.height,
+                ratio: smallSize.ratio
+            });
 
 
             canvasSmall = new OffscreenCanvas(smallSize.width, smallSize.height);
@@ -66,7 +73,7 @@ addEventListener('message', async function (e: MessageEvent) {
 
                 // @ts-ignore: Unreachable code error
                 postMessage({
-                    path: path,
+                    path: e.data.path,
                     type: "small",
                     blob: blob
                 });
@@ -76,7 +83,7 @@ addEventListener('message', async function (e: MessageEvent) {
 
                 // @ts-ignore: Unreachable code error
                 postMessage({
-                    path: path,
+                    path: e.data.path,
                     type: "medium",
                     blob: blob
                 });
@@ -84,7 +91,6 @@ addEventListener('message', async function (e: MessageEvent) {
             });
         });
 
-        path = e.data.path;
 
     }
 

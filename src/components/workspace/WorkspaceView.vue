@@ -741,7 +741,7 @@ export default defineComponent({
         } else {
           if (
             f.path.endsWith("jpg") ||
-            f.path.endsWith("jpeg") ||
+            f.path.endsWith("jpeg") || 
             f.path.endsWith("png")
           ) {
             listFiles.push(new WorkspaceEntryImage(f.path));

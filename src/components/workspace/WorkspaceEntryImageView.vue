@@ -42,16 +42,29 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-    //  this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
     let comp = this;
     let path = this.entry?.getURL();
 
     if (true) {
       cache.ImageCache.registerPath(
         path,
-        (url: string, type: "small" | "medium" | "original") => {
-          comp.$el.style.backgroundImage = url;
-        }
+        {
+          callback: (url: string, type: "small" | "medium" | "original") => {
+            if (type=="medium") {
+                comp.$el.style.backgroundImage = url;
+            }
+          
+          },
+          callbackSize: (dim: cache.ImageDim) => {
+   
+            if (!comp.entry.imageCreated) {
+              let w: number = Number(comp.$el.offsetWidth);
+              comp.$el.style.width = w + "px";
+              comp.$el.style.height = w * dim.ratio + "px";
+              comp.entry.imageCreated = true;
+            }
+          },
+        } 
       );
     } else {
       const ImageLoaderWorker = new Worker("@/utils/imageloader", {
@@ -78,7 +91,7 @@ export default defineComponent({
         };
         img.src = objectURL;
 
-     //   comp.$el.appendChild(img);
+        //   comp.$el.appendChild(img);
 
         comp.$el.style.backgroundImage = "url('" + objectURL + "')";
         // imageElement.setAttribute('src', objectURL)

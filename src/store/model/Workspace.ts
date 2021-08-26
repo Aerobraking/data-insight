@@ -93,6 +93,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         this.name = this.filename;
         this.width = 600;
         this.height = 600;
+        this.imageCreated=false;
     }
 
     public searchResultString(): string {
@@ -116,6 +117,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
     name: string;
     path: string;
     filename: string;
+    imageCreated:boolean;
 }
 
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
