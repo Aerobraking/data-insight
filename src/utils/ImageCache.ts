@@ -1,7 +1,7 @@
-
-
-export const smallSize: number = 32;
-export const mediumlSize: number = 32;
+export function isImageTypeSupported(path:string):boolean{
+    return ['.apng','.png','.jpg','.jpeg','.avif','.gif','.svg','.webp','.bmp','.tiff','.tif'].some(char => path.toLowerCase().endsWith(char));
+}
+ 
 
 export class Cache {
 
@@ -36,10 +36,8 @@ export class Cache {
             type: "module",
         });
 
-        const c1 = new OffscreenCanvas(smallSize, smallSize);
-        const c2 = new OffscreenCanvas(mediumlSize, mediumlSize);
 
-        worker.postMessage({ msg: "init", cSmall: c1, cMedium: c2 }, [c1, c2]);
+        worker.postMessage({ msg: "init" });
         worker.postMessage({ msg: "create", path: path });
         worker.onmessage = (e: any) => {
             // Grab the message data from the event
@@ -48,22 +46,19 @@ export class Cache {
             if (e.data.type == "small") {
                 const smallURl = URL.createObjectURL(e.data.blob);
 
-
-
                 let imageEntry: Map<String, String> | undefined = this.hash.get(e.data.path);
-                imageEntry?.set("small", smallURl);
+                imageEntry?.set(e.data.type, smallURl);
 
                 this.doCallback(e.data.path, smallURl, e.data.type);
-
             }
 
             if (e.data.type == "medium") {
-                const smallURl = URL.createObjectURL(e.data.blob);
+                const mediuamURl = URL.createObjectURL(e.data.blob);
 
                 let imageEntry: Map<String, String> | undefined = this.hash.get(e.data.path);
-                imageEntry?.set("medium", smallURl);
+                imageEntry?.set("medium", mediuamURl);
 
-                this.doCallback(e.data.path, smallURl, e.data.type);
+                this.doCallback(e.data.path, mediuamURl, e.data.type);
 
 
             }
@@ -97,14 +92,18 @@ export class Cache {
             this.hash.set(path, new Map());
             this.createWorker(path);
         } else {
-
-            let imageEntry: Map<string, string> | undefined = this.hash.get("path");
+          
+            let imageEntry: Map<string, string> | undefined = this.hash.get(path);
             if (imageEntry == undefined) {
                 return undefined;
             } else {
                 let url: string | undefined = imageEntry.get("small");
                 if (url) {
-                    callback(url, "small");
+                    callback("url('" + url + "')", "small");
+                }
+                let urlM: string | undefined = imageEntry.get("medium");
+                if (urlM) {
+                    callback("url('" + urlM + "')", "medium");
                 }
 
             }

@@ -6,6 +6,7 @@
 </template>
 
 <script lang="ts">
+import * as cache from "./../../utils/ImageCache";
 import { defineComponent } from "vue";
 import { FolderWindowFile } from "../../store/model/Workspace";
 import * as icons from "./../../utils/IconHandler";
@@ -20,14 +21,28 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-    let c: any = this.$el;
+    let el: any = this.$el;
 
-    icons.IconHandler.registerPath(this.entry.path, (url: string) => {
-      var img = new Image();
-      img.src = url;
-      c.getElementsByClassName("folder-file-symbol")[0].style.backgroundImage =
-        "url('" + img.src + "')";
-    });
+    if (cache.isImageTypeSupported(this.entry.path)) {
+      cache.ImageCache.registerPath(
+       this.entry.path,
+        (url: string, type: "small" | "medium" | "original") => {
+          if (type == "small") {
+           el.getElementsByClassName(
+              "folder-file-symbol"
+            )[0].style.backgroundImage = url;
+          }
+        }
+      );
+    } else {
+      icons.IconHandler.registerPath(this.entry.path, (url: string) => {
+        var img = new Image();
+        img.src = url;
+       el.getElementsByClassName(
+          "folder-file-symbol"
+        )[0].style.backgroundImage = "url('" + img.src + "')";
+      });
+    }
   },
 
   methods: {},
@@ -38,11 +53,11 @@ export default defineComponent({
 <style scoped lang="scss">
 .folder-file {
   z-index: 100;
-  // will-change: transform; 
+  // will-change: transform;
   color: #f1f1f1;
-  padding: 10px; 
+  padding: 10px;
   height: 180px;
- 
+
   box-sizing: border-box;
 
   p {
@@ -54,14 +69,14 @@ export default defineComponent({
     padding: 0;
     margin: 0 auto;
     margin-top: 4px;
-    color:#222;
+    color: #222;
     text-align: center;
   }
 
   .folder-file-symbol {
     height: 75px;
     width: 75px;
-    display: block;
+    display: block; 
     background-size: cover;
     background-color: #f1f1f100;
     border: none;
