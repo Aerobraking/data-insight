@@ -1,4 +1,4 @@
-import { ElementDimension, set3DPosition } from "@/utils/resize";
+import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
 import { timeHours } from "d3";
 import { WorkspaceViewIfc } from "../WorkspaceUtils";
 import Plugin from "./AbstractPlugin"
@@ -18,6 +18,10 @@ export default class ReArrange extends Plugin {
                 this.hash.set(id, d);
             }
             e.style.transition = "transform 0.2s";
+
+            if (e.classList.contains("sizefixed")) {
+                this.onlyResizable = false;
+            }
         }
 
         this.workspace.getUnselectedEntries().forEach(e => {
@@ -35,6 +39,9 @@ export default class ReArrange extends Plugin {
     padding: number = 10;
     selection: HTMLElement[] = [];
     mouseStart: { x: number, y: number } | undefined;
+    fitSize: boolean = false;
+    onlyResizable: boolean = true;
+    averageWidth: number = 0;
 
     public isModal(): boolean { return true; }
     public cancel(): boolean {
@@ -47,6 +54,7 @@ export default class ReArrange extends Plugin {
                 let d: ElementDimension | undefined = this.hash.get(id);
                 if (d) {
                     set3DPosition(e, d.x, d.y);
+                    setSize(e, d.w, d.h);
                 }
             }
         }
@@ -72,25 +80,78 @@ export default class ReArrange extends Plugin {
         this.workspace.updateSelectionWrapper();
         return true;
     }
+
     public keydown(e: KeyboardEvent): boolean {
+        if (this.onlyResizable && e.key == "f") {
+            this.fitSize = !this.fitSize;
+            this.fitElementSize();
+        }
+
         return true;
     }
+    private fitElementSize(): void {
+
+
+
+        if (this.fitSize) {
+            /**
+             * set size from the average width of all elements.
+             */
+            let sum = 0;
+            for (let index = 0; index < this.selection.length; index++) {
+                const e = this.selection[index];
+                let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
+                sum += d.w;
+            }
+
+            this.averageWidth = (sum / this.selection.length) || 200;
+
+            for (let index = 0; index < this.selection.length; index++) {
+                const e = this.selection[index];
+                let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
+                setSize(e, this.averageWidth, d.h * (this.averageWidth / d.w));
+            }
+        } else {
+            /**
+             * set original size
+             */
+            for (let index = 0; index < this.selection.length; index++) {
+                const e = this.selection[index];
+                let id = e.getAttribute("name");
+                if (id) {
+                    let d: ElementDimension | undefined = this.hash.get(id);
+                    if (d) {
+                        setSize(e, d.w, d.h);
+                    }
+                }
+            }
+        }
+
+
+        this.updateview();
+
+    }
+
     public keyup(e: KeyboardEvent): boolean {
         if (e.key == "Enter") {
             this.workspace.finishPlugin();
         }
         return true;
     }
+
     public mouseup(e: MouseEvent): boolean {
         return true;
     }
+
     public mousedown(e: MouseEvent): boolean {
         this.workspace.finishPlugin();
         return true;
     }
+
     public mousedownPan(e: any): boolean {
         return true;
     }
+
     public mousemove(e: MouseEvent): boolean {
 
         if (!this.mouseStart) {
@@ -116,23 +177,51 @@ export default class ReArrange extends Plugin {
 
         let padding = this.padding;
 
-        for (let index = 0, widthCurrent = 0, heightRow = 0, heightCurrent = 0, xCurrent = this.mouseStart.x, yCurrent = this.mouseStart.y; index < this.selection.length; index++) {
-            const e = this.selection[index];
-            let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
-            let id = e.getAttribute("name");
 
-            set3DPosition(e, xCurrent + widthCurrent, yCurrent + heightCurrent);
+        if (this.fitSize) {
 
-            widthCurrent += d.w + padding;
-            heightRow = Math.max(d.h + padding, heightRow);
+            let columnCount = Math.max(Math.round(this.width / this.averageWidth), 1);
 
-            if (widthCurrent > this.width) {
-                widthCurrent = 0;
-                heightCurrent += heightRow;
+            let columnHeight: number[] = Array(columnCount).fill(0);
+
+            for (let index = 0, xCurrent = this.mouseStart.x, columnCurrent = 0, yCurrent = this.mouseStart.y; index < this.selection.length; index++) {
+                const e = this.selection[index];
+                let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
+
+
+                let heightCurrent = columnHeight[columnCurrent];
+ 
+
+                set3DPosition(e, xCurrent + columnCurrent * this.averageWidth + (padding*columnCurrent), yCurrent + heightCurrent);
+
+                columnHeight[columnCurrent] += d.h+padding;
+
+                columnCurrent++
+                if (columnCurrent > columnCount - 1) {
+                    columnCurrent = 0;
+                }
+
+                e.style.transition = "transform 0.2s";
             }
-            e.style.transition = "transform 0.2s";
-        }
+        } else {
+            for (let index = 0, widthCurrent = 0, heightRow = 0, heightCurrent = 0, xCurrent = this.mouseStart.x, yCurrent = this.mouseStart.y; index < this.selection.length; index++) {
+                const e = this.selection[index];
+                let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
 
+
+                set3DPosition(e, xCurrent + widthCurrent, yCurrent + heightCurrent);
+
+                widthCurrent += d.w + padding;
+                heightRow = Math.max(d.h + padding, heightRow);
+
+                if (widthCurrent > this.width) {
+                    widthCurrent = 0;
+                    heightCurrent += heightRow;
+                    heightRow = 0;
+                }
+                e.style.transition = "transform 0.2s";
+            }
+        }
         this.workspace.updateSelectionWrapper();
     }
 
