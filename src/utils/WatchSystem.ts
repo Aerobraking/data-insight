@@ -1,6 +1,6 @@
 import { FSWatcher } from "chokidar";
 
-const chokidar = window.require("chokidar");
+const chokidar = require("chokidar");
 const pathSys = require("path");
 interface Hash {
     [details: string]: { (): void; }[];

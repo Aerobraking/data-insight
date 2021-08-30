@@ -14,7 +14,7 @@ export class InsightFile {
             ],
         },
     })
-    views: Array<Workspace> = []; 
+    views: Array<Workspace> = [new Workspace("Default").setActive(true)]; 
 }
 
 export class UserSettings {
@@ -24,14 +24,10 @@ export class UserSettings {
 }
 
 export const state: {
-
     userSettings: UserSettings,
     loadedFile: InsightFile
-
 } = {
-
     userSettings: new UserSettings(),
     loadedFile: new InsightFile(),
-
 }
 export type State = typeof state

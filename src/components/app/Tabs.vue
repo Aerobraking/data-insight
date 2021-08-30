@@ -7,7 +7,7 @@
 
     <!-- <a class="tab-create" @click="createOverviewTab()"> +O </a> -->
     <draggable
-      v-model="getlist" 
+      v-model="getlist"
       @start="drag = true"
       @end="drag = false"
       item-key="order"
@@ -75,9 +75,7 @@ _.once(() => {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {},
     prepareFileSaving(): void {},
     pluginStarted(modal: boolean): void {
-      document
-        .getElementById("tabs")
-        ?.classList.toggle("prevent-input", modal);
+      document.getElementById("tabs")?.classList.toggle("prevent-input", modal);
     },
   });
 })();
@@ -211,6 +209,7 @@ div.tabs-header {
 .tab-create {
   color: #fff;
   width: 10px !important;
+  user-select: none;
   input {
     user-select: none;
     pointer-events: none;
@@ -256,8 +255,11 @@ div.tabs-header {
     outline: none;
 
     &:focus {
-      //      background-color: rgb(116, 79, 79) !important;
     }
+  }
+
+  &:hover {
+    background-color: rgb(83, 83, 83);
   }
 }
 

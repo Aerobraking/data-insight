@@ -6,4 +6,9 @@ export abstract class View {
     isActive: boolean = false;
     name: string = "";
     type: string = "";
+
+    public setActive(a: boolean): this {
+        this.isActive = a;
+        return this;
+    }
 }

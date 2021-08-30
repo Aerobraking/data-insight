@@ -92,7 +92,6 @@ import SelectionArea from "@viselect/vanilla";
 import * as watcher from "./../../utils/WatchSystem";
 const fs = require("fs");
 const path = require("path");
-const chokidar = window.require("chokidar");
 import wsfolderfile from "./FolderFileView.vue";
 import { defineComponent } from "vue";
 import {

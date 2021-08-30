@@ -57,10 +57,8 @@
       <button @click="showAll">Show all</button>
     </div>
 
-    <div class="overview overview-hover" @dblclick.capture="openOverview">
-      <OverviewCanvas class="prevent-input" :model="model" />
-    </div>
-
+       <OverviewView class="overview overview-hover" @dblclick.capture="openOverview" :model="model" />
+    
     <wsentriesbookmarks
       :model="model"
       @bookmarkclicked="moveToEntry"
@@ -90,6 +88,7 @@
 
 
 <script lang="ts">
+//   <OverviewView class="prevent-input" :model="model" />
 import { ipcRenderer } from "electron";
 import {
   Workspace,
@@ -106,6 +105,7 @@ import WorkspacePlugin from "./Plugins/AbstractPlugin";
 import ReArrange from "./Plugins/Rearrange";
 import * as WSUtils from "./WorkspaceUtils";
 import OverviewCanvas from "./../overview/OverviewCanvas.vue";
+import OverviewView from "./../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
 import { defineComponent } from "vue";
@@ -120,16 +120,18 @@ import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
 import { WorkspaceViewIfc } from "./WorkspaceUtils";
 import AbstractPlugin from "./Plugins/AbstractPlugin";
+import { OverviewEngine } from "./overview/OverviewEngine";
 const fs = require("fs");
 const path = require("path");
 
 export default defineComponent({
-  el: "#wrapper",
+  el: ".wrapper",
   name: "WorkspaceView",
   components: {
     wsentriesbookmarks,
     wssearchlist,
     OverviewCanvas,
+    OverviewView,
   },
   props: {
     model: {
@@ -153,7 +155,7 @@ export default defineComponent({
     useCanvas: boolean;
     oldViewRect: ElementDimension | undefined;
     spacePressed: boolean;
-    highlightSelection: boolean;
+    highlightSelection: boolean; 
   } {
     return {
       highlightSelection: true,
@@ -180,6 +182,8 @@ export default defineComponent({
     },
   },
   mounted() {
+ 
+
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),
       this,
@@ -211,8 +215,6 @@ export default defineComponent({
     vm.getCanvas().width = vm.$el.clientWidth;
     vm.getCanvas().height = vm.$el.clientHeight;
 
-    // this.$el.addEventListener("keyup", this.keyPressed);
-
     this.drawCanvas();
   },
   computed: {
@@ -235,10 +237,9 @@ export default defineComponent({
         }, 400);
       }
     },
-    openOverview(e: MouseEvent): void {
-      console.log("openOverview");
+    openOverview(e: MouseEvent): void { 
 
-      let div: HTMLElement = e.target as HTMLElement;
+      let div: HTMLElement =  this.$el.getElementsByClassName("overview")[0];
       div.classList.toggle("open");
       if (div.classList.contains("open")) {
         div.classList.remove("overview-hover");
@@ -741,7 +742,7 @@ export default defineComponent({
         } else {
           if (
             f.path.endsWith("jpg") ||
-            f.path.endsWith("jpeg") || 
+            f.path.endsWith("jpeg") ||
             f.path.endsWith("png")
           ) {
             listFiles.push(new WorkspaceEntryImage(f.path));

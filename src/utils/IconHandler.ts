@@ -1,4 +1,3 @@
-import { FSWatcher } from "chokidar";
 
 const fs = require("fs");
 

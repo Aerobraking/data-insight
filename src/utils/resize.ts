@@ -68,18 +68,37 @@ export interface ElementDimension {
     h: number,
     x2: number,
     y2: number,
-
-
 }
 
-export function editElementDimension(d:ElementDimension,coord: (n: number) => number,size: (n: number) => number):void{
-coord(d.x);
-coord(d.x2);
-coord(d.y);
-coord(d.y2);
-size(d.w);
-size(d.h);
-} 
+export class ElementDimensionInstance implements ElementDimension {
+
+    constructor(x: number,
+        y: number,
+        w: number,
+        h: number) {
+        this.x = x;
+        this.y = y;
+        this.w = h;
+        this.h = h;
+        this.x2 = 0;
+        this.y2 = 0;
+    }
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    x2: number;
+    y2: number;
+}
+
+export function editElementDimension(d: ElementDimension, coord: (n: number) => number, size: (n: number) => number): void {
+    coord(d.x);
+    coord(d.x2);
+    coord(d.y);
+    coord(d.y2);
+    size(d.w);
+    size(d.h);
+}
 
 export function getCoordinatesFromElement(e: any): ElementDimension {
     let results: string = e.style.transform;
@@ -229,7 +248,7 @@ export class ResizerComplex {
 
         this.element.style.width = newWidth + 'px';
         this.element.style.height = newHeight + 'px';
- 
+
 
         /**
          * Calculate the scale factor
