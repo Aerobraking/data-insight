@@ -6,7 +6,10 @@ module.exports = {
     devtool: 'source-map',
     plugins: [
       new WorkerPlugin()
-    ]
+    ],
+    externals: {
+      fsevents: "require('fseventselectron')"
+    }
   },
  
   pluginOptions: {
