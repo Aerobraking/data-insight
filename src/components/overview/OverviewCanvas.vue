@@ -37,7 +37,7 @@
 const fs = require("fs");
 const path = require("path");
 // without "window.", the fsevent module can' be loaded on osx
-const chokidar = window.require("chokidar");
+const chokidar = require("chokidar");
 const { shell } = require("electron"); // deconstructing assignment
 
 function removeItemOnce<T>(arr: Array<T>, value: T) {

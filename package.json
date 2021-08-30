@@ -30,6 +30,7 @@
   "devDependencies": {
     "@types/d3": "^6.7.5",
     "@types/electron-devtools-installer": "^2.2.0",
+    "@types/resize-observer-browser": "^0.1.6",
     "@types/underscore": "^1.11.3",
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-typescript": "~4.5.0",

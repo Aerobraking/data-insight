@@ -7,7 +7,6 @@ import { Overview } from "./OverviewDataModel";
 
 const fs = require("fs");
 const path = require("path");
-const chokidar = window.require("chokidar");
 
 export class WorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {
