@@ -5,11 +5,16 @@ import { State } from './state'
 
 export type Getters = {
 
+  getShowUI(state: State):boolean
   getViewList(state: State): Array<Workspace | Overview>
   getActiveWorkspaceIndex(state: State): number
 }
 
 export const getters: GetterTree<State, State> & Getters = {
+
+  getShowUI: (state) => {
+    return state.loadedFile.settings.showUI;
+  },
 
   getViewList: (state) => {
     return state.loadedFile.views;

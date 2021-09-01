@@ -19,7 +19,7 @@
     <div
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="ws-folder-window-bar-top select-element selectable-highlight"
+      class="ws-entry-window-bar-top select-element selectable-highlight"
     ></div>
     <div class="search-bar">
       <button @click="folderBack">Go Up</button>
@@ -357,7 +357,7 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-$black: 25px;
+ 
 
 .container {
   user-select: none;
@@ -396,12 +396,12 @@ $black: 25px;
     overflow-y: auto;
     overflow-x: hidden;
     //   display: none;
-    height: calc(100% - #{$black * 3+20});
+    height: calc(100% - #{25px * 3+20});
   }
 
   .search-bar {
     width: 70%;
-    height: $black;
+    height: 25px;
 
     input,
     input:focus {
@@ -444,10 +444,10 @@ $tile-size: 150px;
   }
 }
 
-.ws-folder-window-wrapper .ws-folder-window-bar-top {
+.ws-folder-window-wrapper .ws-entry-window-bar-top {
   width: 100%;
-  height: $black;
-  background-color: #c4262600;
+  height: 25px;
+  background-color: rgb(255, 255, 255);
 
   .opaque {
     background-color: #5a5a5a00;

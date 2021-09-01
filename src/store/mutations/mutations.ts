@@ -33,6 +33,9 @@ export type Mutations<S = State> = {
   [MutationTypes.LOAD_INSIGHT_FILE](state: S, payload: {
     insightFile: InsightFile
   }): void
+  [MutationTypes.SHOW_UI](state: S, payload: {
+    showUI: boolean
+  }): void
 }
 
 /**
@@ -118,7 +121,9 @@ export const mutations: MutationTree<State> & Mutations = {
       }
     );
   },
-
+  [MutationTypes.SHOW_UI](state, payload) {
+    state.loadedFile.settings.showUI = payload.showUI;
+  },
   [MutationTypes.CREATE_OVERVIEW](state) {
     // state.loadedFile.views.push(new Overview());
     // let lastIndex = state.loadedFile.views.length - 1;

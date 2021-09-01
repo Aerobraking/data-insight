@@ -1,6 +1,19 @@
 
 <template>
-  <div id="tabs" class="tabs-header" @mousewheel="scrollList">
+  <button
+    class="tab-collapse"
+    @click="isCollapsed = toggleShowUI()"
+    :class="{ 'tab-collapse-true': !getShowUI }"
+  >
+    <ArrowCollapseUp />
+  </button>
+
+  <div
+    id="tabs"
+    class="tabs-header"
+    v-show="getShowUI"
+    @mousewheel="scrollList"
+  >
     <div class="tab-entry tab-create" @click="createWorkspaceTab()">
       <p>+</p>
     </div>
@@ -60,13 +73,12 @@ import Startscreen from "./StartScreen.vue";
 import workspaceview from "../workspace/WorkspaceView.vue";
 import overviewview from "../overview/OverviewView.vue";
 import { MutationTypes } from "@/store/mutations/mutation-types";
-import { View } from "@/store/model/DataModel";
-import { MouseWheelInputEvent } from "electron";
 import draggable from "vuedraggable";
 import _ from "underscore";
 import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 import * as WSUtils from "./../workspace/WorkspaceUtils";
 
+import { ArrowCollapseUp } from "mdue";
 _.once(() => {
   WSUtils.Events.registerCallback({
     zoom(transform: { x: number; y: number; scale: number }): void {},
@@ -83,12 +95,14 @@ export default defineComponent({
   name: "Tabs",
   components: {
     draggable,
+    ArrowCollapseUp,
     workspaceview,
     overviewview,
     Startscreen,
   },
   data(): {} {
     return {
+      isCollapsed: false,
       selectedIndex: 0,
       drag: false,
     };
@@ -106,6 +120,7 @@ export default defineComponent({
         });
       },
     },
+
     getViewList() {
       return this.$store.getters.getViewList;
     },
@@ -118,8 +133,18 @@ export default defineComponent({
         direction: "horizontal",
       };
     },
+    getShowUI(): boolean {
+      return this.$store.getters.getShowUI;
+    },
   },
   methods: {
+    toggleShowUI() {
+      // @ts-ignore: Unreachable code error
+      let show = !this.$store.getters.getShowUI;
+      this.$store.commit(MutationTypes.SHOW_UI, {
+        showUI: show,
+      }); 
+    },
     scrollList(e: WheelEvent) {
       e.preventDefault();
       this.$el.scrollLeft += e.deltaY;
@@ -158,6 +183,33 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.tab-collapse {
+  outline: none;
+  color: white;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  transition: all 0.2s ease-in-out;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  z-index: 999;
+
+  svg {
+    font-size: 24px;
+    padding: 9px;
+    margin: 0;
+  }
+}
+
+.tab-collapse-true {
+  transform: rotate(180deg);
+  svg {
+    color: rgba(255, 255, 255, 0.089);
+  }
+}
+
 .delete {
   display: none;
   background-color: #9a9a9a00;
@@ -237,7 +289,7 @@ div.tabs-header {
     background-color: transparent;
     color: #fff;
     border: none;
-    outline:none;
+    outline: none;
 
     &:focus {
     }

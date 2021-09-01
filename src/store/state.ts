@@ -13,7 +13,12 @@ export class InsightFile {
             ],
         },
     })
-    views: Array<Workspace> = [new Workspace("Default").setActive(true)]; 
+    views: Array<Workspace> = [new Workspace("Default").setActive(true)];
+    settings: InsightFileSettings = new InsightFileSettings();
+}
+
+export class InsightFileSettings {
+    showUI: boolean = true;
 }
 
 export class UserSettings {

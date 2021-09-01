@@ -5,8 +5,14 @@
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry-youtube-wrapper select-element"
+    class="ws-entry-youtube-wrapper"
   >
+    <div
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.stop.exact="entrySelectedLocal('single')"
+      class="ws-entry-window-bar-top select-element selectable-highlight"
+    ></div>
+
     <input
       @keydown.stop
       @keyup.stop
@@ -50,22 +56,16 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-    // this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
-    // this.$el.style.width = this.entry?.width + "px";
-    //  this.$el.style.height = this.entry?.height + "px";
-
-    let comp = this;
-
+   
     let iframe: any = htmlToElement(
       this.entry != undefined
         ? this.entry?.getHtmlCode()
         : "<div>Video not found.</div>"
-    );
-    let c = this;
+    ); 
 
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
 
-    resize(this.$el);
+    // resize(this.$el);
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
@@ -80,15 +80,11 @@ export default defineComponent({
   created() {},
 });
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+ 
 <style lang="scss">
-.ws-entry-youtube-wrapper {
-  //  resize: both;
+.ws-entry-youtube-wrapper { 
   z-index: 100;
-  overflow: hidden;
-  // backface-visibility: hidden;
-  // will-change: transform;
+  overflow: hidden; 
   position: absolute;
   color: #f1f1f1;
   padding: 10px;

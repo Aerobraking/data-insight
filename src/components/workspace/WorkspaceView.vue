@@ -64,10 +64,8 @@
       @bookmarkclicked="moveToEntry"
     ></wsentriesbookmarks>
 
-    <div class="workspace-search">
-      <div>
-        <button @click="showAll">Show all</button>
-      </div>
+    <div class="workspace-search" v-show="getShowUI">
+      <div></div>
       <input
         @keydown.stop
         @keyup.stop
@@ -89,12 +87,36 @@
         @bookmarkclicked="moveToEntry"
       ></wssearchlist>
     </div>
+
+    <div
+      @mousedown.stop
+      @mouseup.stop
+      class="workspace-menu-bar"
+      :class="{ 'workspace-menu-bar-hide': !getShowUI }"
+    >
+      <button :disabled="model.entries.length == 0">
+        <Overscan @click="showAll" />
+      </button>
+      <button><Table @click="createEntry('frame')" /></button>
+      <button><youtube @click="createEntry('youtube')" /></button>
+      <button><CommentTextOutline @click="createEntry('text')" /></button>
+      <button
+        style="transform: rotate(90deg)"
+        :disabled="selectedEntriesCount == 0"
+      >
+        <arrow-expand />
+      </button>
+      <button :disabled="selectedEntriesCount != 1"><FormTextbox /></button>
+      <button :disabled="selectedEntriesCount == 0"><Resize /></button>
+      <button :disabled="selectedEntriesCount == 0">
+        <delete-empty-outline @click="deleteSelection" />
+      </button>
+    </div>
   </div>
 </template>
 
 
 <script lang="ts">
-//   <OverviewView class="prevent-input" :model="model" />
 import { ipcRenderer } from "electron";
 import {
   Workspace,
@@ -140,10 +162,28 @@ for (let index = 0; index < 100; index++) {
   });
 }
 
+import {
+  FormTextbox,
+  Resize,
+  CommentTextOutline,
+  Overscan,
+  Youtube,
+  Table,
+  ArrowExpand,
+  DeleteEmptyOutline,
+} from "mdue";
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    FormTextbox,
+    ArrowExpand,
+    CommentTextOutline,
+    Youtube,
+    Table,
+    DeleteEmptyOutline,
+    Overscan,
+    Resize,
     wsentriesbookmarks,
     wssearchlist,
     OverviewCanvas,
@@ -173,6 +213,7 @@ export default defineComponent({
     spacePressed: boolean;
     highlightSelection: boolean;
     divObserver: any;
+    selectedEntriesCount: number;
   } {
     return {
       highlightSelection: true,
@@ -192,6 +233,7 @@ export default defineComponent({
       oldViewRect: undefined,
       spacePressed: false,
       divObserver: null,
+      selectedEntriesCount: 0,
     };
   },
   watch: {
@@ -255,6 +297,9 @@ export default defineComponent({
     this.divObserver.disconnect();
   },
   computed: {
+    getShowUI(): boolean {
+      return this.$store.getters.getShowUI;
+    },
     searchActive(): boolean {
       return this.searchString.trim().length > 0 && this.searchfocus;
     },
@@ -326,7 +371,7 @@ export default defineComponent({
         90
       );
       b = 70;
-      context.fillStyle = "rgb(" + b + "," + b + "," + (b + 15) + ")";
+      context.fillStyle = "rgb(" + b + "," + b + "," + (b + 5) + ")";
 
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillRect(0, 0, canvas.width, canvas.height);
@@ -488,55 +533,58 @@ export default defineComponent({
             });
             this.spacePressed = false;
           }
-
           break;
         case "Delete":
         case "delete":
-          let listIndices: number[] = [];
-
-          this.getSelectedEntries().forEach((element) => {
-            listIndices.push(Number(element.getAttribute("name")));
-          });
-
-          let payload = {
-            model: <Workspace>this.model,
-            listIndices,
-          };
-
-          this.$store.commit(MutationTypes.REMOVE_ENTRIES, payload);
-
-          this.clearSelection();
-
+          this.deleteSelection();
           break;
         case "a":
           if (e.ctrlKey) {
-            console.log(e);
             this.selectAll();
           }
           break;
         case "t":
-          let p = {
-            model: <Workspace>this.model,
-            listFiles,
-          };
+          this.createEntry("text", true);
+          break;
+        case "f":
+          this.createEntry("frame", true);
+          break;
+        case "y":
+          this.createEntry("youtube", true);
+          break;
+        default:
+      }
 
+      this.drawCanvas();
+    },
+    createEntry(
+      type: "frame" | "text" | "youtube",
+      useMousePosition: boolean = false
+    ) {
+      let viewport = this.getViewport();
+      let doPositioning = true;
+      let listFiles: Array<WorkspaceEntry> = [];
+      let payload = {
+        model: <Workspace>this.model,
+        listFiles,
+      };
+      switch (type) {
+        case "youtube":
+          let yt = new WorkspaceEntryYoutube();
+          yt.x = viewport.x + viewport.w / 2 - yt.width / 2;
+          yt.y = viewport.y + viewport.h / 2 - yt.height / 2;
+          listFiles.push(yt);
+
+          break;
+        case "text":
           let area = new WorkspaceEntryTextArea();
           area.x = this.mousePositionLast.x;
           area.y = this.mousePositionLast.y;
           listFiles.push(area);
 
-          this.$store.commit(MutationTypes.ADD_FILES, p);
-
           break;
-        case "f":
-          p = {
-            model: <Workspace>this.model,
-            listFiles,
-          };
-
+        case "frame":
           let frame = new WorkspaceEntryFrame();
-          frame.x = this.mousePositionLast.x;
-          frame.y = this.mousePositionLast.y;
           listFiles.push(frame);
 
           if (this.getSelectedEntries().length > 0) {
@@ -560,33 +608,28 @@ export default defineComponent({
             frame.y = y - padding;
             frame.width = Math.abs(x2 - x) + padding * 2;
             frame.height = Math.abs(y2 - y) + padding * 2;
+            doPositioning = false;
           }
-
-          this.$store.commit(MutationTypes.ADD_FILES, p);
-
-          break;
-        case "y":
-          p = {
-            model: <Workspace>this.model,
-            listFiles,
-          };
-
-          let yt = new WorkspaceEntryYoutube();
-          yt.x = this.mousePositionLast.x;
-          yt.y = this.mousePositionLast.y;
-          listFiles.push(yt);
-
-          this.$store.commit(MutationTypes.ADD_FILES, p);
-
           break;
         default:
+          break;
       }
 
-      this.drawCanvas();
+      if (doPositioning) {
+        listFiles.forEach((f) => {
+          if (useMousePosition) {
+            f.x = this.mousePositionLast.x;
+            f.y = this.mousePositionLast.y;
+          } else {
+            f.x = viewport.x + viewport.w / 2 - f.width / 2;
+            f.y = viewport.y + viewport.h / 2 - f.height / 2;
+          }
+        });
+      }
+
+      this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
     startDrag: function (e: MouseEvent) {
-      console.log("starte draggen");
-
       this.selectionDragActive = true;
 
       /**
@@ -775,7 +818,7 @@ export default defineComponent({
         return true;
       }
       var shouldIgnore: boolean = !(e.altKey || e.button == 1);
-      console.log(shouldIgnore);
+
       return shouldIgnore;
     },
     dragover(e: any) {
@@ -911,15 +954,10 @@ export default defineComponent({
         y2: y2,
       };
     },
-    showAll() {
-      let rect: ClientRect = this.$el.getBoundingClientRect();
-
+    getViewport(): ElementDimension {
       let currenTransform = this.getCurrentTransform();
 
-      this.mousePositionLast = this.getPositionInWorkspace({
-        clientX: rect.left,
-        clientY: rect.top,
-      });
+      let rect: ClientRect = this.$el.getBoundingClientRect();
 
       let oldView: ElementDimension = {
         x: -currenTransform.x / this.getCurrentTransform().scale,
@@ -932,8 +970,14 @@ export default defineComponent({
 
       oldView.x2 = oldView.x + oldView.w;
       oldView.y2 = oldView.y + oldView.h;
+      return oldView;
+    },
+    showAll() {
+      if (this.getEntries().length == 0) {
+        return;
+      }
 
-      this.oldViewRect = oldView;
+      this.oldViewRect = this.getViewport();
 
       let bound = this.getPanzoomRect(this.getBounds(this.getEntries()), 0.2);
       this.panZoomInstance.smoothShowRectangle(bound);
@@ -1065,7 +1109,29 @@ export default defineComponent({
           });
       }
 
+      this.selectedEntriesCount = this.getSelectedEntries().length;
+
       this.updateSelectionWrapper();
+    },
+    deleteSelection() {
+      if (this.getSelectedEntries().length == 0) {
+        return;
+      }
+
+      let listIndices: number[] = [];
+
+      this.getSelectedEntries().forEach((element) => {
+        listIndices.push(Number(element.getAttribute("name")));
+      });
+
+      let payload = {
+        model: <Workspace>this.model,
+        listIndices,
+      };
+
+      this.$store.commit(MutationTypes.REMOVE_ENTRIES, payload);
+
+      this.clearSelection();
     },
     startPlugin(p: AbstractPlugin): void {
       this.activePlugin = p;
@@ -1118,9 +1184,7 @@ export default defineComponent({
       p.setTransformOrigin(null);
       this.panZoomInstance = p;
       p.set;
-      p.on("panzoompan", function (e: any) {
-        console.log(e);
-      });
+      p.on("panzoompan", function (e: any) {});
       p.on("onDoubleClick", function (e: any) {
         return false;
       });
@@ -1199,9 +1263,8 @@ export default defineComponent({
         ipcRenderer.send("ondragstart", listFilesToDrag);
       }
     },
-
     updateSelectionWrapper() {
-      let selectionRectangle: any = this.getSelectionWrapper();
+      let selectionRectangle: HTMLElement = this.getSelectionWrapper();
 
       let x = Infinity,
         y = Infinity,
@@ -1222,8 +1285,12 @@ export default defineComponent({
       selectionRectangle.style.width = Math.abs(x2 - x) + "px";
       selectionRectangle.style.height = Math.abs(y2 - y) + "px";
 
+      selectionRectangle.classList.toggle(
+        "wrapper-highlight",
+        this.getSelectedEntries().length > 1
+      );
       selectionRectangle.style.visibility =
-        this.getSelectedEntries().length > 1 && this.highlightSelection
+        this.getSelectedEntries().length > 0 && this.highlightSelection
           ? "visible"
           : "hidden";
 
@@ -1289,6 +1356,61 @@ var switcher = false;
 </script>
 
 <style   lang="scss">
+.ws-entry-window-bar-top {
+  width: 100%;
+  height: 25px;
+  background-color: #ffffff;
+}
+
+.workspace-menu-bar {
+  position: absolute;
+  z-index: 800;
+  bottom: 10px;
+  left: 0;
+  text-align: center;
+  width: 100%;
+
+  button {
+    outline: none;
+    color: white;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+  }
+
+  button:disabled,
+  button[disabled] {
+    pointer-events: none;
+    color: #ffffff50;
+    svg {
+      transform: scale(0.7);
+    }
+  }
+}
+
+.workspace-menu-bar-hide {
+  svg {
+    opacity: 0.05;
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+svg {
+  cursor: pointer;
+  margin: 5px 15px 5px 15px;
+  padding: 5px;
+  font-size: 32px;
+
+  transition: all 0.2s ease-in-out;
+  &:hover {
+    color: #ccc;
+    transform: scale(1.25);
+  }
+}
+
 .overview {
   position: absolute;
   right: 0px;
@@ -1333,8 +1455,8 @@ var switcher = false;
   position: absolute;
   border: none;
   background: #fff;
-  padding-top: 2px;
-  padding-bottom: 2px;
+  padding-top: 0px;
+  padding-bottom: 0px;
   width: 100%;
   z-index: 4000;
 
@@ -1354,7 +1476,7 @@ var switcher = false;
   grid-template-rows: 1fr;
   input {
     background: #eee;
-    height: 25px;
+    height: 28px;
     border: none;
     outline: none;
     border-left: 1px solid #aaa;
@@ -1365,8 +1487,8 @@ var switcher = false;
     background: #fff;
     position: absolute;
     top: 100%;
-    left: 25%;
-    width: 50%;
+    left: 33.33%;
+    width: 33.33%;
     color: #333;
     overflow: hidden;
   }
@@ -1415,13 +1537,17 @@ div .resizer-top-left {
   width: 0px;
   height: 0px;
   transform: translate3d(0px, 0px, 0px);
-  border: 2px solid rgba(57, 215, 255, 1);
+
   z-index: 4000;
   padding: 10px;
   margin: -10px;
   visibility: hidden;
 
   pointer-events: none;
+}
+
+.wrapper-highlight {
+  border: 2px solid rgba(57, 215, 255, 1);
 }
 
 .wsentry-displayname {

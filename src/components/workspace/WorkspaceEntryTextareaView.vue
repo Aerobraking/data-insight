@@ -12,7 +12,7 @@
     <div
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="ws-textarea-window-bar-top select-element selectable-highlight"
+      class="ws-entry-window-bar-top select-element selectable-highlight"
     ></div>
 
     <div
@@ -140,11 +140,7 @@ export default defineComponent({
   }
 }
 
-.ws-textarea-window-bar-top {
-  width: 100%;
-  height: 25px;
-  background-color: #ffffff;
-}
+
 
 .ws-entry-textarea-wrapper {
   display: flex;

@@ -3,7 +3,6 @@ export const classPreventInput = "prevent-input";
 
 export function resize(element: HTMLElement) {
 
-
     let startX: number, startY: number, startWidth: number, startHeight: number, originalWidth: number, originalHeight: number;
 
     /**
@@ -161,8 +160,6 @@ export class ResizerComplex {
     public setChildren(listChildren: HTMLElement[]): void {
         this.listChildren = [];
         this.listChildren.push(...listChildren);
-
-        console.log("setChildren: " + this.listChildren.length);
     }
 
     constructor(element: HTMLElement, owner: ResizerComplexOwner, resizeStart: Function = () => { }, resizeStep: Function = () => { }, resizeEnd: Function = () => { }) {
@@ -246,39 +243,46 @@ export class ResizerComplex {
         let newWidth = (this.startWidth + (e.clientX - this.startX) / scale),
             newHeight = (this.startHeight + (e.clientY - this.startY) / scale);
 
-        this.element.style.width = newWidth + 'px';
-        this.element.style.height = newHeight + 'px';
+
+        if (newWidth > 250 && newHeight > 250) {
 
 
-        /**
-         * Calculate the scale factor
-         */
-        let elementSizeCurrent = getCoordinatesFromElement(this.element);
-        let scaleW = elementSizeCurrent.w / this.elementSizeStart.w;
-        let scaleH = elementSizeCurrent.h / this.elementSizeStart.h;
-
-        // resize the children
-        for (let i = 0; i < this.listChildren.length; i++) {
-            const element: HTMLElement = this.listChildren[i];
-            const dim = this.listChildrenDimensions[i];
-
+            this.element.style.width = newWidth + 'px';
+            this.element.style.height = newHeight + 'px';
 
 
             /**
-             * Based on the distance to the origin of the resize rectangle, we calculate the new position
+             * Calculate the scale factor
              */
-            set3DPosition(element,
-                this.elementSizeStart.x + ((dim.x - this.elementSizeStart.x) * scaleW),
-                this.elementSizeStart.y + ((dim.y - this.elementSizeStart.y) * scaleH)
-            );
+            let elementSizeCurrent = getCoordinatesFromElement(this.element);
+            let scaleW = elementSizeCurrent.w / this.elementSizeStart.w;
+            let scaleH = elementSizeCurrent.h / this.elementSizeStart.h;
 
-            if (!element.classList.contains("sizefixed")) {
+            // resize the children
+            for (let i = 0; i < this.listChildren.length; i++) {
+
+                const element: HTMLElement = this.listChildren[i];
+                const dimE = this.listChildrenDimensions[i];
+
                 /**
-                       * the width/height act as vectors that can be scaled directly
-                       */
-                setSize(element, dim.w * scaleW, dim.h * scaleH);
-            }
+                 * Based on the distance to the origin of the resize rectangle, we calculate the new position
+                 */
+                set3DPosition(element,
+                    this.elementSizeStart.x + ((dimE.x - this.elementSizeStart.x) * scaleW),
+                    this.elementSizeStart.y + ((dimE.y - this.elementSizeStart.y) * scaleH)
+                );
 
+                const eW = dimE.w * scaleW;
+                const eH = dimE.h * scaleH;
+
+                if (!element.classList.contains("sizefixed") && eW < 8000 && eH < 8000) {
+                    /**
+                     * the width/height act as vectors that can be scaled directly
+                     */
+                    setSize(element, eW, eH);
+                }
+
+            }
         }
 
         this.resizeStep();

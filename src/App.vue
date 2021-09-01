@@ -177,6 +177,7 @@ body {
   height: 100%;
   width: 100%;
   position: absolute;
+  overflow:hidden;
 }
 
 .vue-pan-zoom-scene {
