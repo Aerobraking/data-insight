@@ -124,7 +124,7 @@ export default defineComponent({
 .bookmarks {
   position: absolute;
   left: 10px;
-  top: 20%;
+  top: 35px;
 
   a {
     user-select: none;

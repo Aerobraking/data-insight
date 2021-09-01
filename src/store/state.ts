@@ -9,8 +9,7 @@ export class InsightFile {
         discriminator: {
             property: 'type',
             subTypes: [
-                { value: Workspace, name: 'workspace' },
-                { value: Overview, name: 'overview' },
+                { value: Workspace, name: 'workspace' }
             ],
         },
     })

@@ -2,7 +2,7 @@
 <template>
   <div id="tabs" class="tabs-header" @mousewheel="scrollList">
     <div class="tab-entry tab-create" @click="createWorkspaceTab()">
-      <input readonly="true" value="+" />
+      <p>+</p>
     </div>
 
     <!-- <a class="tab-create" @click="createOverviewTab()"> +O </a> -->
@@ -39,16 +39,14 @@
     </draggable>
   </div>
 
-  <keep-alive>
-    <workspaceview
-      v-for="(view, index) in getlist"
-      @click="selectTab(index)"
-      :key="view.key"
-      v-show="view.isActive"
-      :model="view"
-    >
-    </workspaceview>
-  </keep-alive>
+  <workspaceview
+    v-for="(view, index) in getlist"
+    @click="selectTab(index)"
+    :key="view.key"
+    v-show="view.isActive"
+    :model="view"
+  >
+  </workspaceview>
 </template>
 
 
@@ -210,17 +208,10 @@ div.tabs-header {
   color: #fff;
   width: 10px !important;
   user-select: none;
-  input {
-    user-select: none;
-    pointer-events: none;
-    text-align: center !important;
-  }
 }
 
 .tab-entry {
-  padding: 8px 16px;
-
-  width: auto;
+  width: 160px;
   border: none;
   display: inline-block;
   outline: 0;
@@ -238,24 +229,32 @@ div.tabs-header {
   }
 
   input {
-    user-select: none;
     cursor: pointer;
-    position: relative;
-    display: inline;
+    position: absolute;
     width: 80%;
     user-select: none;
     text-align: left;
-    background-color: rgba(95, 95, 95, 0);
-
-    float: left;
+    background-color: transparent;
     color: #fff;
     border: none;
-    white-space: nowrap;
-    border-bottom: 8px solid transparent;
-    outline: none;
+    outline:none;
 
     &:focus {
     }
+  }
+
+  p {
+    cursor: pointer;
+    position: absolute;
+    width: auto;
+    user-select: none;
+    text-align: center;
+    background-color: transparent;
+    color: #fff;
+    border: none;
+    margin: 0;
+    top: 4px;
+    font-size: 22px;
   }
 
   &:hover {

@@ -157,6 +157,10 @@ export class OverviewEngine {
         this.divObserver.observe(div);
     }
 
+    public destroy() {
+        this.divObserver.disconnect();
+    }
+
     state: EngineState;
     size: ElementDimensionInstance;
     divObserver: ResizeObserver;

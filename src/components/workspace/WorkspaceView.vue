@@ -53,19 +53,24 @@
       </div>
     </panZoom>
 
-    <div class="ws-button-list">
-      <button @click="showAll">Show all</button>
-    </div>
+    <OverviewView
+      class="overview overview-hover"
+      @dblclick.capture="openOverview"
+      :model="model"
+    />
 
-       <OverviewView class="overview overview-hover" @dblclick.capture="openOverview" :model="model" />
-    
     <wsentriesbookmarks
       :model="model"
       @bookmarkclicked="moveToEntry"
     ></wsentriesbookmarks>
 
     <div class="workspace-search">
+      <div>
+        <button @click="showAll">Show all</button>
+      </div>
       <input
+        @keydown.stop
+        @keyup.stop
         @focus="searchfocusSet(true)"
         @blur="searchfocusSet(false)"
         class="workspace-search-input"
@@ -75,6 +80,7 @@
         v-model="searchString"
         placeholder="Suche..."
       />
+      <div></div>
       <wssearchlist
         class="search-results"
         v-if="searchActive"
@@ -124,6 +130,16 @@ import { OverviewEngine } from "./overview/OverviewEngine";
 const fs = require("fs");
 const path = require("path");
 
+let points: { x: number; y: number; z: number }[] = [];
+
+for (let index = 0; index < 100; index++) {
+  points.push({
+    x: (Math.random() * 1000 - 500) * 2,
+    y: (Math.random() * 1000 - 500) * 2,
+    z: Math.random(),
+  });
+}
+
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
@@ -155,7 +171,8 @@ export default defineComponent({
     useCanvas: boolean;
     oldViewRect: ElementDimension | undefined;
     spacePressed: boolean;
-    highlightSelection: boolean; 
+    highlightSelection: boolean;
+    divObserver: any;
   } {
     return {
       highlightSelection: true,
@@ -174,6 +191,7 @@ export default defineComponent({
       selectionWrapperResizer: null,
       oldViewRect: undefined,
       spacePressed: false,
+      divObserver: null,
     };
   },
   watch: {
@@ -182,7 +200,25 @@ export default defineComponent({
     },
   },
   mounted() {
- 
+    /**
+     * Listen for resizing of the canvas parent element
+     */
+    this.divObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
+      for (let index = 0; index < entries.length; index++) {
+        const e = entries[index];
+        e.target; // div element
+        let w = Math.max(10, e.contentRect.width);
+        let h = Math.max(10, e.contentRect.height);
+
+        //  vm.getCanvas().style.width = `${w}px`;
+        // vm.getCanvas().style.width = `${h}px`;
+        vm.getCanvas().width = w;
+        vm.getCanvas().height = h;
+
+        vm.drawCanvas();
+      }
+    });
+    this.divObserver.observe(this.$el);
 
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),
@@ -203,19 +239,20 @@ export default defineComponent({
     );
 
     let vm = this;
-    window.onresize = function () {
-      vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
-      vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
-      vm.getCanvas().width = vm.$el.clientWidth;
-      vm.getCanvas().height = vm.$el.clientHeight;
-    };
+    // window.onresize = function () {
+    //   vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
+    //   vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
+    //   vm.getCanvas().width = vm.$el.clientWidth;
+    //   vm.getCanvas().height = vm.$el.clientHeight;
+    // };
 
-    vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
-    vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
     vm.getCanvas().width = vm.$el.clientWidth;
     vm.getCanvas().height = vm.$el.clientHeight;
 
     this.drawCanvas();
+  },
+  unmounted() {
+    this.divObserver.disconnect();
   },
   computed: {
     searchActive(): boolean {
@@ -224,9 +261,11 @@ export default defineComponent({
   },
   provide() {
     return {
+      startDrag: this.startDrag,
       entrySelected: this.entrySelected,
     };
   },
+  inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
   methods: {
     searchfocusSet(f: boolean): void {
       if (f) {
@@ -237,9 +276,8 @@ export default defineComponent({
         }, 400);
       }
     },
-    openOverview(e: MouseEvent): void { 
-
-      let div: HTMLElement =  this.$el.getElementsByClassName("overview")[0];
+    openOverview(e: MouseEvent): void {
+      let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
       div.classList.toggle("open");
       if (div.classList.contains("open")) {
         div.classList.remove("overview-hover");
@@ -275,9 +313,6 @@ export default defineComponent({
       return this;
     },
     drawCanvas() {
-      if (!true && true && !false) {
-        return;
-      }
       let canvas: HTMLCanvasElement = this.getCanvas() as HTMLCanvasElement;
 
       let context = canvas.getContext("2d");
@@ -297,6 +332,7 @@ export default defineComponent({
       context.fillRect(0, 0, canvas.width, canvas.height);
 
       b = 200;
+      let currentC = this.getCurrentTransform();
 
       if (this.useCanvas) {
         context.save();
@@ -311,8 +347,6 @@ export default defineComponent({
         );
 
         context.restore();
-
-        let currentC = this.getCurrentTransform();
 
         context.strokeStyle = "rgb(57, 215, 255)";
         context.lineWidth = 2;
@@ -330,12 +364,29 @@ export default defineComponent({
           c.h = c.h * currentC.scale;
 
           var rect = e.getBoundingClientRect();
-
+          let padding = 1;
           if (this.highlightSelection) {
-            context.strokeRect(c.x - 4, c.y - 4, c.w + 8, c.h + 8);
+            context.strokeRect(
+              c.x - padding,
+              c.y - padding,
+              c.w + padding * 2,
+              c.h + padding * 2
+            );
           }
         }
       }
+
+      // b = 150;
+      // context.fillStyle = "rgb(" + b + "," + b + "," + b + ")";
+
+      // for (let p of points) {
+      //   context.fillRect(
+      //     (p.x + currentC.x * p.z) ,
+      //     (p.y + currentC.y * p.z) ,
+      //     6 * p.z,
+      //     6 * p.z
+      //   );
+      // }
     },
     onPaste(e: ClipboardEvent) {
       console.log(e.clipboardData?.getData("text"));
@@ -533,11 +584,32 @@ export default defineComponent({
 
       this.drawCanvas();
     },
+    startDrag: function (e: MouseEvent) {
+      console.log("starte draggen");
+
+      this.selectionDragActive = true;
+
+      /**
+       * Start dragging of the current selection with left mouse button + ctrl or
+       */
+      this.dragMoveRel = { x: e.clientX, y: e.clientY };
+
+      this.dragSelection = Array.from(
+        this.getSelectedEntries()
+      ) as HTMLElement[];
+
+      WSUtils.Events.dragStarting(this.dragSelection, this);
+
+      this.selectionWrapperResizer?.setChildren(this.dragSelection);
+
+      this.dragSelection.push(this.getSelectionWrapper());
+
+      this.preventInput(true);
+    },
     mousedown: function (e: MouseEvent) {
       if (this.activePlugin && this.activePlugin.mousedown(e)) {
         return;
       }
-      this.selectionDragActive = e.ctrlKey && e.button == 0;
 
       if (this.spacePressed) {
         this.spacePressed = false;
@@ -559,6 +631,7 @@ export default defineComponent({
       }
 
       if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
+        this.selectionDragActive = e.ctrlKey && e.button == 0;
         /**
          * Start dragging of the current selection with left mouse button + ctrl or
          */
@@ -638,9 +711,7 @@ export default defineComponent({
       }
 
       if (this.selectionDragActive) {
-        if (e.ctrlKey) {
-          this.updateSelectionDrag(e, this);
-        }
+        this.updateSelectionDrag(e, this);
       } else {
         if (selectionRectangle.style.visibility === "visible") {
           this.isSelectionEvent = true;
@@ -747,19 +818,8 @@ export default defineComponent({
           ) {
             listFiles.push(new WorkspaceEntryImage(f.path));
           } else if (f.path.endsWith("ins")) {
-            let tabs: HTMLElement[] = Array.from(
-              document.querySelectorAll(".close-file-anim")
-            ) as HTMLElement[];
-
-            tabs.forEach((t) => {
-              t.classList.add("close-file");
-            });
-
-            let jsonRead = fs.readFileSync(f.path, "utf8");
-            let test: InsightFile = deserialize(InsightFile, jsonRead);
-            this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
-              insightFile: test,
-            });
+            // @ts-ignore: Unreachable code error
+            this.loadInsightFileFromPath(f.path);
           } else {
             listFiles.push(new WorkspaceEntryFile(f.path));
           }
@@ -955,6 +1015,13 @@ export default defineComponent({
       this.entriesSelected([entry], type);
     },
     entriesSelected(entries: HTMLElement[], type: "add" | "single" | "flip") {
+      /**
+       * Do not select entries that do not fit to the search
+       */
+      entries = entries.filter(
+        (e) => !e.classList.contains("search-not-found")
+      );
+
       switch (type) {
         case "single":
           this.getEntries().forEach((e) =>
@@ -976,19 +1043,27 @@ export default defineComponent({
       this.selectionWrapperResizer?.setChildren(this.dragSelection);
       this.dragSelection.push(this.getSelectionWrapper());
 
-      document
-        .querySelectorAll(".workspace-is-selected .wsentry-displayname")
-        .forEach((e) => {
-          e.classList.toggle("prevent-input", false);
-        });
+      if (this.getSelectedEntries().length > 1) {
+        document
+          .querySelectorAll("div.ws-entry .wsentry-displayname")
+          .forEach((e) => {
+            e.classList.toggle("prevent-input", true);
+          });
+      } else {
+        document
+          .querySelectorAll(".workspace-is-selected .wsentry-displayname")
+          .forEach((e) => {
+            e.classList.toggle("prevent-input", false);
+          });
 
-      document
-        .querySelectorAll(
-          "div.ws-entry:not(.workspace-is-selected) .wsentry-displayname"
-        )
-        .forEach((e) => {
-          e.classList.toggle("prevent-input", true);
-        });
+        document
+          .querySelectorAll(
+            "div.ws-entry:not(.workspace-is-selected) .wsentry-displayname"
+          )
+          .forEach((e) => {
+            e.classList.toggle("prevent-input", true);
+          });
+      }
 
       this.updateSelectionWrapper();
     },
@@ -1148,7 +1223,7 @@ export default defineComponent({
       selectionRectangle.style.height = Math.abs(y2 - y) + "px";
 
       selectionRectangle.style.visibility =
-        this.getSelectedEntries().length > 0 && this.highlightSelection
+        this.getSelectedEntries().length > 1 && this.highlightSelection
           ? "visible"
           : "hidden";
 
@@ -1262,10 +1337,23 @@ var switcher = false;
   padding-bottom: 2px;
   width: 100%;
   z-index: 4000;
+
+  button {
+    border: none;
+    height: 100%;
+    outline: none;
+
+    background-color: #fff;
+    &:hover {
+      background-color: #aaa;
+    }
+  }
+
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
   input {
     background: #eee;
-    left: 25%;
-    width: 50%;
     height: 25px;
     border: none;
     outline: none;
@@ -1285,12 +1373,6 @@ var switcher = false;
 }
 
 .ws-entry-zoom-fixed {
-}
-
-.ws-button-list {
-  position: absolute;
-  left: 10px;
-  top: 70px;
 }
 
 @mixin theme() {
@@ -1365,6 +1447,17 @@ div .resizer-top-left {
   }
   &:hover {
     background-color: rgba(102, 224, 255, 0.479);
+  }
+}
+
+.select-element {
+  cursor: pointer;
+  transition: background-color 0.4s ease-in-out !important;
+  background-color: rgba(169, 238, 255, 0);
+
+  &:hover {
+    transition: background-color 0.4s ease-in-out !important;
+    background-color: rgba(169, 238, 255, 0.35) !important;
   }
 }
 </style>

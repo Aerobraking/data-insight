@@ -1,21 +1,23 @@
 <template>
   <div
     ref="el"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.stop.exact="entrySelectedLocal('single')"
-    @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry-image-wrapper"
+    class="ws-entry-image-wrapper "
   >
     <input
-      v-on:dblclick.stop
-      keydown.capture.stop
-      keyup.capture.stop
-      keypressed.capture.stop
+      @keydown.stop
+      @keyup.stop
+      type="text"
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
       placeholder=""
     />
+    <div
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.stop.exact="entrySelectedLocal('single')"
+      @click.stop
+      class="image-selector select-element"
+    ></div>
   </div>
 </template>
 
@@ -46,26 +48,21 @@ export default defineComponent({
     let path = this.entry?.getURL();
 
     if (true) {
-      cache.ImageCache.registerPath(
-        path,
-        {
-          callback: (url: string, type: "small" | "medium" | "original") => {
-            if (type=="medium") {
-                comp.$el.style.backgroundImage = url;
-            }
-          
-          },
-          callbackSize: (dim: cache.ImageDim) => {
-   
-            if (!comp.entry.imageCreated) {
-              let w: number = Number(comp.$el.offsetWidth);
-              comp.$el.style.width = w + "px";
-              comp.$el.style.height = w * dim.ratio + "px";
-              comp.entry.imageCreated = true;
-            }
-          },
-        } 
-      );
+      cache.ImageCache.registerPath(path, {
+        callback: (url: string, type: "small" | "medium" | "original") => {
+          if (type == "medium") {
+            comp.$el.style.backgroundImage = url;
+          }
+        },
+        callbackSize: (dim: cache.ImageDim) => {
+          if (!comp.entry.imageCreated) {
+            let w: number = Number(comp.$el.offsetWidth);
+            comp.$el.style.width = w + "px";
+            comp.$el.style.height = w * dim.ratio + "px";
+            comp.entry.imageCreated = true;
+          }
+        },
+      });
     } else {
       const ImageLoaderWorker = new Worker("@/utils/imageloader", {
         type: "module",
@@ -138,6 +135,11 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.image-selector {
+  width: 100%;
+  height: 100%;
+}
+
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
   z-index: 90;
@@ -146,7 +148,7 @@ export default defineComponent({
   // will-change: transform;
   position: absolute;
   color: #f1f1f1;
-  padding: 10px;
+  padding: 0px;
   width: 220px;
   height: 180px;
   background-size: cover;

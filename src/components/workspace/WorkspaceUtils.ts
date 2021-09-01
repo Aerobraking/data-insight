@@ -52,36 +52,30 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
             if (text != undefined) {
 
-                text.classList.toggle("prevent-input", true);
+               // text.classList.toggle("prevent-input", true);
 
-                text.readOnly = true;
+              //  text.readOnly = true;
 
                 const inputId = ref(e.displayname);
                 text.value = inputId.value;
 
-                text.addEventListener("mousedown", function (e: MouseEvent) {
-                    //e.preventDefault();
-                }, true);
-
-
-                // text.addEventListener("keypress", function (e: KeyboardEvent) {
-                //      e.preventDefault();
-                // }, true);
-                // text.addEventListener("keyup", function (e: KeyboardEvent) {
-                //     e.preventDefault();
-                // }, true);
-                // text.addEventListener("keydown", function (e: KeyboardEvent) {
-                //     e.preventDefault();
+                // text.addEventListener("mousedown", function (e: MouseEvent) {
+                //     //e.preventDefault();
                 // }, true);
 
-                text.addEventListener("dblclick", function (e: MouseEvent) {
-                    text.readOnly = false;
-                    e.preventDefault();
-                }, true);
-                text.addEventListener("focusout", function (e: FocusEvent) {
-                    text.readOnly = true;
-                    e.preventDefault();
-                }, true);
+
+
+                // text.addEventListener("dblclick", function (e: MouseEvent) {
+                //  //   text.readOnly = false;
+                //     console.log("double click");
+                    
+                //   //  e.preventDefault();
+                // }, true);
+                // text.addEventListener("focusout", function (e: FocusEvent) {
+                //  //   text.readOnly = true;
+                //     console.log("focusout");
+                //   //  e.preventDefault();
+                // }, true);
 
                 el.value.appendChild(text);
             }

@@ -1,17 +1,16 @@
 <template>
   <div
-    @mousedown.left.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.capture.prevent.stop.exact="entrySelectedLocal('single')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip', $event)"
+    @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"
     ref="el"
-    class="ws-entry-file-wrapper sizefixed"
+    class="ws-entry-file-wrapper select-element sizefixed"
     :style="{
       transform: 'translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
     }"
   >
     <input
-      @keydown.stop.prevent
-      @keyup.stop.prevent
-      @keypress.stop.prevent
+      @keydown.stop
+      @keyup.stop
       type="text"
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
@@ -53,7 +52,6 @@ export default defineComponent({
   mounted() {
     let c: any = this.$el;
     // this.$el.style.transform = `translate3d(${this.$props.entry.x}px, ${this.$props.entry.y}px,0px)`;
- 
 
     icons.IconHandler.registerPath(this.entry.path, (url: string) => {
       var img = new Image();
@@ -65,11 +63,18 @@ export default defineComponent({
       )[0].style.backgroundImage = "url('" + img.src + "')";
     });
   },
-  inject: ["entrySelected", "entrySelected"],
+  inject: [
+    "entrySelected", "entrySelected",
+    "startDrag", "startDrag ",
+    ],
   methods: {
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(type: "add" | "single" | "flip", event: MouseEvent) {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
+      if (type == "single") {
+        // @ts-ignore: Unreachable code error
+        this.startDrag(event);
+      }
     },
 
     doubleClick(e: MouseEvent) {
@@ -127,6 +132,7 @@ export default defineComponent({
     margin: 0;
     margin-top: 6px;
     color: rgb(231, 231, 231);
+    text-align: center;
   }
 
   .ws-entry-file-symbol {

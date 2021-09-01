@@ -1,9 +1,18 @@
 <template>
   <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-textarea-wrapper">
+    <input
+      @keydown.stop
+      @keyup.stop
+      type="text"
+      v-model="entry.displayname"
+      class="wsentry-displayname ws-entry-zoom-fixed"
+      placeholder=""
+    />
+
     <div
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="ws-textarea-window-bar-top selectable-highlight"
+      class="ws-textarea-window-bar-top select-element selectable-highlight"
     ></div>
 
     <div
@@ -15,11 +24,6 @@
       <p>Double click to enable</p>
     </div>
 
-    <input
-      v-model="entry.displayname"
-      class="wsentry-displayname ws-entry-zoom-fixed"
-      placeholder=""
-    />
     <editor
       @onSelectionChange="editorFocusLost"
       @blur="editorFocusLost"
@@ -142,15 +146,13 @@ export default defineComponent({
   background-color: #ffffff;
 }
 
- 
-
 .ws-entry-textarea-wrapper {
   display: flex;
   flex-flow: column;
   // pointer-events: none;
   z-index: 100;
   overflow: visible;
- // will-change: transform;
+  // will-change: transform;
   position: absolute;
   color: #f1f1f1;
   padding: 10px;

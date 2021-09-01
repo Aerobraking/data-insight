@@ -1,12 +1,15 @@
 <template>
   <div
-    ref="el" 
+    ref="el"
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
-    class="ws-entry-frame-wrapper"
+    class="ws-entry-frame-wrapper select-element"
   >
     <input
+      @keydown.stop
+      @keyup.stop
+      type="text"
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
       placeholder=""
@@ -84,7 +87,7 @@ export default defineComponent({
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
-     //this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+    //this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {

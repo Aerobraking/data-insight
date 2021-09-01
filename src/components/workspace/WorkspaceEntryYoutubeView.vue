@@ -1,17 +1,20 @@
 <template>
   <div
-    ref="el" 
+    ref="el"
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
     v-on:dblclick="doubleClick"
-    class="ws-entry-youtube-wrapper"
+    class="ws-entry-youtube-wrapper select-element"
   >
     <input
+      @keydown.stop
+      @keyup.stop
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
       placeholder=""
     />
+
     <div class="inner-wrapper"></div>
   </div>
 </template>
@@ -49,7 +52,7 @@ export default defineComponent({
   mounted() {
     // this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
     // this.$el.style.width = this.entry?.width + "px";
-   //  this.$el.style.height = this.entry?.height + "px";
+    //  this.$el.style.height = this.entry?.height + "px";
 
     let comp = this;
 
@@ -59,7 +62,7 @@ export default defineComponent({
         : "<div>Video not found.</div>"
     );
     let c = this;
- 
+
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
 
     resize(this.$el);
@@ -82,7 +85,7 @@ export default defineComponent({
 <style lang="scss">
 .ws-entry-youtube-wrapper {
   //  resize: both;
-   z-index: 100;
+  z-index: 100;
   overflow: hidden;
   // backface-visibility: hidden;
   // will-change: transform;
@@ -93,7 +96,6 @@ export default defineComponent({
   height: 180px;
   background-size: cover;
   box-sizing: border-box;
- 
 
   .inner-wrapper {
     position: relative;

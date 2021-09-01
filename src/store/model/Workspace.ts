@@ -58,8 +58,8 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
         this.path = path != undefined ? path : "";
         this.filename = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
         this.name = this.filename;
-        this.width = 150;
-        this.height = 150;
+        this.width = 220;
+        this.height = 180;
     }
 
     name: string;

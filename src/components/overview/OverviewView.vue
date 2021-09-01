@@ -32,8 +32,10 @@ export default defineComponent({
   },
   mounted() {
     this.overviewEngine = new OverviewEngine(this.$el, this.state);
-
-  //  this.overviewEngine.start();
+ 
+  },
+   unmounted() {
+    this.overviewEngine?.destroy();
   },
   computed: {},
 });

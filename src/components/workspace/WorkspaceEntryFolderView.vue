@@ -2,23 +2,24 @@
   <div
     ref="el"
     @mouseup.stop
-    @mousedown.stop 
+    @mousedown.stop
     @click.stop
     v-on:dblclick.stop=""
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
   >
     <input
+      @keydown.stop
+      @keyup.stop
+      type="text"
       v-model="entry.displayname"
       class="wsentry-displayname ws-entry-zoom-fixed"
       placeholder=""
     />
     <div
-      @mousedown.left.ctrl.capture.prevent.stop.exact="
-        entrySelectedLocal('flip')
-      "
-      @mousedown.left.capture.prevent.stop.exact="entrySelectedLocal('single')"
-      class="ws-folder-window-bar-top selectable-highlight"
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.stop.exact="entrySelectedLocal('single')"
+      class="ws-folder-window-bar-top select-element selectable-highlight"
     ></div>
     <div class="search-bar">
       <button @click="folderBack">Go Up</button>
@@ -242,7 +243,7 @@ export default defineComponent({
       //   dir,
       //   (filepath: string, name: string, ext: string, stat: any) => {
       //     console.log("add file");
-          
+
       //     this.list.push(
       //       new FolderWindowFile(
       //         filepath,
@@ -291,7 +292,7 @@ export default defineComponent({
       } catch (err) {
         console.error(err);
       }
-      this.entry.fileList = this.list;
+      //  this.entry.fileList = this.list;
     },
     selectEntry(select: "add" | "rem" | "flip") {
       switch (select) {
@@ -454,11 +455,10 @@ $tile-size: 150px;
 }
 
 .workspace-is-selected {
-  border: 2px solid #f81fc2;
-  box-sizing: border-box;
+  
 
-  .selectable-highlight {
-    background-color: #f81fc2;
-  }
+  // .selectable-highlight {
+  //   background-color: #f81fc2;
+  // }
 }
 </style>

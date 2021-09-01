@@ -21,8 +21,6 @@ export default defineComponent({
   },
   computed: {},
   mounted() {
-  
-
     window.addEventListener("keyup", this.keyPressed, true);
     const c = this;
 
@@ -37,13 +35,22 @@ export default defineComponent({
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
-        let jsonRead = fs.readFileSync(file, "utf8");
-        let test: InsightFile = deserialize(InsightFile, jsonRead);
-        c.loadInsightFile(test);
+        c.loadInsightFileFromPath(file); 
       }
     );
   },
+  provide() {
+    return {
+      loadInsightFileFromPath: this.loadInsightFileFromPath,
+      loadInsightFile: this.loadInsightFile,
+    };
+  },
   methods: {
+    loadInsightFileFromPath(path: string) {
+      let jsonRead = fs.readFileSync(path, "utf8");
+      let test: InsightFile = deserialize(InsightFile, jsonRead);
+      this.loadInsightFile(test);
+    },
     loadInsightFile(file: InsightFile) {
       let tabs: HTMLElement[] = Array.from(
         document.querySelectorAll(".close-file-anim")
@@ -56,6 +63,12 @@ export default defineComponent({
       this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
         insightFile: file,
       });
+
+      setTimeout(() => {
+        tabs.forEach((t) => {
+          t.classList.remove("close-file");
+        });
+      }, 500);
     },
     saveFile() {
       WSUtils.Events.prepareFileSaving();
