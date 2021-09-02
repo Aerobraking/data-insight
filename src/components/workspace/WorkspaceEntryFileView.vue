@@ -112,14 +112,11 @@ export default defineComponent({
 <style scoped lang="scss">
 .ws-entry-file-wrapper {
   z-index: 100;
-  // will-change: transform;
   position: absolute;
   color: #f1f1f1;
   padding: 10px;
   width: 220px;
   height: 180px;
-
-  // border: 2px solid #ffffffce;
   box-sizing: border-box;
 
   p {

@@ -1537,7 +1537,7 @@ svg {
 @mixin theme() {
   width: 15px;
   height: 15px;
-  background: rgba(218, 218, 218, 0);
+  background: rgba(218, 218, 218, 0.1);
   position: absolute;
   z-index: 5000;
   pointer-events: all;
