@@ -172,14 +172,6 @@ export class ResizerComplex {
         this.element = element;
         this.listChildrenDimensions = [];
 
-
-
-        /**
-         * Todo: Das muss bei allen ws entries passieren!
-         */
-
-
-
         /**
          * Add resize handler divs
          */
@@ -243,6 +235,13 @@ export class ResizerComplex {
         let newWidth = (this.startWidth + (e.clientX - this.startX) / scale),
             newHeight = (this.startHeight + (e.clientY - this.startY) / scale);
 
+        if (e.shiftKey) {
+            let dist = Math.sqrt(Math.pow((e.clientX - this.startX) / scale, 2) + Math.pow((e.clientY - this.startY) / scale, 2));
+            let direction = this.startX < e.clientX && this.startY < e.clientY ? 1 : -1;
+            let ratio = this.startHeight / this.startWidth;
+            newWidth = this.startWidth + dist * direction;
+            newHeight = this.startHeight + dist * direction * ratio;
+        }
 
         if (newWidth > 250 && newHeight > 250) {
 
@@ -263,6 +262,13 @@ export class ResizerComplex {
 
                 const element: HTMLElement = this.listChildren[i];
                 const dimE = this.listChildrenDimensions[i];
+
+                /**
+                 * ignore not selected elements in frame elements when alt key is pressed.
+                 */
+                if (e.altKey && !element.classList.contains("workspace-is-selected")) {
+                    continue;
+                }
 
                 /**
                  * Based on the distance to the origin of the resize rectangle, we calculate the new position
