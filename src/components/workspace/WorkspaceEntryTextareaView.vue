@@ -16,13 +16,10 @@
     ></div>
 
     <div
-      class="editor-enabler selectable-highlight"
+      class="editor-enabler"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      @dblclick="enableEditor"
-    >
-      <p>Double click to enable</p>
-    </div>
+    ></div>
 
     <editor
       @onSelectionChange="editorFocusLost"
@@ -85,21 +82,7 @@ export default defineComponent({
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
-    enableEditor() {
-      let div: HTMLElement =
-        this.$el.getElementsByClassName("editor-enabler")[0];
-
-      div.style.display = "block";
-
-      div.style.display = "none";
-    },
-    editorFocusLost() {
-      console.log("editorFocusLost");
-      let div: HTMLElement =
-        this.$el.getElementsByClassName("editor-enabler")[0];
-
-      div.style.display = "block";
-    },
+    editorFocusLost() {},
     entrySelectedLocal(type: "add" | "single" | "flip") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
@@ -116,39 +99,16 @@ export default defineComponent({
   
 <style  lang="scss">
 .tox-tinymce {
-  // min-height: 100% !important;
-  // height: 100% !important;
   height: initial !important;
   flex: 1 !important;
 }
 </style>
 <style scoped lang="scss">
-.editor-enabler {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: 500;
-  background: rgba(255, 255, 255, 0.151);
-
-  p {
-    bottom: 150px;
-    position: absolute;
-    color: black;
-    text-align: center;
-    width: 100%;
-    cursor: pointer;
-  }
-}
-
-
-
 .ws-entry-textarea-wrapper {
   display: flex;
   flex-flow: column;
-  // pointer-events: none;
   z-index: 100;
   overflow: visible;
-  // will-change: transform;
   position: absolute;
   color: #f1f1f1;
   padding: 10px;

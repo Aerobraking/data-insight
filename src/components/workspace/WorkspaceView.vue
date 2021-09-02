@@ -97,17 +97,18 @@
       <button :disabled="model.entries.length == 0">
         <Overscan @click="showAll" />
       </button>
-      <button><Table @click="createEntry('frame')" /></button>
+      <button><Group @click="createEntry('frame')" /></button>
       <button><youtube @click="createEntry('youtube')" /></button>
       <button><CommentTextOutline @click="createEntry('text')" /></button>
-      <button
+      <!-- <button
         style="transform: rotate(90deg)"
         :disabled="selectedEntriesCount == 0"
       >
         <arrow-expand />
-      </button>
+      </button> -->
+
+      <button :disabled="selectedEntriesCount < 2"><BorderAll /></button>
       <button :disabled="selectedEntriesCount != 1"><FormTextbox /></button>
-      <button :disabled="selectedEntriesCount == 0"><Resize /></button>
       <button :disabled="selectedEntriesCount == 0">
         <delete-empty-outline @click="deleteSelection" />
       </button>
@@ -169,13 +170,17 @@ import {
   Overscan,
   Youtube,
   Table,
+  Group,
   ArrowExpand,
   DeleteEmptyOutline,
+  BorderAll,
 } from "mdue";
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    BorderAll,
+    Group,
     FormTextbox,
     ArrowExpand,
     CommentTextOutline,
@@ -1356,6 +1361,8 @@ var switcher = false;
 </script>
 
 <style   lang="scss">
+$color-Selection: rgba(57, 215, 255, 0.3);
+
 .ws-entry-window-bar-top {
   width: 100%;
   height: 25px;
@@ -1387,6 +1394,36 @@ var switcher = false;
       transform: scale(0.7);
     }
   }
+}
+
+/*.
+Blocks input vor the content of an entry. When selected, this div will be made invisible
+*/
+.editor-enabler {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background-color 0.4s ease-in-out !important;
+  p {
+    bottom: 150px;
+    position: absolute;
+    color: black;
+    text-align: center;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  &:hover {
+    transition: background-color 0.4s ease-in-out !important;
+    background-color: $color-Selection !important;
+  }
+}
+
+.workspace-is-selected .editor-enabler {
+  display: none;
 }
 
 .workspace-menu-bar-hide {
@@ -1547,7 +1584,7 @@ div .resizer-top-left {
 }
 
 .wrapper-highlight {
-  border: 2px solid rgba(57, 215, 255, 1);
+  border: 2px solid $color-Selection;
 }
 
 .wsentry-displayname {
@@ -1579,18 +1616,14 @@ div .resizer-top-left {
 .select-element {
   cursor: pointer;
   transition: background-color 0.4s ease-in-out !important;
-  background-color: rgba(169, 238, 255, 0);
+  background-color: rgb(255, 255, 255);
 
   &:hover {
     transition: background-color 0.4s ease-in-out !important;
-    background-color: rgba(169, 238, 255, 0.35) !important;
+    background-color: $color-Selection !important;
   }
 }
-</style>
 
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped  lang="scss">
 .wrapper {
   overflow: hidden;
   flex: 1 !important;
@@ -1631,7 +1664,7 @@ div .resizer-top-left {
   width: 0px;
   height: 0px;
   transform: translate3d(0px, 0px, 0px);
-  background-color: rgba(57, 215, 255, 0.284);
+  background-color: $color-Selection;
   z-index: 1000;
 
   visibility: hidden;
@@ -1656,4 +1689,9 @@ div .resizer-top-left {
   background-color: yellow;
   transform: translate3d(0, 0, 0);
 }
+</style>
+
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped  lang="scss">
 </style>

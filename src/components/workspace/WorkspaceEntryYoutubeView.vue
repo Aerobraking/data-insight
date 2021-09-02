@@ -7,19 +7,26 @@
     v-on:dblclick="doubleClick"
     class="ws-entry-youtube-wrapper"
   >
+    <input
+      @keydown.stop
+      @keyup.stop
+      type="text"
+      v-model="entry.displayname"
+      class="wsentry-displayname ws-entry-zoom-fixed"
+      placeholder=""
+    />
+
     <div
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       class="ws-entry-window-bar-top select-element selectable-highlight"
     ></div>
 
-    <input
-      @keydown.stop
-      @keyup.stop
-      v-model="entry.displayname"
-      class="wsentry-displayname ws-entry-zoom-fixed"
-      placeholder=""
-    />
+    <div
+      class="editor-enabler"
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.stop.exact="entrySelectedLocal('single')"
+    ></div>
 
     <div class="inner-wrapper"></div>
   </div>
@@ -56,12 +63,11 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-   
     let iframe: any = htmlToElement(
       this.entry != undefined
         ? this.entry?.getHtmlCode()
         : "<div>Video not found.</div>"
-    ); 
+    );
 
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
 
@@ -82,12 +88,13 @@ export default defineComponent({
 </script>
  
 <style lang="scss">
-.ws-entry-youtube-wrapper { 
+.ws-entry-youtube-wrapper {
+  display: flex;
+    flex-flow: column;
+
   z-index: 100;
-  overflow: hidden; 
   position: absolute;
-  color: #f1f1f1;
-  padding: 10px;
+  color: #f1f1f1; 
   width: 220px;
   height: 180px;
   background-size: cover;
@@ -96,7 +103,7 @@ export default defineComponent({
   .inner-wrapper {
     position: relative;
     width: 100%;
-    height: 100%;
+       flex: 1 !important;
   }
 
   iframe,

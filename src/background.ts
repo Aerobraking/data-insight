@@ -108,7 +108,7 @@ async function createWindow() {
     }
   })
 
-  win.setMenuBarVisibility(false)
+ // win.setMenuBarVisibility(false)
   var menu = Menu.buildFromTemplate([
     {
       label: 'Menu',
