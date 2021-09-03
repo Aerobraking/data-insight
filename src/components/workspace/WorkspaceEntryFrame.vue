@@ -12,7 +12,7 @@
       @keyup.stop
       type="text"
       v-model="entry.displayname"
-      class="wsentry-displayname ws-entry-zoom-fixed"
+      class="wsentry-displayname ws-zoom-fixed"
       placeholder=""
     />
   </div>

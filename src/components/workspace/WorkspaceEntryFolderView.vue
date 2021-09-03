@@ -13,14 +13,14 @@
       @keyup.stop
       type="text"
       v-model="entry.displayname"
-      class="wsentry-displayname ws-entry-zoom-fixed"
+      class="wsentry-displayname ws-zoom-fixed"
       placeholder=""
     />
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="ws-entry-window-bar-top select-element selectable-highlight"
+      class="ws-window-bar-top select-element selectable-highlight"
     ></div>
     <div class="search-bar">
       <button @click="folderBack">Go Up</button>
@@ -445,7 +445,7 @@ $tile-size: 150px;
   }
 }
 
-.ws-folder-window-wrapper .ws-entry-window-bar-top {
+.ws-folder-window-wrapper .ws-window-bar-top {
   width: 100%;
   height: 25px;
   background-color: rgb(255, 255, 255);

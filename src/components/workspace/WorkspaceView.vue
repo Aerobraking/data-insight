@@ -35,7 +35,7 @@
       <div class="zoomable close-file-anim">
         <div class="rectangle-selection"></div>
         <div class="rectangle-selection-wrapper">
-          <button class="ws-entry-zoom-fixed resizer-bottom-right">
+          <button class="ws-zoom-fixed resizer-bottom-right">
             <ResizeBottomRight />
           </button>
         </div>
@@ -1332,7 +1332,7 @@ export default defineComponent({
     },
     onZoom(e: any) {
       let zoomFixed: HTMLElement[] = Array.from(
-        this.$el.querySelectorAll(".ws-entry-zoom-fixed")
+        this.$el.querySelectorAll(".ws-zoom-fixed")
       ) as HTMLElement[];
 
       let t = this.getCurrentTransform();
@@ -1525,7 +1525,7 @@ svg {
   }
 }
 
-.ws-entry-zoom-fixed {
+.ws-zoom-fixed {
 }
 
 @mixin theme() {
@@ -1627,7 +1627,7 @@ div .resizer-top-left {
 /**
 A top selection bar for entries to make them more easily selectable. 
  */
-.ws-entry-window-bar-top {
+.ws-window-bar-top {
   width: 100%;
   height: 25px;
   transition: background-color 0.4s ease-in-out !important;

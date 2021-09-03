@@ -13,7 +13,7 @@
       @keyup.stop
       type="text"
       v-model="entry.displayname"
-      class="wsentry-displayname ws-entry-zoom-fixed"
+      class="wsentry-displayname ws-zoom-fixed"
       placeholder=""
     />
 
@@ -21,7 +21,7 @@
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="ws-entry-window-bar-top select-element selectable-highlight"
+      class="ws-window-bar-top select-element selectable-highlight"
     ></div>
 
     <div

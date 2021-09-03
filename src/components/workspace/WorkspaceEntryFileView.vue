@@ -14,21 +14,15 @@
       @keyup.stop
       type="text"
       v-model="entry.displayname"
-      class="wsentry-displayname ws-entry-zoom-fixed"
+      class="wsentry-displayname ws-zoom-fixed"
       placeholder=""
     />
-    <div class="ws-entry-file-symbol"></div>
-    <p class="ws-entry-file-name">{{ entry.name }}</p>
+    <div class="file-symbol"></div>
+    <p>{{ entry.name }}</p>
   </div>
 </template>
 
-<script lang="ts">
-/*
-   @mousedown.left.ctrl.capture.prevent.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.capture.prevent.stop.exact="entrySelectedLocal('single')"
- @click.stop
-    v-on:dblclick="doubleClick"
-*/
+<script lang="ts"> 
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
@@ -60,7 +54,7 @@ export default defineComponent({
       img.src = url;
 
       c.getElementsByClassName(
-        "ws-entry-file-symbol"
+        "file-symbol"
       )[0].style.backgroundImage = "url('" + img.src + "')";
     });
   },
@@ -133,7 +127,7 @@ export default defineComponent({
     text-align: center;
   }
 
-  .ws-entry-file-symbol {
+  .file-symbol {
     height: 70px;
     width: 70px;
     display: block;

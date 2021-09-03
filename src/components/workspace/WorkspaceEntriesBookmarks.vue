@@ -105,7 +105,7 @@ export default defineComponent({
           @mouseup.stop
           @click.stop="goToEntry(false, $event)"
           @dblclick.stop="goToEntry(true, $event)"
-          class="ws-entry-bookmark"
+          class="bookmark-entry"
           :name="element.id"
           :key="element.order"
           :entry="element"
@@ -138,7 +138,7 @@ export default defineComponent({
   }
 }
 
-.ws-entry-bookmark {
+.bookmark-entry {
   color: #fff;
   cursor: grab;
   display: table;

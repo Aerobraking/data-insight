@@ -178,7 +178,7 @@ export class ResizerComplex {
         var resizer;
         //   resizer = document.createElement('div');
         // resizer.className = 'resizer-top-right';
-        // resizer.classList.add('ws-entry-zoom-fixed');
+        // resizer.classList.add('ws-zoom-fixed');
         // element.appendChild(resizer);
         // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
@@ -187,7 +187,7 @@ export class ResizerComplex {
         } else {
             resizer = document.createElement('div');
             resizer.className = 'resizer-bottom-right';
-            resizer.classList.add('ws-entry-zoom-fixed');
+            resizer.classList.add('ws-zoom-fixed');
             element.appendChild(resizer);
             resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
         }
@@ -197,13 +197,13 @@ export class ResizerComplex {
 
         // resizer = document.createElement('div');
         // resizer.className = 'resizer-bottom-left';
-        // resizer.classList.add('ws-entry-zoom-fixed');
+        // resizer.classList.add('ws-zoom-fixed');
         // element.appendChild(resizer);
         // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
         // resizer = document.createElement('div');
         // resizer.className = 'resizer-top-left';
-        // resizer.classList.add('ws-entry-zoom-fixed');
+        // resizer.classList.add('ws-zoom-fixed');
         // element.appendChild(resizer);
         // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
     }
