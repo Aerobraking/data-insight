@@ -1,6 +1,7 @@
 <template>
   <div
     ref="el"
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
@@ -17,6 +18,7 @@
     />
 
     <div
+      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       class="ws-entry-window-bar-top select-element selectable-highlight"
@@ -90,11 +92,11 @@ export default defineComponent({
 <style lang="scss">
 .ws-entry-youtube-wrapper {
   display: flex;
-    flex-flow: column;
+  flex-flow: column;
 
   z-index: 100;
   position: absolute;
-  color: #f1f1f1; 
+  color: #f1f1f1;
   width: 220px;
   height: 180px;
   background-size: cover;
@@ -103,7 +105,7 @@ export default defineComponent({
   .inner-wrapper {
     position: relative;
     width: 100%;
-       flex: 1 !important;
+    flex: 1 !important;
   }
 
   iframe,

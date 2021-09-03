@@ -216,6 +216,7 @@ export default defineComponent({
     searchfocus: boolean;
     isSelectionEvent: boolean;
     panZoomInstance: any;
+    mousePositionLastRaw: { x: number; y: number };
     mousePositionLast: { x: number; y: number };
     dragSelection: HTMLElement[];
     selectionWrapperResizer: ResizerComplex | null;
@@ -231,6 +232,7 @@ export default defineComponent({
       activePlugin: null,
       searchString: "",
       useCanvas: true,
+      mousePositionLastRaw: { x: 0, y: 0 },
       mousePositionLast: { x: 0, y: 0 },
       dragMoveRel: { x: 0, y: 0 },
       dragStart: { x: 0, y: 0 },
@@ -582,18 +584,10 @@ export default defineComponent({
       };
       switch (type) {
         case "youtube":
-          let yt = new WorkspaceEntryYoutube();
-          yt.x = viewport.x + viewport.w / 2 - yt.width / 2;
-          yt.y = viewport.y + viewport.h / 2 - yt.height / 2;
-          listFiles.push(yt);
-
+          listFiles.push(new WorkspaceEntryYoutube());
           break;
         case "text":
-          let area = new WorkspaceEntryTextArea();
-          area.x = this.mousePositionLast.x;
-          area.y = this.mousePositionLast.y;
-          listFiles.push(area);
-
+          listFiles.push(new WorkspaceEntryTextArea());
           break;
         case "frame":
           let frame = new WorkspaceEntryFrame();
@@ -661,6 +655,25 @@ export default defineComponent({
 
       this.preventInput(true);
     },
+    startSelectionDrag(mousePosition: { x: number; y: number }) {
+      this.dragMoveRel = mousePosition;
+      this.selectionDragActive = true;
+      /**
+       * Start dragging of the current selection with left mouse button + ctrl or
+       */
+
+      this.dragSelection = Array.from(
+        this.getSelectedEntries()
+      ) as HTMLElement[];
+
+      WSUtils.Events.dragStarting(this.dragSelection, this);
+
+      this.selectionWrapperResizer?.setChildren(this.dragSelection);
+
+      this.dragSelection.push(this.getSelectionWrapper());
+
+      this.preventInput(true);
+    },
     mousedown: function (e: MouseEvent) {
       if (this.activePlugin && this.activePlugin.mousedown(e)) {
         return;
@@ -686,23 +699,24 @@ export default defineComponent({
       }
 
       if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
-        this.selectionDragActive = e.ctrlKey && e.button == 0;
-        /**
-         * Start dragging of the current selection with left mouse button + ctrl or
-         */
-        this.dragMoveRel = { x: e.clientX, y: e.clientY };
+        this.startSelectionDrag({ x: e.clientX, y: e.clientY });
+        // this.dragMoveRel = { x: e.clientX, y: e.clientY };
+        // this.selectionDragActive = true;
+        // /**
+        //  * Start dragging of the current selection with left mouse button + ctrl or
+        //  */
 
-        this.dragSelection = Array.from(
-          this.getSelectedEntries()
-        ) as HTMLElement[];
+        // this.dragSelection = Array.from(
+        //   this.getSelectedEntries()
+        // ) as HTMLElement[];
 
-        WSUtils.Events.dragStarting(this.dragSelection, this);
+        // WSUtils.Events.dragStarting(this.dragSelection, this);
 
-        this.selectionWrapperResizer?.setChildren(this.dragSelection);
+        // this.selectionWrapperResizer?.setChildren(this.dragSelection);
 
-        this.dragSelection.push(this.getSelectionWrapper());
+        // this.dragSelection.push(this.getSelectionWrapper());
 
-        this.preventInput(true);
+        // this.preventInput(true);
 
         return;
       }
@@ -730,26 +744,8 @@ export default defineComponent({
       }
       let comp = this;
 
+      this.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
       this.mousePositionLast = comp.getPositionInWorkspace(e);
-
-      function updateSelectionDrag() {
-        var xOffT =
-          (comp.dragMoveRel.x - e.clientX) /
-          comp.panZoomInstance.getTransform().scale;
-        var yOffT =
-          (comp.dragMoveRel.y - e.clientY) /
-          comp.panZoomInstance.getTransform().scale;
-
-        comp.dragMoveRel = { x: e.clientX, y: e.clientY };
-
-        for (let index = 0; index < comp.dragSelection.length; index++) {
-          const e: any = comp.dragSelection[index];
-          let coord = comp.getCoordinatesFromElement(e);
-          e.style.transform = `translate3d(${coord.x - xOffT}px, ${
-            coord.y - yOffT
-          }px, 0px)`;
-        }
-      }
 
       let selectionRectangle: any = comp.getSelectionRectangle();
 
@@ -1092,13 +1088,6 @@ export default defineComponent({
           break;
       }
 
-      this.dragSelection = Array.from(
-        this.getSelectedEntries()
-      ) as HTMLElement[];
-      WSUtils.Events.dragStarting(this.dragSelection, this);
-      this.selectionWrapperResizer?.setChildren(this.dragSelection);
-      this.dragSelection.push(this.getSelectionWrapper());
-
       if (this.getSelectedEntries().length > 1) {
         document
           .querySelectorAll("div.ws-entry .wsentry-displayname")
@@ -1124,6 +1113,10 @@ export default defineComponent({
       this.selectedEntriesCount = this.getSelectedEntries().length;
 
       this.updateSelectionWrapper();
+
+      if (this.selectedEntriesCount > 0) {
+        this.startSelectionDrag(this.mousePositionLastRaw);
+      }
     },
     deleteSelection() {
       if (this.getSelectedEntries().length == 0) {

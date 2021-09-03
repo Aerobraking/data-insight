@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="el"
-    v-on:dblclick="doubleClick"
-    class="ws-entry-image-wrapper "
-  >
+  <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-image-wrapper">
     <input
       @keydown.stop
       @keyup.stop
@@ -13,6 +9,7 @@
       placeholder=""
     />
     <div
+      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       @click.stop
@@ -64,8 +61,7 @@ export default defineComponent({
         },
       });
     } else {
-      
-    } 
+    }
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
