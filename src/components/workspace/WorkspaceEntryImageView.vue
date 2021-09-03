@@ -64,54 +64,8 @@ export default defineComponent({
         },
       });
     } else {
-      const ImageLoaderWorker = new Worker("@/utils/imageloader", {
-        type: "module",
-      });
-      ImageLoaderWorker.onmessage = (event: any) => {
-        // Grab the message data from the event
-        const imageData = event.data;
-        console.log("bild antwort bekommen");
-
-        // We can use the `Blob` as an image source! We just need to convert it
-        // to an object URL first
-        const objectURL = URL.createObjectURL(imageData.blob);
-
-        var img = new Image();
-        img.onload = function () {
-          let w = img.width;
-          let h = img.height;
-          let scale = w / 600;
-          w /= scale;
-          h /= scale;
-          //  comp.$el.style.width = w + "px";
-          //  comp.$el.style.height = h + "px";
-        };
-        img.src = objectURL;
-
-        //   comp.$el.appendChild(img);
-
-        comp.$el.style.backgroundImage = "url('" + objectURL + "')";
-        // imageElement.setAttribute('src', objectURL)
-
-        ImageLoaderWorker.terminate();
-      };
-
-      ImageLoaderWorker.postMessage(path);
-    }
-    // this.$el.style.backgroundImage = "url('" + this.entry?.getURL() + "')";
-    // if (this.entry != undefined) {
-    //   var img = new Image();
-    //   img.onload = function () {
-    //     let w = img.width;
-    //     let h = img.height;
-    //     let scale = w / 600;
-    //     w /= scale;
-    //     h /= scale;
-    //     comp.$el.style.width = w + "px";
-    //     comp.$el.style.height = h + "px";
-    //   };
-    //   img.src = this.entry.path;
-    // }
+      
+    } 
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
