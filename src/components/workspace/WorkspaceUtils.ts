@@ -41,6 +41,11 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
         if (true && el != null && el.value != null) {
 
+            el.value.querySelectorAll("div.ws-entry .wsentry-displayname")
+            .forEach((e:any) => {
+              e.classList.toggle("prevent-input", true);
+            });
+
             el.value.style.transform = `translate3d(${e.x}px, ${e.y}px,0px)`;
 
             if (e.isResizable) {

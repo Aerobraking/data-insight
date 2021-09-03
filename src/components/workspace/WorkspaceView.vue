@@ -34,7 +34,11 @@
     >
       <div class="zoomable close-file-anim">
         <div class="rectangle-selection"></div>
-        <div class="rectangle-selection-wrapper"></div>
+        <div class="rectangle-selection-wrapper">
+          <button class="ws-entry-zoom-fixed resizer-bottom-right">
+            <ResizeBottomRight />
+          </button>
+        </div>
 
         <keep-alive>
           <component
@@ -174,11 +178,13 @@ import {
   ArrowExpand,
   DeleteEmptyOutline,
   BorderAll,
+  ResizeBottomRight,
 } from "mdue";
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    ResizeBottomRight,
     BorderAll,
     Group,
     FormTextbox,
@@ -269,6 +275,7 @@ export default defineComponent({
 
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),
+      this.getSelectionWrapper().firstChild as HTMLElement,
       this,
       () => {
         this.getEntries().forEach((e) => {
@@ -1363,12 +1370,6 @@ var switcher = false;
 <style   lang="scss">
 $color-Selection: rgba(57, 215, 255, 0.3);
 
-.ws-entry-window-bar-top {
-  width: 100%;
-  height: 25px;
-  background-color: #ffffff;
-}
-
 .workspace-menu-bar {
   position: absolute;
   z-index: 800;
@@ -1537,10 +1538,12 @@ svg {
 @mixin theme() {
   width: 15px;
   height: 15px;
-  background: rgba(218, 218, 218, 0.1);
+  background: rgba(218, 218, 218, 0);
   position: absolute;
   z-index: 5000;
   pointer-events: all;
+  padding: 0;
+  margin: 0;
 }
 
 div .resizer-top-right {
@@ -1555,7 +1558,22 @@ div .resizer-bottom-right {
   right: 0;
   transform-origin: right bottom;
   cursor: se-resize;
+  width: auto;
+  height: auto;
+  svg {
+    cursor: se-resize;
+    font-size: 24px;
+    margin: 0;
+    color: #fff;
+    padding: 0;
+  }
 }
+
+button {
+  border: none;
+  outline: none;
+}
+
 div .resizer-bottom-left {
   @include theme;
   bottom: 0;
@@ -1613,10 +1631,22 @@ div .resizer-top-left {
   }
 }
 
+/**
+A top selection bar for entries to make them more easily selectable. 
+ */
+.ws-entry-window-bar-top {
+  width: 100%;
+  height: 25px;
+  transition: background-color 0.4s ease-in-out !important;
+  background-color: rgb(255, 255, 255);
+}
+
+/**
+visually highlights elements for selection with a hover effect
+ */
 .select-element {
   cursor: pointer;
   transition: background-color 0.4s ease-in-out !important;
-  background-color: rgb(255, 255, 255);
 
   &:hover {
     transition: background-color 0.4s ease-in-out !important;

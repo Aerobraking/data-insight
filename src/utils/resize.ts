@@ -162,7 +162,7 @@ export class ResizerComplex {
         this.listChildren.push(...listChildren);
     }
 
-    constructor(element: HTMLElement, owner: ResizerComplexOwner, resizeStart: Function = () => { }, resizeStep: Function = () => { }, resizeEnd: Function = () => { }) {
+    constructor(element: HTMLElement, resizeElement: HTMLElement | undefined = undefined, owner: ResizerComplexOwner, resizeStart: Function = () => { }, resizeStep: Function = () => { }, resizeEnd: Function = () => { }) {
         this.elementSizeStart = getCoordinatesFromElement(element);
 
         this.resizeStep = resizeStep;
@@ -175,30 +175,37 @@ export class ResizerComplex {
         /**
          * Add resize handler divs
          */
-        var resizer = document.createElement('div');
-        resizer.className = 'resizer-top-right';
-        resizer.classList.add('ws-entry-zoom-fixed');
-        element.appendChild(resizer);
-        resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
+        var resizer;
+        //   resizer = document.createElement('div');
+        // resizer.className = 'resizer-top-right';
+        // resizer.classList.add('ws-entry-zoom-fixed');
+        // element.appendChild(resizer);
+        // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
-        resizer = document.createElement('div');
-        resizer.className = 'resizer-bottom-right';
-        resizer.classList.add('ws-entry-zoom-fixed');
-        element.appendChild(resizer);
-        resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
+        if (resizeElement != undefined) {
+            resizeElement.addEventListener('mousedown', ev => this.initDrag(ev), false);
+        } else {
+            resizer = document.createElement('div');
+            resizer.className = 'resizer-bottom-right';
+            resizer.classList.add('ws-entry-zoom-fixed');
+            element.appendChild(resizer);
+            resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
+        }
 
 
-        resizer = document.createElement('div');
-        resizer.className = 'resizer-bottom-left';
-        resizer.classList.add('ws-entry-zoom-fixed');
-        element.appendChild(resizer);
-        resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
-        resizer = document.createElement('div');
-        resizer.className = 'resizer-top-left';
-        resizer.classList.add('ws-entry-zoom-fixed');
-        element.appendChild(resizer);
-        resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
+
+        // resizer = document.createElement('div');
+        // resizer.className = 'resizer-bottom-left';
+        // resizer.classList.add('ws-entry-zoom-fixed');
+        // element.appendChild(resizer);
+        // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
+
+        // resizer = document.createElement('div');
+        // resizer.className = 'resizer-top-left';
+        // resizer.classList.add('ws-entry-zoom-fixed');
+        // element.appendChild(resizer);
+        // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
     }
 
     mousemoveFunc: any;
@@ -306,9 +313,7 @@ export class ResizerComplex {
          * Todo: Das muss bei allen ws entries passieren!
          */
         this.element.classList.remove(classPreventInput);
-
-        console.log("stoppe selektion wrapper resizing");
-
+  
         e.preventDefault();
         e.stopPropagation();
     }
