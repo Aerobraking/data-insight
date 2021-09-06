@@ -6,7 +6,7 @@ import { State } from './state'
 export type Getters = {
 
   getShowUI(state: State):boolean
-  getViewList(state: State): Array<Workspace | Overview>
+  getViewList(state: State): Array<Workspace>
   getActiveWorkspaceIndex(state: State): number
 }
 

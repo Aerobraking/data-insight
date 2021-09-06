@@ -79,7 +79,7 @@ export default defineComponent({
     },
     keyPressed(e: KeyboardEvent) {
       if (e.ctrlKey) {
-        switch (e.key) {
+        switch (e.key) { 
           case "Tab":
             let listSize = this.$store.getters.getViewList.length;
             if (listSize == 0) return;

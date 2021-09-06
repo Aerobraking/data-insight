@@ -1,14 +1,12 @@
-import { ElementDimension, ElementDimensionInstance } from "@/utils/resize";
+import { ElementDimensionInstance } from "@/utils/resize";
 import * as d3 from "d3";
 import {
-    D3DragEvent,
-    HierarchyLink,
-    HierarchyNode,
     Simulation,
     SimulationLinkDatum,
     SimulationNodeDatum,
-    ZoomView,
 } from "d3";
+
+
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -26,13 +24,12 @@ import {
  * 
  */
 
-export class AbstractNode<D> implements SimulationNodeDatum {
+
+export abstract class AbstractNode<D = undefined> implements SimulationNodeDatum {
 
     children: Array<AbstractNode<D>> = [];
     parent: AbstractNode<D> | undefined;
     depth: number = 0;
-    radius: number = 0;
-    size: number = 10;
     id?: string | number;
     hue?: number;
 
@@ -64,7 +61,85 @@ export class AbstractNode<D> implements SimulationNodeDatum {
      * Node’s fixed y-position (if position was fixed)
      */
     fy?: number | null | undefined;
+
+    public getDepth(): number {
+        this.depth = 0;
+        let p: AbstractNode<D> = this;
+        while (p.parent) {
+            this.depth++;
+            p = p.parent;
+        }
+        return this.depth;
+    }
+
+    private collectNodes(node: AbstractNode<D>, a: Array<AbstractNode<D>>): void {
+
+        a.push(node);
+
+        for (let i = 0; i < node.children.length; i++) {
+            let c: AbstractNode<D> = node.children[i];
+            this.collectNodes(c, a);
+        }
+    }
+
+    descendants(): Array<this> {
+        let a: Array<this> = [];
+        this.collectNodes(this, a);
+        return a;
+    }
+
+    parents(): Array<this> {
+        let a: Array<this> = [];
+        let p = this;
+        while (parent) {
+            a.push(p.parent as this);
+            p = p.parent as this;
+        }
+        return a;
+    }
+
+    /**   
+   * Returns an array of links for this node, where each link is an object that defines source and target properties.
+   * The source of each link is the parent node, and the target is a child node.
+   * @returns 
+   */
+    links(): Array<AbstractLink<D>> {
+        let a: Array<AbstractLink<D>> = [];
+        this.collectLinks(this, a);
+        return a;
+    }
+
+    private collectLinks(node: AbstractNode<D>, a: Array<AbstractLink<D>>): void {
+        for (let i = 0; i < node.children.length; i++) {
+            let c: AbstractNode<D> = node.children[i];
+            a.push({ source: node, target: c });
+            this.collectLinks(c, a);
+        }
+    }
 }
+
+/**
+ * Defines the Link between two AbstractNode instances. Extend it to use it with your AbstractNode subclass.
+ */
+export class AbstractLink<D> implements SimulationLinkDatum<AbstractNode<D>>{
+    constructor(source: AbstractNode<D>, target: AbstractNode<D>) {
+        this.source = source;
+        this.target = target;
+    }
+    source: AbstractNode<D>;
+    target: AbstractNode<D>;
+}
+
+export class AbstractRootNode<D = undefined> {
+
+    constructor(root: AbstractNode<D>) {
+        this.root = root;
+    }
+
+    root: AbstractNode<D>;
+
+}
+
 
 enum BackgroundBehaviour {
     NORMAL,
@@ -83,22 +158,29 @@ export class EngineState {
     backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
 }
 
-/*
+export abstract class TreeStructureHandler<N extends AbstractNode, AbstractRootNode> {
 
-
-
-*/
-/**
- * Defines the Link between two AbstractNode instances. Extend it to use it with your AbstractNode subclass.
- */
-export class Link<D> implements SimulationLinkDatum<AbstractNode<D>>{
-    constructor(source: AbstractNode<D>, target: AbstractNode<D>) {
-        this.source = source;
-        this.target = target;
+    constructor(root: AbstractRootNode) {
+        this.root = root;
     }
-    source: AbstractNode<D>;
-    target: AbstractNode<D>;
+
+    root: AbstractRootNode;
+
+    /**
+     * Is called to sync the current existing tree structure in our model
+     * with the actual one from our source. That is typically called when 
+     * starting the program. After the sync, the synchronisation is done
+     * through the watching of changed in the source.
+     */
+    abstract syncStructure(): void;
+
+    abstract startWatcher(): void;
+
+    abstract reactToDrop(e: DragEvent): void;
+
 }
+
+
 
 export class OverviewEngine {
 
@@ -115,6 +197,7 @@ export class OverviewEngine {
             .force('center', d3.forceCenter())
             .force('dagRadial', null)
             .stop();
+
 
         let c = d3
             .select(div)
@@ -180,7 +263,7 @@ export class OverviewEngine {
     state: EngineState;
     size: ElementDimensionInstance;
     divObserver: ResizeObserver;
-    simulation: Simulation<AbstractNode<any>, Link<any>>;
+    simulation: Simulation<AbstractNode<any>, AbstractLink<any>>;
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
@@ -199,6 +282,7 @@ export class OverviewEngine {
         if (this.engineActive) {
             this.simulation.tick();
         }
+ 
 
 
         const globalScale = d3.zoomTransform(this.canvas).k;

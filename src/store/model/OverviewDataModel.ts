@@ -3,18 +3,18 @@ import { GraphData, NodeObject, LinkObject } from "force-graph";
 import { View } from "./DataModel";
 import * as _ from "underscore";
 import { randomNormal } from "d3";
+import { FolderRootNode } from "@/components/workspace/overview/FileEngine";
 
-export class Overview extends View {
+export class Overview {
 
-    constructor(name: string = "New Overview") {
-        super();
-        this.name = name;
-        this.type = "overview";
+    constructor() {
     }
 
     initialZoom: number = 1;
     initialX: number = 1;
     initialY: number = 1;
+
+    RootNodes: FolderRootNode[] = [];
 }
 
 enum BackgroundBehaviour {
@@ -26,9 +26,6 @@ enum BackgroundBehaviour {
 export abstract class OverviewRenderSettings {
     nodeSizeRelFacotor: number = 1;
     showLeafs: boolean = true;
-
-
-
     backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
 }
 

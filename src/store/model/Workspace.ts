@@ -329,4 +329,6 @@ export class Workspace extends View {
         },
     })
     entries: Array<WorkspaceEntry> = [];
+
+    
 }
