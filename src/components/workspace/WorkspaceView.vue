@@ -112,7 +112,12 @@
       </button> -->
 
       <button :disabled="selectedEntriesCount < 2"><BorderAll /></button>
-      <button :disabled="selectedEntriesCount != 1"><FormTextbox /></button>
+      <button
+        @click="setFocusOnNameInput(undefined)"
+        :disabled="selectedEntriesCount != 1"
+      >
+        <FormTextbox />
+      </button>
       <button :disabled="selectedEntriesCount == 0">
         <delete-empty-outline @click="deleteSelection" />
       </button>
@@ -1014,16 +1019,19 @@ export default defineComponent({
       return rect;
     },
     moveToEntry(
-      payload: { index: any; zoom: boolean } | { id: any; zoom: boolean }
+      payload:
+        | { index: any; zoom: boolean }
+        | { id: any; zoom: boolean }
+        | { entry: HTMLElement; zoom: boolean }
     ) {
       let p: any = payload;
 
       let entry: HTMLElement | null = null;
 
       if (p.index != undefined) {
-      }
-
-      if (p.id != undefined) {
+      } else if (p.entry != undefined) {
+        entry = p.entry;
+      } else if (p.id != undefined) {
         entry = this.getViewByID(Number(p.id));
       }
 
@@ -1096,12 +1104,6 @@ export default defineComponent({
           });
       } else {
         document
-          .querySelectorAll(".workspace-is-selected .wsentry-displayname")
-          .forEach((e) => {
-            e.classList.toggle("prevent-input", false);
-          });
-
-        document
           .querySelectorAll(
             "div.ws-entry:not(.workspace-is-selected) .wsentry-displayname"
           )
@@ -1116,6 +1118,28 @@ export default defineComponent({
 
       if (this.selectedEntriesCount > 0) {
         this.startSelectionDrag(this.mousePositionLastRaw);
+      }
+    },
+    setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
+      entry = entry ? entry : this.getSelectedEntries()[0];
+
+      let input: HTMLInputElement = entry.getElementsByClassName(
+        "wsentry-displayname"
+      )[0] as HTMLInputElement;
+
+      /**
+       * Enable input element. Will be disabled again when the entry is deselected.
+       */
+      document
+        .querySelectorAll(".workspace-is-selected .wsentry-displayname")
+        .forEach((e) => {
+          e.classList.toggle("prevent-input", false);
+        });
+
+      if (input != undefined) {
+        input.focus();
+        input.select();
+        this.moveToEntry({ zoom: true, entry: entry });
       }
     },
     deleteSelection() {
@@ -1580,6 +1604,16 @@ div .resizer-top-left {
   cursor: se-resize;
 }
 
+.rectangle-selection {
+  position: absolute;
+  width: 0px;
+  height: 0px;
+  transform: translate3d(0px, 0px, 0px);
+  background-color: $color-Selection;
+  z-index: 1000;
+  visibility: hidden;
+}
+
 .rectangle-selection-wrapper {
   position: absolute;
   width: 0px;
@@ -1590,7 +1624,6 @@ div .resizer-top-left {
   padding: 10px;
   margin: -10px;
   visibility: hidden;
-
   pointer-events: none;
 }
 
@@ -1604,24 +1637,23 @@ div .resizer-top-left {
   left: 0px;
   margin-left: 1px;
   top: -40px;
+  width: auto;
   z-index: 20;
-  cursor: pointer;
 
   background-color: transparent;
   border: none;
   color: rgb(230, 230, 230);
   font-size: 25pt;
   overflow: visible;
-  //pointer-events: all;
   outline: none;
   transition: background-color 500ms linear;
   input {
     outline: none;
     color: rgb(233, 214, 107);
   }
-  &:hover {
-    background-color: rgba(102, 224, 255, 0.479);
-  }
+  // &:hover {
+  //   background-color: rgba(102, 224, 255, 0.479);
+  // }
 }
 
 /**
@@ -1682,18 +1714,7 @@ visually highlights elements for selection with a hover effect
   }
 }
 
-.rectangle-selection {
-  position: absolute;
-  width: 0px;
-  height: 0px;
-  transform: translate3d(0px, 0px, 0px);
-  background-color: $color-Selection;
-  z-index: 1000;
-
-  visibility: hidden;
-}
 .ws-entry {
-  z-index: 100;
   transition: opacity 0.3s ease-in-out;
 }
 
