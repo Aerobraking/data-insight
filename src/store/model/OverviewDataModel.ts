@@ -49,7 +49,10 @@ export abstract class OverviewRenderSettings {
 export abstract class TreeStructureHandler<T, N extends AbstractNode<T>> {
     abstract name: string;
     /**
-     * Is called to sync the current existing tree structure in our model with the actual one from our source. That is typically called when starting the program. After the sync, the synchronisation is done through the watching of changed in the source.
+     * Is called to sync the current existing tree structure in our model
+     * with the actual one from our source. That is typically called when 
+     * starting the program. After the sync, the synchronisation is done
+     * through the watching of changed in the source.
      */
     abstract syncStructure(): void;
 

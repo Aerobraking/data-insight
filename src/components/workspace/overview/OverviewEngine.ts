@@ -10,6 +10,22 @@ import {
     ZoomView,
 } from "d3";
 
+/**
+ * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
+ * Außerdem muss man einen neuen Subtree erstellen und hinzufügen können. 
+ * Dieser wird dann gescannt und seine childnodes nach und nach hinzugefügt. 
+ * (da könnte man vll erst alles einlesen, hinzufügen und dann erst zum syncen hinzufügen)
+ * 
+ * Im Vordergrund kümmert sich unsere Engine um das bewegen der nodes. Sie bekommt dann nur die 
+ * entsprechenden Updates vom Server
+ * 
+ * Und als drittes brauchen wir code zum darstellen und interagieren. Der wäre für alle implementierungen 
+ * eigentlich gleich. Es sind dann eher die Node Subklassen, die andere Eigenschaften nutzen könnten.
+ * Da würde es wohl reichen einfach ein System zu erstellen, dass leicht neue Anzeigemöglichkeiten anhand eines
+ * props zu erstellen (size, age, number of files, etc.)
+ * 
+ */
+
 export class AbstractNode<D> implements SimulationNodeDatum {
 
     children: Array<AbstractNode<D>> = [];
