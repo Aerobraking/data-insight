@@ -1,15 +1,10 @@
-
-
-
 var canvasSmall: OffscreenCanvas;
 var ctxSmall: OffscreenCanvasRenderingContext2D | null = null;
 var canvasMedium: OffscreenCanvas;
 var ctxMedium: OffscreenCanvasRenderingContext2D | null = null;
 
-
 const small = 128;
 const medium = 2048;
-
 
 /**
  * Conserve aspect ratio of the original region. Useful when shrinking/enlarging
@@ -34,13 +29,9 @@ function calculateAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: 
 
 addEventListener('message', async function (e: MessageEvent) {
 
-
     if (e.data.msg == "create") {
 
-
-
         const response = await fetch(e.data.path)
-
 
         const blob = await response.blob()
 
@@ -58,35 +49,29 @@ addEventListener('message', async function (e: MessageEvent) {
                 ratio: smallSize.ratio
             });
 
-
             canvasSmall = new OffscreenCanvas(smallSize.width, smallSize.height);
             ctxSmall = canvasSmall.getContext("2d");
             ctxSmall?.drawImage(bitmap, 0, 0, smallSize.width, smallSize.height);
             // Once the file has been fetched, we'll convert it to a `Blob`
             canvasSmall.convertToBlob().then((blob) => {
-
-
                 // @ts-ignore: Unreachable code error
                 postMessage({
                     path: e.data.path,
                     type: "small",
                     blob: blob
                 });
-
             });
 
             canvasMedium = new OffscreenCanvas(mediumSize.width, mediumSize.height);
             ctxMedium = canvasMedium.getContext("2d");
             ctxMedium?.drawImage(bitmap, 0, 0, mediumSize.width, mediumSize.height);
             canvasMedium.convertToBlob().then((blob) => {
-
                 // @ts-ignore: Unreachable code error
                 postMessage({
                     path: e.data.path,
                     type: "medium",
                     blob: blob
                 });
-
             });
         });
 

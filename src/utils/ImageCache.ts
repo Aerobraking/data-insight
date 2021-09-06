@@ -24,18 +24,16 @@ export class Cache {
     private hash: Map<string, Map<string, string>> = new Map();
     private hashCallbacks: Map<string, ImageListener[]> = new Map();
     private static _instance = new Cache();
-    worker = new Worker("@/utils/worker", {
-        type: "module",
-    });
+
     private listWorkerTraverser: number = 0;
 
     private listWorker: Worker[] = [];
 
     private constructor() {
- 
+
         // cpuCount
         for (let index = 0; index < 3; index++) {
-            let w = new Worker("@/utils/worker", {
+            let w = new Worker("@/utils/ImageCacheWorker", {
                 type: "module",
             });
             w.onmessage = (e: any) => {
@@ -80,48 +78,7 @@ export class Cache {
             this.listWorker.push(w);
         }
 
-        /**
-         * init webworker
-         */
-        this.worker.onmessage = (e: any) => {
-            // Grab the message data from the event
 
-
-            if (e.data.type == "size") {
-
-                this.hashDim.set(e.data.path, { width: e.data.width, height: e.data.height, ratio: e.data.ratio });
-
-                this.doCallback(e.data.path, (l: ImageListener) => {
-                    l.callbackSize({ width: e.data.width, height: e.data.height, ratio: e.data.ratio });
-                });
-
-            }
-            if (e.data.type == "small") {
-                const smallURl = URL.createObjectURL(e.data.blob);
-
-                let imageEntry: Map<String, String> | undefined = this.hash.get(e.data.path);
-                imageEntry?.set(e.data.type, smallURl);
-
-
-                this.doCallback(e.data.path, (l: ImageListener) => {
-                    l.callback("url('" + smallURl + "')", e.data.type);
-                });
-            }
-
-            if (e.data.type == "medium") {
-                const mediuamURl = URL.createObjectURL(e.data.blob);
-
-                let imageEntry: Map<String, String> | undefined = this.hash.get(e.data.path);
-                imageEntry?.set("medium", mediuamURl);
-
-
-                this.doCallback(e.data.path, (l: ImageListener) => {
-                    l.callback("url('" + mediuamURl + "')", e.data.type);
-                });
-
-            }
-
-        };
     }
 
     static get instance() {
