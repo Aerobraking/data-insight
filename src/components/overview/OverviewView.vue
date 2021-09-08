@@ -1,11 +1,11 @@
 <template>
-  <div @drop="drop" class="overview-viewport"></div>
+  <div @drop.stop="drop" class="overview-viewport"></div>
 </template>
 
 <script lang="ts">
 import { Overview } from "@/store/model/OverviewDataModel";
 import { Workspace } from "@/store/model/Workspace";
-import {FolderRootNode} from "@/components/workspace/overview/FileEngine"
+import { FolderRootNode } from "@/components/workspace/overview/FileEngine";
 import { defineComponent } from "vue";
 import {
   EngineState,
@@ -25,16 +25,17 @@ export default defineComponent({
     model: Workspace,
   },
   data(): {
-    overviewEngine: OverviewEngine | null;
+    overviewEngine: OverviewEngine | undefined;
     state: EngineState;
   } {
     return {
-      overviewEngine: null,
+      overviewEngine: undefined,
       state: new EngineState(),
     };
   },
   mounted() {
     this.overviewEngine = new OverviewEngine(this.$el, this.state);
+    this.overviewEngine.start();
   },
   unmounted() {
     this.overviewEngine?.destroy();
@@ -51,9 +52,15 @@ export default defineComponent({
           if (fileStat.isDirectory()) {
             let root: FolderRootNode = new FolderRootNode(f.path);
             root.startWatcher();
+            this.$props.model?.overview.RootNodes.push(root);
           }
         }
       }
+      setTimeout(() => {
+        if (this.overviewEngine != undefined) {
+          this.overviewEngine.rootNodes = this.$props.model?.overview.RootNodes;
+        }
+      }, 900);
     },
   },
 });

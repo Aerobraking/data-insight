@@ -4,7 +4,9 @@ import {
     Simulation,
     SimulationLinkDatum,
     SimulationNodeDatum,
+    ZoomTransform,
 } from "d3";
+import { FolderRootNode } from "./FileEngine";
 
 
 
@@ -21,6 +23,14 @@ import {
  * eigentlich gleich. Es sind dann eher die Node Subklassen, die andere Eigenschaften nutzen könnten.
  * Da würde es wohl reichen einfach ein System zu erstellen, dass leicht neue Anzeigemöglichkeiten anhand eines
  * props zu erstellen (size, age, number of files, etc.)
+ * 
+ * 
+ * Wir haben das "problem" dass wir einmal
+ * -    die daten, die müssen speicherbar sein
+ * -    der watcher der änderungen beobachtet und die daten anpassen muss, dabei sollten nodes nach und nach
+ *      hinzugefügt werden, damit der thread nicht zu lange blockiert wird
+ * -    die simulation, die simuliert und evtl. auf änderungen in der daten reagieren muss (watch tiefe)
+ * -    der render, der alle daten haben muss, das ist bisher glaub unproblematisch 
  * 
  */
 
@@ -61,6 +71,14 @@ export abstract class AbstractNode<D = undefined> implements SimulationNodeDatum
      * Node’s fixed y-position (if position was fixed)
      */
     fy?: number | null | undefined;
+
+    public getX() {
+        return this.x ? this.x : 0;
+    }
+
+    public getY() {
+        return this.y ? this.y : 0;
+    }
 
     public getDepth(): number {
         this.depth = 0;
@@ -251,6 +269,7 @@ export class OverviewEngine {
 
                 this.size.w = w;
                 this.size.h = h;
+                _this.tick();
             }
         });
         this.divObserver.observe(div);
@@ -270,6 +289,27 @@ export class OverviewEngine {
     canvasShadow: HTMLCanvasElement;
     engineActive: boolean = false;
 
+    private _rootNodes: FolderRootNode[] | undefined;
+
+    public get rootNodes(): FolderRootNode[] | undefined {
+        return this._rootNodes;
+    }
+
+    public set rootNodes(value: FolderRootNode[] | undefined) {
+        console.log("setter rootnode call");
+
+        this._rootNodes = value;
+        let nodes = [];
+        if (value) {
+            for (const r of value) {
+                nodes.push(...r.root.descendants());
+            }
+        }
+        this.simulation.nodes(nodes);
+    }
+
+    transform: ZoomTransform | undefined;
+
     public start(): void {
         this.tick();
         this.engineActive = true;
@@ -277,40 +317,93 @@ export class OverviewEngine {
 
     public tick(): void {
 
-        console.log("tick");
-
         if (this.engineActive) {
             this.simulation.tick();
         }
- 
 
-
-        const globalScale = d3.zoomTransform(this.canvas).k;
+        this.transform = d3.zoomTransform(this.canvas);
 
         // render the shadow canvas
 
+
         // render the canvas
-        this.clearCanvas(this.context, this.size.w, this.size.h);
+        this.clearCanvas(this.size.w, this.size.h);
+        this.drawCanvas();
         //
         // state.forceGraph.globalScale(globalScale).tickFrame(); 
 
 
         // request next frame
-        requestAnimationFrame(() => this.tick());
+        setTimeout(() => {
+
+            requestAnimationFrame(() => this.tick());
+        }, 80);
     }
 
 
+    private drawCanvas() {
+        this.context.fillStyle = "rgb(100,100,110)";
 
-    private clearCanvas(ctx: CanvasRenderingContext2D, width: number, height: number) {
-        ctx.save();
-        this.resetTransform(ctx);
-        ctx.clearRect(0, 0, width, height);
-        ctx.restore();
+        this.context.clearRect(0, 0, this.size.w, this.size.h);
+        this.context.fillRect(0, 0, this.size.w, this.size.h);
+        this.context.fillStyle = "rgb(200,200,200)";
+
+        this.context.beginPath();
+        this.context.arc(
+            400,
+            490,
+            100,
+            0,
+            2 * Math.PI,
+            false
+        );
+        this.context.fill();
+
+        if (this.rootNodes && this.transform) {
+
+            for (let index = 0; index < this.rootNodes.length; index++) {
+                const root = this.rootNodes[index];
+
+                console.log(root);
+
+
+                let nodes: AbstractNode[] = root.root.descendants();
+
+                for (let i = 0; i < nodes.length; i++) {
+                    const n = nodes[i];
+
+                    let r = 10;
+                    this.context.fillStyle = "rgb(200,200,200)";
+                    this.context.beginPath();
+                    this.context.arc(
+                        n.getX(),
+                        n.getY(),
+                        r,
+                        0,
+                        2 * Math.PI,
+                        false
+                    );
+                    this.context.fill();
+
+                }
+            }
+
+
+
+        }
     }
 
-    private resetTransform(ctx: CanvasRenderingContext2D) {
+
+    private clearCanvas(width: number, height: number) {
+        this.context.save();
+        this.resetTransform();
+        this.context.clearRect(0, 0, width, height);
+        this.context.restore();
+    }
+
+    private resetTransform() {
         const pxRatio = window.devicePixelRatio;
-        ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+        this.context.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
     }
 
 }

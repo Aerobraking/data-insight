@@ -3,9 +3,7 @@ import { Exclude, Type } from "class-transformer";
 import chokidar, { FSWatcher, WatchOptions } from "chokidar";
 
 
-export class FileNode {
 
-}
 
 export class FolderNode extends AbstractNode<FolderNode>{
     constructor(path: string) {
@@ -51,6 +49,9 @@ export class FolderRootNode extends AbstractRootNode<FolderNode>{
     }
 
     startWatcher(): void {
+
+        let _this = this;
+
         if (!this.watcher) {
             this.watcher = chokidar.watch(this.path, {
                 ignored: this.ignoredFolders, // ignore dotfiles
@@ -69,6 +70,7 @@ export class FolderRootNode extends AbstractRootNode<FolderNode>{
                     console.log("unlink: " + path);
                 })
                 .on("addDir", (path: any) => {
+                    _this.root.children.push(new FolderNode(path));
                     console.log("add Dir: " + path);
                 })
                 .on("ready", (path: any) => {
