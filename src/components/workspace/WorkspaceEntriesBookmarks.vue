@@ -140,7 +140,7 @@ export default defineComponent({
 
 .bookmark-entry {
   color: #fff;
-  cursor: grab;
+  cursor: pointer;
   display: table;
   padding-top: 10px;
   -webkit-user-select: none;
@@ -148,5 +148,11 @@ export default defineComponent({
   -ms-user-select: none;
   user-select: none;
   text-shadow: rgb(0, 0, 0) 0px 0 15px, rgb(0, 0, 0) 0px 0 4px;
+  transition: transform 0.3s ease-in-out;
+  transform-origin: center left;
+
+  &:hover {
+    transform: scale(1.3);
+  }
 }
 </style>

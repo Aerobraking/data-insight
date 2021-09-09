@@ -1,7 +1,5 @@
 <template>
-  <Tabs
-  
-   />
+  <Tabs />
 </template>
 
 <script lang="ts">
@@ -23,7 +21,7 @@ export default defineComponent({
   },
   computed: {},
   mounted() {
-    window.addEventListener("keyup", this.keyPressed, true);
+    window.addEventListener("keydown", this.keyPressed, true);
     const c = this;
 
     ipcRenderer.on("fire-file-save", function (event: any, file: string) {
@@ -81,11 +79,14 @@ export default defineComponent({
       ipcRenderer.send("save-insight-file", jsonString);
     },
     keyPressed(e: KeyboardEvent) {
+      console.log("window listener: app");
+
       if (e.ctrlKey) {
         switch (e.key) {
           case "t":
             this.$store.commit(MutationTypes.CREATE_WORKSPACE);
             e.preventDefault();
+            e.stopPropagation();
             break;
           case "Tab":
             let listSize = this.$store.getters.getViewList.length;
@@ -102,6 +103,8 @@ export default defineComponent({
             this.$store.commit(MutationTypes.SELECT_WORKSPACE, {
               index: activeIndex,
             });
+            e.preventDefault();
+            e.stopPropagation();
             break;
           case "1":
           case "2":
@@ -121,6 +124,8 @@ export default defineComponent({
                 }
               );
             }
+            e.preventDefault();
+            e.stopPropagation();
             break;
         }
       } else {
@@ -137,6 +142,10 @@ export default defineComponent({
           case "7":
           case "8":
           case "9":
+            e.preventDefault();
+            e.stopPropagation();
+            console.log("prevent: " + e.defaultPrevented);
+
             break;
         }
       }

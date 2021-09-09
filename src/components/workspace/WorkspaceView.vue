@@ -1,8 +1,6 @@
 
 <template>
   <div
-    @keydown="keydown"
-    @keyup="keyup"
     @mouseup="mouseup"
     @mousedown="mousedown"
     @mousemove.capture="mousemove"
@@ -54,6 +52,21 @@
           >
           </component>
         </keep-alive>
+
+        <div
+          :class="{ 'blend-out': model.entries.length > 0 }"
+          class="welcome-message"
+        >
+          <h2>
+            Let's drop some files to get going!
+            <EmoticonHappyOutline class="svg-smile" />
+          </h2>
+          <p>
+            <FileOutline class="svg-file" />
+            <FolderOutline class="svg-folder" />
+          </p>
+          <p><Download class="svg-download" /></p>
+        </div>
       </div>
     </panZoom>
 
@@ -99,7 +112,7 @@
       class="workspace-menu-bar"
       :class="{ 'workspace-menu-bar-hide': !getShowUI }"
     >
-      <button :disabled="model.entries.length == 0">
+      <button>
         <Overscan @click="showAll" />
       </button>
       <button><Group @click="createEntry('frame')" /></button>
@@ -136,6 +149,7 @@
 <script lang="ts">
 import { ipcRenderer } from "electron";
 import {
+  EntryCollection,
   Workspace,
   WorkspaceEntry,
   WorkspaceEntryFile,
@@ -159,6 +173,7 @@ import {
   ElementDimension,
   getCoordinatesFromElement,
   ResizerComplex,
+  set3DPosition,
 } from "@/utils/resize";
 import { InsightFile } from "@/store/state";
 import { deserialize, serialize } from "class-transformer";
@@ -192,11 +207,19 @@ import {
   BorderAll,
   ResizeBottomRight,
   FormatSize,
+  Download,
+  FolderOutline,
+  FileOutline,
+  EmoticonHappyOutline,
 } from "mdue";
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    EmoticonHappyOutline,
+    Download,
+    FolderOutline,
+    FileOutline,
     FormatSize,
     ResizeBottomRight,
     BorderAll,
@@ -240,6 +263,7 @@ export default defineComponent({
     highlightSelection: boolean;
     divObserver: any;
     selectedEntriesCount: number;
+    clipboard: EntryCollection;
   } {
     return {
       highlightSelection: true,
@@ -261,6 +285,7 @@ export default defineComponent({
       spacePressed: false,
       divObserver: null,
       selectedEntriesCount: 0,
+      clipboard: new EntryCollection(),
     };
   },
   watch: {
@@ -269,6 +294,8 @@ export default defineComponent({
     },
   },
   mounted() {
+    window.addEventListener("keyup", this.keyup, false);
+    window.addEventListener("keydown", this.keydown, false);
     /**
      * Listen for resizing of the canvas parent element
      */
@@ -320,6 +347,20 @@ export default defineComponent({
     vm.getCanvas().height = vm.$el.clientHeight;
 
     this.drawCanvas();
+
+    set3DPosition(
+      this.$el.getElementsByClassName("welcome-message")[0],
+      -750,
+      -500
+    );
+
+    if (this.model.entries.length == 0) {
+      this.moveToHTMLElement(
+        this.$el.getElementsByClassName("welcome-message")[0],
+        false,
+        false
+      );
+    }
   },
   unmounted() {
     this.divObserver.disconnect();
@@ -495,7 +536,71 @@ export default defineComponent({
         this.cancelPlugin();
       }
 
+      console.log(
+        "window listener: workspace " +
+          this.model.name +
+          " prevented: " +
+          e.defaultPrevented +
+          " isActive: " +
+          this.model.isActive
+      );
+
       if (this.activePlugin && this.activePlugin.keydown(e)) {
+        return;
+      }
+
+      if (e.ctrlKey && !e.repeat) {
+        switch (e.key) {
+          case "a":
+            this.selectAll();
+            break;
+          case "r":
+            this.setFocusOnNameInput();
+            break;
+          case "c":
+            this.clipboard = new EntryCollection();
+            this.clipboard.entries.push(
+              ...this.getModelEntriesFromView(this.getSelectedEntries())
+            );
+            console.log("copy");
+
+            break;
+          case "v":
+            console.log("paste");
+
+            if (this.clipboard.entries.length > 0) {
+              WSUtils.Events.prepareFileSaving();
+
+              let jsonString = serialize(this.clipboard);
+
+              let pastedEntries: EntryCollection = deserialize(
+                EntryCollection,
+                jsonString
+              );
+
+              console.log("paste");
+
+              let xMin = 10000000;
+              let yMin = 10000000;
+
+              for (let entry of pastedEntries.entries) {
+                xMin = xMin > entry.x ? entry.x : xMin;
+                yMin = yMin > entry.y ? entry.y : yMin;
+              }
+
+              for (let entry of pastedEntries.entries) {
+                entry.x += -xMin + this.mousePositionLast.x;
+                entry.y += -yMin + this.mousePositionLast.y;
+              }
+
+              let payload = {
+                model: <Workspace>this.model,
+                listFiles: pastedEntries.entries,
+              };
+              this.$store.commit(MutationTypes.ADD_FILES, payload);
+            }
+        }
+
         return;
       }
 
@@ -542,52 +647,43 @@ export default defineComponent({
             this.spacePressed = true;
             this.showAll();
             break;
+          case "r":
+            if (this.getSelectedEntries().length > 1) {
+              this.startPlugin(new ReArrange(this));
+            }
+            break;
+          case " ":
+            if (this.spacePressed) {
+              if (this.oldViewRect) {
+                let bound = this.getPanzoomRect(this.oldViewRect);
+                this.panZoomInstance.smoothShowRectangle(bound);
+              }
+              this.getEntries().forEach((e) => {
+                e.classList.toggle("prevent-input", false);
+              });
+              this.spacePressed = false;
+            }
+            break;
+          case "Delete":
+          case "delete":
+            this.deleteSelection();
+            break;
+
+          case "t":
+            this.createEntry("text", true);
+            break;
+          case "f":
+            this.createEntry("frame", true);
+            break;
+          case "y":
+            this.createEntry("youtube", true);
+            break;
         }
       }
     },
     keyup(e: KeyboardEvent) {
       if (this.activePlugin && this.activePlugin.keyup(e)) {
         return;
-      }
-
-      let listFiles: Array<WorkspaceEntry> = [];
-      switch (e.key) {
-        case "r":
-          if (this.getSelectedEntries().length > 1) {
-            this.startPlugin(new ReArrange(this));
-          }
-          break;
-        case " ":
-          if (this.spacePressed) {
-            if (this.oldViewRect) {
-              let bound = this.getPanzoomRect(this.oldViewRect);
-              this.panZoomInstance.smoothShowRectangle(bound);
-            }
-            this.getEntries().forEach((e) => {
-              e.classList.toggle("prevent-input", false);
-            });
-            this.spacePressed = false;
-          }
-          break;
-        case "Delete":
-        case "delete":
-          this.deleteSelection();
-          break;
-        case "a":
-          if (e.ctrlKey) {
-            this.selectAll();
-          }
-          break;
-        case "t":
-          this.createEntry("text", true);
-          break;
-        case "f":
-          this.createEntry("frame", true);
-          break;
-        case "y":
-          this.createEntry("youtube", true);
-          break;
-        default:
       }
 
       this.drawCanvas();
@@ -670,29 +766,24 @@ export default defineComponent({
 
       WSUtils.Events.dragStarting(this.dragSelection, this);
 
-      this.selectionWrapperResizer?.setChildren(this.dragSelection);
-
       this.dragSelection.push(this.getSelectionWrapper());
 
       this.preventInput(true);
     },
     startSelectionDrag(mousePosition: { x: number; y: number }) {
-      this.dragMoveRel = mousePosition;
-      this.selectionDragActive = true;
       /**
        * Start dragging of the current selection with left mouse button + ctrl or
        */
-
       this.dragSelection = Array.from(
         this.getSelectedEntries()
       ) as HTMLElement[];
 
       WSUtils.Events.dragStarting(this.dragSelection, this);
 
-      this.selectionWrapperResizer?.setChildren(this.dragSelection);
-
       this.dragSelection.push(this.getSelectionWrapper());
 
+      this.dragMoveRel = mousePosition;
+      this.selectionDragActive = true;
       this.preventInput(true);
     },
     mousedown: function (e: MouseEvent) {
@@ -721,24 +812,6 @@ export default defineComponent({
 
       if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
         this.startSelectionDrag({ x: e.clientX, y: e.clientY });
-        // this.dragMoveRel = { x: e.clientX, y: e.clientY };
-        // this.selectionDragActive = true;
-        // /**
-        //  * Start dragging of the current selection with left mouse button + ctrl or
-        //  */
-
-        // this.dragSelection = Array.from(
-        //   this.getSelectedEntries()
-        // ) as HTMLElement[];
-
-        // WSUtils.Events.dragStarting(this.dragSelection, this);
-
-        // this.selectionWrapperResizer?.setChildren(this.dragSelection);
-
-        // this.dragSelection.push(this.getSelectionWrapper());
-
-        // this.preventInput(true);
-
         return;
       }
 
@@ -759,14 +832,13 @@ export default defineComponent({
         }
       }
     },
-    mousemove: function (e: MouseEvent) {
-      if (this.activePlugin && this.activePlugin.mousemove(e)) {
+    mousemoveThrottle: _.throttle((e: MouseEvent, comp: any) => {
+      if (comp.activePlugin && comp.activePlugin.mousemove(e)) {
         return;
       }
-      let comp = this;
 
-      this.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
-      this.mousePositionLast = comp.getPositionInWorkspace(e);
+      comp.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
+      comp.mousePositionLast = comp.getPositionInWorkspace(e);
 
       let selectionRectangle: any = comp.getSelectionRectangle();
 
@@ -782,16 +854,19 @@ export default defineComponent({
         selectionRectangle.style.height = Math.abs(h) + "px";
       }
 
-      if (this.selectionDragActive) {
-        this.updateSelectionDrag(e, this);
+      if (comp.selectionDragActive) {
+        comp.updateSelectionDrag(e, comp);
       } else {
         if (selectionRectangle.style.visibility === "visible") {
-          this.isSelectionEvent = true;
+          comp.isSelectionEvent = true;
           updateSelectionRectangle();
         }
       }
 
-      this.drawCanvas();
+      comp.drawCanvas();
+    }, 10),
+    mousemove: function (e: MouseEvent) {
+      this.mousemoveThrottle(e, this);
     },
     mouseup: function (e: MouseEvent) {
       if (this.activePlugin && this.activePlugin.mouseup(e)) {
@@ -957,11 +1032,15 @@ export default defineComponent({
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
-    getBounds(entries: HTMLElement[]): ElementDimension {
+    getBounds(entries: HTMLElement[] | HTMLElement): ElementDimension {
       let x = Infinity,
         y = Infinity,
         x2 = -Infinity,
         y2 = -Infinity;
+
+      if (entries instanceof HTMLElement) {
+        entries = [entries];
+      }
 
       Array.from(entries).forEach((el) => {
         let coord = this.getCoordinatesFromElement(el);
@@ -1001,13 +1080,16 @@ export default defineComponent({
       return oldView;
     },
     showAll() {
-      if (this.getEntries().length == 0) {
-        return;
-      }
-
       this.oldViewRect = this.getViewport();
 
-      let bound = this.getPanzoomRect(this.getBounds(this.getEntries()), 0.2);
+      let bound = this.getPanzoomRect(
+        this.getBounds(
+          this.getEntries().length > 0
+            ? this.getEntries()
+            : this.$el.getElementsByClassName("welcome-message")[0]
+        ),
+        0.2
+      );
       this.panZoomInstance.smoothShowRectangle(bound);
     },
     getPanzoomRect(
@@ -1051,6 +1133,15 @@ export default defineComponent({
       }
 
       if (entry != null) {
+        this.moveToHTMLElement(entry, payload.zoom);
+      }
+    },
+    moveToHTMLElement(
+      entry: HTMLElement,
+      zoom: boolean,
+      smooth: boolean = true
+    ) {
+      if (entry != null) {
         let coordinates = this.getCoordinatesFromElement(entry);
 
         let scaler = 0.25;
@@ -1076,13 +1167,22 @@ export default defineComponent({
             this.getCurrentTransform().scale +
           this.$el.clientHeight / 2;
 
-        if (payload.zoom) {
-          this.panZoomInstance.setMaxZoom(1);
-          this.panZoomInstance.smoothShowRectangle(rect).then((f: boolean) => {
-            // this.panZoomInstance.smoothZoomAbs(this.getCurrentTransform().x, this.getCurrentTransform().y, 1);
-          });
+        if (zoom) {
+          if (smooth) {
+            this.panZoomInstance.setMaxZoom(1);
+            this.panZoomInstance
+              .smoothShowRectangle(rect)
+              .then((f: boolean) => {});
+          } else {
+            this.panZoomInstance.setMaxZoom(1);
+            this.panZoomInstance.showRectangle(rect).then((f: boolean) => {});
+          }
         } else {
-          this.panZoomInstance.smoothMoveTo(x, y);
+          if (smooth) {
+            this.panZoomInstance.smoothMoveTo(x, y);
+          } else {
+            this.panZoomInstance.moveTo(x, y);
+          }
         }
       }
     },
@@ -1134,6 +1234,8 @@ export default defineComponent({
       this.selectedEntriesCount = this.getSelectedEntries().length;
 
       this.updateSelectionWrapper();
+
+      this.selectionWrapperResizer?.setChildren(this.getSelectedEntries());
 
       if (this.selectedEntriesCount > 0 && activateDrag) {
         this.startSelectionDrag(this.mousePositionLastRaw);
@@ -1400,8 +1502,6 @@ export default defineComponent({
 
       let t = this.getCurrentTransform();
 
-      console.log(zoomFixed.length);
-
       for (let index = 0; index < zoomFixed.length; index++) {
         const element: HTMLElement = zoomFixed[index];
         let s = 1 / t.scale;
@@ -1490,6 +1590,51 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   }
 }
 
+.welcome-message {
+  pointer-events: none;
+  opacity: 1;
+  position: absolute;
+  width: 1500px;
+  height: 1000px;
+  background-color: rgba(170, 170, 170, 0.211);
+  color: #fff;
+  text-align: center;
+  transition: opacity 0.25s;
+
+  p {
+    padding: 10px;
+  }
+
+  h2 {
+    top: 100px;
+    font-size: 50px;
+    display: block;
+    position: relative;
+  }
+
+  .svg-smile {
+    font-size: 60px;
+    transform: translateY(20px);
+  }
+
+  .svg-file {
+    font-size: 200px;
+    margin-top: 190px;
+  }
+  .svg-folder {
+    font-size: 200px;
+    margin-top: 190px;
+  }
+
+  .svg-download {
+    margin: 50px;
+  }
+
+  svg {
+    font-size: 120px;
+  }
+}
+
 svg {
   cursor: pointer;
   margin: 5px 15px 5px 15px;
@@ -1511,10 +1656,10 @@ svg {
   margin-right: 7px;
   height: 100px;
   width: 100px;
-  transition: all 0.6s;
-  transition-timing-function: cubic-bezier(0.58, -0.315, 0.285, 1.65);
+  transition: all 0.25s;
+  transition-timing-function: ease-in-out;
   overflow: hidden;
-  z-index: 8000;
+  z-index: 1000;
 }
 
 .overview-hover {
@@ -1718,6 +1863,16 @@ visually highlights elements for selection with a hover effect
   }
 }
 
+.close-file {
+  opacity: 0;
+  transition: all 0.25s;
+}
+
+.blend-out {
+  opacity: 0;
+  transition: all 0.25s;
+}
+
 .wrapper {
   overflow: hidden;
   flex: 1 !important;
@@ -1726,11 +1881,6 @@ visually highlights elements for selection with a hover effect
   position: relative;
   background-color: rgba(53, 53, 53, 0);
   outline: none;
-
-  .close-file {
-    opacity: 0;
-    transition: all 0.25s;
-  }
 
   .zoomable {
     animation: fade-in 0.25s ease;

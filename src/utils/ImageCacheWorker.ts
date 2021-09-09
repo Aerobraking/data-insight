@@ -4,7 +4,8 @@ var canvasMedium: OffscreenCanvas;
 var ctxMedium: OffscreenCanvasRenderingContext2D | null = null;
 
 const small = 128;
-const medium = 2048;
+const medium = 1024;
+// const medium = 128;
 
 /**
  * Conserve aspect ratio of the original region. Useful when shrinking/enlarging
@@ -19,8 +20,8 @@ const medium = 2048;
  */
 function calculateAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: number, maxHeight: number = maxWidth): { width: number, height: number, ratio: number } {
 
-    maxWidth = Math.max(maxWidth, srcWidth);
-    maxHeight = Math.max(maxHeight, srcHeight);
+    maxWidth = Math.min(maxWidth, srcWidth);
+    maxHeight = Math.min(maxHeight, srcHeight);
 
     var ratio: number = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
 
@@ -73,6 +74,8 @@ addEventListener('message', async function (e: MessageEvent) {
                     blob: blob
                 });
             });
+
+
         });
 
 

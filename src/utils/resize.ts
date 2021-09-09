@@ -313,7 +313,7 @@ export class ResizerComplex {
          * Todo: Das muss bei allen ws entries passieren!
          */
         this.element.classList.remove(classPreventInput);
-  
+
         e.preventDefault();
         e.stopPropagation();
     }

@@ -23,7 +23,7 @@ export default class ReArrange extends Plugin {
 
         this.mouseStart = undefined;
         this.selection = workspace.getSelectedEntries();
-        console.log(this.selection);
+
 
 
         this.selection = this.selection.sort(function (a: HTMLElement, b: HTMLElement) {
@@ -45,14 +45,12 @@ export default class ReArrange extends Plugin {
                     break search;
                 }
             }
-            console.log(classNameA + " <=>" + classNameB);
+
             if (classNameA < classNameB) { return -1; }
             if (classNameA > classNameB) { return 1; }
             return 0;
 
         });
-
-        console.log(this.selection);
 
         for (let index = 0; index < this.selection.length; index++) {
             const e = this.selection[index];

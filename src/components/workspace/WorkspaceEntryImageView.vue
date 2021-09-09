@@ -93,7 +93,7 @@ export default defineComponent({
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
   z-index: 50;
-  background: rgba(255, 255, 255, 0.3);
+ // background: rgba(255, 255, 255, 0.3);
   // backface-visibility: hidden;
   // will-change: transform;
   position: absolute;

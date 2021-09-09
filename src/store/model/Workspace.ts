@@ -93,7 +93,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         this.name = this.filename;
         this.width = 600;
         this.height = 600;
-        this.imageCreated=false;
+        this.imageCreated = false;
     }
 
     public searchResultString(): string {
@@ -117,7 +117,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
     name: string;
     path: string;
     filename: string;
-    imageCreated:boolean;
+    imageCreated: boolean;
 }
 
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
@@ -197,7 +197,7 @@ export class WorkspaceEntryFrame extends WorkspaceEntry {
     public searchResultString(): string {
         return "Found inside Name";
     }
- 
+
     color: string = "rgb(10,10,10)";
 }
 
@@ -310,14 +310,14 @@ export class Workspace extends View {
         super();
         this.name = name;
         this.type = "workspace";
-        this.overview=new Overview();
-        this.overviewOpen=false;
+        this.overview = new Overview();
+        this.overviewOpen = false;
     }
-    
+
     @Type(() => Overview)
     overview: Overview;
-    viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.333 }
-    overviewOpen:boolean;
+    viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.666 }
+    overviewOpen: boolean;
 
     @Type(() => WorkspaceEntry, {
         keepDiscriminatorProperty: true,
@@ -335,5 +335,26 @@ export class Workspace extends View {
     })
     entries: Array<WorkspaceEntry> = [];
 
-    
+
+}
+export class EntryCollection {
+
+
+    @Type(() => WorkspaceEntry, {
+        keepDiscriminatorProperty: true,
+        discriminator: {
+            property: 'componentname',
+            subTypes: [
+                { value: WorkspaceEntryFile, name: 'wsentryfile' },
+                { value: WorkspaceEntryImage, name: 'wsentryimage' },
+                { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' },
+                { value: WorkspaceEntryTextArea, name: 'wsentrytextarea' },
+                { value: WorkspaceEntryFolderWindow, name: 'wsentryfolder' },
+                { value: WorkspaceEntryFrame, name: 'wsentryframe' },
+            ],
+        },
+    })
+    entries: Array<WorkspaceEntry> = [];
+
+
 }

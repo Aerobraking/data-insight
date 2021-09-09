@@ -50,6 +50,8 @@ export const mutations: MutationTree<State> & Mutations = {
     for (let index = 0; index < payload.listFiles.length; index++) {
       const element = payload.listFiles[index];
       element.order = entrycounter++;
+      // make id's unique in case of a copy/paste situation
+      element.id = Math.floor(Math.random() * 1000000000000);
     }
     payload.model.entries.push(...payload.listFiles);
   },
@@ -57,7 +59,6 @@ export const mutations: MutationTree<State> & Mutations = {
     model: Workspace,
     listIndices: Array<number>,
   }) {
-
     payload.listIndices.forEach(id => {
       let e = payload.model.entries.find((e) => e.id === id);
       if (e) {
@@ -67,7 +68,6 @@ export const mutations: MutationTree<State> & Mutations = {
         }
       }
     });
-
   },
   [MutationTypes.SORT_WORKSPACES](state, payload: {
     listWorkspaces: Array<Workspace>,
@@ -84,7 +84,6 @@ export const mutations: MutationTree<State> & Mutations = {
     state.loadedFile.views.splice(payload.index, 1);
 
     // select next workspace that is open
-
     if (l > 0) {
       let indexToSelect = payload.index > l - 1 ? l - 1 : payload.index;
 
@@ -103,14 +102,13 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.LOAD_INSIGHT_FILE](state, payload: {
     insightFile: InsightFile
   }) {
-
     setTimeout(function () {
       let empty = new InsightFile();
-      empty.views=[];
+      empty.views = [];
       state.loadedFile = empty;
       setTimeout(function () {
         state.loadedFile = payload.insightFile;
-      }, 20);
+      }, 10);
     }, 250);
   },
 
