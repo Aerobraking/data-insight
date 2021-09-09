@@ -22,6 +22,7 @@ export class WorkspaceEntry {
     typename: string = "";
     componentname: string = "";
     displayname: string = "";
+    displaynameResize: boolean = true;
     x: number = 0;
     y: number = 0;
     id: number = 0;
@@ -56,7 +57,7 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
     constructor(path: string) {
         super("wsentryfile", false);
         this.path = path != undefined ? path : "";
-        this.filename = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
+        this.filename = path != undefined ? _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found" : "";
         this.name = this.filename;
         this.width = 220;
         this.height = 180;
@@ -88,7 +89,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         super("wsentryimage", true);
 
         this.path = path != undefined ? path : "";
-        this.filename = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
+        this.filename = path != undefined ? _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found" : "";
         this.name = this.filename;
         this.width = 600;
         this.height = 600;
@@ -110,7 +111,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
     }
 
     getURL(): string {
-        return "file://" + this.path.replaceAll("\\", "/");
+        return "file://" + this.path;
     }
 
     name: string;
@@ -208,7 +209,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         super("wsentryfolder", true);
         this.path = path != undefined ? path : "";
         this.defaultPath = path != undefined ? path : "";
-        this.foldername = path != undefined ? _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found" : "";
+        this.foldername = path != undefined ? _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found" : "";
         this.name = this.foldername;
 
         this.sort = "asc";
@@ -290,7 +291,7 @@ export class FolderWindowFile {
 
     constructor(path: string, isDirectory: boolean, size: number) {
         this.path = path;
-        this.filename = _.last(path.split("\\")) != undefined ? <string>_.last(path.split("\\")) : "not found";
+        this.filename = _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found";
         this.isDirectory = isDirectory;
         this.size = size;
         this.id = Math.floor(Math.random() * 1000000000000);
@@ -309,10 +310,14 @@ export class Workspace extends View {
         super();
         this.name = name;
         this.type = "workspace";
+        this.overview=new Overview();
+        this.overviewOpen=false;
     }
-
-    overview: Overview = new Overview();
+    
+    @Type(() => Overview)
+    overview: Overview;
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.333 }
+    overviewOpen:boolean;
 
     @Type(() => WorkspaceEntry, {
         keepDiscriminatorProperty: true,

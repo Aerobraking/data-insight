@@ -1,13 +1,18 @@
+
+import { Overview } from "@/store/model/OverviewDataModel";
 import { ElementDimensionInstance } from "@/utils/resize";
+import { Exclude, Type } from "class-transformer";
 import * as d3 from "d3";
 import {
+    ForceCenter,
+    ForceLink,
     Simulation,
     SimulationLinkDatum,
     SimulationNodeDatum,
     ZoomTransform,
 } from "d3";
-import { FolderRootNode } from "./FileEngine";
-
+import { FolderNode } from "./FileEngine";
+import { AbstractNode, AbstractOverviewEntry, AbstractLink } from "./OverviewData";
 
 
 /**
@@ -29,135 +34,10 @@ import { FolderRootNode } from "./FileEngine";
  * -    die daten, die müssen speicherbar sein
  * -    der watcher der änderungen beobachtet und die daten anpassen muss, dabei sollten nodes nach und nach
  *      hinzugefügt werden, damit der thread nicht zu lange blockiert wird
- * -    die simulation, die simuliert und evtl. auf änderungen in der daten reagieren muss (watch tiefe)
+ * -    die simulation, die simuliert und evtl. auf Änderungen in der daten reagieren muss (watch tiefe)
  * -    der render, der alle daten haben muss, das ist bisher glaub unproblematisch 
  * 
  */
-
-
-export abstract class AbstractNode<D = undefined> implements SimulationNodeDatum {
-
-    children: Array<AbstractNode<D>> = [];
-    parent: AbstractNode<D> | undefined;
-    depth: number = 0;
-    id?: string | number;
-    hue?: number;
-
-    /**
-     * Node’s zero-based index into nodes array. This property is set during the initialization process of a simulation.
-     */
-    index?: number | undefined;
-    /**
-     * Node’s current x-position
-     */
-    x?: number | undefined;
-    /**
-     * Node’s current y-position
-     */
-    y?: number | undefined;
-    /**
-     * Node’s current x-velocity
-     */
-    vx?: number | undefined;
-    /**
-     * Node’s current y-velocity
-     */
-    vy?: number | undefined;
-    /**
-     * Node’s fixed x-position (if position was fixed)
-     */
-    fx?: number | null | undefined;
-    /**
-     * Node’s fixed y-position (if position was fixed)
-     */
-    fy?: number | null | undefined;
-
-    public getX() {
-        return this.x ? this.x : 0;
-    }
-
-    public getY() {
-        return this.y ? this.y : 0;
-    }
-
-    public getDepth(): number {
-        this.depth = 0;
-        let p: AbstractNode<D> = this;
-        while (p.parent) {
-            this.depth++;
-            p = p.parent;
-        }
-        return this.depth;
-    }
-
-    private collectNodes(node: AbstractNode<D>, a: Array<AbstractNode<D>>): void {
-
-        a.push(node);
-
-        for (let i = 0; i < node.children.length; i++) {
-            let c: AbstractNode<D> = node.children[i];
-            this.collectNodes(c, a);
-        }
-    }
-
-    descendants(): Array<this> {
-        let a: Array<this> = [];
-        this.collectNodes(this, a);
-        return a;
-    }
-
-    parents(): Array<this> {
-        let a: Array<this> = [];
-        let p = this;
-        while (parent) {
-            a.push(p.parent as this);
-            p = p.parent as this;
-        }
-        return a;
-    }
-
-    /**   
-   * Returns an array of links for this node, where each link is an object that defines source and target properties.
-   * The source of each link is the parent node, and the target is a child node.
-   * @returns 
-   */
-    links(): Array<AbstractLink<D>> {
-        let a: Array<AbstractLink<D>> = [];
-        this.collectLinks(this, a);
-        return a;
-    }
-
-    private collectLinks(node: AbstractNode<D>, a: Array<AbstractLink<D>>): void {
-        for (let i = 0; i < node.children.length; i++) {
-            let c: AbstractNode<D> = node.children[i];
-            a.push({ source: node, target: c });
-            this.collectLinks(c, a);
-        }
-    }
-}
-
-/**
- * Defines the Link between two AbstractNode instances. Extend it to use it with your AbstractNode subclass.
- */
-export class AbstractLink<D> implements SimulationLinkDatum<AbstractNode<D>>{
-    constructor(source: AbstractNode<D>, target: AbstractNode<D>) {
-        this.source = source;
-        this.target = target;
-    }
-    source: AbstractNode<D>;
-    target: AbstractNode<D>;
-}
-
-export class AbstractRootNode<D = undefined> {
-
-    constructor(root: AbstractNode<D>) {
-        this.root = root;
-    }
-
-    root: AbstractNode<D>;
-
-}
-
 
 enum BackgroundBehaviour {
     NORMAL,
@@ -176,46 +56,14 @@ export class EngineState {
     backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
 }
 
-export abstract class TreeStructureHandler<N extends AbstractNode, AbstractRootNode> {
-
-    constructor(root: AbstractRootNode) {
-        this.root = root;
-    }
-
-    root: AbstractRootNode;
-
-    /**
-     * Is called to sync the current existing tree structure in our model
-     * with the actual one from our source. That is typically called when 
-     * starting the program. After the sync, the synchronisation is done
-     * through the watching of changed in the source.
-     */
-    abstract syncStructure(): void;
-
-    abstract startWatcher(): void;
-
-    abstract reactToDrop(e: DragEvent): void;
-
-}
-
-
-
 export class OverviewEngine {
 
-    constructor(div: HTMLElement, state: EngineState) {
+    constructor(div: HTMLElement, state: EngineState, overview: Overview) {
 
         var _this = this;
 
+        this.overview = overview;
         this.state = state
-
-        this.simulation = d3
-            .forceSimulation([] as Array<AbstractNode<any>>)
-            .force('link', d3.forceLink())
-            .force('charge', d3.forceManyBody())
-            .force('center', d3.forceCenter())
-            .force('dagRadial', null)
-            .stop();
-
 
         let c = d3
             .select(div)
@@ -273,39 +121,135 @@ export class OverviewEngine {
             }
         });
         this.divObserver.observe(div);
+
+
+        /**
+         * 
+         */
+
+        // Setup node drag interaction
+        // d3.select(this.canvas).call(
+        //     d3.drag()          .subject(() => {
+        //         if (!state.enableNodeDrag) { return null; }
+        //         const obj = getObjUnderPointer();
+        //         return (obj && obj.type === 'Node') ? obj.d : null; // Only drag nodes
+        //       })
+        //       .on('start', ev => {
+        //         const obj = ev.subject;
+        //         obj.__initialDragPos = { x: obj.x, y: obj.y, fx: obj.fx, fy: obj.fy };
+
+        //         // keep engine running at low intensity throughout drag
+        //         if (!ev.active) {
+        //           obj.fx = obj.x; obj.fy = obj.y; // Fix points
+        //         }
+
+        //         // drag cursor
+        //         state.canvas.classList.add('grabbable');
+        //       })
+        //       .on('drag', ev => {
+        //         const obj = ev.subject;
+        //         const initPos = obj.__initialDragPos;
+        //         const dragPos = ev;
+
+        //         const k = d3ZoomTransform(state.canvas).k;
+        //         const translate = {
+        //           x: (initPos.x + (dragPos.x - initPos.x) / k) - obj.x,
+        //           y: (initPos.y + (dragPos.y - initPos.y) / k) - obj.y
+        //         };
+
+        //         // Move fx/fy (and x/y) of nodes based on the scaled drag distance since the drag start
+        //         ['x', 'y'].forEach(c => obj[`f${c}`] = obj[c] = initPos[c] + (dragPos[c] - initPos[c]) / k);
+
+        //         // prevent freeze while dragging
+        //         state.forceGraph
+        //           .d3AlphaTarget(0.3) // keep engine running at low intensity throughout drag
+        //           .resetCountdown();  // prevent freeze while dragging
+
+        //         state.isPointerDragging = true;
+
+        //         obj.__dragged = true;
+        //         state.onNodeDrag(obj, translate);
+        //       })
+        //       .on('end', ev => {
+        //         const obj = ev.subject;
+        //         const initPos = obj.__initialDragPos;
+        //         const translate = {x: obj.x - initPos.x, y:  obj.y - initPos.y};
+
+        //         if (initPos.fx === undefined) { obj.fx = undefined; }
+        //         if (initPos.fy === undefined) { obj.fy = undefined; }
+        //         delete(obj.__initialDragPos);
+
+        //         state.forceGraph
+        //           .d3AlphaTarget(0)   // release engine low intensity
+        //           .resetCountdown();  // let the engine readjust after releasing fixed nodes
+
+        //         // drag cursor
+        //         state.canvas.classList.remove('grabbable');
+
+        //         state.isPointerDragging = false;
+
+        //         if (obj.__dragged) {
+        //           delete(obj.__dragged);
+        //           state.onNodeDragEnd(obj, translate);
+        //         }
+        //       })
+        //   );
+
+        // Setup zoom / pan interaction
+        this.zoom = d3.zoom<HTMLCanvasElement, HTMLCanvasElement>()
+        this.zoom(d3.select(this.canvas));
+        this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
+        this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
+        this.zoom.scaleExtent([0.1, 8]);
+        this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
+            let t = d3.zoomTransform(this.canvas);
+            this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
+        });
+        let t = d3.zoomTransform(this.canvas);
+    }
+
+
+    public graphToScreenCoords(c: MouseEvent | { x: number, y: number }) {
+        const t = d3.zoomTransform(this.canvas);
+        if (c instanceof MouseEvent) {
+            return { x: c.clientX * t.k + t.x, y: c.clientY * t.k + t.y };
+        } else {
+            return { x: c.x * t.k + t.x, y: c.y * t.k + t.y };
+        }
+    }
+
+    public screenToGraphCoords(c: MouseEvent | { x: number, y: number }) {
+        const t = d3.zoomTransform(this.canvas);
+        if (c instanceof MouseEvent) {
+            return { x: (c.clientX - t.x) / t.k, y: (c.clientY - t.y) / t.k };
+        } else {
+            return { x: (c.x - t.x) / t.k, y: (c.y - t.y) / t.k };
+        }
     }
 
     public destroy() {
         this.divObserver.disconnect();
     }
 
+    zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
+    overview: Overview;
     state: EngineState;
     size: ElementDimensionInstance;
     divObserver: ResizeObserver;
-    simulation: Simulation<AbstractNode<any>, AbstractLink<any>>;
     canvas: HTMLCanvasElement;
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
     canvasShadow: HTMLCanvasElement;
     engineActive: boolean = false;
 
-    private _rootNodes: FolderRootNode[] | undefined;
+    private _rootNodes: any[] = [];
 
-    public get rootNodes(): FolderRootNode[] | undefined {
+    public get rootNodes(): any[] {
         return this._rootNodes;
     }
 
-    public set rootNodes(value: FolderRootNode[] | undefined) {
-        console.log("setter rootnode call");
-
+    public set rootNodes(value: any[]) {
         this._rootNodes = value;
-        let nodes = [];
-        if (value) {
-            for (const r of value) {
-                nodes.push(...r.root.descendants());
-            }
-        }
-        this.simulation.nodes(nodes);
     }
 
     transform: ZoomTransform | undefined;
@@ -318,35 +262,41 @@ export class OverviewEngine {
     public tick(): void {
 
         if (this.engineActive) {
-            this.simulation.tick();
+            for (let index = 0; index < this._rootNodes.length; index++) {
+                const element = this._rootNodes[index].tick();
+
+            }
         }
 
-        this.transform = d3.zoomTransform(this.canvas);
-
         // render the shadow canvas
-
 
         // render the canvas
         this.clearCanvas(this.size.w, this.size.h);
         this.drawCanvas();
-        //
-        // state.forceGraph.globalScale(globalScale).tickFrame(); 
+
 
 
         // request next frame
         setTimeout(() => {
-
             requestAnimationFrame(() => this.tick());
-        }, 80);
+        }, 33);
     }
 
 
     private drawCanvas() {
+
+        this.context.save();
+
         this.context.fillStyle = "rgb(100,100,110)";
 
         this.context.clearRect(0, 0, this.size.w, this.size.h);
         this.context.fillRect(0, 0, this.size.w, this.size.h);
         this.context.fillStyle = "rgb(200,200,200)";
+
+        this.transform = d3.zoomTransform(this.canvas);
+        this.context.translate(this.transform.x, this.transform.y);
+        this.context.scale(this.transform.k, this.transform.k);
+
 
         this.context.beginPath();
         this.context.arc(
@@ -362,10 +312,7 @@ export class OverviewEngine {
         if (this.rootNodes && this.transform) {
 
             for (let index = 0; index < this.rootNodes.length; index++) {
-                const root = this.rootNodes[index];
-
-                console.log(root);
-
+                const root: AbstractOverviewEntry = this.rootNodes[index];
 
                 let nodes: AbstractNode[] = root.root.descendants();
 
@@ -386,11 +333,40 @@ export class OverviewEngine {
                     this.context.fill();
 
                 }
+
+                let links: AbstractLink[] = root.root.links();
+                let ctx = this.context;
+
+                for (let i = 0; i < links.length; i++) {
+                    const n = links[i];
+                    let start = n.source;
+                    let end = n.target;
+
+                    ctx.beginPath();
+                    ctx.lineWidth = 1.1;
+
+                    ctx.moveTo(start.getX(), start.getY());
+                    let midY = (start.getY() + end.getY()) / 2;
+                    let midX = (start.getX() + end.getX()) / 2;
+                    ctx.bezierCurveTo(
+                        midX,
+                        start.getY(),
+                        midX,
+                        end.getY(),
+                        end.getX(),
+                        end.getY()
+                    );
+                    ctx.stroke();
+
+                }
             }
 
 
 
         }
+
+        this.context.restore();
+
     }
 
 

@@ -58,8 +58,9 @@
     </panZoom>
 
     <OverviewView
-      class="overview overview-hover"
-      @dblclick.capture="openOverview"
+      class="overview"
+      :class="{ 'ov-open': model.overviewOpen }"
+      @dblclick.capture.stop="openOverview"
       :model="model"
     />
 
@@ -117,6 +118,12 @@
         :disabled="selectedEntriesCount != 1"
       >
         <FormTextbox />
+      </button>
+      <button
+        @click="toggleNameResizing()"
+        :disabled="selectedEntriesCount != 1"
+      >
+        <FormatSize />
       </button>
       <button :disabled="selectedEntriesCount == 0">
         <delete-empty-outline @click="deleteSelection" />
@@ -184,11 +191,13 @@ import {
   DeleteEmptyOutline,
   BorderAll,
   ResizeBottomRight,
+  FormatSize,
 } from "mdue";
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    FormatSize,
     ResizeBottomRight,
     BorderAll,
     Group,
@@ -342,14 +351,16 @@ export default defineComponent({
     },
     openOverview(e: MouseEvent): void {
       let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
-      div.classList.toggle("open");
-      if (div.classList.contains("open")) {
-        div.classList.remove("overview-hover");
+      this.model.overviewOpen = !this.model.overviewOpen;
+
+      if (this.model.overviewOpen) {
+        div.classList.toggle("overview-hover", false);
       } else {
         setTimeout(() => {
-          div.classList.add("overview-hover");
-        }, 500);
+          div.classList.toggle("overview-hover", true);
+        }, 1500);
       }
+      e.preventDefault();
     },
     searchUpdate(): void {
       let models = this.model.entries;
@@ -516,17 +527,22 @@ export default defineComponent({
         }
       }
 
-      switch (e.key) {
-        case " ":
-          if (e.repeat) {
-            return;
-          }
-          this.getEntries().forEach((e) => {
-            e.classList.toggle("prevent-input", true);
-          });
-          this.spacePressed = true;
-          this.showAll();
-          break;
+      if (!e.altKey && !e.ctrlKey) {
+        switch (e.key) {
+          case "s":
+            this.openOverview(new MouseEvent("down"));
+            break;
+          case " ":
+            if (e.repeat) {
+              return;
+            }
+            this.getEntries().forEach((e) => {
+              e.classList.toggle("prevent-input", true);
+            });
+            this.spacePressed = true;
+            this.showAll();
+            break;
+        }
       }
     },
     keyup(e: KeyboardEvent) {
@@ -808,7 +824,7 @@ export default defineComponent({
           })
         );
 
-        this.entriesSelected(entriesInside, "single");
+        this.entriesSelected(entriesInside, "single", false);
 
         selectionRectangle.style.visibility = "hidden";
       }
@@ -864,20 +880,22 @@ export default defineComponent({
 
       e.dataTransfer.files.forEach((f: any) => {
         const fileStat = fs.lstatSync(f.path);
+        const p = path.normalize(f.path).replace(/\\/g, "/");
+
         if (fileStat.isDirectory()) {
-          listFiles.push(new WorkspaceEntryFolderWindow(f.path));
+          listFiles.push(new WorkspaceEntryFolderWindow(p));
         } else {
           if (
             f.path.endsWith("jpg") ||
             f.path.endsWith("jpeg") ||
             f.path.endsWith("png")
           ) {
-            listFiles.push(new WorkspaceEntryImage(f.path));
+            listFiles.push(new WorkspaceEntryImage(p));
           } else if (f.path.endsWith("ins")) {
             // @ts-ignore: Unreachable code error
-            this.loadInsightFileFromPath(f.path);
+            this.loadInsightFileFromPath(p);
           } else {
-            listFiles.push(new WorkspaceEntryFile(f.path));
+            listFiles.push(new WorkspaceEntryFile(p));
           }
         }
       });
@@ -936,9 +954,6 @@ export default defineComponent({
       mY *= this.panZoomInstance.getTransform().scale;
 
       mY *= -1;
-
-      // this.panZoomInstance.smoothMoveTo(mX, mY);
-      //   this.panZoomInstance.smoothZoomAbs(-mX, -mY, 1);
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
@@ -1074,7 +1089,11 @@ export default defineComponent({
     entrySelected(entry: any, type: "add" | "single" | "flip") {
       this.entriesSelected([entry], type);
     },
-    entriesSelected(entries: HTMLElement[], type: "add" | "single" | "flip") {
+    entriesSelected(
+      entries: HTMLElement[],
+      type: "add" | "single" | "flip",
+      activateDrag: boolean = true
+    ) {
       /**
        * Do not select entries that do not fit to the search
        */
@@ -1116,7 +1135,7 @@ export default defineComponent({
 
       this.updateSelectionWrapper();
 
-      if (this.selectedEntriesCount > 0) {
+      if (this.selectedEntriesCount > 0 && activateDrag) {
         this.startSelectionDrag(this.mousePositionLastRaw);
       }
     },
@@ -1141,6 +1160,23 @@ export default defineComponent({
         input.select();
         this.moveToEntry({ zoom: true, entry: entry });
       }
+    },
+    toggleNameResizing(entry: HTMLElement | undefined = undefined) {
+      entry = entry ? entry : this.getSelectedEntries()[0];
+
+      let input: HTMLInputElement = entry.getElementsByClassName(
+        "wsentry-displayname"
+      )[0] as HTMLInputElement;
+
+      let model = this.getModelEntryFromView(entry);
+      model.displaynameResize = !model.displaynameResize;
+
+      setTimeout(() => {
+        this.updateFixedZoomElements();
+        if (!model.displaynameResize) {
+          input.style.transform = "scale(" + 1 + ", " + 1 + ")";
+        }
+      }, 10);
     },
     deleteSelection() {
       if (this.getSelectedEntries().length == 0) {
@@ -1191,19 +1227,15 @@ export default defineComponent({
       return { x: x, y: y };
     },
     clearSelection: function () {
-      // if (this.isSelectionEvent) {
-      //   this.isSelectionEvent = false;
-      //   return;
-      // }
-      this.entriesSelected([], "single");
+      this.entriesSelected([], "single", false);
     },
     selectAll: function () {
       let e: HTMLElement[] = this.getEntries();
       let s: HTMLElement[] = this.getSelectedEntries();
       if (e.length != s.length) {
-        this.entriesSelected(e, "add");
+        this.entriesSelected(e, "add", false);
       } else {
-        this.entriesSelected(e, "flip");
+        this.entriesSelected(e, "flip", false);
       }
     },
     getNodes() {
@@ -1242,9 +1274,10 @@ export default defineComponent({
         this.$el.querySelectorAll(".ws-entry:not(.workspace-is-selected)")
       ) as HTMLElement[];
     },
-    getModelEntriesFromView: function (
-      listViews: HTMLElement[]
-    ): WorkspaceEntry[] {
+    getModelEntryFromView(view: HTMLElement): WorkspaceEntry {
+      return this.getModelEntriesFromView([view])[0];
+    },
+    getModelEntriesFromView(listViews: HTMLElement[]): WorkspaceEntry[] {
       let list: WorkspaceEntry[] = [];
 
       for (let index = 0; index < listViews.length; index++) {
@@ -1355,11 +1388,19 @@ export default defineComponent({
       }
     },
     onZoom(e: any) {
+      this.updateFixedZoomElements();
+      this.onPanStart(e);
+
+      WSUtils.Events.zoom(this);
+    },
+    updateFixedZoomElements() {
       let zoomFixed: HTMLElement[] = Array.from(
         this.$el.querySelectorAll(".ws-zoom-fixed")
       ) as HTMLElement[];
 
       let t = this.getCurrentTransform();
+
+      console.log(zoomFixed.length);
 
       for (let index = 0; index < zoomFixed.length; index++) {
         const element: HTMLElement = zoomFixed[index];
@@ -1367,10 +1408,6 @@ export default defineComponent({
         s = s < 1 ? 1 : s > 16 ? 16 : s;
         element.style.transform = "scale(" + s + "," + s + ")";
       }
-
-      this.onPanStart(e);
-
-      WSUtils.Events.zoom(this);
     },
 
     preventInput(prevent: boolean): void {
@@ -1470,24 +1507,26 @@ svg {
   position: absolute;
   right: 0px;
   top: 0px;
-  margin: 50px;
+  margin: 35px;
+  margin-right: 7px;
   height: 100px;
   width: 100px;
-  background: #222;
   transition: all 0.6s;
   transition-timing-function: cubic-bezier(0.58, -0.315, 0.285, 1.65);
   overflow: hidden;
   z-index: 8000;
 }
+
 .overview-hover {
   &:hover {
-    height: 180px;
-    width: 180px;
-    margin: 40px;
+    height: 140px;
+    width: 140px;
+    margin: 35px;
+    margin-right: 7px;
   }
 }
 
-.open {
+.ov-open {
   right: 0px;
   top: 0px;
   margin: 0px;
@@ -1698,7 +1737,7 @@ visually highlights elements for selection with a hover effect
   }
 
   canvas {
-    pointer-events: none;
+    // pointer-events: none;
     position: absolute;
     left: 0;
     top: 0;

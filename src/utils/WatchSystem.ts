@@ -1,6 +1,7 @@
 import { FSWatcher } from "chokidar";
 
 const chokidar = require("chokidar");
+import fs from "fs";
 const pathSys = require("path");
 interface Hash {
     [details: string]: { (): void; }[];
@@ -62,7 +63,7 @@ export class Watcher {
     static get instance() {
         return this._instance;
     }
-   
+
     registerPath(path: string, callback: () => void) {
 
         let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
@@ -70,7 +71,12 @@ export class Watcher {
 
         if (listCallbacks == undefined) {
             listCallbacks = [];
-            this.watcher.add(path);
+            try {
+                fs.accessSync(path, fs.constants.R_OK);
+                this.watcher.add(path);
+            } catch (err) {
+                console.error("no access!");
+            }
             this.hash.set(path, listCallbacks);
         }
 
@@ -81,7 +87,7 @@ export class Watcher {
 
     unregisterPath(path: string, callback: () => void) {
 
-       
+
         let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
 
         if (listCallbacks != undefined) {

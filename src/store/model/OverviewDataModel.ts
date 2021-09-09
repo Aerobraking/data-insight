@@ -2,19 +2,30 @@ import { GraphData, NodeObject, LinkObject } from "force-graph";
 
 import { View } from "./DataModel";
 import * as _ from "underscore";
-import { randomNormal } from "d3";
-import { FolderRootNode } from "@/components/workspace/overview/FileEngine";
+import { FolderOverviewEntry } from "@/components/workspace/overview/FileEngine";
+import { AbstractOverviewEntry } from "@/components/workspace/overview/OverviewData";
+import { Type } from "class-transformer";
 
 export class Overview {
 
     constructor() {
+        this.id = Math.floor(Math.random() * 1000000000000);
     }
 
-    initialZoom: number = 1;
-    initialX: number = 1;
-    initialY: number = 1;
+    id: number;
+    viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.333 }
 
-    RootNodes: FolderRootNode[] = [];
+
+    @Type(() => AbstractOverviewEntry, {
+        keepDiscriminatorProperty: true,
+        discriminator: {
+            property: 'nodetype',
+            subTypes: [
+                { value: FolderOverviewEntry, name: 'folder' }
+            ],
+        },
+    })    
+    rootNodes: FolderOverviewEntry[] = [];
 }
 
 enum BackgroundBehaviour {

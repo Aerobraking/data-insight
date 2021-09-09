@@ -1,5 +1,7 @@
 <template>
-  <Tabs />
+  <Tabs
+  
+   />
 </template>
 
 <script lang="ts">
@@ -35,7 +37,7 @@ export default defineComponent({
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
-        c.loadInsightFileFromPath(file); 
+        c.loadInsightFileFromPath(file);
       }
     );
   },
@@ -47,8 +49,9 @@ export default defineComponent({
   },
   methods: {
     loadInsightFileFromPath(path: string) {
-      let jsonRead = fs.readFileSync(path, "utf8");
-      let test: InsightFile = deserialize(InsightFile, jsonRead);
+      let jsonString = fs.readFileSync(path, "utf8");
+
+      let test: InsightFile = deserialize(InsightFile, jsonString);
       this.loadInsightFile(test);
     },
     loadInsightFile(file: InsightFile) {
@@ -73,13 +76,17 @@ export default defineComponent({
     saveFile() {
       WSUtils.Events.prepareFileSaving();
 
-      let json = serialize(this.$store.state.loadedFile);
+      let jsonString = serialize(this.$store.state.loadedFile);
 
-      ipcRenderer.send("save-insight-file", json);
+      ipcRenderer.send("save-insight-file", jsonString);
     },
     keyPressed(e: KeyboardEvent) {
       if (e.ctrlKey) {
-        switch (e.key) { 
+        switch (e.key) {
+          case "t":
+            this.$store.commit(MutationTypes.CREATE_WORKSPACE);
+            e.preventDefault();
+            break;
           case "Tab":
             let listSize = this.$store.getters.getViewList.length;
             if (listSize == 0) return;
@@ -115,14 +122,6 @@ export default defineComponent({
               );
             }
             break;
-          case "o":
-            // ipcRenderer.send("open-insight-file");
-            break;
-
-          case "s":
-            // this.saveFile();
-
-            break;
         }
       } else {
         switch (e.key) {
@@ -138,16 +137,6 @@ export default defineComponent({
           case "7":
           case "8":
           case "9":
-            // let i: number = +e.key;
-            // i--;
-            // if (i < this.$store.state.loadedFile.views.length) {
-
-            //   this.$store.getters.getViewList.forEach(
-            //     (entry: View, index: Number) => {
-            //       entry.isActive = index === i;
-            //     }
-            //   );
-            // }
             break;
         }
       }
@@ -177,7 +166,7 @@ body {
   height: 100%;
   width: 100%;
   position: absolute;
-  overflow:hidden;
+  overflow: hidden;
 }
 
 .vue-pan-zoom-scene {

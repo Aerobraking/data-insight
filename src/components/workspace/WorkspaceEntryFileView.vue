@@ -60,7 +60,7 @@ export default defineComponent({
   },
   inject: [
     "entrySelected", "entrySelected",
-    "startDrag", "startDrag ",
+ //   "startDrag", "startDrag ",
     ],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip", event: MouseEvent) {
@@ -68,7 +68,7 @@ export default defineComponent({
       this.entrySelected(this.$el, type);
       if (type == "single") {
         // @ts-ignore: Unreachable code error
-        this.startDrag(event);
+     //   this.startDrag(event);
       }
     },
 

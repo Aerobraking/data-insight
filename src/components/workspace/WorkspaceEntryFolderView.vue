@@ -13,7 +13,8 @@
       @keyup.stop
       type="text"
       v-model="entry.displayname"
-      class="wsentry-displayname ws-zoom-fixed"
+      class="wsentry-displayname"
+      :class="{ 'ws-zoom-fixed': entry.displaynameResize }"
       placeholder=""
     />
     <div
@@ -92,7 +93,7 @@
 const { shell } = require("electron"); // deconstructing assignment
 import SelectionArea from "@viselect/vanilla";
 import * as watcher from "./../../utils/WatchSystem";
-const fs = require("fs");
+import fs from "fs";
 const path = require("path");
 import wsfolderfile from "./FolderFileView.vue";
 import { defineComponent } from "vue";
@@ -240,60 +241,33 @@ export default defineComponent({
 
       const dir = this.entry.path;
 
-      // readFiles(
-      //   dir,
-      //   (filepath: string, name: string, ext: string, stat: any) => {
-      //     console.log("add file");
-
-      //     this.list.push(
-      //       new FolderWindowFile(
-      //         filepath,
-      //         stat.isDirectory(),
-      //         stat.isFile ? stat.size : 0
-      //       )
-      //     );
-      //   }
-      // );
-
-      // try {
-      //   processLargeArrayAsync(
-      //     fs.readdirSync(this.entry.path),
-      //     (context: any, item: any, index: number, array: any[]) => {
-      //       const filePath = path.join(dir, item);
-      //       const fileStat = fs.lstatSync(filePath);
-      //       console.log(filePath);
-
-      //       this.list.push(
-      //         new FolderWindowFile(
-      //           filePath,
-      //           fileStat.isDirectory(),
-      //           fileStat.isFile ? fileStat.size : 0
-      //         )
-      //       );
-      //     }
-      //   );
-      // } catch (err) {
-      //   console.error(err);
-      // }
-
       try {
+        fs.accessSync(this.entry.path, fs.constants.R_OK);
+
         if (fs.existsSync(this.entry.path)) {
           fs.readdirSync(this.entry.path).forEach((file: any) => {
-            const filePath = path.join(dir, file);
-            const fileStat = fs.lstatSync(filePath);
-            this.list.push(
-              new FolderWindowFile(
-                filePath,
-                fileStat.isDirectory(),
-                fileStat.isFile ? fileStat.size : 0
-              )
-            );
+            let filePath = path.join(dir, file);
+            filePath = path.normalize(filePath).replace(/\\/g, "/");
+
+            try {
+              fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
+
+              const fileStat = fs.lstatSync(filePath);
+              this.list.push(
+                new FolderWindowFile(
+                  filePath,
+                  fileStat.isDirectory(),
+                  fileStat.isFile() ? fileStat.size : 0
+                )
+              );
+            } catch (err) {
+              console.error("no access! " + filePath);
+            }
           });
         }
       } catch (err) {
-        console.error(err);
+        console.error("no access! " + this.entry.path);
       }
-      //  this.entry.fileList = this.list;
     },
     selectEntry(select: "add" | "rem" | "flip") {
       switch (select) {
@@ -312,7 +286,7 @@ export default defineComponent({
     folderBack() {
       if (this.entry != undefined) {
         this.entry.path = path.dirname(this.entry.path);
-        let l = this.entry.path.split("\\");
+        let l = this.entry.path.split("/");
         this.parentDir = l[l.length - 1];
       }
     },
@@ -325,7 +299,7 @@ export default defineComponent({
         } else {
           this.entry.path = <string>folder;
         }
-        let l = this.entry.path.split("\\");
+        let l = this.entry.path.split("/");
         this.parentDir = l[l.length - 1];
       }
     },
@@ -358,8 +332,6 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
- 
-
 .container {
   user-select: none;
   pointer-events: all;
@@ -456,8 +428,6 @@ $tile-size: 150px;
 }
 
 .workspace-is-selected {
-  
-
   // .selectable-highlight {
   //   background-color: #f81fc2;
   // }

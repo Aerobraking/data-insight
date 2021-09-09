@@ -105,7 +105,9 @@ export const mutations: MutationTree<State> & Mutations = {
   }) {
 
     setTimeout(function () {
-      state.loadedFile = new InsightFile();
+      let empty = new InsightFile();
+      empty.views=[];
+      state.loadedFile = empty;
       setTimeout(function () {
         state.loadedFile = payload.insightFile;
       }, 20);
