@@ -1,20 +1,13 @@
 <template>
   <div
     ref="el"
-        @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
     class="ws-entry-frame-wrapper select-element"
   >
-    <input
-      @keydown.stop
-      @keyup.stop
-      type="text"
-      v-model="entry.displayname"
-      class="wsentry-displayname ws-zoom-fixed"
-      placeholder=""
-    />
+    <wsentrydisplayname :entry="entry" />
   </div>
 </template>
 
@@ -26,7 +19,7 @@ import { WorkspaceEntryFrame } from "../../store/model/Workspace";
 import * as WSUtils from "./WorkspaceUtils";
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 import * as _ from "underscore";
-import { ElementDimension } from "@/utils/resize";
+import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 
 _.once(() => {
   WSUtils.Events.registerCallback({
@@ -65,6 +58,9 @@ _.once(() => {
 
 export default defineComponent({
   name: "wsentryframe",
+  components: {
+    wsentrydisplayname,
+  },
   setup(props) {
     return setupEntry(props, {
       dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {},

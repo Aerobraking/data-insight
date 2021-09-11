@@ -8,15 +8,8 @@
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
   >
-    <input
-      @keydown.stop
-      @keyup.stop
-      type="text"
-      v-model="entry.displayname"
-      class="wsentry-displayname"
-      :class="{ 'ws-zoom-fixed': entry.displaynameResize }"
-      placeholder=""
-    />
+  <wsentrydisplayname :entry="entry"/>
+   
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
@@ -96,6 +89,7 @@ import * as watcher from "./../../utils/WatchSystem";
 import fs from "fs";
 const path = require("path");
 import wsfolderfile from "./FolderFileView.vue";
+import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import { defineComponent } from "vue";
 import {
   FolderWindowFile,
@@ -164,6 +158,7 @@ export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
     wsfolderfile,
+    wsentrydisplayname
   },
   data(): {
     showTiles: boolean;

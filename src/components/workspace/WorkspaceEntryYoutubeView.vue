@@ -8,14 +8,8 @@
     v-on:dblclick="doubleClick"
     class="ws-entry-youtube-wrapper"
   >
-    <input
-      @keydown.stop
-      @keyup.stop
-      type="text"
-      v-model="entry.displayname"
-      class="wsentry-displayname ws-zoom-fixed"
-      placeholder=""
-    />
+ 
+    <wsentrydisplayname :entry="entry" />
 
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -52,10 +46,14 @@ function htmlToElement(html: string) {
 import { defineComponent } from "vue";
 import { WorkspaceEntryYoutube } from "../../store/model/Workspace";
 import { setupEntry } from "./WorkspaceUtils";
+import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {
     return {};
+  },
+  components: { 
+    wsentrydisplayname,
   },
   setup(props) {
     return setupEntry(props);

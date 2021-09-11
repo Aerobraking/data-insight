@@ -1,13 +1,7 @@
 <template>
   <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-textarea-wrapper">
-    <input
-      @keydown.stop
-      @keyup.stop
-      type="text"
-      v-model="entry.displayname"
-      class="wsentry-displayname ws-zoom-fixed"
-      placeholder=""
-    />
+  
+    <wsentrydisplayname :entry="entry" />
 
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -64,14 +58,16 @@ import Editor from "@tinymce/tinymce-vue";
 import { defineComponent } from "vue";
 import { WorkspaceEntryTextArea } from "../../store/model/Workspace";
 import { setupEntry } from "./WorkspaceUtils";
+import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 export default defineComponent({
   name: "wsentrytextarea",
   components: {
     editor: Editor,
+    wsentrydisplayname,
   },
   data() {
     return {};
-  },
+  },  
   setup(props) {
     return setupEntry(props);
   },

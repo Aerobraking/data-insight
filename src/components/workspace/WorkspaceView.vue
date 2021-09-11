@@ -1,9 +1,6 @@
 
 <template>
   <div
-    @mouseup="mouseup"
-    @mousedown="mousedown"
-    @mousemove.capture="mousemove"
     @click.stop
     @dragover="dragover"
     @dragleave="dragleave"
@@ -108,7 +105,6 @@
 
     <div
       @mousedown.stop
-      @mouseup.stop
       class="workspace-menu-bar"
       :class="{ 'workspace-menu-bar-hide': !getShowUI }"
     >
@@ -183,7 +179,7 @@ import AbstractPlugin from "./Plugins/AbstractPlugin";
 import { OverviewEngine } from "./overview/OverviewEngine";
 const fs = require("fs");
 const path = require("path");
-
+let clipboard: EntryCollection;
 let points: { x: number; y: number; z: number }[] = [];
 
 for (let index = 0; index < 100; index++) {
@@ -212,6 +208,8 @@ import {
   FileOutline,
   EmoticonHappyOutline,
 } from "mdue";
+import { ImageCache } from "@/utils/ImageCache";
+import WorkspaceEntryTextareaViewVue from "./WorkspaceEntryTextareaView.vue";
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
@@ -263,7 +261,6 @@ export default defineComponent({
     highlightSelection: boolean;
     divObserver: any;
     selectedEntriesCount: number;
-    clipboard: EntryCollection;
   } {
     return {
       highlightSelection: true,
@@ -285,7 +282,6 @@ export default defineComponent({
       spacePressed: false,
       divObserver: null,
       selectedEntriesCount: 0,
-      clipboard: new EntryCollection(),
     };
   },
   watch: {
@@ -294,8 +290,17 @@ export default defineComponent({
     },
   },
   mounted() {
-    window.addEventListener("keyup", this.keyup, false);
+    window.addEventListener("paste", (event: any) => {
+      this.onPaste(event);
+    });
+
+    window.addEventListener("mousedown", this.mousedown, false);
+    window.addEventListener("mousemove", this.mousemove, false);
+    window.addEventListener("mouseup", this.mouseup, false);
+
     window.addEventListener("keydown", this.keydown, false);
+    window.addEventListener("keyup", this.keyup, false);
+
     /**
      * Listen for resizing of the canvas parent element
      */
@@ -511,20 +516,34 @@ export default defineComponent({
       let text = e.clipboardData?.getData("text");
 
       var mousePos = this.mousePositionLast;
+      if (text != undefined) {
+        if (text.includes("youtube.com")) {
+          let listFiles: Array<WorkspaceEntry> = [];
+          let payload = {
+            model: <Workspace>this.model,
+            listFiles,
+          };
+          listFiles.push(new WorkspaceEntryYoutube(text));
 
-      if (text != undefined && text.includes("youtube.com")) {
-        let listFiles: Array<WorkspaceEntry> = [];
-        let payload = {
-          model: <Workspace>this.model,
-          listFiles,
-        };
-        listFiles.push(new WorkspaceEntryYoutube(text));
+          var mousePos = this.mousePositionLast;
+          listFiles[0].x = mousePos.x;
+          listFiles[0].y = mousePos.y;
 
-        var mousePos = this.mousePositionLast;
-        listFiles[0].x = mousePos.x;
-        listFiles[0].y = mousePos.y;
+          this.$store.commit(MutationTypes.ADD_FILES, payload);
+        } else {
+          let listFiles: Array<WorkspaceEntry> = [];
+          let payload = {
+            model: <Workspace>this.model,
+            listFiles,
+          };
+          listFiles.push(new WorkspaceEntryTextArea(text));
 
-        this.$store.commit(MutationTypes.ADD_FILES, payload);
+          var mousePos = this.mousePositionLast;
+          listFiles[0].x = mousePos.x;
+          listFiles[0].y = mousePos.y;
+
+          this.$store.commit(MutationTypes.ADD_FILES, payload);
+        }
       }
     },
     keydown(e: KeyboardEvent) {
@@ -536,6 +555,13 @@ export default defineComponent({
         this.cancelPlugin();
       }
 
+      if (
+        !this.model.isActive ||
+        (this.activePlugin && this.activePlugin.keydown(e))
+      ) {
+        return;
+      }
+
       console.log(
         "window listener: workspace " +
           this.model.name +
@@ -544,10 +570,6 @@ export default defineComponent({
           " isActive: " +
           this.model.isActive
       );
-
-      if (this.activePlugin && this.activePlugin.keydown(e)) {
-        return;
-      }
 
       if (e.ctrlKey && !e.repeat) {
         switch (e.key) {
@@ -558,20 +580,21 @@ export default defineComponent({
             this.setFocusOnNameInput();
             break;
           case "c":
-            this.clipboard = new EntryCollection();
-            this.clipboard.entries.push(
-              ...this.getModelEntriesFromView(this.getSelectedEntries())
-            );
-            console.log("copy");
+            if (this.getSelectedEntries().length > 0) {
+              WSUtils.Events.prepareFileSaving();
 
+              clipboard = new EntryCollection();
+              clipboard.entries.push(
+                ...this.getModelEntriesFromView(this.getSelectedEntries())
+              );
+              console.log("copy");
+            }
             break;
           case "v":
             console.log("paste");
 
-            if (this.clipboard.entries.length > 0) {
-              WSUtils.Events.prepareFileSaving();
-
-              let jsonString = serialize(this.clipboard);
+            if (clipboard && clipboard.entries.length > 0) {
+              let jsonString = serialize(clipboard);
 
               let pastedEntries: EntryCollection = deserialize(
                 EntryCollection,
@@ -598,6 +621,9 @@ export default defineComponent({
                 listFiles: pastedEntries.entries,
               };
               this.$store.commit(MutationTypes.ADD_FILES, payload);
+
+              e.preventDefault();
+              e.stopPropagation();
             }
         }
 
@@ -682,7 +708,10 @@ export default defineComponent({
       }
     },
     keyup(e: KeyboardEvent) {
-      if (this.activePlugin && this.activePlugin.keyup(e)) {
+      if (
+        !this.model.isActive ||
+        (this.activePlugin && this.activePlugin.keyup(e))
+      ) {
         return;
       }
 
@@ -787,7 +816,10 @@ export default defineComponent({
       this.preventInput(true);
     },
     mousedown: function (e: MouseEvent) {
-      if (this.activePlugin && this.activePlugin.mousedown(e)) {
+      if (
+        !this.model.isActive ||
+        (this.activePlugin && this.activePlugin.mousedown(e))
+      ) {
         return;
       }
 
@@ -833,7 +865,10 @@ export default defineComponent({
       }
     },
     mousemoveThrottle: _.throttle((e: MouseEvent, comp: any) => {
-      if (comp.activePlugin && comp.activePlugin.mousemove(e)) {
+      if (
+        !comp.model.isActive ||
+        (comp.activePlugin && comp.activePlugin.mousemove(e))
+      ) {
         return;
       }
 
@@ -869,9 +904,13 @@ export default defineComponent({
       this.mousemoveThrottle(e, this);
     },
     mouseup: function (e: MouseEvent) {
-      if (this.activePlugin && this.activePlugin.mouseup(e)) {
+      if (
+        !this.model.isActive ||
+        (this.activePlugin && this.activePlugin.mouseup(e))
+      ) {
         return;
       }
+
       let selectionRectangle: any = this.getSelectionRectangle();
 
       if (this.selectionDragActive) {
@@ -929,51 +968,65 @@ export default defineComponent({
       if (this.activePlugin && this.activePlugin.dragover(e)) {
         return;
       }
+
+      this.$el
+        .getElementsByClassName("svg-download")[0]
+        .classList.toggle("pulsating", true);
+
       e.preventDefault();
-      // Add some visual fluff to show the user can drop its files
-      // if (!e.currentTarget.classList.contains("bg-green-300")) {
-      //   e.currentTarget.classList.remove("bg-gray-100");
-      //   e.currentTarget.classList.add("bg-green-300");
-      // }
     },
     dragleave(e: any) {
       if (this.activePlugin && this.activePlugin.dragleave(e)) {
         return;
       }
-      // Clean up
-      // e.currentTarget.classList.add("bg-gray-100");
-      // e.currentTarget.classList.remove("bg-green-300");
+      this.$el
+        .getElementsByClassName("svg-download")[0]
+        .classList.toggle("pulsating", false);
     },
-    drop(e: any) {
+    drop(e: DragEvent) {
       if (this.activePlugin && this.activePlugin.drop(e)) {
         return;
       }
+      this.$el
+        .getElementsByClassName("svg-download")[0]
+        .classList.toggle("pulsating", false);
       e.preventDefault();
-      console.log(e.dataTransfer.files);
-
       let listFiles: Array<WorkspaceEntry> = [];
 
-      e.dataTransfer.files.forEach((f: any) => {
-        const fileStat = fs.lstatSync(f.path);
-        const p = path.normalize(f.path).replace(/\\/g, "/");
+      if (e.dataTransfer) {
+        console.log(e.dataTransfer.types);
 
-        if (fileStat.isDirectory()) {
-          listFiles.push(new WorkspaceEntryFolderWindow(p));
-        } else {
-          if (
-            f.path.endsWith("jpg") ||
-            f.path.endsWith("jpeg") ||
-            f.path.endsWith("png")
-          ) {
-            listFiles.push(new WorkspaceEntryImage(p));
-          } else if (f.path.endsWith("ins")) {
-            // @ts-ignore: Unreachable code error
-            this.loadInsightFileFromPath(p);
-          } else {
-            listFiles.push(new WorkspaceEntryFile(p));
+        if (e.dataTransfer.types.includes("text/plain")) {
+          let t = new WorkspaceEntryTextArea();
+          t.text = e.dataTransfer.getData("text");
+          listFiles.push(t);
+        } else if (e.dataTransfer.types.includes("files")) {
+          for (let index = 0; index < e.dataTransfer.files.length; index++) {
+            const f = e.dataTransfer.files[index];
+
+            const fileStat = fs.lstatSync(f.path);
+            const p = path.normalize(f.path).replace(/\\/g, "/");
+
+            if (fileStat.isDirectory()) {
+              listFiles.push(new WorkspaceEntryFolderWindow(p));
+            } else {
+              if (
+                f.path.endsWith("jpg") ||
+                f.path.endsWith("jpeg") ||
+                f.path.endsWith("gif") ||
+                f.path.endsWith("png")
+              ) {
+                listFiles.push(new WorkspaceEntryImage(p));
+              } else if (f.path.endsWith("ins")) {
+                // @ts-ignore: Unreachable code error
+                this.loadInsightFileFromPath(p);
+              } else {
+                listFiles.push(new WorkspaceEntryFile(p));
+              }
+            }
           }
         }
-      });
+      }
 
       // get drop position
       var rect = this.$el.getBoundingClientRect();
@@ -1018,17 +1071,6 @@ export default defineComponent({
           indexH = 0;
         }
       }
-
-      let mX = x + offsetWMax / 2;
-      mX -= window.innerWidth / this.panZoomInstance.getTransform().scale / 2;
-      mX *= this.panZoomInstance.getTransform().scale;
-      mX *= -1;
-
-      let mY = y + offsetHMax / 2;
-      mY -= window.innerHeight / this.panZoomInstance.getTransform().scale / 2;
-      mY *= this.panZoomInstance.getTransform().scale;
-
-      mY *= -1;
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
     },
@@ -1633,6 +1675,24 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   svg {
     font-size: 120px;
   }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.3);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  .pulsating {
+    animation-iteration-count: infinite;
+    animation-name: pulse;
+    animation-duration: 1s;
+    animation-fill-mode: both;
+  }
 }
 
 svg {
@@ -1668,6 +1728,7 @@ svg {
     width: 140px;
     margin: 35px;
     margin-right: 7px;
+    cursor: pointer;
   }
 }
 

@@ -172,6 +172,7 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
         super("wsentrytextarea", true);
         this.width = 400;
         this.height = 450;
+        this.text=text;
     }
 
     public searchResultString(): string {

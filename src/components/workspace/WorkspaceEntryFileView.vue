@@ -1,6 +1,6 @@
 <template>
   <div
-      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip', $event)"
     @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"
     ref="el"
@@ -9,30 +9,29 @@
       transform: 'translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
     }"
   >
-    <input
-      @keydown.stop
-      @keyup.stop
-      type="text"
-      v-model="entry.displayname"
-      class="wsentry-displayname ws-zoom-fixed"
-      placeholder=""
-    />
+    <wsentrydisplayname :entry="entry" />
+
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>
   </div>
 </template>
 
-<script lang="ts"> 
+<script lang="ts">
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
 import { WorkspaceEntryFile } from "../../store/model/Workspace";
 import { setupEntry } from "./WorkspaceUtils";
 import * as icons from "./../../utils/IconHandler";
+import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+
 export default defineComponent({
   name: "wsentryfile",
   data() {
     return {};
+  },
+  components: {
+    wsentrydisplayname,
   },
   setup(props) {
     return setupEntry(props);
@@ -53,22 +52,22 @@ export default defineComponent({
 
       img.src = url;
 
-      c.getElementsByClassName(
-        "file-symbol"
-      )[0].style.backgroundImage = "url('" + img.src + "')";
+      c.getElementsByClassName("file-symbol")[0].style.backgroundImage =
+        "url('" + img.src + "')";
     });
   },
   inject: [
-    "entrySelected", "entrySelected",
- //   "startDrag", "startDrag ",
-    ],
+    "entrySelected",
+    "entrySelected",
+    //   "startDrag", "startDrag ",
+  ],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip", event: MouseEvent) {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
       if (type == "single") {
         // @ts-ignore: Unreachable code error
-     //   this.startDrag(event);
+        //   this.startDrag(event);
       }
     },
 

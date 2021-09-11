@@ -1,13 +1,7 @@
 <template>
   <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-image-wrapper">
-    <input
-      @keydown.stop
-      @keyup.stop
-      type="text"
-      v-model="entry.displayname"
-      class="wsentry-displayname ws-zoom-fixed"
-      placeholder=""
-    />
+   
+    <wsentrydisplayname :entry="entry" />
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
@@ -25,10 +19,14 @@ import * as cache from "./../../utils/ImageCache";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../../store/model/Workspace";
 import { setupEntry } from "./WorkspaceUtils";
+import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 export default defineComponent({
   name: "wsentryimage",
   data() {
     return {};
+  },
+   components: {
+    wsentrydisplayname,
   },
   setup(props) {
     return setupEntry(props);

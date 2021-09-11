@@ -19,6 +19,7 @@ export class InsightFile {
 
 export class InsightFileSettings {
     showUI: boolean = true;
+    filePath:string="";
 }
 
 export class UserSettings {

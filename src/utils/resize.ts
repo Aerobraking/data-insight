@@ -288,7 +288,7 @@ export class ResizerComplex {
                 const eW = dimE.w * scaleW;
                 const eH = dimE.h * scaleH;
 
-                if (!element.classList.contains("sizefixed") && eW < 8000 && eH < 8000) {
+                if (!element.classList.contains("sizefixed") && eW < 14000 && eH < 14000) {
                     /**
                      * the width/height act as vectors that can be scaled directly
                      */

@@ -6,13 +6,19 @@ import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import { utcFormat } from 'd3'
 import { InsightFile } from './store/state'
 var fs = require("fs");
-var path = require('path');
-
-const isDevelopment = process.env.NODE_ENV !== 'production' 
+import path from "path";
+const isDevelopment = process.env.NODE_ENV !== 'production'
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
+
+const FileEnding: string = ".ins";
+
+function getTempFilePath(): string {
+  const userdata = app.getPath('userData');
+  return userdata + path.sep + "temp-file" + FileEnding;
+}
 
 
 ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
@@ -34,53 +40,104 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
 ipcMain.on('open-insight-file', (event: any, arg: any) => {
   openFile();
 })
+ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
 
-function openFile() {
-  const files = dialog.showOpenDialogSync({
-    filters: [{ name: "Insight File Type", extensions: ["ins"] }],
-    properties: ["openFile", "openFile"],
-  });
+  if (win) {
 
-  if (!files) { return; }
-
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('insight-file-selected', files[0]);
-  })
-
-  console.log(files);
-}
-
-
-ipcMain.on('save-insight-file', (event: any, arg: string) => {
-  saveFile(arg);
+    win.setTitle(arg.filePath && arg.filePath.length > 0 ? "Data Insight: " + path.parse(path.basename(arg.filePath)).name : "Data Insight: " + "New File");
+  }
 })
 
-function saveFile(arg: string) {
-  dialog.showSaveDialog({}).then((result) => {
-
-    if (result.canceled) { return; }
-
-    let filepath = result.filePath;
-    let ext = path.extname(filepath);
-
-    if (ext !== ".ins") {
-      filepath += ".ins";
-    }
-
-    fs.writeFile(filepath, arg, (err: any) => {
-      console.log(err);
+function openFile(filePath: string | undefined = undefined) {
+  if (!filePath) {
+    const files = dialog.showOpenDialogSync({
+      filters: [{ name: "Insight File Type", extensions: ["ins"] }],
+      properties: ["openFile", "openFile"],
     });
 
-  }).catch((err) => {
+    if (!files) { return; }
+    filePath = files[0];
+  }
+
+
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('insight-file-selected', filePath);
+  })
+
+
+}
+
+/**
+ * 
+ * Programm wird beendet
+ * wir speichern die datei automatisch als temp Datei in AppData
+ * 
+ * Beim starten nach temp datei gucken und diese öffnen
+ * 
+ * 
+ * 
+ */
+
+ipcMain.on('save-insight-file', (event: any, arg:
+  { json: string, temp: boolean, path: string, chooseFile: boolean }) => {
+  const userdata = app.getPath('userData');
+  console.log(userdata);
+  if (arg.temp) {
+    saveFile(arg.json, getTempFilePath(), true);
+  } else {
+    if (!arg.chooseFile && arg.path && arg.path.length != 0 && fs.existsSync(arg.path)) {
+      saveFile(arg.json, arg.path);
+    } else {
+      dialog.showSaveDialog({}).then((result) => {
+        if (result.canceled) { return; }
+        if (result.filePath) {
+          saveFile(arg.json, result.filePath);
+        }
+      }).catch((err) => {
+        console.log(err);
+      });
+    }
+
+  }
+})
+
+function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
+
+  console.log("save file: " + filepath);
+
+  let ext = path.extname(filepath);
+
+  if (ext !== ".ins") {
+    filepath += ".ins";
+  }
+
+  fs.writeFile(filepath, jsonData, (err: any) => {
     console.log(err);
   });
+
+  if (!isTemp) {
+    webContents.getAllWebContents().forEach(wc => {
+      wc.send('fire-file-saved', filepath);
+    })
+  }
+
+
+
+  if (win) {
+    if (isTemp
+    ) {
+      win.setTitle("Data Insight: " + " New File");
+    } else {
+      win.setTitle("Data Insight: " + path.parse(path.basename(filepath)).name);
+    }
+  }
 
   console.log("file saved");
 }
 
-function fireFileSaveEvent() {
+function fireFileSaveEvent(chooseFile: boolean) {
   webContents.getAllWebContents().forEach(wc => {
-    wc.send('fire-file-save', "");
+    wc.send('fire-file-save', chooseFile);
   })
 }
 function fireNewFileEvent() {
@@ -89,9 +146,20 @@ function fireNewFileEvent() {
   })
 }
 
+let win: BrowserWindow | null;
+
+ipcMain.on('closed', _ => {
+  win = null;
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
 async function createWindow() {
+ 
   // Create the browser window.
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
+    title: "Data Insight",
     width: 1400,
     height: 800,
     x: 10,
@@ -107,8 +175,14 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
-
- // win.setMenuBarVisibility(false)
+ 
+  win.on('close', (e) => {
+    if (win) {
+      e.preventDefault();
+      win.webContents.send('app-close');
+    }
+  });
+  // win.setMenuBarVisibility(false)
   var menu = Menu.buildFromTemplate([
     {
       label: 'Menu',
@@ -127,9 +201,16 @@ async function createWindow() {
         },
         {
           accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
+          label: 'Save',
+          click() {
+            fireFileSaveEvent(false);
+          }
+        },
+        {
+          accelerator: process.platform === 'darwin' ? 'Ctrl+Shift+S' : 'Ctrl+Shift+S',
           label: 'Save as',
           click() {
-            fireFileSaveEvent();
+            fireFileSaveEvent(true);
           }
         },
         {
@@ -142,13 +223,17 @@ async function createWindow() {
         {
           label: 'Reload Page',
           click() {
-            win.reload()
+            if (win) {
+              win.reload()
+            }
           }
         },
         {
           label: 'Dev Tools',
           click() {
-            win.webContents.openDevTools();
+            if (win) {
+              win.webContents.openDevTools();
+            }
           }
         },
         {
@@ -171,6 +256,8 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
+
+  openFile(getTempFilePath());
 }
 
 
@@ -218,65 +305,3 @@ if (isDevelopment) {
     })
   }
 }
-
-// const fs = require('fs');
-// const path = require('path');
-// const { webContents } = require('electron')
-
-
-
-// async function getFiles(dir: string, parent: OverviewNode) {
-//   const files = fs.readdirSync(dir);
-//   files.forEach((file: any) => {
-//     const filePath = path.join(dir, file);
-//     const fileStat = fs.lstatSync(filePath);
-
-//     let child: OverviewNode = new OverviewNode(filePath);
-//     child.isDirectory = fileStat.isDirectory();
-//     child.name = file;
-//     child.path = dir;
-//     child.parent = parent
-//     child.depthCalc();
-
-//     var fileSizeInBytes = fileStat.size;
-//     // Convert the file size to megabytes (optional)
-//     parent.size = Math.sqrt(fileSizeInBytes / (1024 * 1024));
-//     parent.children.push(child);
-//     if (child.isDirectory) {
-//       getFiles(filePath, child);
-//     }
-//   });
-// }
-
-// function createDummyTreeData(node: OverviewNode, depthMax: number, depth?: number) {
-//   if (depth == undefined) {
-//     depth = 0;
-//   }
-//   for (let i = 0; i < 13 + Math.random() * 13; i++) {
-//     let name: string = Math.random().toString(36).substring(7);
-//     let child = new OverviewNode(name);
-//     child.name = name;
-//     child.path = name;
-//     node.children.push(child);
-//     if (depth < depthMax) {
-//       createDummyTreeData(child, depthMax, ++depth);
-//     }
-//   }
-// }
-
-// async function loadFiles(path: string) {
-//   let rootFile: OverviewNode = new OverviewNode(path);
-//   rootFile.name = "root";
-//   rootFile.path = path;
-//   getFiles(path, rootFile);
-//   //createDummy(rootFile, 6);
-
-//   console.log(rootFile);
-
-
-//   webContents.getAllWebContents().forEach(wc => {
-//     wc.send('files-added', rootFile)
-//   })
-
-// }
-

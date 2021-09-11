@@ -21,15 +21,22 @@ export default defineComponent({
   },
   computed: {},
   mounted() {
-    window.addEventListener("keydown", this.keyPressed, true);
+    window.addEventListener("keydown", this.keyPressed, false);
     const c = this;
 
-    ipcRenderer.on("fire-file-save", function (event: any, file: string) {
-      c.saveFile();
-    });
+    ipcRenderer.on(
+      "fire-file-save",
+      function (event: any, chooseFile: boolean) {
+        c.saveFile(false, chooseFile);
+      }
+    );
 
     ipcRenderer.on("fire-new-file", function (event: any, file: string) {
       c.loadInsightFile(new InsightFile());
+    });
+
+    ipcRenderer.on("fire-file-saved", function (event: any, filepath: string) {
+      c.$store.state.loadedFile.settings.filePath = filepath;
     });
 
     ipcRenderer.on(
@@ -38,6 +45,11 @@ export default defineComponent({
         c.loadInsightFileFromPath(file);
       }
     );
+
+    ipcRenderer.on("app-close", (_) => {
+      c.saveFile(true);
+      ipcRenderer.send("closed");
+    });
   },
   provide() {
     return {
@@ -48,7 +60,6 @@ export default defineComponent({
   methods: {
     loadInsightFileFromPath(path: string) {
       let jsonString = fs.readFileSync(path, "utf8");
-
       let test: InsightFile = deserialize(InsightFile, jsonString);
       this.loadInsightFile(test);
     },
@@ -70,13 +81,22 @@ export default defineComponent({
           t.classList.remove("close-file");
         });
       }, 500);
+
+       ipcRenderer.send("insight-file-loaded", {
+        filePath: file.settings.filePath 
+      });
     },
-    saveFile() {
+    saveFile(temp: boolean = false, chooseFile: boolean = false) {
       WSUtils.Events.prepareFileSaving();
 
       let jsonString = serialize(this.$store.state.loadedFile);
 
-      ipcRenderer.send("save-insight-file", jsonString);
+      ipcRenderer.send("save-insight-file", {
+        json: jsonString,
+        temp: temp,
+        path: this.$store.state.loadedFile.settings.filePath,
+        chooseFile: chooseFile,
+      });
     },
     keyPressed(e: KeyboardEvent) {
       console.log("window listener: app");
@@ -142,10 +162,6 @@ export default defineComponent({
           case "7":
           case "8":
           case "9":
-            e.preventDefault();
-            e.stopPropagation();
-            console.log("prevent: " + e.defaultPrevented);
-
             break;
         }
       }
