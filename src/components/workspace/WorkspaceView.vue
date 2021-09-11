@@ -208,7 +208,7 @@ import {
   FileOutline,
   EmoticonHappyOutline,
 } from "mdue";
-import { ImageCache } from "@/utils/ImageCache";
+import { ImageCache, ImageDim } from "@/utils/ImageCache";
 import WorkspaceEntryTextareaViewVue from "./WorkspaceEntryTextareaView.vue";
 export default defineComponent({
   el: ".wrapper",
@@ -484,7 +484,6 @@ export default defineComponent({
           c.w = c.w * currentC.scale;
           c.h = c.h * currentC.scale;
 
-          var rect = e.getBoundingClientRect();
           let padding = 1;
           if (this.highlightSelection) {
             context.strokeRect(
@@ -495,6 +494,47 @@ export default defineComponent({
             );
           }
         }
+
+        // let v = this.getEntries();
+        // let m = this.getModelEntriesFromView(this.getEntries());
+
+        // for (let index = 0; index < v.length; index++) {
+        //   const view = v[index];
+        //   const model = m[index];
+        //   if (model instanceof WorkspaceEntryImage) {
+        //     let c = this.getCoordinatesFromElement(view);
+
+        //     c.x = c.x * currentC.scale + currentC.x;
+        //     c.x2 = c.x2 * currentC.scale + currentC.x;
+
+        //     c.y = c.y * currentC.scale + currentC.y;
+        //     c.y2 = c.y2 * currentC.scale + currentC.y;
+
+        //     c.w = c.w * currentC.scale;
+        //     c.h = c.h * currentC.scale;
+
+        //     ImageCache.registerPath(model.getURL(), {
+        //       callback: (
+        //         url: string,
+        //         type: "small" | "medium" | "original"
+        //       ) => {},
+        //       callbackSize: (dim: ImageDim) => {},
+        //     });
+        //     let url = ImageCache.getUrlRaw(model.getURL(), "small");
+
+        //     if (url && context) {
+        //       let image = new Image();
+        //       image.onload = function () {
+        //         if (context) {
+        //           context.drawImage(image, c.x, c.y, c.w, c.h);
+        //           console.log("draw image");
+        //         }
+
+        //         image.src = url ? url : "";
+        //       };
+        //     }
+        //   }
+        // }
       }
 
       // b = 150;
@@ -510,10 +550,34 @@ export default defineComponent({
       // }
     },
     onPaste(e: ClipboardEvent) {
-      console.log(e.clipboardData?.getData("text"));
-
       e.preventDefault();
       let text = e.clipboardData?.getData("text");
+
+      if (e.clipboardData?.items) {
+        for (let index = 0; index < e.clipboardData?.items.length; index++) {
+          const item = e.clipboardData?.items[index];
+
+          if (item.type.includes("image")) {
+            var blob = item.getAsFile();
+            const smallURl = URL.createObjectURL(blob);
+            let imageEntry = this.createEntry<WorkspaceEntryImage>(
+              "image",
+              true,
+              smallURl
+            );
+            if (blob) {
+              var reader = new FileReader();
+              reader.readAsDataURL(blob);
+              reader.onloadend = function () {
+                var base64data = reader.result;
+                imageEntry.blob = base64data as string;
+              };
+            }
+
+            return;
+          }
+        }
+      }
 
       var mousePos = this.mousePositionLast;
       if (text != undefined) {
@@ -562,15 +626,6 @@ export default defineComponent({
         return;
       }
 
-      console.log(
-        "window listener: workspace " +
-          this.model.name +
-          " prevented: " +
-          e.defaultPrevented +
-          " isActive: " +
-          this.model.isActive
-      );
-
       if (e.ctrlKey && !e.repeat) {
         switch (e.key) {
           case "a":
@@ -587,12 +642,9 @@ export default defineComponent({
               clipboard.entries.push(
                 ...this.getModelEntriesFromView(this.getSelectedEntries())
               );
-              console.log("copy");
             }
             break;
           case "v":
-            console.log("paste");
-
             if (clipboard && clipboard.entries.length > 0) {
               let jsonString = serialize(clipboard);
 
@@ -600,8 +652,6 @@ export default defineComponent({
                 EntryCollection,
                 jsonString
               );
-
-              console.log("paste");
 
               let xMin = 10000000;
               let yMin = 10000000;
@@ -678,18 +728,6 @@ export default defineComponent({
               this.startPlugin(new ReArrange(this));
             }
             break;
-          case " ":
-            if (this.spacePressed) {
-              if (this.oldViewRect) {
-                let bound = this.getPanzoomRect(this.oldViewRect);
-                this.panZoomInstance.smoothShowRectangle(bound);
-              }
-              this.getEntries().forEach((e) => {
-                e.classList.toggle("prevent-input", false);
-              });
-              this.spacePressed = false;
-            }
-            break;
           case "Delete":
           case "delete":
             this.deleteSelection();
@@ -714,13 +752,30 @@ export default defineComponent({
       ) {
         return;
       }
+      if (!e.altKey && !e.ctrlKey) {
+        switch (e.key) {
+          case " ":
+            if (this.spacePressed) {
+              if (this.oldViewRect) {
+                let bound = this.getPanzoomRect(this.oldViewRect);
+                this.panZoomInstance.smoothShowRectangle(bound);
+              }
+              this.getEntries().forEach((e) => {
+                e.classList.toggle("prevent-input", false);
+              });
+              this.spacePressed = false;
+            }
+            break;
+        }
+      }
 
       this.drawCanvas();
     },
-    createEntry(
-      type: "frame" | "text" | "youtube",
-      useMousePosition: boolean = false
-    ) {
+    createEntry<T extends WorkspaceEntry>(
+      type: "frame" | "text" | "youtube" | "image",
+      useMousePosition: boolean = false,
+      path: string = ""
+    ): T {
       let viewport = this.getViewport();
       let doPositioning = true;
       let listFiles: Array<WorkspaceEntry> = [];
@@ -729,6 +784,9 @@ export default defineComponent({
         listFiles,
       };
       switch (type) {
+        case "image":
+          listFiles.push(new WorkspaceEntryImage(path, true));
+          break;
         case "youtube":
           listFiles.push(new WorkspaceEntryYoutube());
           break;
@@ -780,6 +838,8 @@ export default defineComponent({
       }
 
       this.$store.commit(MutationTypes.ADD_FILES, payload);
+
+      return listFiles[0] as T;
     },
     startDrag: function (e: MouseEvent) {
       this.selectionDragActive = true;
@@ -813,7 +873,6 @@ export default defineComponent({
 
       this.dragMoveRel = mousePosition;
       this.selectionDragActive = true;
-      this.preventInput(true);
     },
     mousedown: function (e: MouseEvent) {
       if (
@@ -890,6 +949,7 @@ export default defineComponent({
       }
 
       if (comp.selectionDragActive) {
+        comp.preventInput(true);
         comp.updateSelectionDrag(e, comp);
       } else {
         if (selectionRectangle.style.visibility === "visible") {
@@ -994,13 +1054,11 @@ export default defineComponent({
       let listFiles: Array<WorkspaceEntry> = [];
 
       if (e.dataTransfer) {
-        console.log(e.dataTransfer.types);
-
         if (e.dataTransfer.types.includes("text/plain")) {
           let t = new WorkspaceEntryTextArea();
           t.text = e.dataTransfer.getData("text");
           listFiles.push(t);
-        } else if (e.dataTransfer.types.includes("files")) {
+        } else if (e.dataTransfer.types.includes("Files")) {
           for (let index = 0; index < e.dataTransfer.files.length; index++) {
             const f = e.dataTransfer.files[index];
 
@@ -1701,7 +1759,7 @@ svg {
   padding: 5px;
   font-size: 32px;
 
-  transition: all 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out;
   &:hover {
     color: #ccc;
     transform: scale(1.25);
