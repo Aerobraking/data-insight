@@ -4,6 +4,7 @@ import * as _ from "underscore";
 import { Type } from "class-transformer";
 import { ElementDimension } from "@/utils/resize";
 import { Overview } from "./OverviewDataModel";
+import { ImageCache, ImageDim } from "@/utils/ImageCache";
 
 const fs = require("fs");
 const path = require("path");
@@ -85,7 +86,7 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
 }
 
 export class WorkspaceEntryImage extends WorkspaceEntry {
-    constructor(path: string | undefined) {
+    constructor(path: string | undefined, clipboard: boolean = false) {
         super("wsentryimage", true);
 
         this.path = path != undefined ? path : "";
@@ -94,6 +95,16 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         this.width = 600;
         this.height = 600;
         this.imageCreated = false;
+        this.isClipboard = clipboard;
+        
+        // ImageCache.registerPath(this.getURL(), {
+        //     callback: (
+        //       url: string,
+        //       type: "small" | "medium" | "original"
+        //     ) => {},
+        //     callbackSize: (dim: ImageDim) => {},
+        //   }
+        //   );
     }
 
     public searchResultString(): string {
@@ -111,9 +122,11 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
     }
 
     getURL(): string {
-        return "file://" + this.path;
+        return this.isClipboard ? this.path : "file://" + this.path;
     }
 
+    blob:string="";
+    isClipboard: boolean;
     name: string;
     path: string;
     filename: string;
@@ -172,7 +185,7 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
         super("wsentrytextarea", true);
         this.width = 400;
         this.height = 450;
-        this.text=text;
+        this.text = text;
     }
 
     public searchResultString(): string {

@@ -86,12 +86,21 @@ export class Cache {
     }
 
     getUrl(path: string, type: "small" | "medium" | "original"): string | undefined {
-        let imageEntry: Map<string, string> | undefined = this.hash.get("path");
+        let imageEntry: Map<string, string> | undefined = this.hash.get(path);
         if (imageEntry == undefined) {
             return undefined;
         } else {
             let url: string | undefined = imageEntry.get(type);
             return path != undefined ? "url('" + url + "')" : undefined;
+        }
+    }
+    getUrlRaw(path: string, type: "small" | "medium" | "original"): string | undefined {
+        let imageEntry: Map<string, string> | undefined = this.hash.get(path);
+        if (imageEntry == undefined) {
+            return undefined;
+        } else {
+            let url: string | undefined = imageEntry.get(type);
+            return path != undefined ?   url   : undefined;
         }
     }
 

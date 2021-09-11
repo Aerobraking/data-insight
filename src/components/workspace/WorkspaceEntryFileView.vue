@@ -1,5 +1,6 @@
 <template>
   <div
+    @dblclick.capture.stop="doubleClick"
     @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip', $event)"
     @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"

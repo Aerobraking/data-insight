@@ -46,7 +46,7 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.ADD_FILES](state, payload: {
     model: Workspace,
     listFiles: Array<WorkspaceEntry>,
-  }) {
+  }) { 
     for (let index = 0; index < payload.listFiles.length; index++) {
       const element = payload.listFiles[index];
       element.order = entrycounter++;
