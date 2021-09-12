@@ -1,0 +1,1114 @@
+{
+    "extension": "linecounter",
+    "version": "0.2.7",
+    "workspace": "e:\\code\\ma-data-insight",
+    "linecount": [
+        {
+            "version": "0.2.7",
+            "counttime": "2021-09-12 01:22:26",
+            "filesum": 158,
+            "codesum": 47275,
+            "commentsum": 1153,
+            "blanksum": 6267,
+            "statistics": {
+                ".js": {
+                    "code": 570,
+                    "comment": 502,
+                    "blank": 110
+                },
+                ".json": {
+                    "code": 15292,
+                    "comment": 0,
+                    "blank": 5
+                },
+                ".lock": {
+                    "code": 8168,
+                    "comment": 20,
+                    "blank": 1791
+                },
+                ".ts": {
+                    "code": 2461,
+                    "comment": 372,
+                    "blank": 737
+                },
+                ".md": {
+                    "code": 19,
+                    "comment": 0,
+                    "blank": 6
+                },
+                ".vue": {
+                    "code": 2780,
+                    "comment": 257,
+                    "blank": 313
+                },
+                ".yaml": {
+                    "code": 9,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".html": {
+                    "code": 17756,
+                    "comment": 2,
+                    "blank": 3272
+                },
+                ".css": {
+                    "code": 1,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".yml": {
+                    "code": 170,
+                    "comment": 0,
+                    "blank": 25
+                },
+                "": {
+                    "code": 24,
+                    "comment": 0,
+                    "blank": 5
+                },
+                ".txt": {
+                    "code": 17,
+                    "comment": 0,
+                    "blank": 3
+                },
+                ".map": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                },
+                ".svg": {
+                    "code": 4,
+                    "comment": 0,
+                    "blank": 0
+                }
+            },
+            "filelist": [
+                {
+                    "blank": 0,
+                    "code": 3,
+                    "comment": 0,
+                    "filename": ".browserslistrc"
+                },
+                {
+                    "blank": 5,
+                    "code": 21,
+                    "comment": 0,
+                    "filename": ".gitignore"
+                },
+                {
+                    "blank": 1,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "babel.config.js"
+                },
+                {
+                    "blank": 25,
+                    "code": 158,
+                    "comment": 0,
+                    "filename": "dist_electron\\builder-debug.yml"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 0,
+                    "filename": "dist_electron\\builder-effective-config.yaml"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\bundled\\background.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\bundled\\css\\app.a2869e74.css"
+                },
+                {
+                    "filename": "dist_electron\\bundled\\favicon.ico",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\bundled\\index.html"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 1,
+                    "filename": "dist_electron\\bundled\\js\\0.2698fc40.worker.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\bundled\\js\\0.2698fc40.worker.js.map"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 1,
+                    "filename": "dist_electron\\bundled\\js\\app.afed427a.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\bundled\\js\\app.afed427a.js.map"
+                },
+                {
+                    "blank": 0,
+                    "code": 9,
+                    "comment": 59,
+                    "filename": "dist_electron\\bundled\\js\\chunk-vendors.c247e0ba.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\bundled\\js\\chunk-vendors.c247e0ba.js.map"
+                },
+                {
+                    "blank": 0,
+                    "code": 36,
+                    "comment": 0,
+                    "filename": "dist_electron\\bundled\\package.json"
+                },
+                {
+                    "filename": "dist_electron\\data-insight-0.1.0.exe",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 107,
+                    "code": 536,
+                    "comment": 438,
+                    "filename": "dist_electron\\index.js"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\index.js.map"
+                },
+                {
+                    "blank": 0,
+                    "code": 8,
+                    "comment": 0,
+                    "filename": "dist_electron\\latest.yml"
+                },
+                {
+                    "filename": "dist_electron\\master-data-insight Setup 0.1.0.exe",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\master-data-insight Setup 0.1.0.exe.blockmap",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 52,
+                    "comment": 0,
+                    "filename": "dist_electron\\package.json"
+                },
+                {
+                    "filename": "dist_electron\\unpacked.zip",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\chrome_100_percent.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\chrome_200_percent.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\d3dcompiler_47.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\ffmpeg.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\icudtl.dat",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\libEGL.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\libGLESv2.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 3,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "dist_electron\\win-unpacked\\LICENSE.electron.txt"
+                },
+                {
+                    "blank": 3272,
+                    "code": 17739,
+                    "comment": 1,
+                    "filename": "dist_electron\\win-unpacked\\LICENSES.chromium.html"
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\am.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ar.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\bg.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\bn.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ca.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\cs.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\da.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\de.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\el.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\en-GB.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\en-US.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\es-419.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\es.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\et.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\fa.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\fi.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\fil.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\fr.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\gu.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\he.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\hi.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\hr.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\hu.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\id.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\it.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ja.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\kn.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ko.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\lt.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\lv.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ml.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\mr.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ms.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\nb.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\nl.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\pl.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\pt-BR.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\pt-PT.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ro.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ru.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\sk.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\sl.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\sr.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\sv.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\sw.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\ta.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\te.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\th.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\tr.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\uk.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\vi.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\zh-CN.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\locales\\zh-TW.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\master-data-insight.exe",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\resources.pak",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 4,
+                    "comment": 0,
+                    "filename": "dist_electron\\win-unpacked\\resources\\app-update.yml"
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\resources\\elevate.exe",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\snapshot_blob.bin",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\swiftshader\\libEGL.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\swiftshader\\libGLESv2.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\v8_context_snapshot.bin",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\vk_swiftshader.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "dist_electron\\win-unpacked\\vk_swiftshader_icd.json"
+                },
+                {
+                    "filename": "dist_electron\\win-unpacked\\vulkan-1.dll",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 15115,
+                    "comment": 0,
+                    "filename": "package-lock.json"
+                },
+                {
+                    "blank": 0,
+                    "code": 52,
+                    "comment": 0,
+                    "filename": "package.json"
+                },
+                {
+                    "filename": "public\\favicon.ico",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 16,
+                    "comment": 1,
+                    "filename": "public\\index.html"
+                },
+                {
+                    "blank": 6,
+                    "code": 19,
+                    "comment": 0,
+                    "filename": "README.md"
+                },
+                {
+                    "blank": 22,
+                    "code": 197,
+                    "comment": 0,
+                    "filename": "src\\App.vue"
+                },
+                {
+                    "filename": "src\\assets\\icons\\folder-48.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "src\\assets\\icons\\folder_open_black_24dp.svg"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "src\\assets\\icons\\folder_open_white_24dp.svg"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "src\\assets\\icons\\insert_drive_file_black_24dp.svg"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "src\\assets\\icons\\insert_drive_file_white_24dp.svg"
+                },
+                {
+                    "filename": "src\\assets\\logo.png",
+                    "isbinaryfile": true,
+                    "blank": 0,
+                    "code": 0,
+                    "comment": 0
+                },
+                {
+                    "blank": 44,
+                    "code": 231,
+                    "comment": 32,
+                    "filename": "src\\background.ts"
+                },
+                {
+                    "blank": 6,
+                    "code": 17,
+                    "comment": 0,
+                    "filename": "src\\components\\app\\StartScreen.vue"
+                },
+                {
+                    "blank": 27,
+                    "code": 300,
+                    "comment": 7,
+                    "filename": "src\\components\\app\\Tabs.vue"
+                },
+                {
+                    "blank": 118,
+                    "code": 833,
+                    "comment": 120,
+                    "filename": "src\\components\\overview\\OverviewCanvas.vue"
+                },
+                {
+                    "blank": 14,
+                    "code": 130,
+                    "comment": 7,
+                    "filename": "src\\components\\overview\\OverviewView.vue"
+                },
+                {
+                    "blank": 10,
+                    "code": 77,
+                    "comment": 1,
+                    "filename": "src\\components\\workspace\\FolderFileView.vue"
+                },
+                {
+                    "blank": 22,
+                    "code": 69,
+                    "comment": 2,
+                    "filename": "src\\components\\workspace\\overview\\FileEngine.ts"
+                },
+                {
+                    "blank": 35,
+                    "code": 137,
+                    "comment": 30,
+                    "filename": "src\\components\\workspace\\overview\\OverviewData.ts"
+                },
+                {
+                    "blank": 82,
+                    "code": 215,
+                    "comment": 89,
+                    "filename": "src\\components\\workspace\\overview\\OverviewEngine.ts"
+                },
+                {
+                    "blank": 13,
+                    "code": 33,
+                    "comment": 0,
+                    "filename": "src\\components\\workspace\\overview\\OverviewTransferHandler.ts"
+                },
+                {
+                    "blank": 9,
+                    "code": 24,
+                    "comment": 0,
+                    "filename": "src\\components\\workspace\\Plugins\\AbstractPlugin.ts"
+                },
+                {
+                    "blank": 64,
+                    "code": 211,
+                    "comment": 7,
+                    "filename": "src\\components\\workspace\\Plugins\\Rearrange.ts"
+                },
+                {
+                    "blank": 56,
+                    "code": 176,
+                    "comment": 6,
+                    "filename": "src\\components\\workspace\\Plugins\\Resize.ts"
+                },
+                {
+                    "blank": 7,
+                    "code": 39,
+                    "comment": 0,
+                    "filename": "src\\components\\workspace\\WorkspaceEntries.vue"
+                },
+                {
+                    "blank": 9,
+                    "code": 149,
+                    "comment": 1,
+                    "filename": "src\\components\\workspace\\WorkspaceEntriesBookmarks.vue"
+                },
+                {
+                    "blank": 2,
+                    "code": 28,
+                    "comment": 0,
+                    "filename": "src\\components\\workspace\\WorkspaceEntryDisplayName.vue"
+                },
+                {
+                    "blank": 14,
+                    "code": 109,
+                    "comment": 19,
+                    "filename": "src\\components\\workspace\\WorkspaceEntryFileView.vue"
+                },
+                {
+                    "blank": 35,
+                    "code": 332,
+                    "comment": 64,
+                    "filename": "src\\components\\workspace\\WorkspaceEntryFolderView.vue"
+                },
+                {
+                    "blank": 10,
+                    "code": 105,
+                    "comment": 9,
+                    "filename": "src\\components\\workspace\\WorkspaceEntryFrame.vue"
+                },
+                {
+                    "blank": 9,
+                    "code": 98,
+                    "comment": 7,
+                    "filename": "src\\components\\workspace\\WorkspaceEntryImageView.vue"
+                },
+                {
+                    "blank": 7,
+                    "code": 91,
+                    "comment": 12,
+                    "filename": "src\\components\\workspace\\WorkspaceEntryTextareaView.vue"
+                },
+                {
+                    "blank": 13,
+                    "code": 100,
+                    "comment": 9,
+                    "filename": "src\\components\\workspace\\WorkspaceEntryYoutubeView.vue"
+                },
+                {
+                    "blank": 6,
+                    "code": 131,
+                    "comment": 1,
+                    "filename": "src\\components\\workspace\\WorkspaceSeachList.vue"
+                },
+                {
+                    "blank": 44,
+                    "code": 130,
+                    "comment": 33,
+                    "filename": "src\\components\\workspace\\WorkspaceUtils.ts"
+                },
+                {
+                    "blank": 4,
+                    "code": 44,
+                    "comment": 0,
+                    "filename": "src\\components\\workspace\\WorkspaceView.vue"
+                },
+                {
+                    "blank": 3,
+                    "code": 19,
+                    "comment": 0,
+                    "filename": "src\\main.ts"
+                },
+                {
+                    "blank": 1,
+                    "code": 7,
+                    "comment": 3,
+                    "filename": "src\\shims-vuex.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 3,
+                    "comment": 0,
+                    "filename": "src\\store\\actions\\action-types.ts"
+                },
+                {
+                    "blank": 5,
+                    "code": 15,
+                    "comment": 0,
+                    "filename": "src\\store\\actions\\actions.ts"
+                },
+                {
+                    "blank": 5,
+                    "code": 21,
+                    "comment": 0,
+                    "filename": "src\\store\\getters.ts"
+                },
+                {
+                    "blank": 2,
+                    "code": 12,
+                    "comment": 0,
+                    "filename": "src\\store\\model\\DataModel.ts"
+                },
+                {
+                    "blank": 10,
+                    "code": 29,
+                    "comment": 0,
+                    "filename": "src\\store\\model\\FileTree.ts"
+                },
+                {
+                    "blank": 39,
+                    "code": 140,
+                    "comment": 35,
+                    "filename": "src\\store\\model\\OverviewDataModel.ts"
+                },
+                {
+                    "blank": 77,
+                    "code": 286,
+                    "comment": 11,
+                    "filename": "src\\store\\model\\Workspace.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 11,
+                    "comment": 0,
+                    "filename": "src\\store\\mutations\\mutation-types.ts"
+                },
+                {
+                    "blank": 11,
+                    "code": 112,
+                    "comment": 14,
+                    "filename": "src\\store\\mutations\\mutations.ts"
+                },
+                {
+                    "blank": 4,
+                    "code": 34,
+                    "comment": 0,
+                    "filename": "src\\store\\state.ts"
+                },
+                {
+                    "blank": 6,
+                    "code": 38,
+                    "comment": 4,
+                    "filename": "src\\store\\store.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 5,
+                    "comment": 1,
+                    "filename": "src\\types\\index.d.ts"
+                },
+                {
+                    "blank": 0,
+                    "code": 1,
+                    "comment": 0,
+                    "filename": "src\\types\\vue-panzoom.d.ts"
+                },
+                {
+                    "blank": 22,
+                    "code": 40,
+                    "comment": 0,
+                    "filename": "src\\utils\\IconHandler.ts"
+                },
+                {
+                    "blank": 52,
+                    "code": 120,
+                    "comment": 6,
+                    "filename": "src\\utils\\ImageCache.ts"
+                },
+                {
+                    "blank": 20,
+                    "code": 49,
+                    "comment": 16,
+                    "filename": "src\\utils\\ImageCacheWorker.ts"
+                },
+                {
+                    "blank": 6,
+                    "code": 8,
+                    "comment": 32,
+                    "filename": "src\\utils\\imageloader.ts"
+                },
+                {
+                    "blank": 74,
+                    "code": 207,
+                    "comment": 43,
+                    "filename": "src\\utils\\resize.ts"
+                },
+                {
+                    "blank": 31,
+                    "code": 78,
+                    "comment": 8,
+                    "filename": "src\\utils\\WatchSystem.ts"
+                },
+                {
+                    "blank": 5,
+                    "code": 36,
+                    "comment": 0,
+                    "filename": "tsconfig.json"
+                },
+                {
+                    "blank": 2,
+                    "code": 18,
+                    "comment": 3,
+                    "filename": "vue.config.js"
+                },
+                {
+                    "blank": 1791,
+                    "code": 8168,
+                    "comment": 20,
+                    "filename": "yarn.lock"
+                }
+            ]
+        }
+    ]
+}

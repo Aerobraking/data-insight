@@ -4,35 +4,60 @@
       :class="{ 'prevent-input': !model.overviewOpen }"
       class="overview-wrapper"
     ></div>
+
+    <div
+      @mousedown.stop
+      @dblclick.capture.stop
+      class="workspace-menu-bar"
+      :class="{ 'workspace-menu-bar-hide': !getShowUI }"
+    >
+      <button>
+        <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
+      </button>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Overview } from "@/store/model/OverviewDataModel";
 import { Workspace } from "@/store/model/Workspace";
-import {
-  FolderNode,
-  FolderOverviewEntry,
-} from "@/components/workspace/overview/FileEngine";
+import { FolderOverviewEntry } from "@/components/workspace/overview/FileEngine";
 import { defineComponent } from "vue";
 
 import * as WSUtils from "./../workspace/WorkspaceUtils";
-import { AbstractOverviewEntry } from "../workspace/overview/OverviewData";
 import {
   EngineState,
   OverviewEngine,
 } from "../workspace/overview/OverviewEngine";
 import OverviewCanvas from "./OverviewCanvas.vue";
 import { Instance } from "../workspace/overview/OverviewTransferHandler";
-import { ElementDimension, getCoordinatesFromElement } from "@/utils/resize";
 import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 const fs = require("fs");
 import path from "path";
+import {
+  FormTextbox,
+  Resize,
+  CommentTextOutline,
+  Overscan,
+  Youtube,
+  Qrcode,
+  Table,
+  Group,
+  ArrowExpand,
+  DeleteEmptyOutline,
+  BorderAll,
+  ResizeBottomRight,
+  FormatSize,
+  Download,
+  FolderOutline,
+  FileOutline,
+  EmoticonHappyOutline,
+} from "mdue";
 
 export default defineComponent({
   name: "App",
   components: {
     OverviewCanvas,
+    Qrcode,
   },
   props: {
     model: {
@@ -102,6 +127,9 @@ export default defineComponent({
   },
   computed: {},
   methods: {
+    toggleShadowCanvas() {
+      this.overviewEngine?.showShadowCanvas(!this.overviewEngine.showShadow);
+    },
     drop(e: DragEvent) {
       e.preventDefault();
 
@@ -147,5 +175,17 @@ export default defineComponent({
   top: 0;
   width: 100%;
   height: 100%;
+
+  canvas {
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor; 
+}
+}
+.grabbable {
+  // cursor: pointer !important;
 }
 </style>

@@ -13,6 +13,8 @@ import {
 } from "d3";
 import { FolderNode } from "./FileEngine";
 import { AbstractNode, AbstractOverviewEntry, AbstractLink } from "./OverviewData";
+import ColorTracker from 'canvas-color-tracker';
+import _ from "underscore";
 
 
 /**
@@ -57,6 +59,13 @@ export class EngineState {
 }
 
 export class OverviewEngine {
+
+
+    showShadowCanvas(show: boolean) {
+        this.showShadow = show;
+        // d3.select(this.canvas).style("display", show ? "none" : "block");
+        // d3.select(this.canvasShadow).style("display", show ? "block" : "none");
+    }
 
     constructor(div: HTMLElement, state: EngineState, overview: Overview) {
 
@@ -122,82 +131,82 @@ export class OverviewEngine {
         });
         this.divObserver.observe(div);
 
-
-        /**
-         * 
-         */
+        let throttle = _.throttle(() => {
+            const pxScale = window.devicePixelRatio;
+            if (_this.mousePosition.x > 0 && _this.mousePosition.y > 0) {
+                const px: any = (_this.mousePosition.x > 0 && _this.mousePosition.y > 0)
+                    ? _this.contextShadow.getImageData(_this.mousePosition.x * pxScale, _this.mousePosition.y * pxScale, 1, 1)
+                    : null;
+                _this.nodeHovered = this.getNodeAtMousePosition();
+            }
+        }, 80);
 
         // Setup node drag interaction
-        // d3.select(this.canvas).call(
-        //     d3.drag()          .subject(() => {
-        //         if (!state.enableNodeDrag) { return null; }
-        //         const obj = getObjUnderPointer();
-        //         return (obj && obj.type === 'Node') ? obj.d : null; // Only drag nodes
-        //       })
-        //       .on('start', ev => {
-        //         const obj = ev.subject;
-        //         obj.__initialDragPos = { x: obj.x, y: obj.y, fx: obj.fx, fy: obj.fy };
+        d3.select(this.canvas).on("mousemove", function (e: MouseEvent) {
+            var rect = _this.canvas.getBoundingClientRect();
+            _this.mousePosition = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            throttle();
+        })
+            .call(
+                d3.drag<HTMLCanvasElement, unknown>().subject(() => {
+                    const obj = this.getNodeAtMousePosition();
+                    return obj; // Only drag nodes
+                })
+                    .on('start', ev => {
+                        const obj = ev.subject;
+                        obj.__initialDragPos = { x: obj.x, y: obj.y, fx: obj.fx, fy: obj.fy };
 
-        //         // keep engine running at low intensity throughout drag
-        //         if (!ev.active) {
-        //           obj.fx = obj.x; obj.fy = obj.y; // Fix points
-        //         }
+                        // keep engine running at low intensity throughout drag
+                        if (!ev.active) {
+                            obj.fx = obj.x; obj.fy = obj.y; // Fix points
+                        }
 
-        //         // drag cursor
-        //         state.canvas.classList.add('grabbable');
-        //       })
-        //       .on('drag', ev => {
-        //         const obj = ev.subject;
-        //         const initPos = obj.__initialDragPos;
-        //         const dragPos = ev;
+                        this.canvas.classList.add('grabbable');
+                    })
+                    .on('drag', ev => {
+                        const obj = ev.subject;
+                        const initPos = obj.__initialDragPos;
+                        const dragPos = ev;
 
-        //         const k = d3ZoomTransform(state.canvas).k;
-        //         const translate = {
-        //           x: (initPos.x + (dragPos.x - initPos.x) / k) - obj.x,
-        //           y: (initPos.y + (dragPos.y - initPos.y) / k) - obj.y
-        //         };
+                        const k = d3.zoomTransform(this.canvas).k;
 
-        //         // Move fx/fy (and x/y) of nodes based on the scaled drag distance since the drag start
-        //         ['x', 'y'].forEach(c => obj[`f${c}`] = obj[c] = initPos[c] + (dragPos[c] - initPos[c]) / k);
+                        // Move fx/fy (and x/y) of nodes based on the scaled drag distance since the drag start
+                        ['x', 'y'].forEach(c => obj[`f${c}`] = obj[c] = initPos[c] + (dragPos[c] - initPos[c]) / k);
 
-        //         // prevent freeze while dragging
-        //         state.forceGraph
-        //           .d3AlphaTarget(0.3) // keep engine running at low intensity throughout drag
-        //           .resetCountdown();  // prevent freeze while dragging
+                        // prevent freeze while dragging
+                        // state.forceGraph
+                        //     .d3AlphaTarget(0.3) // keep engine running at low intensity throughout drag
+                        //     .resetCountdown();  // prevent freeze while dragging
 
-        //         state.isPointerDragging = true;
+                    })
+                    .on('end', ev => {
+                        console.log("end");
+                        const obj = ev.subject;
+                        const initPos = obj.__initialDragPos;
 
-        //         obj.__dragged = true;
-        //         state.onNodeDrag(obj, translate);
-        //       })
-        //       .on('end', ev => {
-        //         const obj = ev.subject;
-        //         const initPos = obj.__initialDragPos;
-        //         const translate = {x: obj.x - initPos.x, y:  obj.y - initPos.y};
+                        if (initPos.fx === undefined) { obj.fx = undefined; }
+                        if (initPos.fy === undefined) { obj.fy = undefined; }
+                        delete (obj.__initialDragPos);
 
-        //         if (initPos.fx === undefined) { obj.fx = undefined; }
-        //         if (initPos.fy === undefined) { obj.fy = undefined; }
-        //         delete(obj.__initialDragPos);
+                        // state.forceGraph
+                        //     .d3AlphaTarget(0)   // release engine low intensity
+                        //     .resetCountdown();  // let the engine readjust after releasing fixed nodes
 
-        //         state.forceGraph
-        //           .d3AlphaTarget(0)   // release engine low intensity
-        //           .resetCountdown();  // let the engine readjust after releasing fixed nodes
-
-        //         // drag cursor
-        //         state.canvas.classList.remove('grabbable');
-
-        //         state.isPointerDragging = false;
-
-        //         if (obj.__dragged) {
-        //           delete(obj.__dragged);
-        //           state.onNodeDragEnd(obj, translate);
-        //         }
-        //       })
-        //   );
+                        this.canvas.classList.remove('grabbable');
+                    })
+            );
 
         // Setup zoom / pan interaction
         this.zoom = d3.zoom<HTMLCanvasElement, HTMLCanvasElement>()
         this.zoom(d3.select(this.canvas));
+        this.zoom.filter((event: MouseEvent | WheelEvent) => {
+            if (event instanceof WheelEvent) {
+                return true;
+            } else if (event instanceof MouseEvent) {
+                return (event.button === 1);
+            }
+            return false;
+        });
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
         this.zoom.scaleExtent([0.1, 8]);
@@ -207,6 +216,16 @@ export class OverviewEngine {
         });
         let t = d3.zoomTransform(this.canvas);
     }
+
+    getNodeAtMousePosition = () => {
+        let obj = null;
+        const pxScale = window.devicePixelRatio;
+        const px: any = (this.mousePosition.x > 0 && this.mousePosition.y > 0)
+            ? this.contextShadow.getImageData(this.mousePosition.x * pxScale, this.mousePosition.y * pxScale, 1, 1)
+            : null;
+        px && (obj = this.autocolor.lookup(px.data));
+        return obj != null ? obj : undefined;
+    };
 
 
     public graphToScreenCoords(c: MouseEvent | { x: number, y: number }) {
@@ -231,17 +250,20 @@ export class OverviewEngine {
         this.divObserver.disconnect();
     }
 
+    mousePosition: { x: number, y: number } = { x: 0, y: 0 };
+    autocolor: ColorTracker = new ColorTracker();
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
     overview: Overview;
     state: EngineState;
     size: ElementDimensionInstance;
     divObserver: ResizeObserver;
     canvas: HTMLCanvasElement;
+    nodeHovered: AbstractNode | undefined;
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
     canvasShadow: HTMLCanvasElement;
     engineActive: boolean = false;
-
+    public showShadow: boolean = false;
     private _rootNodes: any[] = [];
 
     public get rootNodes(): any[] {
@@ -250,6 +272,19 @@ export class OverviewEngine {
 
     public set rootNodes(value: any[]) {
         this._rootNodes = value;
+
+        for (let j = 0; j < this.rootNodes.length; j++) {
+            const root: AbstractOverviewEntry = this.rootNodes[j];
+
+            let nodes: AbstractNode[] = root.root.descendants();
+
+            for (let i = 0; i < nodes.length; i++) {
+                const n: AbstractNode = nodes[i];
+                n.colorID = this.autocolor.register(n);
+            }
+        }
+
+
     }
 
     transform: ZoomTransform | undefined;
@@ -264,16 +299,13 @@ export class OverviewEngine {
         if (this.engineActive) {
             for (let index = 0; index < this._rootNodes.length; index++) {
                 const element = this._rootNodes[index].tick();
-
             }
         }
 
-        // render the shadow canvas
-
         // render the canvas
-        this.clearCanvas(this.size.w, this.size.h);
-        this.drawCanvas();
-
+        this.drawCanvas(this.context);
+        // render the shadow canvas
+        this.drawCanvas(this.contextShadow, true);
 
 
         // request next frame
@@ -283,59 +315,37 @@ export class OverviewEngine {
     }
 
 
-    private drawCanvas() {
+    private drawCanvas(ctx: CanvasRenderingContext2D, isShadow: boolean = false) {
 
-        this.context.save();
+        this.clearCanvas(ctx, this.size.w, this.size.h);
 
-        this.context.fillStyle = "rgb(100,100,110)";
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.fillStyle = "rgb(100,100,110)";
 
-        this.context.clearRect(0, 0, this.size.w, this.size.h);
-        this.context.fillRect(0, 0, this.size.w, this.size.h);
-        this.context.fillStyle = "rgb(200,200,200)";
+        ctx.clearRect(0, 0, this.size.w, this.size.h);
+        ctx.fillRect(0, 0, this.size.w, this.size.h);
+        ctx.fillStyle = "rgb(200,200,200)";
 
         this.transform = d3.zoomTransform(this.canvas);
-        this.context.translate(this.transform.x, this.transform.y);
-        this.context.scale(this.transform.k, this.transform.k);
-
-
-        this.context.beginPath();
-        this.context.arc(
-            400,
-            490,
-            100,
-            0,
-            2 * Math.PI,
-            false
-        );
-        this.context.fill();
+        ctx.translate(this.transform.x, this.transform.y);
+        ctx.scale(this.transform.k, this.transform.k);
 
         if (this.rootNodes && this.transform) {
+
+            if (isShadow) {
+                ctx.fillStyle = "rgb(240,240,240)";
+                ctx.fillRect(-100,-100,200,200);
+            }
+
 
             for (let index = 0; index < this.rootNodes.length; index++) {
                 const root: AbstractOverviewEntry = this.rootNodes[index];
 
-                let nodes: AbstractNode[] = root.root.descendants();
-
-                for (let i = 0; i < nodes.length; i++) {
-                    const n = nodes[i];
-
-                    let r = 10;
-                    this.context.fillStyle = "rgb(200,200,200)";
-                    this.context.beginPath();
-                    this.context.arc(
-                        n.getX(),
-                        n.getY(),
-                        r,
-                        0,
-                        2 * Math.PI,
-                        false
-                    );
-                    this.context.fill();
-
-                }
+                ctx.fillStyle = "rgb(200,200,200)";
 
                 let links: AbstractLink[] = root.root.links();
-                let ctx = this.context;
+
 
                 for (let i = 0; i < links.length; i++) {
                     const n = links[i];
@@ -344,6 +354,12 @@ export class OverviewEngine {
 
                     ctx.beginPath();
                     ctx.lineWidth = 1.1;
+
+
+                    if (isShadow) {
+                        ctx.strokeStyle = start.colorID ? start.colorID : "rgb(200,200,200)";
+                    }
+
 
                     ctx.moveTo(start.getX(), start.getY());
                     let midY = (start.getY() + end.getY()) / 2;
@@ -359,27 +375,58 @@ export class OverviewEngine {
                     ctx.stroke();
 
                 }
+
+                let nodes: AbstractNode[] = root.root.descendants();
+
+
+                for (let i = 0; i < nodes.length; i++) {
+                    const n = nodes[i];
+                    let isNodeHovered = this.nodeHovered == n;
+
+                    if (isShadow) {
+                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                    }
+
+                    let r = 10;
+
+                    ctx.beginPath();
+                    ctx.arc(
+                        n.getX(),
+                        n.getY(),
+                        isNodeHovered ? r * 2 : r,
+                        0,
+                        2 * Math.PI,
+                        false
+                    );
+                    ctx.fill();
+
+                }
+
             }
 
 
 
         }
 
-        this.context.restore();
+        ctx.restore();
+
+        if (!isShadow && this.showShadow) {
+            ctx.drawImage(this.canvasShadow, 0, 0);
+        }
 
     }
 
 
-    private clearCanvas(width: number, height: number) {
-        this.context.save();
-        this.resetTransform();
-        this.context.clearRect(0, 0, width, height);
-        this.context.restore();
+    private clearCanvas(ctx: CanvasRenderingContext2D, width: number, height: number) {
+        ctx.save();
+        this.resetTransform(ctx);
+        ctx.clearRect(0, 0, width, height);
+        ctx.restore();
     }
 
-    private resetTransform() {
+    private resetTransform(ctx: CanvasRenderingContext2D) {
         const pxRatio = window.devicePixelRatio;
-        this.context.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+        ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
     }
 
 }

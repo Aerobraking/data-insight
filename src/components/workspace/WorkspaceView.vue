@@ -70,7 +70,7 @@
     <OverviewView
       class="overview"
       :class="{ 'ov-open': model.overviewOpen }"
-      @dblclick.capture.stop="openOverview"
+      @dblclick.stop="openOverview"
       :model="model"
     />
 
@@ -1966,7 +1966,19 @@ A top selection bar for entries to make them more easily selectable.
   width: 100%;
   height: 25px;
   transition: background-color 0.4s ease-in-out !important;
-  background-color: rgb(255, 255, 255);
+  //  background-color: rgb(255, 255, 255);
+}
+
+@keyframes circle {
+  0% {
+    background-color: none;
+  }
+  50% {
+    background-color: $color-Selection;
+  }
+  100% {
+    background-color: none;
+  }
 }
 
 /**
@@ -1974,11 +1986,8 @@ visually highlights elements for selection with a hover effect
  */
 .select-element {
   cursor: pointer;
-  transition: background-color 0.4s ease-in-out !important;
-
   &:hover {
-    transition: background-color 0.4s ease-in-out !important;
-    background-color: $color-Selection !important;
+    animation: circle 0.5s linear forwards;
   }
 }
 
@@ -2024,6 +2033,8 @@ visually highlights elements for selection with a hover effect
 
 .ws-entry {
   transition: opacity 0.3s ease-in-out;
+  contain: layout ;
+  content-visibility: hidden; 
 }
 
 .vue-pan-zoom-scene {

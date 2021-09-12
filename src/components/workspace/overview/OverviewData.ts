@@ -15,6 +15,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     children: Array<this> = [];
 
     @Exclude()
+    colorID: string|null=null;
+    @Exclude()
     parent: this | undefined;
     depth: number = 0;
     nodetype: string;
