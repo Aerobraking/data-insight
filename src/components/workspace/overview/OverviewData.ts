@@ -1,37 +1,88 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
 import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink } from "d3";
-import { FolderNode } from "./FileEngine";
+import { FolderNode, FolderOverviewEntry } from "./FileEngine";
+import path from "path";
+import { OverviewEngine } from "./OverviewEngine";
+import TWEEN from "@tweenjs/tween.js";
+import { Tween } from "@tweenjs/tween.js";
 
 
 export abstract class AbstractNode implements SimulationNodeDatum {
 
 
-    constructor(nodetype: string) {
+    constructor(nodetype: string, name: string) {
         this.nodetype = nodetype;
+        this._name = name;
     }
 
     @Type(() => FolderNode)
-    children: Array<this> = [];
+    private children: Array<this> = [];
+
+    public getChildren() {
+        return this.children;
+    }
+
+    public addChild(c: this) {
+        c.parent = this;
+        c.entry = this.entry;
+        c.depth = c.parents().length;
+        c.y = this.y;
+        this.children.push(c);
+        this.entry?.engine?.nodeAdded(c);
+
+    }
+
+    public removeChild(c: this) {
+        let index = this.children.indexOf(c);
+        if (index > -1) {
+            this.children.splice(index, 1);
+        }
+    }
 
     @Exclude()
-    colorID: string|null=null;
+    colorID: string | null = null;
     @Exclude()
     parent: this | undefined;
+    @Exclude()
+    entry: FolderOverviewEntry | undefined;
     depth: number = 0;
     nodetype: string;
     id?: string | number;
     hue?: number;
+    private _name: string;
+    public get name(): string {
+        return this._name;
+    }
+    public set name(value: string) {
+        this._name = value;
+        if (this.entry) {
+            this.entry.nodeUpdate();
+        }
+    }
+
 
     /**
-     * Node’s zero-based index into nodes array. 
+     * Node’s zero-based index into nodes array.
      * This property is set during the initialization process of a simulation.
      */
     index?: number | undefined;
     /**
      * Node’s current x-position
      */
-    x?: number | undefined;
+    private _x?: number | undefined;
+
+    public get x(): number | undefined {
+        // let x = this.parent ? this.entry ? this.entry?.getColumnX(this) : 200 * this.depth : this._x;
+        let x = this.parent ? 500 * this.depth : this._x;
+        return x;
+    }
+
+    public set x(value: number | undefined) {
+        this._x = value;
+    }
+
+    r: number = 10;
     /**
      * Node’s current y-position
      */
@@ -55,6 +106,10 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     public getX() {
         return this.x ? this.x : 0;
+    }
+
+    public getRadius() {
+        return this.r ? this.r : 0;
     }
 
     public getY() {
@@ -81,26 +136,32 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         }
     }
 
-    descendants(): Array<this> {
+    descendants(withItself: boolean = true): Array<this> {
         let a: Array<this> = [];
-        this.collectNodes(this, a);
+        if (withItself) {
+            a.push(this);
+        }
+
+        for (let i = 0; i < this.children.length; i++) {
+            this.collectNodes(this.children[i], a);
+        }
         return a;
     }
 
     parents(): Array<this> {
         let a: Array<this> = [];
         let p = this;
-        while (parent) {
-            a.push(p.parent as this);
-            p = p.parent as this;
+        while (p.parent) {
+            a.push(p.parent);
+            p = p.parent;
         }
         return a;
     }
 
-    /**   
+    /**
    * Returns an array of links for this node, where each link is an object that defines source and target properties.
    * The source of each link is the parent node, and the target is a child node.
-   * @returns 
+   * @returns
    */
     links(): Array<AbstractLink<this>> {
         let a: Array<AbstractLink<this>> = [];
@@ -129,29 +190,174 @@ export class AbstractLink<D extends AbstractNode = AbstractNode> implements Simu
     target: D;
 }
 
+export interface EntryListener<D extends AbstractNode = AbstractNode> {
+    nodeAdded(node: D): void;
+    nodeUpdate(): void;
+}
+
+export interface ColumnTextWidth {
+    depth: number,
+    min: number,
+    max: number
+}
+
 export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNode> {
 
-    constructor(nodetype: string, root: D) {
+    constructor(nodetype: string, path: string, root: D) {
         this.nodetype = nodetype;
+        this.path = path;
         this.root = root;
+        this.id = Math.floor(Math.random() * 10000000);
+
         this.root.fx = 0;
         this.root.fy = 0;
+
+        let _this = this;
 
         this.simulation = d3
             .forceSimulation([] as Array<D>)
             .force('link', d3.forceLink())
             .force('charge', d3.forceManyBody())
-            .force('center', d3.forceCenter())
-            .force('dagRadial', null)
+            // .force('center', d3.forceCenter())
+            // .force(
+            //     "x",
+            //     d3.forceX<AbstractNode>()
+            //         .x(function (d: AbstractNode, i: number, data: AbstractNode[]) {
+            //             return _this.getColumnX(d);
+            //         })
+            //         .strength(5)
+            // )
+            .alphaDecay(1 - Math.pow(0.001, 1 / 10000))
             .alphaMin(0.003)
             .alphaTarget(0.004)
             .stop();
+
+        // this.simulation.force(
+        //     "x",
+        //     // @ts-ignore: Unreachable code error
+        //     d3.forceX()
+        //         .x(function (d: any) {
+        //             return (d.depth + 0) * column;
+        //         })
+        //         .strength(5)
+        // );
+
+        // @ts-ignore: Unreachable code error
+        // this.graph.d3Force("y", d3.forceY().y(0).strength(0.015));
+
+        // @ts-ignore: Unreachable code error
+        this.simulation.force(
+            "y",
+            // @ts-ignore: Unreachable code error
+            d3.forceY()
+                .y(function (d: any) {
+                    return 0;
+                })
+                .strength(0.0015)
+        );
     }
 
     @Type(() => FolderNode)
     root: D;
 
+    public abstract createNode(name: string): D;
+    id: number;
+
+    /**
+     * The path to the root folder
+     */
+    path: string;
+
+    @Exclude()
+    engine: EntryListener<AbstractNode> | undefined;
+
+    isSimulationActive: boolean = true;
+
     nodetype: string;
+
+    public renameByPaths(oldPath: string, newPath: string) {
+
+        let node = this.getNodeByPath(oldPath);
+
+        newPath = path.normalize(path.relative(this.path, newPath)).replace(/\\/g, "/");
+
+        let newName = path.basename(newPath);
+
+        if (node) {
+            node.name = newName;
+        }
+
+    }
+
+    public nodeUpdate() {
+        if (this.engine) {
+            this.engine.nodeUpdate();
+        }
+    }
+
+    public getNodeByPath(relativePath: string): AbstractNode | undefined {
+        relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
+
+        let folders: string[] = relativePath.split("/");
+
+        let currentFolder: D | undefined = this.root;
+        s:
+        for (let i = 0; i < folders.length; i++) {
+            const f = folders[i];
+
+            let childFound: D | undefined = currentFolder.getChildren().find(c => c.name == f);
+            if (childFound) {
+                currentFolder = childFound;
+            } else {
+                currentFolder = undefined;
+                break s;
+            }
+        }
+        return currentFolder;
+
+    }
+    public addEntryPath(relativePath: string) {
+        relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
+
+        let folders: string[] = relativePath.split("/");
+
+        let currentFolder = this.root;
+        for (let i = 0; i < folders.length; i++) {
+            const f = folders[i];
+
+            let childFound = currentFolder.getChildren().find(c => c.name == f);
+            if (childFound) {
+                // Child was found, go to next subfolder
+            } else {
+                // Create new sub folder
+                childFound = this.createNode(f);
+                currentFolder.addChild(childFound);
+            }
+            currentFolder = childFound;
+        }
+
+    }
+
+    public removeEntryPath(relativePath: string) {
+
+        relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
+        let folders: string[] = relativePath.split("/");
+        let currentFolder: D | undefined = this.root;
+
+        s:
+        for (let i = 0; i < folders.length; i++) {
+            const f = folders[i];
+            if (currentFolder) {
+                currentFolder = currentFolder.getChildren().find(c => c.name == f);
+
+            }
+
+        }
+        // remove folder if found
+        if (currentFolder && currentFolder.parent) {
+            currentFolder.parent.removeChild(currentFolder);
+        }
+    }
 
     public setCoordinates(c: { x: number, y: number }) {
         this.x = c.x;
@@ -180,25 +386,47 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
     public set y(value: number) {
         this.root.y = value;
         this.root.fy = value;
+
+        for (let i = 0; i < this.root.descendants().length; i++) {
+            const c = this.root.descendants()[i];
+            c.fy = value;
+        }
     }
 
 
     @Exclude()
     simulation: Simulation<D, AbstractLink<D>>;
 
-    updateSimulationData() {
-        this.simulation
-            .alpha(1)
-            .nodes(this.root.descendants());
+    updateSimulationData(reheat: boolean = true) {
+
+        if (reheat) {
+            this.simulation.alpha(1);
+        }
+
+        this.simulation.nodes(this.root.descendants());
+
         let f: ForceLink<D, AbstractLink<D>> | undefined = this.simulation.force<ForceLink<D, AbstractLink<D>>>("force");
 
         if (f) {
             f.links(this.root.links());
         }
-
     }
 
     tick() {
+
+        this.simulation.force(
+            "y",
+            d3.forceY<D>()
+                .y(function (d: D) {
+                    return d.parent ? d.parent.getY() : d.getY();
+                })
+                .strength(function (d: D, i: number, data: D[]) {
+                    return d.parent ? 0.002 : 0;
+                })
+        );
+
+
         this.simulation.tick();
+
     }
 }

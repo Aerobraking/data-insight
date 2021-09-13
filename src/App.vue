@@ -98,8 +98,7 @@ export default defineComponent({
         chooseFile: chooseFile,
       });
     },
-    keyPressed(e: KeyboardEvent) {
-      console.log("window listener: app");
+    keyPressed(e: KeyboardEvent) { 
 
       if (e.ctrlKey) {
         switch (e.key) {

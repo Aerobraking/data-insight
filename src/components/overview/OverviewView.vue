@@ -135,33 +135,38 @@ export default defineComponent({
 
       let a: FolderOverviewEntry[] = Instance.getData(this.idOverview);
 
+      /**
+       * create the entries based on the dropped files.
+       */
       if (e.dataTransfer && this.overviewEngine) {
         for (let index = 0; index < e.dataTransfer?.files.length; index++) {
           const f = e.dataTransfer?.files[index];
           const p = path.normalize(f.path).replace(/\\/g, "/");
-          console.log("original: " + f.path);
-          console.log("normalized: " + path.normalize(f.path));
-          console.log("sep: " + path.sep);
-          console.log("forward: " + path.normalize(f.path).replace(/\\/g, "/"));
-          console.log();
 
           const fileStat = fs.lstatSync(p);
           if (fileStat.isDirectory()) {
-            let root: FolderOverviewEntry = new FolderOverviewEntry(
-              path.normalize(p)
-            );
+            let root: FolderOverviewEntry = new FolderOverviewEntry(p);
             root.setCoordinates(this.overviewEngine.screenToGraphCoords(e));
-            root.startWatcher();
-
+            root.engine = this.overviewEngine;
             a.push(root);
           }
         }
       }
-      setTimeout(() => {
-        if (this.overviewEngine) {
-          this.overviewEngine.rootNodes = a;
-        }
-      }, 50);
+
+      /**
+       * register the entries to the engine
+       */
+      if (this.overviewEngine) {
+        this.overviewEngine.rootNodes = a;
+      }
+
+      /**
+       * start syncing the folders in the entry.
+       */
+      for (let i = 0; i < a.length; i++) {
+        const e = a[i];
+        e.startWatcher();
+      }
     },
   },
 });
@@ -182,8 +187,8 @@ export default defineComponent({
     image-rendering: -webkit-optimize-contrast;
     image-rendering: optimize-contrast;
     image-rendering: pixelated;
-    -ms-interpolation-mode: nearest-neighbor; 
-}
+    -ms-interpolation-mode: nearest-neighbor;
+  }
 }
 .grabbable {
   // cursor: pointer !important;

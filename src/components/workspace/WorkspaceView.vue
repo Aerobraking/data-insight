@@ -759,6 +759,7 @@ export default defineComponent({
               if (this.oldViewRect) {
                 let bound = this.getPanzoomRect(this.oldViewRect);
                 this.panZoomInstance.smoothShowRectangle(bound);
+                // this.panZoomInstance.showRectangle(bound);
               }
               this.getEntries().forEach((e) => {
                 e.classList.toggle("prevent-input", false);
@@ -1191,6 +1192,7 @@ export default defineComponent({
         0.2
       );
       this.panZoomInstance.smoothShowRectangle(bound);
+      // this.panZoomInstance.showRectangle(bound);
     },
     getPanzoomRect(
       coordinates: ElementDimension,
@@ -1588,12 +1590,43 @@ export default defineComponent({
       if (this.model != undefined) {
         this.model.viewportTransform = this.getCurrentTransform();
       }
+
+      WSUtils.Events.zoom(this);
+
+      // let currentC = this.getCurrentTransform();
+      // let rect = this.$el.getBoundingClientRect();
+      // let viewport: ElementDimension = {
+      //   x: rect.x,
+      //   y: rect.y,
+      //   x2:  rect.x+rect.width,
+      //   y2:  rect.y+rect.height,
+      //   w: rect.width,
+      //   h: rect.height,
+      // };
+
+      // for (let e of this.getEntries()) {
+      //   let c = this.getCoordinatesFromElement(e);
+
+      //   c.x = c.x * currentC.scale + currentC.x;
+      //   c.x2 = c.x2 * currentC.scale + currentC.x;
+
+      //   c.y = c.y * currentC.scale + currentC.y;
+      //   c.y2 = c.y2 * currentC.scale + currentC.y;
+
+      //   c.w = c.w * currentC.scale;
+      //   c.h = c.h * currentC.scale;
+
+      //   let padding = 1;
+      //   if (this.highlightSelection) {
+      //     e.style.visibility = WSUtils.intersectRect(viewport, c)|| WSUtils.insideRect(viewport, c)
+      //       ? "visible"
+      //       : "hidden";
+      //   }
+      // }
     },
     onZoom(e: any) {
       this.updateFixedZoomElements();
       this.onPanStart(e);
-
-      WSUtils.Events.zoom(this);
     },
     updateFixedZoomElements() {
       let zoomFixed: HTMLElement[] = Array.from(
@@ -2012,6 +2045,10 @@ visually highlights elements for selection with a hover effect
 
   .zoomable {
     animation: fade-in 0.25s ease;
+    /**
+    Way of animating the viewport
+     */
+    // transition: transform 0.4s ease-in-out;
   }
 
   canvas {
@@ -2033,8 +2070,6 @@ visually highlights elements for selection with a hover effect
 
 .ws-entry {
   transition: opacity 0.3s ease-in-out;
-  contain: layout ;
-  content-visibility: hidden; 
 }
 
 .vue-pan-zoom-scene {
