@@ -1,16 +1,31 @@
 <template>
   <div @drop.stop="drop" class="overview-viewport">
+    <div class="overview-search">
+      <div></div>
+      <input
+        @keydown.stop
+        @keyup.stop
+        type="search"
+        @input="searchUpdate"
+        v-model="searchString"
+        placeholder="Suche..."
+      />
+      <div></div>
+      <!-- <wssearchlist
+        class="search-results"
+        v-if="searchActive"
+        :model="model"
+        :searchString="searchString"
+        @bookmarkclicked="moveToEntry"
+      ></wssearchlist> -->
+    </div>
+
     <div
       :class="{ 'prevent-input': !model.overviewOpen }"
       class="overview-wrapper"
     ></div>
 
-    <div
-      @mousedown.stop
-      @dblclick.capture.stop
-      class="workspace-menu-bar"
-      :class="{ 'workspace-menu-bar-hide': !getShowUI }"
-    >
+    <div @mousedown.stop @dblclick.capture.stop class="workspace-menu-bar">
       <button>
         <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
       </button>
@@ -52,6 +67,10 @@ import {
   FileOutline,
   EmoticonHappyOutline,
 } from "mdue";
+import {
+  AbstractNode,
+  AbstractOverviewEntry,
+} from "../workspace/overview/OverviewData";
 
 export default defineComponent({
   name: "App",
@@ -65,17 +84,27 @@ export default defineComponent({
       required: true,
     },
   },
+  watch: {
+    // only draw the canvas when the overview is visibile
+    "model.overviewOpen": function (newValue: boolean, oldValue: boolean) {
+      if (this.overviewEngine) {
+        this.overviewEngine.enablePainting = newValue;
+      }
+    },
+  },
   data(): {
     overviewEngine: OverviewEngine | undefined;
     state: EngineState;
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
+    searchString: string;
   } {
     return {
       idOverview: 0,
       wsListener: undefined,
       overviewEngine: undefined,
       state: new EngineState(),
+      searchString: "",
     };
   },
   mounted() {
@@ -127,13 +156,41 @@ export default defineComponent({
   },
   computed: {},
   methods: {
+    searchUpdate() {
+      let lowercase = this.searchString.toLowerCase().trim();
+      let nodesMatching: AbstractNode[] = [];
+
+      if (lowercase.length > 0) {
+        if (this.overviewEngine) {
+          for (let i = 0; i < this.overviewEngine.rootNodes.length; i++) {
+            const entry: AbstractOverviewEntry =
+              this.overviewEngine.rootNodes[i];
+
+            for (let j = 0; j < entry.nodes.length; j++) {
+              const n = entry.nodes[j];
+
+              if (n.name.toLowerCase().includes(lowercase)) {
+                nodesMatching.push(...n.parents(true));
+              }
+            }
+          }
+        }
+        this.overviewEngine?.setFilterList("search", nodesMatching);
+      } else {
+        this.overviewEngine?.setFilterList("search");
+      }
+    },
     toggleShadowCanvas() {
       this.overviewEngine?.showShadowCanvas(!this.overviewEngine.showShadow);
+
+      console.log(this.overviewEngine?.rootNodes);
     },
     drop(e: DragEvent) {
       e.preventDefault();
 
-      let a: FolderOverviewEntry[] = Instance.getData(this.idOverview);
+      let listEntries: FolderOverviewEntry[] = Instance.getData(
+        this.idOverview
+      );
 
       /**
        * create the entries based on the dropped files.
@@ -148,7 +205,7 @@ export default defineComponent({
             let root: FolderOverviewEntry = new FolderOverviewEntry(p);
             root.setCoordinates(this.overviewEngine.screenToGraphCoords(e));
             root.engine = this.overviewEngine;
-            a.push(root);
+            listEntries.push(root);
           }
         }
       }
@@ -157,14 +214,14 @@ export default defineComponent({
        * register the entries to the engine
        */
       if (this.overviewEngine) {
-        this.overviewEngine.rootNodes = a;
+        this.overviewEngine.rootNodes = listEntries;
       }
 
       /**
        * start syncing the folders in the entry.
        */
-      for (let i = 0; i < a.length; i++) {
-        const e = a[i];
+      for (let i = 0; i < listEntries.length; i++) {
+        const e = listEntries[i];
         e.startWatcher();
       }
     },
@@ -174,12 +231,23 @@ export default defineComponent({
 
  
 <style   lang="scss">
-.overview-wrapper {
+.overview-viewport {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+  width: 100%;
   position: absolute;
+  overflow: hidden;
+}
+
+.overview-wrapper {
+  position: relative;
+  flex: 1 !important;
+  height: initial !important;
+
   left: 0;
   top: 0;
   width: 100%;
-  height: 100%;
 
   canvas {
     image-rendering: optimizeSpeed;
@@ -192,5 +260,48 @@ export default defineComponent({
 }
 .grabbable {
   // cursor: pointer !important;
+}
+
+.overview-search {
+  position: relative;
+
+  border: none;
+  background: #fff;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  width: 100%;
+
+  button {
+    border: none;
+    height: 100%;
+    outline: none;
+
+    background-color: #fff;
+    &:hover {
+      background-color: #aaa;
+    }
+  }
+
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  input {
+    background: #eee;
+    height: 28px;
+    border: none;
+    outline: none;
+    border-left: 1px solid #aaa;
+    border-right: 1px solid #aaa;
+    position: relative;
+  }
+  .search-results {
+    background: #fff;
+    position: absolute;
+    top: 100%;
+    left: 33.33%;
+    width: 33.33%;
+    color: #333;
+    overflow: hidden;
+  }
 }
 </style>

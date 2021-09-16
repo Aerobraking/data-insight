@@ -186,8 +186,7 @@ export default defineComponent({
 
       console.log("asdasd");
     },
-    keyPressed(e: KeyboardEvent) {
-      console.log("asdasd");
+    keyPressed(e: KeyboardEvent) { 
       if (e.ctrlKey) {
         switch (e.key) {
           case "i":
@@ -931,7 +930,7 @@ export default defineComponent({
           globalScale: number
         ): void {
           vm.nodePaint(node as TreeNode, ctx, globalScale);
-        })
+        }) 
         .linkCanvasObject(function (
           node: LinkObject,
           ctx: CanvasRenderingContext2D

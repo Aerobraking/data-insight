@@ -9,6 +9,7 @@ import {
     Simulation,
     SimulationLinkDatum,
     SimulationNodeDatum,
+    ZoomScale,
     ZoomTransform,
 } from "d3";
 import { FolderNode } from "./FileEngine";
@@ -60,6 +61,9 @@ export class EngineState {
     backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
 }
 
+var fpsInterval: number, startTime, now, then: number, elapsed;
+
+
 export class OverviewEngine implements EntryListener<AbstractNode>{
 
 
@@ -70,6 +74,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     constructor(div: HTMLElement, state: EngineState, overview: Overview) {
+
+        console.log("create engine");
 
         var _this = this;
 
@@ -90,7 +96,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             this.canvas = new HTMLCanvasElement();
         }
 
-        let context = this.canvas.getContext("2d");
+        let context = this.canvas.getContext("2d", { alpha: false });
         this.context = context ? context : new CanvasRenderingContext2D();
 
         let cShadow = d3
@@ -108,7 +114,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             this.canvasShadow = new HTMLCanvasElement();
         }
 
-        context = this.canvasShadow.getContext("2d");
+        context = this.canvasShadow.getContext("2d", { alpha: false });
         this.contextShadow = context ? context : new CanvasRenderingContext2D();
         this.size = new ElementDimensionInstance(0, 0, 1, 1);
 
@@ -128,26 +134,28 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 this.size.w = w;
                 this.size.h = h;
-                _this.tick();
+                // _this.tick();
             }
         });
         this.divObserver.observe(div);
 
-        let throttle = _.throttle(() => {
-            const pxScale = window.devicePixelRatio;
-            if (_this.mousePosition.x > 0 && _this.mousePosition.y > 0) {
-                const px: any = (_this.mousePosition.x > 0 && _this.mousePosition.y > 0)
-                    ? _this.contextShadow.getImageData(_this.mousePosition.x * pxScale, _this.mousePosition.y * pxScale, 1, 1)
-                    : null;
-                _this.nodeHovered = this.getNodeAtMousePosition();
-            }
-        }, 80);
+        d3.select(this.canvas).on('dblclick', function (e: MouseEvent) {
+
+            var rect = _this.canvas.getBoundingClientRect();
+            _this.mousePosition = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+            let pos = _this.screenToGraphCoords(e);
+
+            _this.setView(1, pos.x, pos.y);
+            // _this.setView(1,e.clientX - rect.left, e.clientY - rect.top );
+
+        });
 
         // Setup node drag interaction
         d3.select(this.canvas).on("mousemove", function (e: MouseEvent) {
             var rect = _this.canvas.getBoundingClientRect();
             _this.mousePosition = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-            throttle();
+            _this.hoverFinder(_this);
         })
             .call(
                 d3.drag<HTMLCanvasElement, unknown>().subject(() => {
@@ -155,11 +163,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     return obj; // Only drag nodes
                 })
                     .on('start', ev => {
+                        _this.pauseHovering = true;
                         const obj = ev.subject;
                         obj.__initialDragPos = { x: obj.x, y: obj.y, fx: obj.fx, fy: obj.fy };
                         const node = ev.subject as AbstractNode;
 
-                        if (!node.parent) {
+                        if (!node.parent || true) {
                             if (node.entry) {
                                 node.entry.isSimulationActive = false;
                             }
@@ -192,7 +201,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         let diffX = (dragPos.x - initPos.x) / k;
                         let diffY = (dragPos.y - initPos.y) / k;
 
-                        if (!node.parent) {
+                        if (!node.parent || true) {
                             /**
                              * the root can be moved in any direction and moves the whole tree with it
                              */
@@ -222,7 +231,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                     })
                     .on('end', ev => {
-
+                        _this.pauseHovering = false;
                         const obj = ev.subject;
                         const node = ev.subject as AbstractNode;
                         const initPos = obj.__initialDragPos;
@@ -233,7 +242,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         if (initPos.fy === undefined) { obj.fy = undefined; }
                         delete (obj.__initialDragPos);
 
-                        if (!node.parent) {
+                        if (!node.parent || true) {
                             let children = node.descendants(false);
                             for (let i = 0; i < children.length; i++) {
                                 const child: any = children[i];
@@ -275,7 +284,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     getNodeAtMousePosition = () => {
         let obj = null;
-        const pxScale = window.devicePixelRatio;
+        const pxScale = 1;//window.devicePixelRatio;
         const px: any = (this.mousePosition.x > 0 && this.mousePosition.y > 0)
             ? this.contextShadow.getImageData(this.mousePosition.x * pxScale, this.mousePosition.y * pxScale, 1, 1)
             : null;
@@ -306,6 +315,66 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.divObserver.disconnect();
     }
 
+    public setView(scale: number, x: number, y: number, duration: number = 1250) {
+
+        let _this = this;
+
+
+
+        // setter
+        if (_this.transform !== undefined) {
+            if (duration == 0) { // no animation
+                setZoom({ k: _this.transform.k, x: x, y: y });
+            } else {
+                new TWEEN.Tween({
+                    k: _this.transform.k,
+                    x:   (_this.size.w / 2 - _this.transform.x) / _this.transform.k,
+                    y:  (_this.size.h / 2 - _this.transform.y) / _this.transform.k
+                })
+                    .to({ k: scale, x: x, y: y }, duration)
+                    .easing(TWEEN.Easing.Quadratic.InOut)
+                    .onUpdate((data: { k: number, x: number, y: number }) => setZoom(data))
+                    .start();
+            }
+            return this;
+        }
+
+        // function getCenter() {
+        //     const t = _this.transform;
+        //     return { x: (state.width / 2 - t.x) / t.k, y: (state.height / 2 - t.y) / t.k };
+        //   }
+
+        function setZoom(data: { k: number, x: number, y: number }) {
+
+            // _this.zoom.transform(d3.select(_this.canvas), data.k, [data.x, data.y]);
+            _this.zoom.scaleTo(d3.select(_this.canvas), data.k);
+            _this.zoom.translateTo(d3.select(_this.canvas), data.x, data.y);
+
+
+        }
+    }
+
+    hoverFinder(_this: this) {
+        const pxScale = 1;//window.devicePixelRatio;
+        if (!this.pauseHovering && _this.mousePosition && _this.mousePosition.x > 0 && _this.mousePosition.y > 0) {
+            const px: any = (_this.mousePosition.x > 0 && _this.mousePosition.y > 0)
+                ? _this.contextShadow.getImageData(_this.mousePosition.x * pxScale, _this.mousePosition.y * pxScale, 1, 1)
+                : null;
+            _this.nodeHovered = this.getNodeAtMousePosition();
+            if (_this.nodeHovered) {
+                _this.canvas.style.cursor = "pointer";
+                _this.setFilterList("hover", [..._this.nodeHovered.descendants(), ..._this.nodeHovered.parents()]);
+            } else {
+                _this.setFilterList("hover");
+                _this.canvas.style.cursor = "auto";
+            }
+        }
+    };
+
+    pauseHovering: boolean = false;
+
+
+
     mousePosition: { x: number, y: number } = { x: 0, y: 0 };
     autocolor: ColorTracker = new ColorTracker();
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
@@ -315,6 +384,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     divObserver: ResizeObserver;
     canvas: HTMLCanvasElement;
     nodeHovered: AbstractNode | undefined;
+
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
     canvasShadow: HTMLCanvasElement;
@@ -322,14 +392,94 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     public showShadow: boolean = true;
     private _rootNodes: any[] = [];
 
+
+    private nodeFilterList: Map<string, AbstractNode[]> = new Map();
+    private nodeFiltered: AbstractNode[] = [];
+    private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
+
+    public setFilterList(key: string, listNodes: AbstractNode[] | undefined = undefined, showImmediately: boolean = false) {
+
+        if (listNodes) {
+
+            this.nodeFilterList.set(key, listNodes);
+        } else {
+            this.nodeFilterList.delete(key);
+        }
+
+        this.nodeFiltered = [];
+
+        let lists: AbstractNode[][] = Array.from(this.nodeFilterList.values());
+
+        if (lists.length > 0) {
+            this.nodeFiltered = lists[0];
+            for (let i = 1; i < lists.length; i++) {
+                this.nodeFiltered = this.nodeFiltered.filter(value => lists[i].includes(value));
+            }
+
+
+        }
+
+        if (this.nodeFiltered.length > 0) {
+            // search for new nodes that will be blending out or in
+            for (let index = 0; index < this.rootNodes.length; index++) {
+                const entry = this.rootNodes[index] as AbstractOverviewEntry;
+
+                for (let j = 0; j < entry.nodes.length; j++) {
+                    const n = entry.nodes[j];
+
+                    if (!this.nodeFiltered.includes(n)) {
+                        if (!this.notFound.has(n)) {
+                            // add it to blending out when not already in
+                            this.notFound.set(n, { o: 1, d: false });
+                        } else {
+                            // node is in blending mode, so make it blending out
+                            let o = this.notFound.get(n)?.o;
+                            o = o ? o : 0;
+                            this.notFound.set(n, { o, d: false });
+                        }
+                    } else {
+
+                        if (this.notFound.has(n)) {
+                            // node is in blending mode, so make it blending in
+                            let o = this.notFound.get(n)?.o;
+                            o = o ? o : 0;
+                            this.notFound.set(n, { o, d: true });
+                        }
+                    }
+                }
+            }
+        } else {
+            // all blending nodes will be set to blending in
+            let listOpacity = Array.from(this.notFound.keys());
+            for (let i = 0; i < listOpacity.length; i++) {
+                const n = this.notFound.get(listOpacity[i]);
+                if (n) {
+                    n.d = true;
+                    this.notFound.set(listOpacity[i], n);
+                }
+            }
+        }
+
+        if (listNodes) {
+            for (let i = 0; i < listNodes.length; i++) {
+                const n = listNodes[i];
+                if (this.nodeFiltered.includes(n)) {
+                    const data = this.notFound.delete(n);
+                }
+            }
+        }
+
+
+    }
+
     nodeAdded(node: AbstractNode) {
         node.colorID = this.autocolor.register(node);
-
         this.updateColumns = true;
     }
 
-
-
+    /**
+     * When a node is updated, we recalculate the column widths
+     */
     nodeUpdate() {
         /**
          * Recalculate column widths
@@ -358,36 +508,91 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     transform: ZoomTransform | undefined;
 
     public start(): void {
-        this.tick();
+
+        fpsInterval = 1000 / 60;
+        then = performance.now();
+        startTime = then;
+        this.timeLastFrame = performance.now();
+        if (!this.engineActive) {
+            this.tick();
+        }
         this.engineActive = true;
     }
 
+    // milliseconds till last frame
+    delta: number = 0;
+    timeLastFrame: number = 0;
+    enablePainting: boolean = true;
+
     public tick(): void {
 
-        if (this.engineActive) {
-            for (let index = 0; index < this._rootNodes.length; index++) {
-                const element = this._rootNodes[index].tick();
+        requestAnimationFrame(this.tick.bind(this));
+
+        // calc elapsed time since last loop, ideally ~33
+        now = performance.now();
+        elapsed = now - then;
+
+        // if enough time has elapsed, draw the next frame
+        if (elapsed > fpsInterval) {
+
+            console.log(this.transform);
+
+
+            this.hoverFinder(this);
+
+            this.delta = performance.now() - this.timeLastFrame;
+            this.timeLastFrame = performance.now();
+
+            // 0.3
+            let stepPos = 1 + this.delta / 60;
+            let stepNeg = 1 - this.delta / 160;
+
+            let listOpacity = Array.from(this.notFound.keys());
+            for (let i = 0; i < listOpacity.length; i++) {
+                const n = this.notFound.get(listOpacity[i]);
+                if (n) {
+                    n.o *= n.d ? stepPos : stepNeg;
+                    n.o = Math.min(1, Math.max(0.05, n.o));
+                    if (n.o >= 1) {
+                        this.notFound.delete(listOpacity[i]);
+                    }
+                }
             }
+
+            // Get ready for next frame by setting then=now, but also adjust for your
+            // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
+            then = now - (elapsed % fpsInterval);
+
+            // Put your drawing code here
+            if (this.engineActive) {
+                for (let index = 0; index < this._rootNodes.length; index++) {
+                    const element = this._rootNodes[index].tick();
+                }
+            }
+
+            if (this.enablePainting) {
+                // render the canvas
+                this.drawCanvas(this.context);
+                // render the shadow canvas
+                this.drawCanvas(this.contextShadow, true);
+            }
+
+
+            TWEEN.update();
         }
 
-        // render the canvas
-        this.drawCanvas(this.context);
-        // render the shadow canvas
-        this.drawCanvas(this.contextShadow, true);
-
-
-        TWEEN.update();
-        // request next frame
-        setTimeout(() => {
-            requestAnimationFrame(() => this.tick());
-        }, 33);
     }
-
-
 
     public getColumnX(entry: AbstractOverviewEntry, n: AbstractNode) {
 
         let x = n.parent ? this.getColumnData(entry, n.depth).x + entry.root.getX() : n.getX();
+
+        return x;
+    }
+
+    public getColumnWidth(entry: AbstractOverviewEntry, n: AbstractNode) {
+
+        let x = n.parent ? this.getColumnData(entry, n.depth).textWidth : 200;
 
         return x;
     }
@@ -469,15 +674,13 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     }
 
                     /**
-                     * E:\Testdaten\Bilder\0_40kb\Neuer Ordner awdaw\Neuer Ordner\1
-                     * E:\Testdaten\Bilder\0_40kb\Neuer Ordner awdaw\Neuer Ordner\1
                      *  we give the next column 
                      */
                     dataNext.xTemp = dataPrev.x + dataPrev.textWidth;
                     tween = new TWEEN.Tween({ x: dataNext.x, id: entry.id, depth: i });
-                    tween.to({ x: diff }, 2000) 
+                    tween.to({ x: diff }, 2000)
                     tween.easing(TWEEN.Easing.Elastic.Out)
-                    tween.delay(index*150)
+                    tween.delay(index * 110)
                     tween.onUpdate(function (object) {
                         let d = _this.getColumnDataRawByID(object.id, object.depth);
                         if (d) {
@@ -485,7 +688,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         }
                     })
                     tween.start();
- 
+
                     entryTweenList.set(value.depth, tween);
 
                 }
@@ -510,13 +713,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         ctx.imageSmoothingEnabled = false;
 
 
-        ctx.clearRect(0, 0, this.size.w, this.size.h);
-        if (!isShadow) {
-            ctx.fillStyle = "rgb(100,100,110)";
-            ctx.fillRect(0, 0, this.size.w, this.size.h);
-        }
+        ctx.fillStyle = "rgb(30,30,30)";
+        ctx.fillRect(0, 0, this.size.w, this.size.h);
 
-        ctx.fillStyle = "rgb(200,200,200)";
         this.transform = d3.zoomTransform(this.canvas);
         ctx.translate(this.transform.x, this.transform.y);
         ctx.scale(this.transform.k, this.transform.k);
@@ -531,8 +730,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             for (let index = 0; index < this.rootNodes.length; index++) {
                 const entry: AbstractOverviewEntry = this.rootNodes[index];
-                let nodes: AbstractNode[] = entry.root.descendants();
-
+                let nodes: AbstractNode[] = entry.nodes;
+                let links: AbstractLink[] = entry.links;
                 /**
                  * Update column metrics
                  */
@@ -557,7 +756,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             setWidths.set(n.depth, textWidth);
                         }
 
-                        let textw = ctx.measureText(n.name).width + n.getRadius() * 3 + 70;
+                        let textw = (ctx.measureText(n.name).width + n.getRadius() * 3 + 70) * 2;
                         textWidth.max = Math.max(textWidth.max, textw);
                         textWidth.min = Math.min(textWidth.min, textw);
 
@@ -577,108 +776,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 ctx.fillStyle = "rgb(170,170,170)";
 
-                let links: AbstractLink[] = entry.root.links();
 
-
-                /**
-                 *  Links
-                 */
-                for (let i = 0; i < links.length; i++) {
-                    const n = links[i];
-                    let start = n.source;
-                    let end = n.target;
-
-                    ctx.beginPath();
-                    ctx.lineWidth = 1.1;
-
-                    let xStart = this.getColumnX(entry, start);
-                    let xEnd = this.getColumnX(entry, end);
-
-
-                    let grd = ctx.createLinearGradient(xStart, start.getY(), xEnd, end.getY());
-                    grd.addColorStop(0, "#00000000");
-                    grd.addColorStop(0.1, "#00000000");
-                    grd.addColorStop(0.4, "#000000ff");
-                    ctx.strokeStyle = grd;
-
-                    if (isShadow) {
-                        ctx.strokeStyle = start.colorID ? start.colorID : "rgb(200,200,200)";
-                    }
-
-
-                    ctx.moveTo(xStart, start.getY());
-                    let midX = (xStart + xEnd) / 2;
-                    ctx.bezierCurveTo(
-                        midX,
-                        start.getY(),
-                        midX,
-                        end.getY(),
-                        xEnd,
-                        end.getY()
-                    );
-                    ctx.stroke();
-
-                }
-
-                /**
-                 *  Nodes
-                 */
-                for (let i = 0; i < nodes.length; i++) {
-                    const n = nodes[i];
-                    let isNodeHovered = this.nodeHovered == n;
-
-                    if (isShadow) {
-                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                    }
-
-                    let r = n.getRadius();
-                    let xPos = this.getColumnX(entry, n);
-
-                    ctx.beginPath();
-                    ctx.arc(
-                        xPos,
-                        n.getY(),
-                        isNodeHovered ? r * 2 : r,
-                        0,
-                        2 * Math.PI,
-                        false
-                    );
-                    ctx.fill();
-
-                }
-
-
-                ctx.fillStyle = "#fff";
-
-                // let textWidth:ColumnTextWidth = { min: 10000000, max: 0 };
-
-
-                /**
-                 * Draw Folder names
-                 */
-                for (let i = 0; i < nodes.length && !isShadow; i++) {
-                    const n = nodes[i];
-                    let isNodeHovered = this.nodeHovered == n;
-
-                    ctx.font = `${isNodeHovered ? 18 : 13}px Lato`;
-                    if (isShadow) {
-                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                    }
-                    let r = n.getRadius();
-                    let xPos = this.getColumnX(entry, n);
-
-                    let xName = xPos + r * 2;
-                    let yName = n.y ? n.y + 2 : 0;
-
-                    ctx.fillText(`${n.name}  `, xName, yName);
-
-                }
-
-
-
-
-
-
+                this.drawLinks(ctx, isShadow, links, entry);
+                this.drawNodes(ctx, isShadow, nodes, entry);
+                this.drawText(ctx, isShadow, nodes, entry);
 
             }
 
@@ -686,12 +787,193 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         ctx.restore();
 
-
         this.updateColumns = false;
 
         if (!isShadow && this.showShadow) {
             ctx.drawImage(this.canvasShadow, 0, 0);
         }
+
+    }
+
+    drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], entry: AbstractOverviewEntry) {
+
+        /**
+         *  Links
+         */
+        for (let i = 0; i < links.length; i++) {
+            const n = links[i];
+            let start = n.source;
+            let end = n.target;
+            const opacity = this.notFound.get(end);
+            if (!isShadow && opacity) {
+                ctx.globalAlpha = opacity.o;
+            } else {
+                ctx.globalAlpha = 1;
+            }
+
+            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(end)) {
+                ctx.beginPath();
+                ctx.lineWidth = isShadow ? 10 : 2;
+
+                let xStart = this.getColumnX(entry, start);
+                let xEnd = this.getColumnX(entry, end);
+
+                if (start.isRoot()) {
+                    ctx.strokeStyle = "#555";
+                } else {
+                    let grd = ctx.createLinearGradient(xStart, start.getY(), xEnd, end.getY());
+
+                    grd.addColorStop(0.1, "#5550");
+                    grd.addColorStop(0.4, "#555");
+                    ctx.strokeStyle = grd;
+                }
+
+                if (isShadow) {
+                    ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
+                }
+
+                ctx.moveTo(xStart, start.getY());
+                let midX = (xStart + xEnd) / 2;
+                ctx.bezierCurveTo(
+                    midX,
+                    start.getY(),
+                    midX,
+                    end.getY(),
+                    xEnd,
+                    end.getY()
+                );
+                ctx.stroke();
+
+            }
+
+        }
+    }
+
+    drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], entry: AbstractOverviewEntry) {
+
+
+        var angle = 2 * Math.PI;
+        var i = 0, len = nodes.length;
+        while (i < len) {
+
+            const n = nodes[i];
+            const opacity = this.notFound.get(n);
+            if (!isShadow && opacity) {
+                ctx.globalAlpha = opacity.o;
+            } else {
+                ctx.globalAlpha = 1;
+            }
+            //  let isNodeHovered = this.nodeHovered == n;
+
+            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
+                if (isShadow) {
+                    ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                }
+
+                var r = n.getRadius();
+                var xPos = this.getColumnX(entry, n);
+
+                ctx.beginPath();
+                ctx.arc(
+                    xPos,
+                    n.getY(),
+                    isShadow ? r * 3 : r,
+                    0,
+                    angle
+                );
+                ctx.fill();
+            }
+
+            i++
+        }
+
+    }
+
+    private isHoveredNode(n: any) {
+        return this.nodeHovered == n;
+    }
+
+    drawText(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], entry: AbstractOverviewEntry) {
+
+        ctx.fillStyle = "#fff";
+
+        let scale = this.transform ? this.transform.k : 1;
+
+        // let textWidth:ColumnTextWidth = { min: 10000000, max: 0 };
+        /**
+         * Draw Folder names
+         */
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i];
+
+            const opacity = this.notFound.get(n);
+            if (!isShadow && opacity) {
+                ctx.globalAlpha = opacity.o;
+            } else {
+                ctx.globalAlpha = 1;
+            }
+
+            let isNodeHovered = this.isHoveredNode(n);
+
+            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
+
+
+
+                if (!n.isRoot()) {
+
+                    let fontSize = isNodeHovered && !isShadow ? 18 : 14;
+                    ctx.font = `${fontSize}px Lato`;
+                    if (isShadow) {
+                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                    }
+                    let r = n.getRadius();
+                    let xPos = this.getColumnX(entry, n);
+                    let width = this.getColumnWidth(entry, n) * 0.8;
+
+                    let xName = xPos + r * 2;
+                    let yName = n.getY() + fontSize / 4;
+
+                    if (isShadow) {
+                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                        ctx.fillRect(xName, n.getY() - fontSize, width, fontSize * 2);
+                    } else {
+                        ctx.fillStyle = "#fff";
+                        ctx.fillText(`${n.name}  `, xName, yName);
+                    }
+
+                } else {
+
+                    let fontSize = 16 / scale;
+                    let translate = (fontSize) / 4;
+
+                    ctx.font = `${fontSize}px Lato`;
+                    if (isShadow) {
+                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                    }
+
+                    let name = isNodeHovered && !isShadow && n.entry ? n.entry.path : n.name;
+
+                    let r = n.getRadius();
+                    let xPos = this.getColumnX(entry, n);
+
+                    let xName = xPos - ctx.measureText(name).width - r * 2;
+                    let yName = n.getY() + translate;
+
+
+                    if (isShadow) {
+                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                        ctx.fillRect(xName, n.getY() - fontSize, ctx.measureText(n.name).width, fontSize * 2);
+                    } else {
+                        ctx.fillStyle = "#fff";
+                        ctx.fillText(`${name}  `, xName, yName);
+                    }
+
+                }
+            }
+
+
+        }
+        ctx.globalAlpha = 1;
 
     }
 
@@ -704,7 +986,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     private resetTransform(ctx: CanvasRenderingContext2D) {
         const pxRatio = window.devicePixelRatio;
-        ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+        // ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
     }
 
 }

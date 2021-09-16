@@ -9,17 +9,16 @@ export class FolderNode extends AbstractNode {
     constructor(name: string) {
         super("folder", name);
     }
-
-
 }
 
 export class FolderLink extends AbstractLink<FolderNode>{
 }
 
+
 export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
 
     constructor(path: string) {
-        super("folder", path, new FolderNode(pathNodejs.dirname(path)));
+        super("folder", path, new FolderNode(pathNodejs.basename(path)));
         this.path = path;
         this.root.entry = this;
     }
@@ -53,37 +52,43 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
 
     renameList: string[] = [];
     renameMap: Map<string, NodeJS.Timeout> = new Map();
+    startTime: number = 0;
+    endTime: number = 0;
+    interval: any = setInterval(this.handleEvents.bind(this), 200);
+
+    eventStack: { path: string, type: "add" }[] = [];
+
+    handleEvents(): void {
+        let event = this.eventStack.shift();
+
+        if (event) {
+            switch (event.type) {
+                case "add":
+                    this.addEntryPath(event.path);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
 
     startWatcher(): void {
+
+
 
         let _this = this;
 
         if (!this.watcher) {
-
-            console.log("start watcher");
 
             this.watcher = chokidar.watch(this.path, {
                 ignored: this.ignoredFolders, // ignore dotfiles
                 persistent: true,
                 depth: this.depth,
                 usePolling: true,
+                interval: 1500,
             });
 
-            this.watcher.on('raw', (event, path, { watchedPath }) => {
-                // console.log("event: " + event);
-
-                // if (event === 'rename') {
-                //     let abs = watchedPath + pathNodejs.sep + path;
-                //     if (this.renameList.length > 0) {
-                //         _this.renameByPaths(this.renameList[0], abs);
-                //         this.renameList = [];
-                //         return;
-                //     }
-                //     console.log("rename: " + abs);
-
-                //     this.renameList.push(abs)
-                // }
-            });
             this.watcher
                 .on("add", (path: any) => {
                     //  console.log("add: " + path);
@@ -113,14 +118,15 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
                                 stat += node.getChildren().find(c => c.name == name) ? 1 : 0;
                             });
                             let similiar = stat / filecount;
-                            console.log("similiar from : " + pathNew);
-                            console.log("similiar to   : " + p);
-                            console.log("similiar value: " + similiar);
-                            console.log("liste length  : " + paths.length);
+                            // console.log("similiar from : " + pathNew);
+                            // console.log("similiar to   : " + p);
+                            // console.log("similiar value: " + similiar);
+                            // console.log("liste length  : " + paths.length);
+                            // console.log("#");
 
-                            console.log("#");
-
-
+                            /**
+                             * This folder was renamed, remove the timer for deleting
+                             */
                             if (!isNaN(similiar) && similiar > 0.4) {
                                 renameCase = true;
                                 renamendPath = p;
@@ -131,63 +137,49 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
                                 }
                                 break s;
                             }
-                        } else {
-                            console.log("node not found: " + p);
-
                         }
                     }
 
                     if (renameCase) {
+                        /**
+                         * sub folders of the rename folders may also be in our renaming list. 
+                         * So test if they are and rename the folder in these paths. This way they will also be found when there addDir Event is fired and thus not be deleted.
+                         */
                         for (let i = 0; i < paths.length; i++) {
                             const p: string = paths[i];
                             if (p != renamendPath) {
                                 let timer = this.renameMap.get(p);
-                                if (timer) {
-
-                                    /**
-                                     * Only 
-                                     */
-                                    if (p.includes(renamendPath)
-                                        && p.replace(renamendPath, pathNew) != p) {
-                                        console.log("subfolder renamed from: " + p + " to: " + p.replace(renamendPath, pathNew));
-                                        this.renameMap.set(p.replace(renamendPath, pathNew), timer);
-                                        this.renameMap.delete(p);
-                                    }
-
+                                if (timer && p.includes(renamendPath)
+                                    && p.replace(renamendPath, pathNew) != p) {
+                                    this.renameMap.set(p.replace(renamendPath, pathNew), timer);
+                                    this.renameMap.delete(p);
                                 }
                             }
-
                         }
+
+                        // rename the node
                         _this.renameByPaths(renamendPath, pathNew);
-                        console.log("## rename Dir: " + pathNew);
                     } else {
-                        _this.addEntryPath(pathNew);
-
-                        console.log("## add Dir: " + pathNew);
+                        /**
+                         * Make sure the events happen at least with 30ms between them  
+                         */
+                        var timeDiff = performance.now() - this.endTime; //in ms 
+                        this.endTime = performance.now();
+                        this.eventStack.push({ path: pathNew, type: "add" });
+                        // setTimeout((t, p) => {
+                        //     t.addEntryPath(p);
+                        // }, timeDiff < 200 ? (200 - timeDiff) : 0, _this, pathNew);
                     }
-                    console.log(" ");
 
 
-
-                    _this.updateSimulationData(false);
                 })
                 .on("ready", (path: any) => {
                     console.log("READY");
                 })
                 .on("unlinkDir", (path: any) => {
-                    /*
-                    bei jedem neuem gelöschten ordner resetten wir das timeout und sammeln die ordner
-                    so lange in einer liste.
-                    */
-
                     /**
-                     * Der geänderte Ordner kommt rein. Wir finden ihn in der Liste und nennen ihn um
-                     * 
-                     * Die Subordner kommen, finden jedoch per getNodeByPath() ihren ordner nicht mehr
-                     * da dieser ja jetzt anders heißt. 
-                     * 
-                     * Wir müssen also beim renaming die removeListe durchgehen und die absoluten pfade
-                     * ersetzen wenn wir welche finden.
+                     * Dir will be deleted with delay so when an add event happens we can
+                     * test for a rename situation
                      */
                     let timer = setTimeout((p) => {
                         _this.removeEntryPath(p);
@@ -195,12 +187,6 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
                     }, 400, path);
                     this.renameMap.set(path, timer);
                     this.renameList.push(path);
-
-
-                    if (!this.renameList.includes(path)) {
-                    } else {
-                        console.log("dir will not be removed, as it is marked for renaming: " + path);
-                    }
 
                 });
         }

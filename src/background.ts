@@ -156,7 +156,7 @@ ipcMain.on('closed', _ => {
 });
 
 async function createWindow() {
- 
+
   // Create the browser window.
   win = new BrowserWindow({
     title: "Data Insight",
@@ -175,7 +175,7 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
- 
+
   win.on('close', (e) => {
     if (win) {
       e.preventDefault();
@@ -222,6 +222,7 @@ async function createWindow() {
         },
         {
           label: 'Reload Page',
+          accelerator: 'Ctrl+R',
           click() {
             if (win) {
               win.reload()

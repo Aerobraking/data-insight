@@ -68,7 +68,7 @@ export default defineComponent({
         @click="goToEntry(false, $event)"
         @dblclick="goToEntry(true, $event)"
         class="search-result-row"
-        v-for="e in listFound"
+                                                     v-for="e in listFound"
         :name="e.id"
         :key="e.id"
         :entry="e"

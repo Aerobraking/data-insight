@@ -70,7 +70,7 @@
     <OverviewView
       class="overview"
       :class="{ 'ov-open': model.overviewOpen }"
-      @dblclick.stop="openOverview"
+      @dblclick="openOverview"
       :model="model"
     />
 
@@ -395,10 +395,17 @@ export default defineComponent({
         }, 400);
       }
     },
-    openOverview(e: MouseEvent): void {
+    openOverview(e: MouseEvent, toggle: boolean = false): void {
       let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
-      this.model.overviewOpen = !this.model.overviewOpen;
 
+      if (toggle) {
+        this.model.overviewOpen = !this.model.overviewOpen;
+          e.stopPropagation();
+      } else if (!this.model.overviewOpen) {
+        this.model.overviewOpen = true;
+        e.stopPropagation();
+      }
+  
       if (this.model.overviewOpen) {
         div.classList.toggle("overview-hover", false);
       } else {
@@ -434,6 +441,10 @@ export default defineComponent({
       return this;
     },
     drawCanvas() {
+      if (this.model.overviewOpen) {
+        return;
+      }
+
       let canvas: HTMLCanvasElement = this.getCanvas() as HTMLCanvasElement;
 
       let context = canvas.getContext("2d");
@@ -711,7 +722,7 @@ export default defineComponent({
       if (!e.altKey && !e.ctrlKey) {
         switch (e.key) {
           case "s":
-            this.openOverview(new MouseEvent("down"));
+            this.openOverview(new MouseEvent("down"),true);
             break;
           case " ":
             if (e.repeat) {
@@ -1849,7 +1860,7 @@ svg {
   padding-top: 0px;
   padding-bottom: 0px;
   width: 100%;
-  z-index: 4000;
+  z-index: 800;
 
   button {
     border: none;
