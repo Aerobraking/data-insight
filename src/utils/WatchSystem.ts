@@ -8,9 +8,7 @@ interface Hash {
 }
 
 export class Watcher {
-
-
-
+ 
     private hash: Map<String, { (): void; }[]> = new Map();
     private static _instance = new Watcher();
     private watcher: FSWatcher;

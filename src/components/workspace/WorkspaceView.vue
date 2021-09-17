@@ -210,6 +210,7 @@ import {
 } from "mdue";
 import { ImageCache, ImageDim } from "@/utils/ImageCache";
 import WorkspaceEntryTextareaViewVue from "./WorkspaceEntryTextareaView.vue";
+
 export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",

@@ -20,6 +20,24 @@ function getTempFilePath(): string {
   return userdata + path.sep + "temp-file" + FileEnding;
 }
 
+ipcMain.on('msg-worker', (event, arg) => {
+  // win?.webContents.send("msg-worker", arg)
+  console.log("msg-worker");
+  console.log(arg);
+
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('msg-worker', arg);
+  })
+});
+ 
+ipcMain.on('msg-main', (event: any, arg: any) => {
+  console.log("msg-main");
+  console.log(arg);
+
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('msg-main', arg);
+  })
+})
 
 ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
 
@@ -43,7 +61,6 @@ ipcMain.on('open-insight-file', (event: any, arg: any) => {
 ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
 
   if (win) {
-
     win.setTitle(arg.filePath && arg.filePath.length > 0 ? "Data Insight: " + path.parse(path.basename(arg.filePath)).name : "Data Insight: " + "New File");
   }
 })
@@ -101,6 +118,13 @@ ipcMain.on('save-insight-file', (event: any, arg:
   }
 })
 
+ipcMain.on('closed', _ => {
+  win = null;
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
 function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
 
   console.log("save file: " + filepath);
@@ -120,9 +144,7 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
       wc.send('fire-file-saved', filepath);
     })
   }
-
-
-
+ 
   if (win) {
     if (isTemp
     ) {
@@ -143,17 +165,13 @@ function fireFileSaveEvent(chooseFile: boolean) {
 function fireNewFileEvent() {
   webContents.getAllWebContents().forEach(wc => {
     wc.send('fire-new-file', "");
+
   })
 }
 
 let win: BrowserWindow | null;
+let windowWorker: BrowserWindow | null;
 
-ipcMain.on('closed', _ => {
-  win = null;
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
 
 async function createWindow() {
 
@@ -173,6 +191,27 @@ async function createWindow() {
       nodeIntegration: (process.env
         .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
+    }
+  })
+
+  console.log("nodeingetragtion: ");
+  console.log((process.env
+    .ELECTRON_NODE_INTEGRATION as unknown) as boolean);
+  console.log(!process.env.ELECTRON_NODE_INTEGRATION);
+  
+
+  // Create the worker window.
+  windowWorker = new BrowserWindow({
+    title: "worker",
+    show: true,
+    webPreferences: {
+      enableRemoteModule: true,
+      webSecurity: false,
+      // Use pluginOptions.nodeIntegration, leave this alone
+      // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
+      nodeIntegrationInWorker: true,
+      nodeIntegration: true,
+      contextIsolation:false
     }
   })
 
@@ -246,15 +285,17 @@ async function createWindow() {
       ]
     }
   ])
-  Menu.setApplicationMenu(menu);
+  // Menu.setApplicationMenu(menu);
 
-  if (process.env.WEBPACK_DEV_SERVER_URL) {
+  if (process.env.WEBPACK_DEV_SERVER_URL) { 
+    windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage')
     // Load the url of the dev server if in development mode
-    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
+    win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
     if (!process.env.IS_TEST) win.webContents.openDevTools()
-  } else {
+  } else { 
     createProtocol('app')
     // Load the index.html when not in development
+    windowWorker.loadURL('app://./worker.html')
     win.loadURL('app://./index.html')
   }
 

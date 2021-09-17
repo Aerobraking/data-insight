@@ -6,6 +6,7 @@ import path from "path";
 import { OverviewEngine } from "./OverviewEngine";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
+import { Stats } from "./OverviewInterfaces";
 
 
 export abstract class AbstractNode implements SimulationNodeDatum {
@@ -52,6 +53,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     nodetype: string;
     id?: string | number;
     hue?: number;
+    stats: Stats | undefined;
+    statsRec: Stats | undefined;
     private _name: string;
     public get name(): string {
         return this._name;
@@ -208,6 +211,7 @@ export interface ColumnTextWidth {
     min: number,
     max: number
 }
+ 
 
 export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNode> {
 
@@ -290,10 +294,24 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
     }
 
-    public getNodeByPath(relativePath: string): AbstractNode | undefined {
-        relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
 
-        let folders: string[] = relativePath.split("/");
+
+    public addStats(stats: Stats) {
+        let node = this.getNodeByPath(stats.path);
+
+        if (node) {
+            node.stats = stats;
+            console.log("stats put into folder");
+
+            // the name renaming fires an nodeupdate event in the setter function
+
+        }
+    }
+
+    public getNodeByPath(absPath: string): AbstractNode | undefined {
+        absPath = path.normalize(path.relative(this.path, absPath)).replace(/\\/g, "/");
+
+        let folders: string[] = absPath.split("/");
 
         let currentFolder: D | undefined = this.root;
         s:

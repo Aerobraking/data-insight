@@ -328,8 +328,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             } else {
                 new TWEEN.Tween({
                     k: _this.transform.k,
-                    x:   (_this.size.w / 2 - _this.transform.x) / _this.transform.k,
-                    y:  (_this.size.h / 2 - _this.transform.y) / _this.transform.k
+                    x: (_this.size.w / 2 - _this.transform.x) / _this.transform.k,
+                    y: (_this.size.h / 2 - _this.transform.y) / _this.transform.k
                 })
                     .to({ k: scale, x: x, y: y }, duration)
                     .easing(TWEEN.Easing.Quadratic.InOut)
@@ -535,7 +535,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         // if enough time has elapsed, draw the next frame
         if (elapsed > fpsInterval) {
 
-            console.log(this.transform);
 
 
             this.hoverFinder(this);
@@ -797,6 +796,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], entry: AbstractOverviewEntry) {
 
+        let scale = this.transform ? this.transform.k : 1;
+        let lineWidth = 3 / scale;
         /**
          *  Links
          */
@@ -813,7 +814,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(end)) {
                 ctx.beginPath();
-                ctx.lineWidth = isShadow ? 10 : 2;
+                ctx.lineWidth = isShadow ? 10 : lineWidth;
 
                 let xStart = this.getColumnX(entry, start);
                 let xEnd = this.getColumnX(entry, end);

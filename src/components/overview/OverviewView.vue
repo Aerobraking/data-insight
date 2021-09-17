@@ -71,6 +71,7 @@ import {
   AbstractNode,
   AbstractOverviewEntry,
 } from "../workspace/overview/OverviewData";
+import scandir from "scandirectory";
 
 export default defineComponent({
   name: "App",
@@ -198,6 +199,9 @@ export default defineComponent({
       if (e.dataTransfer && this.overviewEngine) {
         for (let index = 0; index < e.dataTransfer?.files.length; index++) {
           const f = e.dataTransfer?.files[index];
+
+     
+
           const p = path.normalize(f.path).replace(/\\/g, "/");
 
           const fileStat = fs.lstatSync(p);

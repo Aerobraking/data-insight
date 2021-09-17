@@ -3,7 +3,10 @@ import { Exclude, Type } from "class-transformer";
 import chokidar, { FSWatcher, WatchOptions } from "chokidar";
 import pathNodejs from "path";
 import { fstat } from "original-fs";
-import fs from "fs";
+import fs from "fs"; 
+import { Instance } from "./FileSystemWatcher";
+import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./OverviewInterfaces";
+
 
 export class FolderNode extends AbstractNode {
     constructor(name: string) {
@@ -15,7 +18,7 @@ export class FolderLink extends AbstractLink<FolderNode>{
 }
 
 
-export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
+export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> implements FileSystemListener {
 
     constructor(path: string) {
         super("folder", path, new FolderNode(pathNodejs.basename(path)));
@@ -25,7 +28,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
 
     path: string;
 
-    private _depth: number = 8;
+    private _depth: number = 0;
 
     public get depth(): number {
         return this._depth;
@@ -54,7 +57,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
     renameMap: Map<string, NodeJS.Timeout> = new Map();
     startTime: number = 0;
     endTime: number = 0;
-    interval: any = setInterval(this.handleEvents.bind(this), 200);
+    interval: any = setInterval(this.handleEvents.bind(this), 100);
 
     eventStack: { path: string, type: "add" }[] = [];
 
@@ -66,130 +69,151 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode>{
                 case "add":
                     this.addEntryPath(event.path);
                     break;
-
                 default:
                     break;
             }
         }
     }
 
+    event(e: FolderStatsResult | FolderSyncResult): void {
+
+        switch (e.type) {
+            case "folderstats":
+                console.log(e);
+                this.addStats(e.stats);
+                break;
+            case "foldersync":
+                this.eventStack.push({ path: e.path, type: "add" });
+                break;
+        }
+
+    }
+    getPath(): string {
+        return this.path;
+    }
+    getDepth(): number {
+        return this.depth;
+    }
+    getID(): number {
+        return this.id;
+    }
+
     startWatcher(): void {
 
 
+console.log("start watcher");
 
-        let _this = this;
+        /**
+         * this starts the syncing of the folder for this entry.
+         */
+        Instance.syncFolder(this);
 
-        if (!this.watcher) {
+        // let _this = this;
+        // if ( !this.watcher) {
 
-            this.watcher = chokidar.watch(this.path, {
-                ignored: this.ignoredFolders, // ignore dotfiles
-                persistent: true,
-                depth: this.depth,
-                usePolling: true,
-                interval: 1500,
-            });
-
-            this.watcher
-                .on("add", (path: any) => {
-                    //  console.log("add: " + path);
-                })
-                .on("change", (path: any) => {
-                    console.log("change: " + path);
-                })
-                .on("unlink", (path: any) => {
-                    console.log("unlink: " + path);
-                })
-                .on("addDir", (pathNew: any) => {
-
-                    let paths: string[] = Array.from(this.renameMap.keys());
-                    let renameCase = false;
-                    let renamendPath: string = "";
-                    s:
-                    for (let i = 0; i < paths.length; i++) {
-                        const p: string = paths[i];
-                        const node = _this.getNodeByPath(p);
-                        let stat = 0;
-                        let filecount = 0;
-                        if (node) {
-                            // node found, test if it is the added Dir by comparing their children
-                            fs.readdirSync(pathNew).forEach(file => {
-                                filecount++;
-                                let name = pathNodejs.basename(file);
-                                stat += node.getChildren().find(c => c.name == name) ? 1 : 0;
-                            });
-                            let similiar = stat / filecount;
-                            // console.log("similiar from : " + pathNew);
-                            // console.log("similiar to   : " + p);
-                            // console.log("similiar value: " + similiar);
-                            // console.log("liste length  : " + paths.length);
-                            // console.log("#");
-
-                            /**
-                             * This folder was renamed, remove the timer for deleting
-                             */
-                            if (!isNaN(similiar) && similiar > 0.4) {
-                                renameCase = true;
-                                renamendPath = p;
-                                let timeout = this.renameMap.get(p)
-                                if (timeout) {
-                                    clearTimeout(timeout);
-                                    this.renameMap.delete(p);
-                                }
-                                break s;
-                            }
-                        }
-                    }
-
-                    if (renameCase) {
-                        /**
-                         * sub folders of the rename folders may also be in our renaming list. 
-                         * So test if they are and rename the folder in these paths. This way they will also be found when there addDir Event is fired and thus not be deleted.
-                         */
-                        for (let i = 0; i < paths.length; i++) {
-                            const p: string = paths[i];
-                            if (p != renamendPath) {
-                                let timer = this.renameMap.get(p);
-                                if (timer && p.includes(renamendPath)
-                                    && p.replace(renamendPath, pathNew) != p) {
-                                    this.renameMap.set(p.replace(renamendPath, pathNew), timer);
-                                    this.renameMap.delete(p);
-                                }
-                            }
-                        }
-
-                        // rename the node
-                        _this.renameByPaths(renamendPath, pathNew);
-                    } else {
-                        /**
-                         * Make sure the events happen at least with 30ms between them  
-                         */
-                        var timeDiff = performance.now() - this.endTime; //in ms 
-                        this.endTime = performance.now();
-                        this.eventStack.push({ path: pathNew, type: "add" });
-                        // setTimeout((t, p) => {
-                        //     t.addEntryPath(p);
-                        // }, timeDiff < 200 ? (200 - timeDiff) : 0, _this, pathNew);
-                    }
+        //     this.watcher = chokidar.watch(this.path, {
+        //         ignored: this.ignoredFolders, // ignore dotfiles
+        //         persistent: true,
+        //         depth: this.depth,
+        //         usePolling: true,
+        //         interval: 1500,
+        //     });
 
 
-                })
-                .on("ready", (path: any) => {
-                    console.log("READY");
-                })
-                .on("unlinkDir", (path: any) => {
-                    /**
-                     * Dir will be deleted with delay so when an add event happens we can
-                     * test for a rename situation
-                     */
-                    let timer = setTimeout((p) => {
-                        _this.removeEntryPath(p);
-                        _this.renameMap.delete(p);
-                    }, 400, path);
-                    this.renameMap.set(path, timer);
-                    this.renameList.push(path);
 
-                });
-        }
+        //     this.watcher
+        //         .on("add", (path: any) => {
+        //             //  console.log("add: " + path);
+        //         })
+        //         .on("change", (path: any) => {
+        //             console.log("change: " + path);
+        //         })
+        //         .on("unlink", (path: any) => {
+        //             console.log("unlink: " + path);
+        //         })
+        //         .on("addDir", (pathNew: any) => {
+
+        //             let paths: string[] = Array.from(this.renameMap.keys());
+        //             let renameCase = false;
+        //             let renamendPath: string = "";
+        //             s:
+        //             for (let i = 0; i < paths.length; i++) {
+        //                 const p: string = paths[i];
+        //                 const node = _this.getNodeByPath(p);
+        //                 let stat = 0;
+        //                 let filecount = 0;
+        //                 if (node) {
+        //                     // node found, test if it is the added Dir by comparing their children
+        //                     fs.readdirSync(pathNew).forEach(file => {
+        //                         filecount++;
+        //                         let name = pathNodejs.basename(file);
+        //                         stat += node.getChildren().find(c => c.name == name) ? 1 : 0;
+        //                     });
+        //                     let similiar = stat / filecount;
+
+        //                     /**
+        //                      * This folder was renamed, remove the timer for deleting
+        //                      */
+        //                     if (!isNaN(similiar) && similiar > 0.4) {
+        //                         renameCase = true;
+        //                         renamendPath = p;
+        //                         let timeout = this.renameMap.get(p)
+        //                         if (timeout) {
+        //                             clearTimeout(timeout);
+        //                             this.renameMap.delete(p);
+        //                         }
+        //                         break s;
+        //                     }
+        //                 }
+        //             }
+
+        //             if (renameCase) {
+        //                 /**
+        //                  * sub folders of the rename folders may also be in our renaming list. 
+        //                  * So test if they are and rename the folder in these paths. This way they will also be found when there addDir Event is fired and thus not be deleted.
+        //                  */
+        //                 for (let i = 0; i < paths.length; i++) {
+        //                     const p: string = paths[i];
+        //                     if (p != renamendPath) {
+        //                         let timer = this.renameMap.get(p);
+        //                         if (timer && p.includes(renamendPath)
+        //                             && p.replace(renamendPath, pathNew) != p) {
+        //                             this.renameMap.set(p.replace(renamendPath, pathNew), timer);
+        //                             this.renameMap.delete(p);
+        //                         }
+        //                     }
+        //                 }
+
+        //                 // rename the node
+        //                 _this.renameByPaths(renamendPath, pathNew);
+        //             } else {
+        //                 /**
+        //                  * Make sure the events happen at least with 30ms between them  
+        //                  */
+        //                 var timeDiff = performance.now() - this.endTime; //in ms 
+        //                 this.endTime = performance.now();
+        //                 this.eventStack.push({ path: pathNew, type: "add" });
+        //             }
+
+
+        //         })
+        //         .on("ready", (path: any) => {
+        //             console.log("READY");
+        //         })
+        //         .on("unlinkDir", (path: any) => {
+        //             /**
+        //              * Dir will be deleted with delay so when an add event happens we can
+        //              * test for a rename situation
+        //              */
+        //             let timer = setTimeout((p) => {
+        //                 _this.removeEntryPath(p);
+        //                 _this.renameMap.delete(p);
+        //             }, 400, path);
+        //             this.renameMap.set(path, timer);
+        //             this.renameList.push(path);
+
+        //         });
+        // }
 
     }
 

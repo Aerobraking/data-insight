@@ -10,7 +10,7 @@ import wsentrytextarea from "./components/workspace/WorkspaceEntryTextareaView.v
 import wsentryfolderview from "./components/workspace/WorkspaceEntryFolderView.vue";
 import wsentryimage from "./components/workspace/WorkspaceEntryImageView.vue";
 import wsentryyoutube from "./components/workspace/WorkspaceEntryYoutubeView.vue";
-
+ 
 const app = createApp(App);
 app.use(store).use(panZoom).mount('#app');
 
