@@ -3,7 +3,7 @@ import { Exclude, Type } from "class-transformer";
 import chokidar, { FSWatcher, WatchOptions } from "chokidar";
 import pathNodejs from "path";
 import { fstat } from "original-fs";
-import fs from "fs"; 
+import fs from "fs";
 import { Instance } from "./FileSystemWatcher";
 import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./OverviewInterfaces";
 
@@ -57,9 +57,9 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     renameMap: Map<string, NodeJS.Timeout> = new Map();
     startTime: number = 0;
     endTime: number = 0;
-    interval: any = setInterval(this.handleEvents.bind(this), 100);
+    interval: any = setInterval(this.handleEvents.bind(this), 10);
 
-    eventStack: { path: string, type: "add" }[] = [];
+    eventStack: ({ path: string, type: "add" } | FolderStatsResult)[] = [];
 
     handleEvents(): void {
         let event = this.eventStack.shift();
@@ -68,6 +68,9 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
             switch (event.type) {
                 case "add":
                     this.addEntryPath(event.path);
+                    break;
+                case "folderstats":
+                    this.addStats(event.stats);
                     break;
                 default:
                     break;
@@ -79,8 +82,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
 
         switch (e.type) {
             case "folderstats":
-                console.log(e);
-                this.addStats(e.stats);
+                this.eventStack.push(e);
                 break;
             case "foldersync":
                 this.eventStack.push({ path: e.path, type: "add" });
@@ -101,7 +103,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     startWatcher(): void {
 
 
-console.log("start watcher");
+        console.log("start watcher");
 
         /**
          * this starts the syncing of the folder for this entry.

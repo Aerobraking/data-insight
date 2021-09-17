@@ -1,11 +1,6 @@
-import { FSWatcher } from "chokidar";
-
-const chokidar = require("chokidar");
-import fs from "fs";
 import { ipcRenderer } from "electron";
 import { FileSystemListener, FolderStatsResult, FolderSync, FolderSyncResult } from "./OverviewInterfaces";
 const pathSys = require("path");
-
 
 export class FileSystemWatcher {
 
@@ -42,13 +37,10 @@ export class FileSystemWatcher {
                     }
                 }
 
-
             }
         );
 
-
     }
-
 
     syncFolder(listener: FileSystemListener): void {
 
@@ -59,17 +51,11 @@ export class FileSystemWatcher {
         /**
          * Ein neuer ordner wurde hinzugefügt, wir scannen ihn komplett.
          */
-        //  this.worker.postMessage(msg);
-        console.log("send msg from main to worker:");
-        console.log(msg);
-
         ipcRenderer.send('msg-main', msg);
+
     }
 
-
-
 }
-
 
 export const Instance = FileSystemWatcher.instance;
 

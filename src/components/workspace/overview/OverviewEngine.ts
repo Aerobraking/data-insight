@@ -822,12 +822,20 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 if (start.isRoot()) {
                     ctx.strokeStyle = "#555";
                 } else {
-                    let grd = ctx.createLinearGradient(xStart, start.getY(), xEnd, end.getY());
 
-                    grd.addColorStop(0.1, "#5550");
-                    grd.addColorStop(0.4, "#555");
-                    ctx.strokeStyle = grd;
                 }
+
+                let grd = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+
+                /*
+                a = r * r * PI
+                250 * 0.4 = 
+interpolateWarm
+                */
+
+                grd.addColorStop(0.25, d3.interpolatePlasma(1 - start.getRadius() / 250).replace(")", ",0.05)").replace("(", "a("));
+                grd.addColorStop(0.6, d3.interpolatePlasma(1 - end.getRadius() / 250));
+                ctx.strokeStyle = grd;
 
                 if (isShadow) {
                     ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
@@ -853,6 +861,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], entry: AbstractOverviewEntry) {
 
 
+        var mycolor = d3.scaleLinear<string>()
+            .domain([0, 100, 250])
+            .range(["green", "yellow", "red"]);
+
         var angle = 2 * Math.PI;
         var i = 0, len = nodes.length;
         while (i < len) {
@@ -867,6 +879,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             //  let isNodeHovered = this.nodeHovered == n;
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
+
+                ctx.fillStyle = mycolor((n.getRadius() / 250));
+                ctx.fillStyle = d3.interpolatePlasma(1 - n.getRadius() / 250);
+
                 if (isShadow) {
                     ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
                 }

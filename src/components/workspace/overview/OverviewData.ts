@@ -6,7 +6,7 @@ import path from "path";
 import { OverviewEngine } from "./OverviewEngine";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
-import { Stats } from "./OverviewInterfaces";
+import { Stats, StatsType } from "./OverviewInterfaces";
 
 
 export abstract class AbstractNode implements SimulationNodeDatum {
@@ -66,6 +66,17 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         }
     }
 
+    public getStatsValue(key: string): number {
+        if (this.statsRec) {
+            let e = this.statsRec.stats[key];
+            if (e) {
+                return e.value;
+            }
+        }
+        return 0;
+    }
+
+
     public isRoot(): boolean {
         return this.parent == undefined;
     }
@@ -117,7 +128,17 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     }
 
     public getRadius() {
-        return this.r ? this.r : 0;
+
+        if (this.isRoot()) {
+            return 250;
+        } else if (this.entry) {
+            let abs = this.entry.root.getStatsValue("size");
+            let part = this.getStatsValue("size");
+            if (abs > 0) {
+                return Math.sqrt(220000 * (part / abs) / Math.PI);
+            }
+        }
+        return this.r ? this.r : 1;
     }
 
     public getY() {
@@ -211,7 +232,7 @@ export interface ColumnTextWidth {
     min: number,
     max: number
 }
- 
+
 
 export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNode> {
 
@@ -230,7 +251,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             .forceSimulation([] as Array<D>)
             .force('link', d3.forceLink().strength(0.2))
             .force('charge', d3.forceManyBody().distanceMax(100).strength(0.5))
-            .force("collide", d3.forceCollide<AbstractNode>().radius(d => d.getRadius() * 4).iterations(8).strength(1.5))
+            .force("collide", d3.forceCollide<AbstractNode>().radius(d => Math.max(d.getRadius() * 4, 25)).iterations(8).strength(1.5))
             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
             .alphaMin(0.003)
             .alphaTarget(0.004)
@@ -295,20 +316,59 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
     }
 
 
-
     public addStats(stats: Stats) {
         let node = this.getNodeByPath(stats.path);
-
         if (node) {
             node.stats = stats;
-            console.log("stats put into folder");
 
-            // the name renaming fires an nodeupdate event in the setter function
+            let parent: D | undefined = node;
+
+            while (parent) {
+
+                // reset the recursive stats so we can recalculate them
+                parent.statsRec = { path: "", stats: {} }
+                if (parent.stats) {
+                    Object.assign(parent.statsRec, parent.stats);
+                }
+                let statsParent = parent.statsRec;
+
+
+                /**
+                 * We recalculate the stats for the node and then for all coming parent nodes.
+                 * For that we combine the stat of the node folder with the stats of all its child nodes
+                 */
+                for (let i = 0; i < parent.getChildren().length; i++) {
+                    const c = parent.getChildren()[i];
+                    let childStats = c.statsRec;
+                    if (childStats) {
+                        Object.keys(childStats.stats).forEach((key: string) => {
+                            if (statsParent && childStats) {
+                                if (childStats.stats[key]) {
+                                    // init the value in the stats if not available yet
+                                    if (!statsParent.stats[key]) {
+                                        statsParent.stats[key] = { value: 0, type: childStats.stats[key].type }
+                                    }
+                                    /**
+                                     * We add the values together when we have a sum value.
+                                     */
+                                    if (childStats.stats[key].type == StatsType.SUM) {
+                                        statsParent.stats[key].value += childStats.stats[key].value;
+                                    }
+                                }
+
+                            }
+                        })
+                    }
+                }
+
+
+                parent = parent.parent;
+            }
 
         }
     }
 
-    public getNodeByPath(absPath: string): AbstractNode | undefined {
+    public getNodeByPath(absPath: string): D | undefined {
         absPath = path.normalize(path.relative(this.path, absPath)).replace(/\\/g, "/");
 
         let folders: string[] = absPath.split("/");

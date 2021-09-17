@@ -4,28 +4,14 @@ import fs from 'fs';
 import { ipcRenderer } from "electron";
 import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult } from './components/workspace/overview/OverviewInterfaces';
 
-// import awd from "./components/workspace/overview/FileScanner"
-// import { startListener } from "./FileScanner"
-// startListener();
-console.log("Second created!");
-// awd();
-
-console.log("register ipc in worker");
-
 /**
  * We scan the complete folder and send back first the folder structure and then the stats for each folder based on their files
  */
 ipcRenderer.on("msg-main",
     function (event: any, payload: any) {
 
-        console.log("worker got message from main: ");
-
-        console.log(payload);
-
 
         if (payload.type === "folderdeepsync") {
-
-            console.log("worker got message from main: ");
 
             let scanFinishd = false;
 
@@ -36,10 +22,6 @@ ipcRenderer.on("msg-main",
                 let sync: FolderSyncResult = { id: msg.id, path: pathF, type: "foldersync" };
                 // @ts-ignore: Unreachable code error
                 ipcRenderer.send('msg-worker', sync);
-                console.log("folder visited: ");
-                console.log(sync);
-
-                // postMessage(sync);
 
                 let files: string[] = fs.readdirSync(pathF);
 
@@ -47,7 +29,7 @@ ipcRenderer.on("msg-main",
                     const fileName = files[i];
                     const absolutePath = pathF + "/" + fileName;
                     const stats = fs.statSync(absolutePath);
-                    if (stats.isDirectory() && msg.depth < 100 && (msg.depth == 0 || depth < msg.depth)) {
+                    if (stats.isDirectory() && fileName != "." && msg.depth < 100 && (msg.depth == 0 || depth < msg.depth)) {
                         visitFolder(absolutePath, depth++)
                     }
                 }
@@ -86,25 +68,28 @@ ipcRenderer.on("msg-main",
                     folderStat.stats.mtime.value /= fileCount;
                     folderStat.stats.atime.value /= fileCount;
                     folderStat.stats.ctime.value /= fileCount;
+                    console.log("scanned: " + fileCount + " files");
+
                 }
 
                 let result: FolderStatsResult = {
+                    type: "folderstats",
                     id: msg.id,
                     stats: folderStat,
-                    type: "folderstats",
                     path: pathF
                 }
 
                 // @ts-ignore: Unreachable code error
                 ipcRenderer.send('msg-worker', result);
-                // postMessage(result);
-
                 return folderStat;
 
             }
 
 
             visitFolder(msg.path);
+
+            console.log("finished scanning");
+
 
         }
     }

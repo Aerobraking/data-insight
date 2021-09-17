@@ -22,8 +22,7 @@ function getTempFilePath(): string {
 
 ipcMain.on('msg-worker', (event, arg) => {
   // win?.webContents.send("msg-worker", arg)
-  console.log("msg-worker");
-  console.log(arg);
+  
 
   webContents.getAllWebContents().forEach(wc => {
     wc.send('msg-worker', arg);
@@ -31,8 +30,7 @@ ipcMain.on('msg-worker', (event, arg) => {
 });
  
 ipcMain.on('msg-main', (event: any, arg: any) => {
-  console.log("msg-main");
-  console.log(arg);
+   
 
   webContents.getAllWebContents().forEach(wc => {
     wc.send('msg-main', arg);
