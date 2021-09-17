@@ -42,8 +42,7 @@ import * as WSUtils from "./../workspace/WorkspaceUtils";
 import {
   EngineState,
   OverviewEngine,
-} from "../workspace/overview/OverviewEngine";
-import OverviewCanvas from "./OverviewCanvas.vue";
+} from "../workspace/overview/OverviewEngine"; 
 import { Instance } from "../workspace/overview/OverviewTransferHandler";
 import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 const fs = require("fs");
@@ -75,8 +74,7 @@ import scandir from "scandirectory";
 
 export default defineComponent({
   name: "App",
-  components: {
-    OverviewCanvas,
+  components: { 
     Qrcode,
   },
   props: {

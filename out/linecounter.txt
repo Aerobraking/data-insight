@@ -138,8 +138,7 @@ src\assets\icons\insert_drive_file_white_24dp.svg, code is 1, comment is 0, blan
 src\assets\logo.png, it is a binary file.
 src\background.ts, code is 231, comment is 32, blank is 44.
 src\components\app\StartScreen.vue, code is 17, comment is 0, blank is 6.
-src\components\app\Tabs.vue, code is 300, comment is 7, blank is 27.
-src\components\overview\OverviewCanvas.vue, code is 833, comment is 120, blank is 118.
+src\components\app\Tabs.vue, code is 300, comment is 7, blank is 27. 
 src\components\overview\OverviewView.vue, code is 130, comment is 7, blank is 14.
 src\components\workspace\FolderFileView.vue, code is 77, comment is 1, blank is 10.
 src\components\workspace\overview\FileEngine.ts, code is 69, comment is 2, blank is 22.

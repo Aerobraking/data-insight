@@ -158,8 +158,7 @@ import {
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import WorkspacePlugin from "./Plugins/AbstractPlugin";
 import ReArrange from "./Plugins/Rearrange";
-import * as WSUtils from "./WorkspaceUtils";
-import OverviewCanvas from "./../overview/OverviewCanvas.vue";
+import * as WSUtils from "./WorkspaceUtils"; 
 import OverviewView from "./../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
@@ -207,9 +206,7 @@ import {
   FolderOutline,
   FileOutline,
   EmoticonHappyOutline,
-} from "mdue";
-import { ImageCache, ImageDim } from "@/utils/ImageCache";
-import WorkspaceEntryTextareaViewVue from "./WorkspaceEntryTextareaView.vue";
+} from "mdue"; 
 
 export default defineComponent({
   el: ".wrapper",
@@ -232,8 +229,7 @@ export default defineComponent({
     Overscan,
     Resize,
     wsentriesbookmarks,
-    wssearchlist,
-    OverviewCanvas,
+    wssearchlist, 
     OverviewView,
   },
   props: {

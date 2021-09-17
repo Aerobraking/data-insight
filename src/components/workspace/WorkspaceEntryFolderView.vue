@@ -96,30 +96,7 @@ import {
   WorkspaceEntryFolderWindow,
 } from "../../store/model/Workspace";
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
-
-function processLargeArrayAsync(
-  array: any[],
-  fn: (context: any, item: any, index: number, array: any[]) => void,
-  chunk: number | undefined = undefined,
-  context: any | undefined = undefined
-) {
-  context = context || window;
-  chunk = chunk || 50;
-  var index = 0;
-  function doChunk() {
-    var cnt = chunk || 50;
-    while (cnt-- && index < array.length) {
-      // callback called with args (value, index, array)
-      fn.call(context, context, array[index], index, array);
-      ++index;
-    }
-    if (index < array.length) {
-      // set Timeout for async iteration
-      setTimeout(doChunk, 1);
-    }
-  }
-  doChunk();
-}
+ 
 
 function readFiles(
   dir: string,

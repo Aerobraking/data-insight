@@ -833,12 +833,6 @@
                     "filename": "src\\components\\app\\Tabs.vue"
                 },
                 {
-                    "blank": 118,
-                    "code": 833,
-                    "comment": 120,
-                    "filename": "src\\components\\overview\\OverviewCanvas.vue"
-                },
-                {
                     "blank": 14,
                     "code": 130,
                     "comment": 7,

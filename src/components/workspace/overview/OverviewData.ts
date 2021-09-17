@@ -1,12 +1,14 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
-import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink } from "d3";
+import * as d3f from "d3-force-reuse";
+import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink, ForceY } from "d3";
 import { FolderNode, FolderOverviewEntry } from "./FileEngine";
 import path from "path";
 import { OverviewEngine } from "./OverviewEngine";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
 import { Stats, StatsType } from "./OverviewInterfaces";
+
 
 
 export abstract class AbstractNode implements SimulationNodeDatum {
@@ -247,25 +249,27 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
         let _this = this;
 
+
         this.simulation = d3
             .forceSimulation([] as Array<D>)
             .force('link', d3.forceLink().strength(0.2))
-            .force('charge', d3.forceManyBody().distanceMax(100).strength(0.5))
-            .force("collide", d3.forceCollide<AbstractNode>().radius(d => Math.max(d.getRadius() * 4, 25)).iterations(8).strength(1.5))
+            // @ts-ignore: Unreachable code error
+            //  .force("charge", d3f.forceManyBodyReuse().distanceMax(100).strength(0.5))
+            // .force('charge', d3.forceManyBody().distanceMax(100).strength(0.5))
+            .force("collide", d3.forceCollide<AbstractNode>().radius(d => Math.max(d.getRadius() * 4, 25)).iterations(2).strength(1.5))
+            .force(
+                "y",
+                d3.forceY()
+                    .y(function (d: any) {
+                        return 0;
+                    })
+                    .strength(0.0015)
+            )
             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
             .alphaMin(0.003)
             .alphaTarget(0.004)
             .stop();
 
-
-        this.simulation.force(
-            "y",
-            d3.forceY()
-                .y(function (d: any) {
-                    return 0;
-                })
-                .strength(0.0015)
-        );
     }
 
     @Type(() => FolderNode)
@@ -414,7 +418,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
 
         if (foldersCreated) {
-            this.simulation.restart();
+            this.simulation.alpha(1);
             this.updateSimulationData(false);
         }
 
@@ -437,7 +441,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         // remove folder if found
         if (currentFolder && currentFolder.parent) {
             currentFolder.parent.removeChild(currentFolder);
-            this.simulation.restart();
+            this.simulation.alpha(1);
             this.updateSimulationData(false);
         }
     }
@@ -497,16 +501,17 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     tick() {
 
-        this.simulation.force(
-            "y",
-            d3.forceY<D>()
-                .y(function (d: D) {
-                    return d.parent ? d.parent.getY() : d.getY();
-                })
-                .strength(function (d: D, i: number, data: D[]) {
-                    return d.parent ? 0.002 : 0;
-                })
+        let y: ForceY<D> | undefined = this.simulation.force(
+            "y"
         );
+
+        if (y) {
+            y.y(function (d: D) {
+                return d.parent ? d.parent.getY() : d.getY();
+            }).strength(function (d: D, i: number, data: D[]) {
+                return d.parent ? 0.002 : 0;
+            })
+        }
 
         this.simulation.tick();
 

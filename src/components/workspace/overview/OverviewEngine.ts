@@ -227,7 +227,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         // prevent freeze while dragging
                         node.entry?.simulation
                             .alphaTarget(0.3) // keep engine running at low intensity throughout drag
-                            .restart();  // prevent freeze while dragging
+                            .alpha(1);  // prevent freeze while dragging
 
                     })
                     .on('end', ev => {
@@ -255,7 +255,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                         node.entry?.simulation
                             .alphaTarget(0.004) // keep engine running at low intensity throughout drag
-                            .restart();
+                            ;
 
                         this.canvas.classList.remove('grabbable');
                     })
@@ -274,7 +274,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         });
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
-        this.zoom.scaleExtent([0.1, 8]);
+        this.zoom.scaleExtent([0.02, 8]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
             let t = d3.zoomTransform(this.canvas);
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
@@ -577,7 +577,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 }
 
             }
- 
+
             TWEEN.update();
         }
 
@@ -595,7 +595,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
     setWidthsTween: Map<AbstractOverviewEntry, Map<number, Tween<any>>> = new Map();
- 
+
     public getColumnData(entry: AbstractOverviewEntry, depth: number, create: boolean = true) {
         return this.getColumnDataByID(entry.id, depth, create);
     }
@@ -618,7 +618,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         }
         return data;
     }
- 
+
     public getColumnDataRaw(entry: AbstractOverviewEntry, depth: number) {
         return this.getColumnDataRawByID(entry.id, depth);
     }
@@ -688,7 +688,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 index++;
                 dataNext = this.getColumnDataRaw(entry, i);
             }
- 
+
         }
     }
 
@@ -701,7 +701,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         ctx.save();
         ctx.imageSmoothingEnabled = false;
- 
+
         ctx.fillStyle = "rgb(30,30,30)";
         ctx.fillRect(0, 0, this.size.w, this.size.h);
 
@@ -774,10 +774,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 }
 
                 ctx.fillStyle = "rgb(170,170,170)";
- 
+
                 this.drawLinks(ctx, isShadow, links, widths, entry);
                 this.drawNodes(ctx, isShadow, nodes, widths, entry);
-                this.drawText(ctx, isShadow, nodes, widths, entry); 
+                this.drawText(ctx, isShadow, nodes, widths, entry);
             }
 
         }
@@ -816,8 +816,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 ctx.beginPath();
                 ctx.lineWidth = isShadow ? 10 : lineWidth;
 
-                let xStart = widths[start.depth].x;
-                let xEnd = widths[end.depth].x;
+                let xStart = widths[start.depth] ? widths[start.depth].x : 0;
+                let xEnd = widths[end.depth] ? widths[end.depth].x : 0;
 
                 if (start.isRoot()) {
                     ctx.strokeStyle = "#555";
@@ -829,10 +829,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 a = r * r * PI
                 250 * 0.4 = 
 interpolateWarm
+interpolatePlasma
                 */
 
-                grd.addColorStop(0.25, d3.interpolatePlasma(1 - start.getRadius() / 250).replace(")", ",0.05)").replace("(", "a("));
-                grd.addColorStop(0.6, d3.interpolatePlasma(1 - end.getRadius() / 250));
+                grd.addColorStop(0.25, d3.interpolateWarm(1 - start.getRadius() / 250).replace(")", ",0.05)").replace("(", "a("));
+                grd.addColorStop(0.6, d3.interpolateWarm(1 - end.getRadius() / 250));
                 ctx.strokeStyle = grd;
 
                 if (isShadow) {
@@ -879,13 +880,13 @@ interpolateWarm
 
                 var r = n.getRadius();
                 ctx.fillStyle = mycolor((r / 250));
-                ctx.fillStyle = d3.interpolatePlasma(1 - r / 250);
+                ctx.fillStyle = d3.interpolateWarm(1 - r / 250);
 
                 if (isShadow) {
                     ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
                 }
 
-                let xPos = widths[n.depth].x;
+                let xPos = widths[n.depth] ? widths[n.depth].x : 0;
 
                 ctx.beginPath();
                 ctx.arc(
@@ -930,9 +931,9 @@ interpolateWarm
             let isNodeHovered = this.isHoveredNode(n);
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
- 
-                let xPos = widths[n.depth].x;
-                let width = widths[n.depth].width;
+
+                let xPos = widths[n.depth] ? widths[n.depth].x : 0;
+                let width = widths[n.depth] ? widths[n.depth].width : 10;
                 let r = n.getRadius();
 
 
@@ -943,7 +944,7 @@ interpolateWarm
                     if (isShadow) {
                         ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
                     }
-                
+
                     let xName = xPos + r * 2;
                     let yName = n.getY() + fontSize / 4;
 

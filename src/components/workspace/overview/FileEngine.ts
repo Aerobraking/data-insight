@@ -57,7 +57,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     renameMap: Map<string, NodeJS.Timeout> = new Map();
     startTime: number = 0;
     endTime: number = 0;
-    interval: any = setInterval(this.handleEvents.bind(this), 10);
+    interval: any = setInterval(this.handleEvents.bind(this), 2);
 
     eventStack: ({ path: string, type: "add" } | FolderStatsResult)[] = [];
 
