@@ -270,7 +270,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             } else if (event instanceof MouseEvent) {
                 return (event.button === 1);
             }
-            return false;
+            return true;
         });
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
@@ -280,6 +280,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
         });
         let t = d3.zoomTransform(this.canvas);
+        
+      
     }
 
     getNodeAtMousePosition = () => {
