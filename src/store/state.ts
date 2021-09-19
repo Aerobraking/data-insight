@@ -15,6 +15,13 @@ export class InsightFile {
     })
     views: Array<Workspace> = [new Workspace("Default").setActive(true)];
     settings: InsightFileSettings = new InsightFileSettings();
+
+    public initAfterLoading(){
+        for (let i = 0; i < this.views.length; i++) {
+            const v = this.views[i];
+            v.initAfterLoading();
+        }
+    }
 }
 
 export class InsightFileSettings {

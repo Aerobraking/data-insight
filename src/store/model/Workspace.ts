@@ -96,7 +96,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         this.height = 600;
         this.imageCreated = false;
         this.isClipboard = clipboard;
-        
+
         // ImageCache.registerPath(this.getURL(), {
         //     callback: (
         //       url: string,
@@ -125,7 +125,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         return this.isClipboard ? this.path : "file://" + this.path;
     }
 
-    blob:string="";
+    blob: string = "";
     isClipboard: boolean;
     name: string;
     path: string;
@@ -348,6 +348,10 @@ export class Workspace extends View {
         },
     })
     entries: Array<WorkspaceEntry> = [];
+
+    public initAfterLoading() {
+        this.overview.initAfterLoading(); 
+    }
 
 
 }

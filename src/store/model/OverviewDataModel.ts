@@ -15,7 +15,6 @@ export class Overview {
     id: number;
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.333 }
 
-
     @Type(() => AbstractOverviewEntry, {
         keepDiscriminatorProperty: true,
         discriminator: {
@@ -24,63 +23,18 @@ export class Overview {
                 { value: FolderOverviewEntry, name: 'folder' }
             ],
         },
-    })    
+    })
     rootNodes: FolderOverviewEntry[] = [];
-}
 
-enum BackgroundBehaviour {
-    NORMAL,
-    SLOWDOWN,
-    PAUSE,
-}
-
-export abstract class OverviewRenderSettings {
-    nodeSizeRelFacotor: number = 1;
-    showLeafs: boolean = true;
-    backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
-}
-
-
-/**
- * 
- * 
- * What do we need:
- * 
- * Extend Overview for your implementation of an Overview. 
- * 
- * Create a Vue component for your overview Subclass. 
- * 
- * 
- * 
- */
-
-export abstract class TreeStructureHandler<T, N extends AbstractNode<T>> {
-    abstract name: string;
-    /**
-     * Is called to sync the current existing tree structure in our model
-     * with the actual one from our source. That is typically called when 
-     * starting the program. After the sync, the synchronisation is done
-     * through the watching of changed in the source.
-     */
-    abstract syncStructure(): void;
-
-    abstract startWatcher(): void;
-
-    abstract reactToDrop(e: DragEvent): void;
+    public initAfterLoading() {
+        for (let i = 0; i < this.rootNodes.length; i++) {
+            const v = this.rootNodes[i];
+            v.initAfterLoading();
+        }
+    }
 
 }
 
-
-
-/**
- * Handles the Rendering of the Overview Graph
- */
-export interface OverviewRendererInterface<T, N extends AbstractNode<T>> {
-    getNodeHSLString(node: N): string;
-
-    renderNodes(listNodes: Array<N>): void;
-    renderLinks(listLinks: Array<OverviewLink<T>>, listNodes: Array<N>,): void;
-}
 /**
  * The super class for any nodes you want to display in the Overview.
  */

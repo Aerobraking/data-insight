@@ -201,7 +201,7 @@ async function createWindow() {
   // Create the worker window.
   windowWorker = new BrowserWindow({
     title: "worker",
-    show: true,
+    show: false,
     webPreferences: {
       enableRemoteModule: true,
       webSecurity: false,
@@ -283,7 +283,7 @@ async function createWindow() {
       ]
     }
   ])
-  // Menu.setApplicationMenu(menu);
+  Menu.setApplicationMenu(menu);
 
   if (process.env.WEBPACK_DEV_SERVER_URL) { 
     windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage')

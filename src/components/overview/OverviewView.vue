@@ -29,6 +29,14 @@
       <button>
         <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
       </button>
+      <button>
+        <Pause
+          @dblclick.capture.stop
+          @click="
+            overviewEngine.engineActive = !overviewEngine.engineActive
+          "
+        />
+      </button>
     </div>
   </div>
 </template>
@@ -42,7 +50,7 @@ import * as WSUtils from "./../workspace/WorkspaceUtils";
 import {
   EngineState,
   OverviewEngine,
-} from "../workspace/overview/OverviewEngine"; 
+} from "../workspace/overview/OverviewEngine";
 import { Instance } from "../workspace/overview/OverviewTransferHandler";
 import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 const fs = require("fs");
@@ -53,6 +61,7 @@ import {
   CommentTextOutline,
   Overscan,
   Youtube,
+  Pause,
   Qrcode,
   Table,
   Group,
@@ -74,8 +83,9 @@ import scandir from "scandirectory";
 
 export default defineComponent({
   name: "App",
-  components: { 
+  components: {
     Qrcode,
+    Pause,
   },
   props: {
     model: {
@@ -118,8 +128,7 @@ export default defineComponent({
       this.$el.getElementsByClassName("overview-wrapper")[0],
       this.state,
       this.model.overview
-    );
-    this.overviewEngine.start();
+    ); 
 
     this.overviewEngine.transform;
 
@@ -197,8 +206,6 @@ export default defineComponent({
       if (e.dataTransfer && this.overviewEngine) {
         for (let index = 0; index < e.dataTransfer?.files.length; index++) {
           const f = e.dataTransfer?.files[index];
-
-     
 
           const p = path.normalize(f.path).replace(/\\/g, "/");
 

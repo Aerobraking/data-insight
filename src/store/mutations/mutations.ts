@@ -27,6 +27,9 @@ export type Mutations<S = State> = {
   [MutationTypes.DELETE_WORKSPACE](state: S, payload: {
     index: number,
   }): void
+  [MutationTypes.COPY_WORKSPACE](state: S, payload: {
+    index: number,
+  }): void
   [MutationTypes.SELECT_WORKSPACE](state: S, payload: {
     index: number,
   }): void
@@ -46,7 +49,7 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.ADD_FILES](state, payload: {
     model: Workspace,
     listFiles: Array<WorkspaceEntry>,
-  }) { 
+  }) {
     for (let index = 0; index < payload.listFiles.length; index++) {
       const element = payload.listFiles[index];
       element.order = entrycounter++;
@@ -91,6 +94,26 @@ export const mutations: MutationTree<State> & Mutations = {
         entry.isActive = index === indexToSelect;
       });
     }
+  },
+  [MutationTypes.COPY_WORKSPACE](state, payload: {
+    index: number,
+  }) {
+
+    let activeindex = state.loadedFile.views.findIndex(x => x.isActive); 
+
+    let w = state.loadedFile.views[activeindex];
+
+    let wCopy = new Workspace();
+    Object.assign(wCopy, w);
+    wCopy.id= Math.random()*10000000; 
+
+    state.loadedFile.views.push(wCopy);
+    let lastIndex = state.loadedFile.views.length - 1;
+    state.loadedFile.views.forEach(
+      (entry: View, index: Number) => {
+        entry.isActive = index === lastIndex;
+      }
+    );
   },
   [MutationTypes.SELECT_WORKSPACE](state, payload: {
     index: number,

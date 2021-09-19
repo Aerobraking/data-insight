@@ -14,8 +14,6 @@ import { View } from "./store/model/DataModel";
 
 var fs = require("fs");
 
- 
-
 export default defineComponent({
   name: "App",
   components: {
@@ -62,8 +60,9 @@ export default defineComponent({
   methods: {
     loadInsightFileFromPath(path: string) {
       let jsonString = fs.readFileSync(path, "utf8");
-      let test: InsightFile = deserialize(InsightFile, jsonString);
-      this.loadInsightFile(test);
+      let file: InsightFile = deserialize(InsightFile, jsonString);
+      file.initAfterLoading();
+      this.loadInsightFile(file);
     },
     loadInsightFile(file: InsightFile) {
       let tabs: HTMLElement[] = Array.from(
@@ -84,8 +83,8 @@ export default defineComponent({
         });
       }, 500);
 
-       ipcRenderer.send("insight-file-loaded", {
-        filePath: file.settings.filePath 
+      ipcRenderer.send("insight-file-loaded", {
+        filePath: file.settings.filePath,
       });
     },
     saveFile(temp: boolean = false, chooseFile: boolean = false) {
@@ -100,8 +99,7 @@ export default defineComponent({
         chooseFile: chooseFile,
       });
     },
-    keyPressed(e: KeyboardEvent) { 
-
+    keyPressed(e: KeyboardEvent) {
       if (e.ctrlKey) {
         switch (e.key) {
           case "t":
@@ -186,8 +184,8 @@ body {
   display: flex;
   flex-flow: column;
   font-family: Lato, Avenir, Helvetica, Arial, sans-serif;
-//  -webkit-font-smoothing: antialiased;
-//  -moz-osx-font-smoothing: grayscale;
+  //  -webkit-font-smoothing: antialiased;
+  //  -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
   height: 100%;
   width: 100%;

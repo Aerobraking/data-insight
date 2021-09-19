@@ -35,12 +35,20 @@
           @click="selectTab(index)"
         >
           <input
+            @keydown.stop
+            @keyup.stop
             @dblclick.self="edit"
             v-on:keyup.enter="editFinish"
             @blur="editFinish"
             readonly="true"
             v-model="element.name"
           />
+          <!-- <a
+            class="copy"
+            v-show="element.isActive"
+            @click.self="copyTab(index)"
+            >C</a
+          > -->
           <a
             class="delete"
             v-show="element.isActive"
@@ -143,7 +151,7 @@ export default defineComponent({
       let show = !this.$store.getters.getShowUI;
       this.$store.commit(MutationTypes.SHOW_UI, {
         showUI: show,
-      }); 
+      });
     },
     scrollList(e: WheelEvent) {
       e.preventDefault();
@@ -168,6 +176,9 @@ export default defineComponent({
     },
     selectTab(i: number) {
       this.$store.commit(MutationTypes.SELECT_WORKSPACE, { index: i });
+    },
+    copyTab(i: number) {
+      this.$store.commit(MutationTypes.COPY_WORKSPACE , { index: i });
     },
     deleteTab(i: number) {
       this.$store.commit(MutationTypes.DELETE_WORKSPACE, { index: i });
@@ -229,10 +240,36 @@ export default defineComponent({
   font-weight: bold;
   transition: all 0.3s;
 }
+
+.copy {
+  display: none;
+  background-color: #9a9a9a00;
+  color: #ffffff;
+  position: absolute;
+  right: 22px;
+  padding-right: 4px;
+  top: 0;
+  z-index: 200;
+  height: 100%;
+  vertical-align: bottom;
+  text-align: center;
+  width: 21px;
+  margin: 0;
+  padding: 0;
+  line-height: 34px;
+  font-weight: bold;
+  transition: all 0.3s;
+}
 .tab-entry:hover .delete {
   display: block;
 }
 .delete:hover {
+  background-color: #808080;
+}
+.tab-entry:hover .copy {
+  display: block;
+}
+.copy:hover {
   background-color: #808080;
 }
 

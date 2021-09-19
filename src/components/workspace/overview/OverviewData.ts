@@ -1,7 +1,7 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
 import * as d3f from "d3-force-reuse";
-import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink, ForceY } from "d3";
+import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink, ForceY, Quadtree } from "d3";
 import { FolderNode, FolderOverviewEntry } from "./FileEngine";
 import path from "path";
 import { OverviewEngine } from "./OverviewEngine";
@@ -13,14 +13,10 @@ import { Stats, StatsType } from "./OverviewInterfaces";
 
 export abstract class AbstractNode implements SimulationNodeDatum {
 
-
     constructor(nodetype: string, name: string) {
         this.nodetype = nodetype;
         this._name = name;
     }
-
-    @Type(() => FolderNode)
-    private children: Array<this> = [];
 
     public getChildren() {
         return this.children;
@@ -34,7 +30,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         c.y = bottom ? bottom.getY() + 50 : this.y;
         this.children.push(c);
         this.entry?.engine?.nodeAdded(c);
-
     }
 
     public removeChild(c: this) {
@@ -45,19 +40,41 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         }
     }
 
+
+    // list of child node for this node
+    @Type(() => FolderNode)
+    private children: Array<this> = [];
+    // the colorid for the overview engine, will be generated on the fly while rendering
     @Exclude()
     colorID: string | null = null;
+    // the parent node. will be set after loading from the json
     @Exclude()
     parent: this | undefined;
+    // the OverviewEntry this nodes belongs to. will be set after loading from the json
     @Exclude()
     entry: FolderOverviewEntry | undefined;
+    // the depth inside the tree structure, relative to the root node
     depth: number = 0;
+    // string for json that links to the javascript implemented class
     nodetype: string;
+    //
     id?: string | number;
-    hue?: number;
+    // stats for this node
     stats: Stats | undefined;
+    // stats that combines the stats for all descendent nodes and this node
     statsRec: Stats | undefined;
+    // the name of this string, should be unique inside the parents node childrens list
     private _name: string;
+    /**
+     * Node’s zero-based index into nodes array.
+     * This property is set during the initialization process of a simulation.
+     */
+    index?: number | undefined;
+    /**
+     * Node’s current x-position
+     */
+    private _x?: number | undefined;
+
     public get name(): string {
         return this._name;
     }
@@ -78,24 +95,14 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         return 0;
     }
 
-
     public isRoot(): boolean {
         return this.parent == undefined;
     }
 
-    /**
-     * Node’s zero-based index into nodes array.
-     * This property is set during the initialization process of a simulation.
-     */
-    index?: number | undefined;
-    /**
-     * Node’s current x-position
-     */
-    private _x?: number | undefined;
-
     public get x(): number | undefined {
         // let x = this.parent ? this.entry ? this.entry?.getColumnX(this) : 200 * this.depth : this._x;
-        let x = this.parent ? 500 * this.depth : this._x;
+        let x = this.parent ? 500000 * this.depth : this._x;
+        x = this._x ? this._x : x;
         return x;
     }
 
@@ -103,7 +110,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this._x = value;
     }
 
-    r: number = 10;
     /**
      * Node’s current y-position
      */
@@ -126,21 +132,20 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     fy?: number | null | undefined;
 
     public getX() {
-        return this.x ? this.x : 0;
+        return this._x ? this._x : 0;
     }
 
     public getRadius() {
-
         if (this.isRoot()) {
-            return 250;
+            return 100;
         } else if (this.entry) {
             let abs = this.entry.root.getStatsValue("size");
             let part = this.getStatsValue("size");
             if (abs > 0) {
-                return Math.sqrt(220000 * (part / abs) / Math.PI);
+                return Math.sqrt(31415 * (part / abs) / Math.PI);
             }
         }
-        return this.r ? this.r : 1;
+        return 100;
     }
 
     public getY() {
@@ -158,7 +163,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     }
 
     private collectNodes(node: this, a: Array<this>): void {
-
         a.push(node);
 
         for (let i = 0; i < node.children.length; i++) {
@@ -247,23 +251,23 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         this.root.fx = 0;
         this.root.fy = 0;
 
-        let _this = this;
-
-
         this.simulation = d3
             .forceSimulation([] as Array<D>)
             .force('link', d3.forceLink().strength(0.2))
             // @ts-ignore: Unreachable code error
             //  .force("charge", d3f.forceManyBodyReuse().distanceMax(100).strength(0.5))
             // .force('charge', d3.forceManyBody().distanceMax(100).strength(0.5))
-            .force("collide", d3.forceCollide<AbstractNode>().radius(d => Math.max(d.getRadius() * 4, 25)).iterations(2).strength(1.5))
+            // .force("collide", d3.forceCollide<AbstractNode>().radius(d => Math.max(d.getRadius() * 4, 225))
+            //     .iterations(4).strength(0.5))
+            .force("collide", d3.forceCollide<AbstractNode>().radius(120)
+                .iterations(8).strength(1.0))
             .force(
                 "y",
                 d3.forceY()
                     .y(function (d: any) {
                         return 0;
                     })
-                    .strength(0.0015)
+                    .strength(0.0)
             )
             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
             .alphaMin(0.003)
@@ -272,6 +276,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     }
 
+    // the root node
     @Type(() => FolderNode)
     root: D;
 
@@ -284,17 +289,25 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
     @Exclude()
     engine: EntryListener<AbstractNode> | undefined;
 
+    // disables the d3 force simulation when false
     isSimulationActive: boolean = true;
 
     // identifier for json serializing
     nodetype: string;
 
+    // the d3 simulation instance
     @Exclude()
     simulation: Simulation<D, AbstractLink<D>>;
+    // list of all nodes inside this entry. will be set everytime the amount of nodes changes
     @Exclude()
-    nodes: AbstractNode[] = [];
+    nodes: D[] = [];
+    // list of all links between the nodes in this entry. will be set everytime the amount of nodes changes
     @Exclude()
     links: AbstractLink[] = [];
+    @Exclude()
+    quadtree: Quadtree<D> | undefined;
+
+    public abstract initAfterLoading(): void;
 
     public abstract createNode(name: string): D;
 
@@ -318,7 +331,6 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             this.engine.nodeUpdate();
         }
     }
-
 
     public addStats(stats: Stats) {
         let node = this.getNodeByPath(stats.path);
@@ -480,23 +492,27 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
     }
 
-
-    updateSimulationData(reheat: boolean = true) {
+    /**
+     * Updates the list of all nodes and links for this entry.
+     * Assign all nodes to the force simulation in case of new created nodes.
+     * @param reheat sets the alpha to one
+     */
+    protected updateSimulationData(reheat: boolean = true) {
 
         if (reheat) {
             this.simulation.alpha(1);
         }
 
-        this.simulation.nodes(this.root.descendants());
-
         let f: ForceLink<D, AbstractLink<D>> | undefined = this.simulation.force<ForceLink<D, AbstractLink<D>>>("force");
-
-        if (f) {
-            f.links(this.root.links());
-        }
-
         this.nodes = this.root.descendants();
         this.links = this.root.links();
+
+        if (f) {
+            f.links(this.links as any);
+        }
+        this.simulation.nodes(this.nodes);
+
+
     }
 
     tick() {
@@ -514,6 +530,12 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
 
         this.simulation.tick();
+
+        this.quadtree = d3.quadtree<D>()
+            .x(function (d) { return d.getX(); })
+            .y(function (d) { return d.getY(); });
+
+        this.quadtree.addAll(this.nodes);
 
     }
 }

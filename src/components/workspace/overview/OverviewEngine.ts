@@ -19,6 +19,7 @@ import _ from "underscore";
 import { EntryCollection } from "@/store/model/Workspace";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
+import { Ufo } from "mdue";
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -61,7 +62,7 @@ export class EngineState {
     backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
 }
 
-var fpsInterval: number, startTime, now, then: number, elapsed;
+
 
 
 export class OverviewEngine implements EntryListener<AbstractNode>{
@@ -69,13 +70,60 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     showShadowCanvas(show: boolean) {
         this.showShadow = show;
-        // d3.select(this.canvas).style("display", show ? "none" : "block");
-        // d3.select(this.canvasShadow).style("display", show ? "block" : "none");
+    }
+
+    private static instances: OverviewEngine[] = [];
+    private static started: boolean = false;
+    private static fpsInterval: number = 0;
+    private static now: number = 0;
+    private static then: number = 0;
+    private static timeLastFrame: number = 0;
+    private static elapsed: number = 0;
+    // milliseconds till last frame
+    private static delta: number = 0;
+
+    private static startClock(): void {
+        OverviewEngine.fpsInterval = 1000 / 144;
+        OverviewEngine.then = performance.now();
+        OverviewEngine.timeLastFrame = performance.now();
+        OverviewEngine.tickClock();
+    }
+
+    private static tickClock(): void {
+
+        requestAnimationFrame(OverviewEngine.tickClock.bind(this));
+
+        // calc elapsed time since last loop, ideally ~33
+        OverviewEngine.now = performance.now();
+        OverviewEngine.elapsed = OverviewEngine.now - OverviewEngine.then;
+
+        // if enough time has elapsed, draw the next frame
+        if (OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
+
+            for (let i = 0; i < OverviewEngine.instances.length; i++) {
+                const inst = OverviewEngine.instances[i];
+                inst.tick();
+            }
+
+            OverviewEngine.delta = OverviewEngine.elapsed;
+
+            // Get ready for next frame by setting then=now, but also adjust for your
+            // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
+            OverviewEngine.then = OverviewEngine.now - (OverviewEngine.elapsed % OverviewEngine.fpsInterval);
+            OverviewEngine.framecounter++;
+            TWEEN.update();
+        }
+
     }
 
     constructor(div: HTMLElement, state: EngineState, overview: Overview) {
 
-        console.log("create engine");
+        if (!OverviewEngine.started) {
+            OverviewEngine.startClock();
+            OverviewEngine.started = true;
+        }
+
+        OverviewEngine.instances.push(this);
 
         var _this = this;
 
@@ -238,7 +286,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         if (node.entry) {
                             node.entry.isSimulationActive = true;
                         }
-                        if (initPos.fx === undefined) { obj.fx = undefined; }
+                        // if (initPos.fx === undefined) { obj.fx = undefined; }
                         if (initPos.fy === undefined) { obj.fy = undefined; }
                         delete (obj.__initialDragPos);
 
@@ -247,7 +295,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             for (let i = 0; i < children.length; i++) {
                                 const child: any = children[i];
                                 const childInitPos = child.__initialDragPos;
-                                if (childInitPos.fx === undefined) { child.fx = undefined; }
+                                // if (childInitPos.fx === undefined) { child.fx = undefined; }
                                 if (childInitPos.fy === undefined) { child.fy = undefined; }
                                 delete (child.__initialDragPos);
                             }
@@ -279,17 +327,41 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             let t = d3.zoomTransform(this.canvas);
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
         });
+        this.zoom.on("start", (event: any, d: HTMLCanvasElement) => {
+            _this.pauseHovering = true;
+        });
+        this.zoom.on("end", (event: any, d: HTMLCanvasElement) => {
+            _this.pauseHovering = false;
+        });
         let t = d3.zoomTransform(this.canvas);
     }
 
     getNodeAtMousePosition = () => {
-        let obj = null;
-        const pxScale = 1;//window.devicePixelRatio;
-        const px: any = (this.mousePosition.x > 0 && this.mousePosition.y > 0)
-            ? this.contextShadow.getImageData(this.mousePosition.x * pxScale, this.mousePosition.y * pxScale, 1, 1)
-            : null;
-        px && (obj = this.autocolor.lookup(px.data));
-        return obj != null ? obj : undefined;
+        // let obj = null;
+        // const pxScale = 1;//window.devicePixelRatio;
+        // const px: any = (this.mousePosition.x > 0 && this.mousePosition.y > 0)
+        //     ? this.contextShadow.getImageData(this.mousePosition.x * pxScale, this.mousePosition.y * pxScale, 1, 1)
+        //     : null;
+        // px && (obj = this.autocolor.lookup(px.data));
+
+        let mGraph = this.screenToGraphCoords(this.mousePosition);
+
+        let n = undefined;
+        for (let i = 0; i < this.rootNodes.length; i++) {
+            const e = this.rootNodes[i];
+            if (e.quadtree) {
+                let nFound = e.quadtree.find(mGraph.x, mGraph.y, 500);
+                if (nFound) {
+                    n = nFound;
+                }
+            }
+            // console.log(nFound);
+
+        }
+
+        return n;
+        // return obj != null ? obj : undefined;
+
     };
 
 
@@ -357,14 +429,35 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     hoverFinder(_this: this) {
         const pxScale = 1;//window.devicePixelRatio;
         if (!this.pauseHovering && _this.mousePosition && _this.mousePosition.x > 0 && _this.mousePosition.y > 0) {
-            const px: any = (_this.mousePosition.x > 0 && _this.mousePosition.y > 0)
-                ? _this.contextShadow.getImageData(_this.mousePosition.x * pxScale, _this.mousePosition.y * pxScale, 1, 1)
-                : null;
-            _this.nodeHovered = this.getNodeAtMousePosition();
-            if (_this.nodeHovered) {
-                _this.canvas.style.cursor = "pointer";
-                _this.setFilterList("hover", [..._this.nodeHovered.descendants(), ..._this.nodeHovered.parents()]);
+
+            // let mGraph = _this.screenToGraphCoords(_this.mousePosition);
+
+            let n = this.getNodeAtMousePosition();
+
+            // n = undefined;
+            // for (let i = 0; i < _this.rootNodes.length; i++) {
+            //     const e = _this.rootNodes[i];
+            //     if (e.quadtree) {
+            //         let nFound = e.quadtree.find(mGraph.x, mGraph.y);
+            //         if (nFound) {
+            //             n = nFound;
+            //         }
+            //     }
+            //     // console.log(nFound);
+
+            // }
+
+
+
+            if (n) {
+                if (n != _this.nodeHovered) {
+                    _this.nodeHovered = n;
+                    _this.canvas.style.cursor = "pointer";
+                    _this.setFilterList("hover", [...n.descendants(), ...n.parents()]);
+                }
             } else {
+                _this.setFilterList("hover", []);
+                _this.nodeHovered = undefined;
                 _this.setFilterList("hover");
                 _this.canvas.style.cursor = "auto";
             }
@@ -388,20 +481,19 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
     canvasShadow: HTMLCanvasElement;
-    engineActive: boolean = false;
-    public showShadow: boolean = true;
+    engineActive: boolean = true;
+    public showShadow: boolean = false;
     private _rootNodes: any[] = [];
 
 
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
     private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
-    private framecounter: number = 0;
+    private static framecounter: number = 0;
 
     public setFilterList(key: string, listNodes: AbstractNode[] | undefined = undefined, showImmediately: boolean = false) {
 
         if (listNodes) {
-
             this.nodeFilterList.set(key, listNodes);
         } else {
             this.nodeFilterList.delete(key);
@@ -488,8 +580,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.updateColumns = true;
     }
 
-
-
     public get rootNodes(): any[] {
         return this._rootNodes;
     }
@@ -500,6 +590,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         // register the root nodes for color ids
         for (let j = 0; j < this.rootNodes.length; j++) {
             const entry: AbstractOverviewEntry = this.rootNodes[j];
+            for (let i = 0; i < entry.nodes.length; i++) {
+                const n = entry.nodes[i];
+                n.colorID = this.autocolor.register(n);
+            }
             entry.root.colorID = this.autocolor.register(entry.root);
         }
 
@@ -508,77 +602,40 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     transform: ZoomTransform | undefined;
 
-    public start(): void {
-
-        fpsInterval = 1000 / 60;
-        then = performance.now();
-        startTime = then;
-        this.timeLastFrame = performance.now();
-        if (!this.engineActive) {
-            this.tick();
-        }
-        this.engineActive = true;
-    }
-
-    // milliseconds till last frame
-    delta: number = 0;
-    timeLastFrame: number = 0;
     enablePainting: boolean = true;
 
     public tick(): void {
 
-        requestAnimationFrame(this.tick.bind(this));
+        if (this.engineActive) {
+            for (let index = 0; index < this._rootNodes.length; index++) {
+                this._rootNodes[index].tick();
+            }
+        }
 
-        // calc elapsed time since last loop, ideally ~33
-        now = performance.now();
-        elapsed = now - then;
+        this.hoverFinder(this);
 
-        // if enough time has elapsed, draw the next frame
-        if (elapsed > fpsInterval) {
+        let stepPos = 1 + OverviewEngine.delta / 60;
+        let stepNeg = 1 - OverviewEngine.delta / 160;
 
-            this.hoverFinder(this);
-
-            this.delta = performance.now() - this.timeLastFrame;
-            this.timeLastFrame = performance.now();
-
-            // 0.3
-            let stepPos = 1 + this.delta / 60;
-            let stepNeg = 1 - this.delta / 160;
-
-            let listOpacity = Array.from(this.notFound.keys());
-            for (let i = 0; i < listOpacity.length; i++) {
-                const n = this.notFound.get(listOpacity[i]);
-                if (n) {
-                    n.o *= n.d ? stepPos : stepNeg;
-                    n.o = Math.min(1, Math.max(0.05, n.o));
-                    if (n.o >= 1) {
-                        this.notFound.delete(listOpacity[i]);
-                    }
+        let listOpacity = Array.from(this.notFound.keys());
+        for (let i = 0; i < listOpacity.length; i++) {
+            const n = this.notFound.get(listOpacity[i]);
+            if (n) {
+                n.o *= n.d ? stepPos : stepNeg;
+                n.o = Math.min(1, Math.max(0.05, n.o));
+                if (n.o >= 1) {
+                    this.notFound.delete(listOpacity[i]);
                 }
             }
+        }
 
-            // Get ready for next frame by setting then=now, but also adjust for your
-            // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
-            then = now - (elapsed % fpsInterval);
-
-            // Put your drawing code here
-            if (this.engineActive) {
-                for (let index = 0; index < this._rootNodes.length; index++) {
-                    const element = this._rootNodes[index].tick();
-                }
+        if (this.enablePainting) {
+            // render the canvas
+            this.drawCanvas(this.context);
+            // render the shadow canvas
+            if (OverviewEngine.framecounter % 3 == 0) {
+                //   this.drawCanvas(this.contextShadow, true);
             }
-
-            if (this.enablePainting) {
-                // render the canvas
-                this.drawCanvas(this.context);
-                // render the shadow canvas
-                if (this.framecounter++ % 3 == 0) {
-                    this.drawCanvas(this.contextShadow, true);
-                }
-
-            }
-
-            TWEEN.update();
         }
 
     }
@@ -640,8 +697,13 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             /**
              * the changed column gets the new width directly as itself will not visibility be changed 
              */
-
             data.width = value.max;
+            for (let i = 0; i < entry.nodes.length; i++) {
+                const n = entry.nodes[i];
+                if (n.depth == value.depth) {
+                    n.x = n.fx = data.x;
+                }
+            }
             let diff = data.x;
             /**
              * Update the x coord for the following columns.
@@ -679,6 +741,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             d.x = object.x;
                         }
                     })
+                    tween.onComplete(function (object) {
+                        for (let k = 0; k < entry.nodes.length; k++) {
+                            const n = entry.nodes[k];
+                            if (n.depth == object.depth) {
+                                n.x = n.fx = object.x;
+                            }
+                        }
+                    });
                     tween.start();
 
                     entryTweenList.set(value.depth, tween);
@@ -716,11 +786,21 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 ctx.fillRect(-100, -100, 200, 200);
             }
 
-
             for (let index = 0; index < this.rootNodes.length; index++) {
                 const entry: AbstractOverviewEntry = this.rootNodes[index];
                 let nodes: AbstractNode[] = entry.nodes;
                 let links: AbstractLink[] = entry.links;
+
+                if (OverviewEngine.framecounter % 100 == 0) {
+                    //   this.drawCanvas(this.contextShadow, true);
+
+                    for (let l = 0; l < nodes.length; l++) {
+                        const n = nodes[l];
+                        console.log(n.getX());
+
+                    }
+                    console.log(" ");
+                }
 
                 let widths: { x: number, width: number }[] = [];
 
@@ -795,7 +875,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
 
         let scale = this.transform ? this.transform.k : 1;
-        let lineWidth = 3 / scale;
+        let lineWidth = 2 / scale;
+        let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
+        op = 1 - op;
+        op = Math.max(op, 0.075)
         /**
          *  Links
          */
@@ -832,8 +915,8 @@ interpolateWarm
 interpolatePlasma
                 */
 
-                grd.addColorStop(0.25, d3.interpolateWarm(1 - start.getRadius() / 250).replace(")", ",0.05)").replace("(", "a("));
-                grd.addColorStop(0.6, d3.interpolateWarm(1 - end.getRadius() / 250));
+                grd.addColorStop(0.35, d3.interpolateWarm(1 - start.getRadius() / 250).replace(")", "," + op + ")").replace("(", "a("));
+                grd.addColorStop(0.7, d3.interpolateWarm(1 - end.getRadius() / 250));
                 ctx.strokeStyle = grd;
 
                 if (isShadow) {
@@ -878,7 +961,7 @@ interpolatePlasma
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
 
-                var r = n.getRadius();
+                var r = isShadow ? 100 : n.getRadius();
                 ctx.fillStyle = mycolor((r / 250));
                 ctx.fillStyle = d3.interpolateWarm(1 - r / 250);
 
@@ -892,7 +975,7 @@ interpolatePlasma
                 ctx.arc(
                     xPos,
                     n.getY(),
-                    isShadow ? r * 3 : r,
+                    isShadow ? r * 1.2 : r,
                     0,
                     angle
                 );
@@ -914,6 +997,8 @@ interpolatePlasma
 
         let scale = this.transform ? this.transform.k : 1;
 
+        let op: number = scale >= 0.1 && scale <= 0.2 ? (scale - 0.1) * 10 : scale < 0.1 ? 0 : 1;
+
         // let textWidth:ColumnTextWidth = { min: 10000000, max: 0 };
         /**
          * Draw Folder names
@@ -925,7 +1010,7 @@ interpolatePlasma
             if (!isShadow && opacity) {
                 ctx.globalAlpha = opacity.o;
             } else {
-                ctx.globalAlpha = 1;
+                ctx.globalAlpha = op;
             }
 
             let isNodeHovered = this.isHoveredNode(n);
@@ -934,26 +1019,27 @@ interpolatePlasma
 
                 let xPos = widths[n.depth] ? widths[n.depth].x : 0;
                 let width = widths[n.depth] ? widths[n.depth].width : 10;
-                let r = n.getRadius();
-
 
                 if (!n.isRoot()) {
 
-                    let fontSize = isNodeHovered && !isShadow ? 18 : 14;
-                    ctx.font = `${fontSize}px Lato`;
-                    if (isShadow) {
-                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                    }
+                    if (op > 0) {
 
-                    let xName = xPos + r * 2;
-                    let yName = n.getY() + fontSize / 4;
+                        let fontSize = isNodeHovered && !isShadow ? 18 : 24;
+                        ctx.font = `${fontSize}px Lato`;
+                        if (isShadow) {
+                            ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                        }
 
-                    if (isShadow) {
-                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                        ctx.fillRect(xName, n.getY() - fontSize, width, fontSize * 2);
-                    } else {
-                        ctx.fillStyle = "#fff";
-                        ctx.fillText(`${n.name}  `, xName, yName);
+                        let xName = xPos + 100 * 1.1;
+                        let yName = n.getY() + fontSize / 4;
+
+                        if (isShadow) {
+                            ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                            ctx.fillRect(xName, n.getY() - fontSize, width, fontSize * 2);
+                        } else {
+                            ctx.fillStyle = "#fff";
+                            ctx.fillText(`${n.name}  `, xName, yName);
+                        }
                     }
 
                 } else {
@@ -967,7 +1053,7 @@ interpolatePlasma
                     }
 
                     let name = isNodeHovered && !isShadow && n.entry ? n.entry.path : n.name;
-                    let xName = xPos - ctx.measureText(name).width - r * 2;
+                    let xName = xPos - ctx.measureText(name).width - 100 * 2;
                     let yName = n.getY() + translate;
 
 

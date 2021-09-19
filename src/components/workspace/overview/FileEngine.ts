@@ -7,6 +7,7 @@ import fs from "fs";
 import { Instance } from "./FileSystemWatcher";
 import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./OverviewInterfaces";
 
+let c = 0;
 
 export class FolderNode extends AbstractNode {
     constructor(name: string) {
@@ -20,15 +21,10 @@ export class FolderLink extends AbstractLink<FolderNode>{
 
 export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> implements FileSystemListener {
 
-    constructor(path: string) {
-        super("folder", path, new FolderNode(pathNodejs.basename(path)));
-        this.path = path;
+    constructor(path: string | undefined) {
+        super("folder", path ? path : "", new FolderNode(path ? pathNodejs.basename(path) : ""));
         this.root.entry = this;
     }
-
-    path: string;
-
-    private _depth: number = 0;
 
     public get depth(): number {
         return this._depth;
@@ -45,37 +41,57 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
         return new FolderNode(name);
     }
 
-    private ignoredFolders: string[] = [];
-
     @Exclude()
     private watcher: FSWatcher | undefined;
 
     syncStructure(): void {
     }
 
-    renameList: string[] = [];
-    renameMap: Map<string, NodeJS.Timeout> = new Map();
-    startTime: number = 0;
-    endTime: number = 0;
-    interval: any = setInterval(this.handleEvents.bind(this), 2);
+    public initAfterLoading(): void {
+        this.updateSimulationData();
+        for (let i = 0; i < this.nodes.length; i++) {
+            const n = this.nodes[i];
+            n.entry = this;
+            for (let j = 0; j < n.getChildren().length; j++) {
+                const c = n.getChildren()[j];
+                c.parent = n;
+            }
+        }
+    }
 
+    private ignoredFolders: string[] = [];
+    private _depth: number = 0;
+    @Exclude()
+    renameMap: Map<string, NodeJS.Timeout> = new Map();
+    // startTime: number = 0;
+    // endTime: number = 0;
+    @Exclude()
+    interval: any = setInterval(this.handleEvents.bind(this), 2);
+    @Exclude()
     eventStack: ({ path: string, type: "add" } | FolderStatsResult)[] = [];
 
     handleEvents(): void {
-        let event = this.eventStack.shift();
 
-        if (event) {
-            switch (event.type) {
-                case "add":
-                    this.addEntryPath(event.path);
-                    break;
-                case "folderstats":
-                    this.addStats(event.stats);
-                    break;
-                default:
-                    break;
+        s:
+        for (let i = 0; i < 30; i++) {
+            let event = this.eventStack.shift();
+            if (event) {
+                switch (event.type) {
+                    case "add":
+                        this.addEntryPath(event.path);
+                        if (this.eventStack.length < 500) {
+                            break s;
+                        }
+                        break;
+                    case "folderstats":
+                        this.addStats(event.stats);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
+
     }
 
     event(e: FolderStatsResult | FolderSyncResult): void {
