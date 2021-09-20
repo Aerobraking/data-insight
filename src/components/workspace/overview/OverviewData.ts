@@ -85,14 +85,14 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         }
     }
 
-    public getStatsValue(key: string): number {
+    public getStatsValue(key: string): number | undefined {
         if (this.statsRec) {
             let e = this.statsRec.stats[key];
             if (e) {
                 return e.value;
             }
         }
-        return 0;
+        return undefined;
     }
 
     public isRoot(): boolean {
@@ -141,7 +141,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         } else if (this.entry) {
             let abs = this.entry.root.getStatsValue("size");
             let part = this.getStatsValue("size");
-            if (abs > 0) {
+            if (abs && part && abs > 0) {
                 return Math.sqrt(31415 * (part / abs) / Math.PI);
             }
         }
@@ -276,6 +276,9 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     }
 
+    x: number = 0;
+    y: number = 0;
+
     // the root node
     @Type(() => FolderNode)
     root: D;
@@ -382,6 +385,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             }
 
         }
+        this.nodeUpdate();
     }
 
     public getNodeByPath(absPath: string): D | undefined {
@@ -462,35 +466,35 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         this.x = c.x;
         this.y = c.y;
 
-        let f: ForceCenter<AbstractNode> | undefined = this.simulation.force("center");
-        if (f) {
-            f.x(this.x);
-            f.y(this.y);
-        }
+        // let f: ForceCenter<AbstractNode> | undefined = this.simulation.force("center");
+        // if (f) {
+        //     f.x(this.x);
+        //     f.y(this.y);
+        // }
     }
 
-    public get x(): number {
-        return this.root.x ? this.root.x : 0;
-    }
+    // public get x(): number {
+    //     return this.root.x ? this.root.x : 0;
+    // }
 
-    public set x(value: number) {
-        this.root.x = value;
-        this.root.fx = value;
-    }
+    // public set x(value: number) {
+    //     this.root.x = value;
+    //     this.root.fx = value;
+    // }
 
-    public get y(): number {
-        return this.root.y ? this.root.y : 0;
-    }
+    // public get y(): number {
+    //     return this.root.y ? this.root.y : 0;
+    // }
 
-    public set y(value: number) {
-        this.root.y = value;
-        this.root.fy = value;
+    // public set y(value: number) {
+    //     this.root.y = value;
+    //     this.root.fy = value;
 
-        for (let i = 0; i < this.root.descendants().length; i++) {
-            const c = this.root.descendants()[i];
-            c.fy = value;
-        }
-    }
+    //     for (let i = 0; i < this.root.descendants().length; i++) {
+    //         const c = this.root.descendants()[i];
+    //         c.fy = value;
+    //     }
+    // }
 
     /**
      * Updates the list of all nodes and links for this entry.
@@ -512,7 +516,6 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
         this.simulation.nodes(this.nodes);
 
-
     }
 
     tick() {
@@ -531,7 +534,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
         this.simulation.tick();
 
-        
+
         this.quadtree = d3.quadtree<D>()
             .x(function (d) { return d.getX(); })
             .y(function (d) { return d.getY(); });

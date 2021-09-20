@@ -27,14 +27,18 @@
 
     <div @mousedown.stop @dblclick.capture.stop class="workspace-menu-bar">
       <button>
+        <Qrcode @dblclick.capture.stop @click="setMode1" />
+      </button>
+      <button>
+        <Qrcode @dblclick.capture.stop @click="setMode2" />
+      </button>
+      <button>
         <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
       </button>
       <button>
         <Pause
           @dblclick.capture.stop
-          @click="
-            overviewEngine.engineActive = !overviewEngine.engineActive
-          "
+          @click="overviewEngine.engineActive = !overviewEngine.engineActive"
         />
       </button>
     </div>
@@ -43,7 +47,10 @@
 
 <script lang="ts">
 import { Workspace } from "@/store/model/Workspace";
-import { FolderOverviewEntry } from "@/components/workspace/overview/FileEngine";
+import {
+  FolderNode,
+  FolderOverviewEntry,
+} from "@/components/workspace/overview/FileEngine";
 import { defineComponent } from "vue";
 
 import * as WSUtils from "./../workspace/WorkspaceUtils";
@@ -80,6 +87,7 @@ import {
   AbstractOverviewEntry,
 } from "../workspace/overview/OverviewData";
 import scandir from "scandirectory";
+import * as d3 from "d3";
 
 export default defineComponent({
   name: "App",
@@ -128,15 +136,30 @@ export default defineComponent({
       this.$el.getElementsByClassName("overview-wrapper")[0],
       this.state,
       this.model.overview
-    ); 
-
-    this.overviewEngine.transform;
+    );
 
     let a: FolderOverviewEntry[] = Instance.getData(this.idOverview);
     if (this.overviewEngine) {
       // debugger;
       this.overviewEngine.rootNodes = a;
     }
+    //          kb    mb      gb
+    // 723889653
+    let maxV = 1024 * 1024 * 1024;
+
+    this.overviewEngine.setColorScale<FolderNode>(
+      "size",
+      0,
+      maxV,
+      (node: FolderNode, stat: number, min: number, max: number) => {
+      
+        stat = stat < min ? 0 : stat > max ? max : stat;
+        return stat < min || stat > max
+          ? "h"
+          : d3.interpolateWarm(1 - stat / max);
+      },
+      1000
+    );
 
     this.wsListener = {
       dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {},
@@ -192,6 +215,44 @@ export default defineComponent({
       this.overviewEngine?.showShadowCanvas(!this.overviewEngine.showShadow);
 
       console.log(this.overviewEngine?.rootNodes);
+    },
+    setMode1() {
+      if (this.overviewEngine) {
+        let maxV = 1024 * 1024 * 512;
+
+        this.overviewEngine.setColorScale<FolderNode>(
+          "size",
+          0,
+          maxV,
+          (node: FolderNode, stat: number, min: number, max: number) => {
+           
+            stat = stat < min ? 0 : stat > max ? max : stat;
+            return stat < min || stat > max
+              ? "h"
+              : d3.interpolateWarm(1 - stat / max);
+          },
+          400
+        );
+      }
+    },
+    setMode2() {
+      if (this.overviewEngine) {
+        let maxV = 1024 * 1024 * 50;
+
+        this.overviewEngine.setColorScale<FolderNode>(
+          "size",
+          0,
+          maxV,
+          (node: FolderNode, stat: number, min: number, max: number) => {
+             
+            stat = stat < min ? 0 : stat > max ? max : stat;
+            return stat < min || stat > max
+              ? "h"
+              : d3.interpolateWarm(1 - stat / max);
+          },
+          400
+        );
+      }
     },
     drop(e: DragEvent) {
       e.preventDefault();

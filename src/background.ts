@@ -201,7 +201,7 @@ async function createWindow() {
   // Create the worker window.
   windowWorker = new BrowserWindow({
     title: "worker",
-    show: false,
+    show: true,
     webPreferences: {
       enableRemoteModule: true,
       webSecurity: false,
@@ -269,8 +269,9 @@ async function createWindow() {
         {
           label: 'Dev Tools',
           click() {
-            if (win) {
+            if (win&& windowWorker) {
               win.webContents.openDevTools();
+              windowWorker.webContents.openDevTools();
             }
           }
         },

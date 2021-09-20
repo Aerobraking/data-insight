@@ -62,6 +62,36 @@ export class EngineState {
     backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
 }
 
+function formatBytes(bytes: number, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+
+/**
+          * 1. Das attr des Stats den wir nutzen wollen
+          * 2. Ein min und max Wert der Stats (alles außerhalb davon wird ausgeblendet)
+          * 3. Eine funktion die diese 3 werte bekommt + den stats Wert von einem node, damit 
+          *    man den farbwert zurückgeben kann.
+          */
+export interface OverviewColorScale<N extends AbstractNode> {
+    getColor(node: N, stat: number, min: number, max: number): void;
+}
+
+export interface ColorStatsSettings<N> {
+    attr: string,
+    min: number,
+    max: number,
+    colorFunction: (node: N, stat: number, min: number, max: number) => string
+}
+
 
 
 
@@ -181,8 +211,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 this.canvasShadow.height = h;
 
                 this.size.w = w;
-                this.size.h = h;
-                // _this.tick();
+                this.size.h = h; 
             }
         });
         this.divObserver.observe(div);
@@ -194,9 +223,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             let pos = _this.screenToGraphCoords(e);
 
-            _this.setView(1, pos.x, pos.y);
-            // _this.setView(1,e.clientX - rect.left, e.clientY - rect.top );
-
+            _this.setView(1, pos.x, pos.y, 400);
         });
 
         // Setup node drag interaction
@@ -208,18 +235,37 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             .call(
                 d3.drag<HTMLCanvasElement, unknown>().subject(() => {
                     const obj = this.getNodeAtMousePosition();
+                    if (obj.isRoot()) {
+                        return obj.entry;
+                    }
                     return obj; // Only drag nodes
                 })
                     .on('start', ev => {
-                        _this.pauseHovering = true;
-                        const obj = ev.subject;
-                        obj.__initialDragPos = { x: obj.x, y: obj.y, fx: obj.fx, fy: obj.fy };
-                        const node = ev.subject as AbstractNode;
+                        this.canvas.classList.add('grabbable');
 
-                        if (!node.parent || true) {
+                        _this.pauseHovering = true;
+
+
+                        const obj = ev.subject;
+                        obj.__initialDragPos = {
+                            x: obj.x,
+                            y: obj.y,
+                            fx: obj instanceof AbstractOverviewEntry ? obj.x : obj.fx,
+                            fy: obj instanceof AbstractOverviewEntry ? obj.y : obj.fy
+                        };
+
+
+                        if (obj instanceof AbstractOverviewEntry) {
+
+
+                        } else {
+                            const node = ev.subject as AbstractNode;
+                            node.fy = node.y; // Fix points
+
                             if (node.entry) {
                                 node.entry.isSimulationActive = false;
                             }
+
                             let children = node.descendants(false);
                             for (let i = 0; i < children.length; i++) {
                                 const child: any = children[i];
@@ -228,19 +274,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                                     child.fy = child.y; // Fix points
                                 }
                             }
+
                         }
 
 
-                        // keep engine running at low intensity throughout drag
-                        if (!ev.active) {
-                            obj.fx = obj.x; obj.fy = obj.y; // Fix points
-                        }
-
-                        this.canvas.classList.add('grabbable');
                     })
                     .on('drag', ev => {
                         const obj = ev.subject;
-                        const node = ev.subject as AbstractNode;
+
                         const initPos = obj.__initialDragPos;
                         const dragPos = ev;
 
@@ -249,12 +290,15 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         let diffX = (dragPos.x - initPos.x) / k;
                         let diffY = (dragPos.y - initPos.y) / k;
 
-                        if (!node.parent || true) {
+                        if (obj instanceof AbstractOverviewEntry) {
+                            obj.setCoordinates({ x: initPos.x + diffX, y: initPos.y + diffY })
+
+                        } else {
+                            const node = ev.subject as AbstractNode;
                             /**
                              * the root can be moved in any direction and moves the whole tree with it
                              */
-                            obj.fx = obj.x = initPos.x + diffX;
-                            obj.fy = obj.y = initPos.y + diffY;
+                            node.fy = node.y = initPos.y + diffY;
 
                             let children = node.descendants(false);
                             for (let i = 0; i < children.length; i++) {
@@ -263,49 +307,40 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                                 child.fy = child.y = childInitPos.y + diffY;
                             }
 
-                        } else {
-                            /**
-                             * A non root node is bound to its X column position, so we only allow vertical movement and 
-                             * a small X movement for user feedback.
-                             */
-                            obj.fx = obj.x = initPos.x + diffX * 0.1;
-                            obj.fy = obj.y = initPos.y + diffY;
+                            // prevent freeze while dragging
+                            node.entry?.simulation.alpha(1);  // prevent freeze while dragging
                         }
 
-                        // prevent freeze while dragging
-                        node.entry?.simulation
-                            .alphaTarget(0.3) // keep engine running at low intensity throughout drag
-                            .alpha(1);  // prevent freeze while dragging
 
                     })
                     .on('end', ev => {
                         _this.pauseHovering = false;
-                        const obj = ev.subject;
-                        const node = ev.subject as AbstractNode;
+                        this.canvas.classList.remove('grabbable');
+
+                        const obj = ev.subject; const node = ev.subject as AbstractNode;
                         const initPos = obj.__initialDragPos;
+
+
+                        delete (obj.__initialDragPos);
+
+                        if (obj instanceof AbstractOverviewEntry) {
+                            return;
+                        }
+
                         if (node.entry) {
                             node.entry.isSimulationActive = true;
                         }
-                        // if (initPos.fx === undefined) { obj.fx = undefined; }
-                        if (initPos.fy === undefined) { obj.fy = undefined; }
-                        delete (obj.__initialDragPos);
 
-                        if (!node.parent || true) {
-                            let children = node.descendants(false);
-                            for (let i = 0; i < children.length; i++) {
-                                const child: any = children[i];
-                                const childInitPos = child.__initialDragPos;
-                                // if (childInitPos.fx === undefined) { child.fx = undefined; }
-                                if (childInitPos.fy === undefined) { child.fy = undefined; }
-                                delete (child.__initialDragPos);
-                            }
+                        if (initPos.fy === undefined) { obj.fy = undefined; }
+
+                        let children = node.descendants(false);
+                        for (let i = 0; i < children.length; i++) {
+                            const child: any = children[i];
+                            const childInitPos = child.__initialDragPos;
+                            if (childInitPos.fy === undefined) { child.fy = undefined; }
+                            delete (child.__initialDragPos);
                         }
 
-                        node.entry?.simulation
-                            .alphaTarget(0.004) // keep engine running at low intensity throughout drag
-                            ;
-
-                        this.canvas.classList.remove('grabbable');
                     })
             );
 
@@ -347,19 +382,16 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         // px && (obj = this.autocolor.lookup(px.data));
 
         let mGraph = this.screenToGraphCoords(this.mousePosition);
-        let scale = this.transform ? Math.max(20 / this.transform.k, 50) : 200;
+        let scale = this.transform ? Math.max(40 / this.transform.k, 50) : 200;
         let n = undefined;
-        for (let i = 0; this.transform && this.transform.k > 0.05 && i < this.rootNodes.length; i++) {
+        for (let i = 0; this.transform && this.transform.k > 0.02 && i < this.rootNodes.length; i++) {
             const e = this.rootNodes[i];
             if (e.quadtree) {
-                let nFound = e.quadtree.find(mGraph.x, mGraph.y, scale);
+                let nFound = e.quadtree.find(mGraph.x - e.x, mGraph.y - e.y, scale);
                 if (nFound) {
                     n = nFound;
                 }
             }
-            // console.log(nFound);
-            // 1 = 120;     0.01 = 1200
-            // x * 0.01 = 1200
 
         }
 
@@ -391,7 +423,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.divObserver.disconnect();
     }
 
-    public setView(scale: number, x: number, y: number, duration: number = 1250) {
+    public setView(scale: number, x: number, y: number, duration: number = 500) {
 
         let _this = this;
 
@@ -571,6 +603,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     nodeAdded(node: AbstractNode) {
         node.colorID = this.autocolor.register(node);
+        this.updateNodeColorScale(node);
         this.updateColumns = true;
     }
 
@@ -582,6 +615,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
          * Recalculate column widths
          */
         this.updateColumns = true;
+        this.updateNodeColorScale();
     }
 
     public get rootNodes(): any[] {
@@ -600,6 +634,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             }
             entry.root.colorID = this.autocolor.register(entry.root);
         }
+        this.updateNodeColorScale();
 
         this.updateColumns = true;
     }
@@ -613,6 +648,19 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         if (this.engineActive) {
             for (let index = 0; index < this._rootNodes.length; index++) {
                 this._rootNodes[index].tick();
+            }
+        }
+
+
+        if (this.colorTransitionElapsed != undefined) {
+
+            this.colorTransitionElapsed += OverviewEngine.delta;
+
+            if (this.colorTransitionElapsed > this.colorTransitionTarget) {
+                this.colorTransitionElapsed = undefined;
+                this.colorTransitionMap.clear();
+                console.log("clear transition");
+
             }
         }
 
@@ -658,19 +706,21 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     setWidthsTween: Map<AbstractOverviewEntry, Map<number, Tween<any>>> = new Map();
 
     public getColumnData(entry: AbstractOverviewEntry, depth: number, create: boolean = true) {
-        return this.getColumnDataByID(entry.id, depth, create);
-    }
 
-    public getColumnDataByID(id: number, depth: number, create: boolean = true) {
-        let entryColumns = this.mapEntryColumns.get(id);
+        let entryColumns = this.mapEntryColumns.get(entry.id);
         if (!entryColumns) {
             entryColumns = new Map();
-            this.mapEntryColumns.set(id, entryColumns);
+            this.mapEntryColumns.set(entry.id, entryColumns);
         }
+
+        // if (depth == 0) {
+        //     return { x: entry.root.getX(), width: 200 };
+        // }
+
         let data = entryColumns.get(depth);
         if (!data && create) {
             data = { x: 0, width: 100 };
-            const dataPrev = this.getColumnDataRawByID(id, depth - 1);
+            const dataPrev = this.getColumnDataRawByID(entry.id, depth - 1);
             if (dataPrev) {
                 data.x = dataPrev.x + dataPrev.width;
             }
@@ -685,6 +735,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     public getColumnDataRawByID(id: number, depth: number) {
+
+        // if (depth == 0) {
+        //     return { x: entry.root.getX(), width: 200 };
+        // }
+
         let entryColumns = this.mapEntryColumns.get(id);
         if (!entryColumns) {
             entryColumns = new Map();
@@ -697,72 +752,75 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     public setColumnTextWidth(entry: AbstractOverviewEntry, value: ColumnTextWidth) {
         let _this = this;
         let data = this.getColumnData(entry, value.depth);
-        if (data && data.width != value.max) {
-            /**
-             * the changed column gets the new width directly as itself will not visibility be changed 
-             */
-            data.width = value.max;
+        if (data) {
             for (let i = 0; i < entry.nodes.length; i++) {
                 const n = entry.nodes[i];
-                if (n.depth == value.depth) {
+                if (!n.isRoot() && n.depth == value.depth) {
                     n.x = n.fx = data.x;
                 }
             }
-            let diff = data.x;
-            /**
-             * Update the x coord for the following columns.
-             */
-            let i = value.depth + 1;
-            let index = 0;
-            let dataNext = this.getColumnDataRaw(entry, i);
-            while (dataNext) {
-                let dataPrev = this.getColumnDataRaw(entry, i - 1);
-                if (dataPrev) {
+            if (data.width != value.max) {
+                /**
+                 * the changed column gets the new width directly as itself will not visibility be changed 
+                 */
+                data.width = value.max;
 
-                    diff += dataPrev.width;
+                let diff = data.x;
+                /**
+                 * Update the x coord for the following columns.
+                 */
+                let i = value.depth + 1;
+                let index = 0;
+                let dataNext = this.getColumnDataRaw(entry, i);
+                while (dataNext) {
+                    let dataPrev = this.getColumnDataRaw(entry, i - 1);
+                    if (dataPrev) {
 
-                    let entryTweenList = this.setWidthsTween.get(entry);
+                        diff += dataPrev.width;
 
-                    if (!entryTweenList) {
-                        entryTweenList = new Map();
-                    }
+                        let entryTweenList = this.setWidthsTween.get(entry);
 
-                    let tween = entryTweenList.get(i);
-                    if (tween) {
-                        tween.stop();
-                    }
-
-                    /**
-                     *  we give the next column 
-                     */
-                    tween = new TWEEN.Tween({ x: dataNext.x, id: entry.id, depth: i });
-                    tween.to({ x: diff }, 2000)
-                    tween.easing(TWEEN.Easing.Elastic.Out)
-                    tween.delay(index * 110)
-                    tween.onUpdate(function (object) {
-                        let d = _this.getColumnDataRawByID(object.id, object.depth);
-                        if (d) {
-                            d.x = object.x;
+                        if (!entryTweenList) {
+                            entryTweenList = new Map();
                         }
-                    })
-                    tween.onComplete(function (object) {
-                        for (let k = 0; k < entry.nodes.length; k++) {
-                            const n = entry.nodes[k];
-                            if (n.depth == object.depth) {
-                                n.x = n.fx = object.x;
+
+                        let tween = entryTweenList.get(i);
+                        if (tween) {
+                            tween.stop();
+                        }
+
+                        /**
+                         *  we give the next column 
+                         */
+                        tween = new TWEEN.Tween({ x: dataNext.x, id: entry.id, depth: i });
+                        tween.to({ x: diff }, 2000)
+                        tween.easing(TWEEN.Easing.Elastic.Out)
+                        tween.delay(index * 110)
+                        tween.onUpdate(function (object) {
+                            let d = _this.getColumnDataRawByID(object.id, object.depth);
+                            if (d) {
+                                d.x = object.x;
                             }
-                        }
-                    });
-                    tween.start();
+                        })
+                        tween.onComplete(function (object) {
+                            for (let k = 0; k < entry.nodes.length; k++) {
+                                const n = entry.nodes[k];
+                                if (n.isRoot() && n.depth == object.depth) {
+                                    n.x = n.fx = object.x;
+                                }
+                            }
+                        });
+                        tween.start();
 
-                    entryTweenList.set(value.depth, tween);
+                        entryTweenList.set(value.depth, tween);
 
+                    }
+                    i++;
+                    index++;
+                    dataNext = this.getColumnDataRaw(entry, i);
                 }
-                i++;
-                index++;
-                dataNext = this.getColumnDataRaw(entry, i);
-            }
 
+            }
         }
     }
 
@@ -792,19 +850,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             for (let index = 0; index < this.rootNodes.length; index++) {
                 const entry: AbstractOverviewEntry = this.rootNodes[index];
+                ctx.save();
+                ctx.translate(entry.x, entry.y);
                 let nodes: AbstractNode[] = entry.nodes;
                 let links: AbstractLink[] = entry.links;
 
-                if (OverviewEngine.framecounter % 100 == 0) {
-                    //   this.drawCanvas(this.contextShadow, true);
-
-                    for (let l = 0; l < nodes.length; l++) {
-                        const n = nodes[l];
-                        console.log(n.getX());
-
-                    }
-                    console.log(" ");
-                }
 
                 let widths: { x: number, width: number }[] = [];
 
@@ -862,6 +912,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 this.drawLinks(ctx, isShadow, links, widths, entry);
                 this.drawNodes(ctx, isShadow, nodes, widths, entry);
                 this.drawText(ctx, isShadow, nodes, widths, entry);
+
+                ctx.restore();
             }
 
         }
@@ -879,7 +931,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
 
         let scale = this.transform ? this.transform.k : 1;
-        let lineWidth = 2 / scale;
+        let lineWidth = (2 * 0.7) + (2 / scale) * 0.3;
         let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
         op = 1 - op;
         op = Math.max(op, 0.075)
@@ -912,11 +964,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 let grd = ctx.createLinearGradient(xStart, 0, xEnd, 0);
 
+
                 /*
                 a = r * r * PI
                 250 * 0.4 = 
-interpolateWarm
-interpolatePlasma
+                interpolateWarm
+                interpolatePlasma
                 */
 
                 grd.addColorStop(0.35, d3.interpolateWarm(1 - start.getRadius() / 250).replace(")", "," + op + ")").replace("(", "a("));
@@ -926,7 +979,8 @@ interpolatePlasma
                 if (isShadow) {
                     ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
                 }
-                ctx.strokeStyle = d3.interpolateWarm(1 - end.getRadius() / 250);
+                // ctx.strokeStyle = d3.interpolateWarm(1 - end.getRadius() / 250);
+                ctx.strokeStyle = this.getColorForNode(end);
 
                 ctx.moveTo(xStart, start.getY());
                 let midX = (xStart + xEnd) / 2;
@@ -943,6 +997,108 @@ interpolatePlasma
             }
 
         }
+    }
+
+    /**
+           * wir speichern die farben für jede node ab und aktualisieren sie bei jedem update von nodes.
+           * 
+           * ändern wir die render eigenschaften, speichern wir die neuen farben in einer 2. map und erstellen
+           * für jede node ein d3.scaleLinear mit den beiden farben.
+           * 
+           * dann starten wir ne duration mit der wir uns dann die aktuelle farbe holen. 
+           * 
+           * werden die render settings wieder geändert, speichern wir die aktuelle farbe bei der duration als neue start
+           * farbe 
+           * 
+           */
+    public setColorScale<N extends AbstractNode>(statAttribute: string, min: number, max: number, getColor: (node: N, stat: number, min: number, max: number) => string, duration: number = 400): void {
+
+        this.colorSettings = { attr: statAttribute, min: min, max: max, colorFunction: getColor };
+
+        for (let index = 0; index < this.rootNodes.length; index++) {
+            const entry: AbstractOverviewEntry = this.rootNodes[index];
+            let nodes: AbstractNode[] = entry.nodes;
+            for (let j = 0; j < nodes.length; j++) {
+                const n = nodes[j];
+                const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                const colorOld = this.getColorForNode(n);
+                if (nodeValue != undefined) {
+                    const colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                    var scale = d3.scaleLinear<string>()
+                        .domain([0, duration])
+                        .range([colorOld, colorNew]);
+                    this.colorTransitionMap.set(n, scale);
+                    this.colorNodeMap.set(n, colorNew);
+                }
+            }
+        }
+
+        this.colorTransitionElapsed = 1;
+        this.colorTransitionTarget = duration;
+    }
+
+
+    public updateNodeColorScale(node: AbstractNode | undefined = undefined): void {
+
+        if (node) {
+            const n = node;
+            if (this.colorSettings) {
+                const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                if (nodeValue != undefined) {
+                    const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                    this.colorNodeMap.set(n, colorNew);
+                }
+            }
+        } else {
+
+            for (let index = 0; index < this.rootNodes.length; index++) {
+                const entry: AbstractOverviewEntry = this.rootNodes[index];
+                let nodes: AbstractNode[] = entry.nodes;
+                for (let j = 0; j < nodes.length; j++) {
+                    const n = nodes[j];
+                    if (this.colorSettings) {
+                        const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                        if (nodeValue != undefined) {
+                            const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                            this.colorNodeMap.set(n, colorNew);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    colorSettings: ColorStatsSettings<any> | undefined;
+
+    colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
+    colorTransitionElapsed: number | undefined = 0;
+    colorTransitionTarget: number = 400;
+    colorNodeDefault: string = "rgb(200,200,200)";
+    colorNodeHiddenDefault: string = "rgba(200,200,200,0.075)";
+    colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
+
+    getColorForNode(n: AbstractNode): string {
+
+        if (this.colorTransitionElapsed != undefined) {
+            let scale = this.colorTransitionMap.get(n);
+            if (scale) {
+                const color = scale(this.colorTransitionElapsed);
+                // console.log(color);
+                return color;
+            }
+        } else {
+            let c = this.colorNodeMap.get(n);
+            if (c) {
+                if (c == "h") {
+                    console.log("return h");
+                    return this.colorNodeHiddenDefault;
+                }
+                return c;
+            }
+        }
+
+        return this.colorNodeDefault;
     }
 
     drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
@@ -967,8 +1123,10 @@ interpolatePlasma
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
 
                 var r = isShadow ? 100 : n.getRadius();
-                ctx.fillStyle = mycolor((r / 250));
-                ctx.fillStyle = d3.interpolateWarm(1 - r / 250);
+                r = 80 * 0.2 + r * 0.8;
+                // ctx.fillStyle = mycolor((r / 250));
+                // ctx.fillStyle = d3.interpolateWarm(1 - r / 250);
+                ctx.fillStyle = this.getColorForNode(n);
 
                 if (isShadow) {
                     ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
@@ -1028,6 +1186,7 @@ interpolatePlasma
                 if (!n.isRoot()) {
 
                     if (op > 0) {
+                        ctx.textAlign = "left";
 
                         let fontSize = isNodeHovered && !isShadow ? 18 : 24;
                         ctx.font = `${fontSize}px Lato`;
@@ -1049,6 +1208,9 @@ interpolatePlasma
 
                 } else {
 
+                    ctx.globalAlpha = 1;
+                    ctx.textAlign = "right";
+
                     let fontSize = 16 / scale;
                     let translate = (fontSize) / 4;
 
@@ -1058,16 +1220,22 @@ interpolatePlasma
                     }
 
                     let name = isNodeHovered && !isShadow && n.entry ? n.entry.path : n.name;
-                    let xName = xPos - ctx.measureText(name).width - 100 * 2;
                     let yName = n.getY() + translate;
 
+                    xPos -= 100;
 
                     if (isShadow) {
                         ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                        ctx.fillRect(xName, n.getY() - fontSize, ctx.measureText(n.name).width, fontSize * 2);
+                        ctx.fillRect(xPos, n.getY() - fontSize, ctx.measureText(n.name).width, fontSize * 2);
                     } else {
                         ctx.fillStyle = "#fff";
-                        ctx.fillText(`${name}  `, xName, yName);
+                        ctx.fillText(name, xPos, yName);
+
+                        if (this.colorSettings) {
+                            let value = n.getStatsValue(this.colorSettings.attr);
+                            let s = (value ? formatBytes(value, 2) : " - MB") + (n.entry ? "x: " + Math.floor(n.entry.x) + ", y: " + Math.floor(n.entry.y) : "");
+                            ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
+                        }
                     }
                 }
             }
