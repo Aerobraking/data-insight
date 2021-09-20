@@ -1091,7 +1091,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             let c = this.colorNodeMap.get(n);
             if (c) {
                 if (c == "h") {
-                    console.log("return h");
                     return this.colorNodeHiddenDefault;
                 }
                 return c;

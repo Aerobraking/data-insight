@@ -12,9 +12,42 @@ ipcRenderer.on("msg-main",
 
         if (payload.type === "folderdeepsync") {
 
-            let scanFinishd = false;
 
             let msg: FolderSync = payload;
+
+            let count = 0;
+
+            console.log("Start folder sync");
+
+
+            function countFolders(pathF: string, depth: number = 0): void {
+
+                let files: string[] = fs.readdirSync(pathF);
+                let folders: string[] = [];
+
+                for (let i = 0; i < files.length; i++) {
+                    const fileName = files[i];
+                    const absolutePath = pathF + "/" + fileName;
+                    const stats = fs.statSync(absolutePath);
+                    if (stats.isDirectory() && fileName != "." && msg.depth < 100 && (msg.depth == 0 || depth < msg.depth)) {
+                        folders.push(absolutePath);
+                    }
+                }
+
+                count += folders.length;
+
+                let depthChildren = depth + 1;
+                for (let i = 0; i < folders.length; i++) {
+                    const f = folders[i];
+                    countFolders(f, depthChildren);
+                }
+
+            }
+
+            countFolders(msg.path)
+
+            console.log("foldercount: " + count);
+
 
             function scanFolders(pathF: string, depth: number = 0): void {
 
@@ -44,10 +77,8 @@ ipcRenderer.on("msg-main",
 
             scanFolders(msg.path);
 
-            if (!scanFinishd) {
-                console.log("Scan finished");
-                scanFinishd = true;
-            }
+            console.log("Scan finished");
+            console.log("Start stats creation");
 
             function visitFolder(pathF: string, depth: number = 0): FolderStat {
 
@@ -116,7 +147,7 @@ ipcRenderer.on("msg-main",
 
             visitFolder(msg.path);
 
-            console.log("finished scanning");
+            console.log("finished stats creation");
 
 
         }

@@ -5,6 +5,7 @@ import { Type } from "class-transformer";
 import { ElementDimension } from "@/utils/resize";
 import { Overview } from "./OverviewDataModel";
 import { ImageCache, ImageDim } from "@/utils/ImageCache";
+import { Instance } from "@/components/workspace/overview/OverviewTransferHandler";
 
 const fs = require("fs");
 const path = require("path");
@@ -350,7 +351,12 @@ export class Workspace extends View {
     entries: Array<WorkspaceEntry> = [];
 
     public initAfterLoading() {
-        this.overview.initAfterLoading(); 
+        this.overview.initAfterLoading();
+
+        /**
+         * remove the node data from the vuex store
+         */
+        Instance.storeData(this.overview);
     }
 
 

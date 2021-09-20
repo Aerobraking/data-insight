@@ -1,5 +1,9 @@
 <template>
   <div @drop.stop="drop" class="overview-viewport">
+    <div class="filter-settings">
+      <div class="slider"></div>
+    </div>
+
     <div class="overview-search">
       <div></div>
       <input
@@ -10,7 +14,7 @@
         v-model="searchString"
         placeholder="Suche..."
       />
-      <div></div>
+
       <!-- <wssearchlist
         class="search-results"
         v-if="searchActive"
@@ -52,7 +56,7 @@ import {
   FolderOverviewEntry,
 } from "@/components/workspace/overview/FileEngine";
 import { defineComponent } from "vue";
-
+import noUiSlider, { API, PipsMode } from "nouislider";
 import * as WSUtils from "./../workspace/WorkspaceUtils";
 import {
   EngineState,
@@ -88,6 +92,7 @@ import {
 } from "../workspace/overview/OverviewData";
 import scandir from "scandirectory";
 import * as d3 from "d3";
+import _ from "underscore";
 
 export default defineComponent({
   name: "App",
@@ -125,11 +130,81 @@ export default defineComponent({
     };
   },
   mounted() {
+    var sliderDiv = this.$el.getElementsByClassName("slider")[0];
+
+    var slider = noUiSlider.create(sliderDiv, {
+      start: [0, 1024 * 1024 * 1024],
+      connect: true,
+      orientation: "vertical",
+      range: {
+        min: 0, // kb
+        "20%": [1024 * 1024 * 32], // mb
+        "40%": [1024 * 1024 * 256], // mb
+        "60%": [1024 * 1024 * 1024], // gb
+        "80%": [1024 * 1024 * 1024 * 16], // gb
+        max: [1024 * 1024 * 1024 * 1024], // tb
+      },
+      pips: {
+        mode: PipsMode.Range,
+        density: 2,
+        format: {
+          to: (value: number) => {
+            if (value < 1024) {
+              return "1 MB";
+            } else if (value < 1024 * 1024) {
+              return value / Math.pow(1024, 1) + " KB";
+            } else if (value < 1024 * 1024 * 1024) {
+              return value / Math.pow(1024, 2) + " MB";
+            } else if (value < 1024 * 1024 * 1024 * 1024) {
+              return value / Math.pow(1024, 3) + " GB";
+            } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
+              return value / Math.pow(1024, 4) + " TB";
+            }
+            return value + " Bytes";
+          },
+        },
+      },
+    });
+
+    const _this = this;
+
+    const filterfunc = _.throttle((stats: string, min: number, max: number) => {
+      console.log("set filter");
+
+      if (_this.overviewEngine) {
+        _this.overviewEngine.setColorScale<FolderNode>(
+          "size",
+          Number(min),
+          Number(max),
+          (node: FolderNode, stat: number, min: number, max: number) => {
+            stat = stat < min ? 0 : stat > max ? max : stat;
+            return stat < min || stat > max
+              ? "h"
+              : d3.interpolateWarm(1 - stat / max);
+          },
+          200
+        );
+      }
+    }, 128);
+
+    slider.on(
+      "update.one",
+      (
+        values: (number | string)[],
+        handleNumber: number,
+        unencoded: number[],
+        tap: boolean,
+        locations: number[],
+        slider: API
+      ) => {
+        filterfunc("size", Number(values[0]), Number(values[1]));
+      }
+    );
+
     /**
      * remove the node data from the vuex store
      */
     Instance.storeData(this.model.overview);
-    let _this = this;
     this.idOverview = this.model.overview.id;
 
     this.overviewEngine = new OverviewEngine(
@@ -152,7 +227,6 @@ export default defineComponent({
       0,
       maxV,
       (node: FolderNode, stat: number, min: number, max: number) => {
-      
         stat = stat < min ? 0 : stat > max ? max : stat;
         return stat < min || stat > max
           ? "h"
@@ -225,7 +299,6 @@ export default defineComponent({
           0,
           maxV,
           (node: FolderNode, stat: number, min: number, max: number) => {
-           
             stat = stat < min ? 0 : stat > max ? max : stat;
             return stat < min || stat > max
               ? "h"
@@ -244,7 +317,6 @@ export default defineComponent({
           0,
           maxV,
           (node: FolderNode, stat: number, min: number, max: number) => {
-             
             stat = stat < min ? 0 : stat > max ? max : stat;
             return stat < min || stat > max
               ? "h"
@@ -301,6 +373,18 @@ export default defineComponent({
 
  
 <style   lang="scss">
+.filter-settings {
+  position: absolute;
+  top: 60px;
+  left: 40px;
+  width: 150px;
+  height: 70%;
+  z-index: 6000;
+  .slider {
+    height: 100%;
+  }
+}
+
 .overview-viewport {
   display: flex;
   flex-flow: column;

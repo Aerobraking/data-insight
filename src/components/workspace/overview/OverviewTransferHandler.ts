@@ -21,22 +21,23 @@ export class OverviewTransferHandler {
         }
     }
 
-    getData(id: number): FolderOverviewEntry[]  {
-        let a= this.hash.get(id);
+    getData(id: number): FolderOverviewEntry[] {
+        let a = this.hash.get(id);
         if (!a) {
             a = [];
-            this.hash.set(id,a);
+            this.hash.set(id, a);
         }
         return a;
     }
 
     storeData(o: Overview) {
-        let newArray: FolderOverviewEntry[] = [];
-        newArray.push(...o.rootNodes);
-        o.rootNodes = [];
-        this.hash.set(o.id, newArray);
-        console.log("stored: "+o.id);
-        
+        if (!this.hash.has(o.id)) {
+            let newArray: FolderOverviewEntry[] = [];
+            newArray.push(...o.rootNodes);
+            o.rootNodes = [];
+            this.hash.set(o.id, newArray);
+            console.log("stored: " + o.id);
+        }
     }
 
 }
