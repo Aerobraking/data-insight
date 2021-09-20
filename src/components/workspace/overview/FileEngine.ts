@@ -66,14 +66,14 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     // startTime: number = 0;
     // endTime: number = 0;
     @Exclude()
-    interval: any = setInterval(this.handleEvents.bind(this), 2);
+    interval: any = setInterval(this.handleEvents.bind(this), 33);
     @Exclude()
     eventStack: ({ path: string, type: "add" } | FolderStatsResult)[] = [];
 
     handleEvents(): void {
 
         s:
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 1; i++) {
             let event = this.eventStack.shift();
             if (event) {
                 switch (event.type) {

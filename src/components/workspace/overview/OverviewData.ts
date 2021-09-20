@@ -531,6 +531,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
         this.simulation.tick();
 
+        
         this.quadtree = d3.quadtree<D>()
             .x(function (d) { return d.getX(); })
             .y(function (d) { return d.getY(); });

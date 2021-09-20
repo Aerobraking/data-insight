@@ -10,33 +10,62 @@ import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult 
 ipcRenderer.on("msg-main",
     function (event: any, payload: any) {
 
-
         if (payload.type === "folderdeepsync") {
 
             let scanFinishd = false;
 
             let msg: FolderSync = payload;
 
-            function visitFolder(pathF: string, depth: number = 0): FolderStat {
-
-                let sync: FolderSyncResult = { id: msg.id, path: pathF, type: "foldersync" };
-                // @ts-ignore: Unreachable code error
-                ipcRenderer.send('msg-worker', sync);
+            function scanFolders(pathF: string, depth: number = 0): void {
 
                 let files: string[] = fs.readdirSync(pathF);
+                let folders: string[] = [];
 
                 for (let i = 0; i < files.length; i++) {
                     const fileName = files[i];
                     const absolutePath = pathF + "/" + fileName;
                     const stats = fs.statSync(absolutePath);
                     if (stats.isDirectory() && fileName != "." && msg.depth < 100 && (msg.depth == 0 || depth < msg.depth)) {
-                        visitFolder(absolutePath, depth++)
+                        folders.push(absolutePath);
                     }
                 }
 
-                if (!scanFinishd) {
-                    console.log("Scan finished");
-                    scanFinishd = true;
+                let sync: FolderSyncResult = { id: msg.id, childCount: folders.length, path: pathF, type: "foldersync" };
+                // @ts-ignore: Unreachable code error
+                ipcRenderer.send('msg-worker', sync);
+
+                let depthChildren = depth + 1;
+                for (let i = 0; i < folders.length; i++) {
+                    const f = folders[i];
+                    scanFolders(f, depthChildren);
+                }
+
+            }
+
+            scanFolders(msg.path);
+
+            if (!scanFinishd) {
+                console.log("Scan finished");
+                scanFinishd = true;
+            }
+
+            function visitFolder(pathF: string, depth: number = 0): FolderStat {
+
+                // let sync: FolderSyncResult = { id: msg.id, childCount:0,path: pathF, type: "foldersync" };
+                // @ts-ignore: Unreachable code error
+                // ipcRenderer.send('msg-worker', sync);
+
+                let files: string[] = fs.readdirSync(pathF);
+
+                let depthChildren = depth + 1;
+
+                for (let i = 0; i < files.length; i++) {
+                    const fileName = files[i];
+                    const absolutePath = pathF + "/" + fileName;
+                    const stats = fs.statSync(absolutePath);
+                    if (stats.isDirectory() && fileName != "." && msg.depth < 100 && (msg.depth == 0 || depth < msg.depth)) {
+                        visitFolder(absolutePath, depthChildren)
+                    }
                 }
 
                 let folderStat: FolderStat = {
@@ -84,7 +113,6 @@ ipcRenderer.on("msg-main",
                 return folderStat;
 
             }
-
 
             visitFolder(msg.path);
 

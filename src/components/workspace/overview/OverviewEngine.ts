@@ -334,8 +334,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             _this.pauseHovering = false;
         });
         let t = d3.zoomTransform(this.canvas);
-        
-      
+
+
     }
 
     getNodeAtMousePosition = () => {
@@ -347,17 +347,19 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         // px && (obj = this.autocolor.lookup(px.data));
 
         let mGraph = this.screenToGraphCoords(this.mousePosition);
-
+        let scale = this.transform ? Math.max(20 / this.transform.k, 50) : 200;
         let n = undefined;
-        for (let i = 0; i < this.rootNodes.length; i++) {
+        for (let i = 0; this.transform && this.transform.k > 0.05 && i < this.rootNodes.length; i++) {
             const e = this.rootNodes[i];
             if (e.quadtree) {
-                let nFound = e.quadtree.find(mGraph.x, mGraph.y, 500);
+                let nFound = e.quadtree.find(mGraph.x, mGraph.y, scale);
                 if (nFound) {
                     n = nFound;
                 }
             }
             // console.log(nFound);
+            // 1 = 120;     0.01 = 1200
+            // x * 0.01 = 1200
 
         }
 
@@ -816,7 +818,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 /**
                  * Update column metrics
                  */
-                if (this.updateColumns) {
+                if (this.updateColumns || true) {
 
                     ctx.font = `${13}px Lato`;
                     ctx.fillStyle = "#fff";
@@ -837,7 +839,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             setWidths.set(n.depth, textWidth);
                         }
 
-                        let textw = (ctx.measureText(n.name).width + n.getRadius() * 3 + 70) * 2;
+                        let textw = (ctx.measureText(n.name).width * 2.5 + 70) * 2;
                         textWidth.max = Math.max(textWidth.max, textw);
                         textWidth.min = Math.min(textWidth.min, textw);
 
@@ -924,6 +926,7 @@ interpolatePlasma
                 if (isShadow) {
                     ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
                 }
+                ctx.strokeStyle = d3.interpolateWarm(1 - end.getRadius() / 250);
 
                 ctx.moveTo(xStart, start.getY());
                 let midX = (xStart + xEnd) / 2;
