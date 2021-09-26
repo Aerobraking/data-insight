@@ -1,13 +1,14 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
 import * as d3f from "d3-force-reuse";
-import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink, ForceY, Quadtree } from "d3";
+import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";
 import { FolderNode, FolderOverviewEntry } from "./FileEngine";
 import path from "path";
 import { OverviewEngine } from "./OverviewEngine";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
 import { Stats, StatsType } from "./OverviewInterfaces";
+import { IframeOutline } from "mdue";
 
 
 
@@ -16,6 +17,21 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     constructor(nodetype: string, name: string) {
         this.nodetype = nodetype;
         this._name = name;
+
+        this.simulation = d3
+            .forceSimulation([] as Array<this>)
+            .force("collide", d3.forceCollide<AbstractNode>().radius(d => {
+
+                var r = d.getRadius();
+                r = 80 * 0.2 + r * 0.8;
+
+                return r;
+            })
+                .iterations(2).strength(0.4))
+            .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
+            .alphaMin(0.003)
+            .alphaTarget(0.01)
+            .stop();
     }
 
     public getChildren() {
@@ -26,10 +42,15 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         c.parent = this;
         c.entry = this.entry;
         c.depth = c.parents().length;
+
         let bottom = c.parent.children.length > 0 ? c.parent.children.reduce((prev, current, index, a) => { return prev.getY() < current.getY() ? prev : current }) : undefined;
-        c.y = bottom ? bottom.getY() + 50 : this.y;
+
+        c.y = bottom ? bottom.getY() + 20 : this.y;
         this.children.push(c);
         this.entry?.engine?.nodeAdded(c);
+        this.updateSimulation();
+
+        this.updateForce();
     }
 
     public removeChild(c: this) {
@@ -37,10 +58,80 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         if (index > -1) {
             this.children.splice(index, 1);
             this.entry?.engine?.nodeUpdate();
+            this.updateSimulation();
         }
     }
 
+    forceRadius: number = 16;
 
+    public updateForce() {
+
+        /**
+         * Wir müssen wahrscheinlich rekursiv vorgehen.
+         * also hier radius berechnen und den 
+         */
+        if (this.children.length > 1) {
+            const max = this.children.reduce(function (prev, current) {
+                return (prev.getY() > current.getY()) ? prev : current
+            })
+            const min = this.children.reduce(function (prev, current) {
+                return (prev.getY() < current.getY()) ? prev : current
+            })
+            if (max && min) {
+                this.forceRadius = (max.getY() + max.forceRadius) - (min.getY() - min.forceRadius);
+                // console.log("forceRadius: "+ this.forceRadius);
+            }
+            const sum = this.children.map(d => d.forceRadius).reduce(function (prev, current) {
+                return prev + current;
+            })
+            this.forceRadius = sum * 1.2;
+            // console.log("sum: "+ sum);
+            // console.log(" ");
+
+
+        } else if (this.children.length == 1) {
+
+            var r = this.children[0].forceRadius;
+            r *= 1.2;
+            this.forceRadius = r;
+
+        } else {
+            this.forceRadius = this.getRadius();
+        }
+
+        // make sure the radius is not smaller then the node itself
+        this.forceRadius = Math.max(this.getRadius() * 1.2, this.forceRadius);
+
+
+        if (this.parent) {
+            this.parent.updateForce();
+        }
+
+    }
+
+    public getRadius() {
+        if (this.isRoot()) {
+            return 100;
+        } else if (this.entry) {
+            let abs = this.entry.root.getStatsValue("size");
+            let part = this.getStatsValue("size");
+            if (abs != undefined && part != undefined) {
+                let r = abs > 0 ? Math.sqrt(31415 * (part / abs) / Math.PI) : 1;
+                r = 80 * 0.2 + r * 0.8;
+
+                return r;
+            }
+        }
+        return 16;
+    }
+
+    public updateSimulation() {
+        this.simulation.nodes(this.children);
+    }
+
+    // the d3 simulation instance
+    @Exclude()
+    simulation: Simulation<this, AbstractLink<this>>;
     // list of child node for this node
     @Type(() => FolderNode)
     private children: Array<this> = [];
@@ -78,11 +169,49 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     public get name(): string {
         return this._name;
     }
+
     public set name(value: string) {
         this._name = value;
         if (this.entry) {
             this.entry.nodeUpdate();
         }
+    }
+
+    public tick() {
+
+        let c = this.simulation.force<ForceCollide<this>>("collide");
+
+        function getR(d: AbstractNode): number {
+            var r = d.getRadius();
+            r = 80 * 0.2 + r * 0.8;
+            r *= 1.2;
+            return r;
+        }
+
+        if (c) {
+            let collide: ForceCollide<this> = c;
+            collide.radius((d: this, i: number, nodes: this[]) => {
+                // var r = getR(d);
+                // r = 80 * 0.2 + r * 0.8;
+                // r *= 1.2;
+                // if (d.children.length > 1) {
+                //     const max = d.children.reduce(function (prev, current) {
+                //         return (prev.getY() > current.getY()) ? prev : current
+                //     })
+                //     const min = d.children.reduce(function (prev, current) {
+                //         return (prev.getY() < current.getY()) ? prev : current
+                //     })
+                //     if (max && min) {
+                //         return (max.getY() + getR(max)) - (min.getY() - getR(min));
+                //     }
+                // }
+                // return r;
+                return d.forceRadius;
+            }
+            );
+        }
+
+        this.simulation.tick();
     }
 
     public getStatsValue(key: string): number | undefined {
@@ -133,19 +262,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     public getX() {
         return this._x ? this._x : 0;
-    }
-
-    public getRadius() {
-        if (this.isRoot()) {
-            return 100;
-        } else if (this.entry) {
-            let abs = this.entry.root.getStatsValue("size");
-            let part = this.getStatsValue("size");
-            if (abs != undefined && part != undefined) {
-                return abs > 0 ? Math.sqrt(31415 * (part / abs) / Math.PI) : 1;
-            }
-        }
-        return 100;
     }
 
     public getY() {
@@ -253,21 +369,25 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
         this.simulation = d3
             .forceSimulation([] as Array<D>)
-            .force('link', d3.forceLink().strength(0.2))
+            .force('link', d3.forceLink<AbstractNode, AbstractLink>()
+                .strength(function (d: AbstractLink, i: number, data: AbstractLink[]) {
+                    return d.source.isRoot() ? 0.0005 : 0.2;
+                })
+                .distance(1400))
             // @ts-ignore: Unreachable code error
             //  .force("charge", d3f.forceManyBodyReuse().distanceMax(100).strength(0.5))
             // .force('charge', d3.forceManyBody().distanceMax(100).strength(0.5))
             // .force("collide", d3.forceCollide<AbstractNode>().radius(d => Math.max(d.getRadius() * 4, 225))
             //     .iterations(4).strength(0.5))
-            .force("collide", d3.forceCollide<AbstractNode>().radius(120)
-                .iterations(8).strength(1.0))
+            // .force("collide", d3.forceCollide<AbstractNode>().radius(120)
+            //     .iterations(8).strength(0.4))
             .force(
                 "y",
                 d3.forceY()
                     .y(function (d: any) {
                         return 0;
                     })
-                    .strength(0.0)
+                    .strength(0.01)
             )
             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
             .alphaMin(0.003)
@@ -339,6 +459,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         let node = this.getNodeByPath(stats.path);
         if (node) {
             node.stats = stats;
+            node.updateForce();
 
             let parent: D | undefined = node;
 
@@ -380,7 +501,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
                     }
                 }
 
-
+                parent.updateForce();
                 parent = parent.parent;
             }
 
@@ -466,35 +587,8 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         this.x = c.x;
         this.y = c.y;
 
-        // let f: ForceCenter<AbstractNode> | undefined = this.simulation.force("center");
-        // if (f) {
-        //     f.x(this.x);
-        //     f.y(this.y);
-        // }
     }
 
-    // public get x(): number {
-    //     return this.root.x ? this.root.x : 0;
-    // }
-
-    // public set x(value: number) {
-    //     this.root.x = value;
-    //     this.root.fx = value;
-    // }
-
-    // public get y(): number {
-    //     return this.root.y ? this.root.y : 0;
-    // }
-
-    // public set y(value: number) {
-    //     this.root.y = value;
-    //     this.root.fy = value;
-
-    //     for (let i = 0; i < this.root.descendants().length; i++) {
-    //         const c = this.root.descendants()[i];
-    //         c.fy = value;
-    //     }
-    // }
 
     /**
      * Updates the list of all nodes and links for this entry.
@@ -507,12 +601,12 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             this.simulation.alpha(1);
         }
 
-        let f: ForceLink<D, AbstractLink<D>> | undefined = this.simulation.force<ForceLink<D, AbstractLink<D>>>("force");
+        let f: ForceLink<D, AbstractLink<D>> | undefined = this.simulation.force<ForceLink<D, AbstractLink<D>>>("link");
         this.nodes = this.root.descendants();
         this.links = this.root.links();
 
         if (f) {
-            f.links(this.links as any);
+            f.links(this.links as any).strength(0);
         }
         this.simulation.nodes(this.nodes);
 
@@ -528,12 +622,25 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             y.y(function (d: D) {
                 return d.parent ? d.parent.getY() : d.getY();
             }).strength(function (d: D, i: number, data: D[]) {
-                return d.parent ? 0.002 : 0;
+                return d.parent ? d.parent.isRoot() ? 0.0005 : 0.015 : 0;
             })
         }
 
-        this.simulation.tick();
+        for (let i = 0; i < this.nodes.length; i++) {
+            this.nodes[i].tick();
+            if (OverviewEngine.framecounter % 400 == 0) {
+                if (this.nodes[i].getChildren().length == 0) {
+                    this.nodes[i].updateForce();
+                }
+            }
+        }
 
+        if (OverviewEngine.framecounter % 400 == 0) {
+        console.log("force update");
+        
+        }
+
+        this.simulation.tick();
 
         this.quadtree = d3.quadtree<D>()
             .x(function (d) { return d.getX(); })

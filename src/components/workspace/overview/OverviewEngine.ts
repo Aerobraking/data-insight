@@ -211,7 +211,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 this.canvasShadow.height = h;
 
                 this.size.w = w;
-                this.size.h = h; 
+                this.size.h = h;
             }
         });
         this.divObserver.observe(div);
@@ -525,7 +525,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
     private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
-    private static framecounter: number = 0;
+    public static framecounter: number = 0;
 
     public setFilterList(key: string, listNodes: AbstractNode[] | undefined = undefined, showImmediately: boolean = false) {
 
@@ -931,7 +931,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
 
         let scale = this.transform ? this.transform.k : 1;
-        let lineWidth = (2 * 0.7) + (2 / scale) * 0.3;
+        let weight = 0.6;
+        let lineWidth = (4 * weight) + (4 / scale) * (1-weight);
         let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
         op = 1 - op;
         op = Math.max(op, 0.075)
@@ -1122,7 +1123,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
 
                 var r = isShadow ? 100 : n.getRadius();
-                r = 80 * 0.2 + r * 0.8;
                 // ctx.fillStyle = mycolor((r / 250));
                 // ctx.fillStyle = d3.interpolateWarm(1 - r / 250);
                 ctx.fillStyle = this.getColorForNode(n);
@@ -1142,6 +1142,18 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     angle
                 );
                 ctx.fill();
+
+                ctx.globalAlpha=0.05;
+
+                ctx.beginPath();
+                ctx.arc(
+                    xPos,
+                    n.getY(),
+                    n.forceRadius,
+                    0,
+                    angle
+                );
+              //  ctx.fill();
             }
 
             i++
