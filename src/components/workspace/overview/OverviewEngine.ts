@@ -384,7 +384,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         let mGraph = this.screenToGraphCoords(this.mousePosition);
         let scale = this.transform ? Math.max(40 / this.transform.k, 50) : 200;
         let n = undefined;
-        for (let i = 0; this.transform && this.transform.k > 0.02 && i < this.rootNodes.length; i++) {
+        for (let i = 0; this.transform && this.transform.k > 0.005 && i < this.rootNodes.length; i++) {
             const e = this.rootNodes[i];
             if (e.quadtree) {
                 let nFound = e.quadtree.find(mGraph.x - e.x, mGraph.y - e.y, scale);
@@ -928,11 +928,31 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
+
+    // nodeCulling(n: AbstractNode): boolean {
+
+    //     let viewportWidth: number = this.size.w;
+    //     let viewportHeight: number = this.size.h;
+
+    //     let x = -(this.transform ? this.transform.x + viewportWidth / 2 : 0); // nach rechts draggen macht x kleiner, also -100 usw.
+    //     let y = -(this.transform ? this.transform.y + viewportWidth / 2 : 0);  // nach unten macht y kleiner, also -100 usw.
+
+    //     let scale = this.transform ? this.transform.k : 1;
+    //     let nodeX = Math.round(n.getX()) * scale;
+    //     let nodeY = Math.round(n.getY()) * scale;
+
+
+    //     return (nodeX > x - viewportWidth / 2 &&
+    //         nodeX < x + viewportWidth / 2 &&
+    //         nodeY > y - viewportHeight / 2 &&
+    //         nodeY < y + viewportHeight / 2);
+    // }
+
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
 
         let scale = this.transform ? this.transform.k : 1;
-        let weight = 0.6;
-        let lineWidth = (4 * weight) + (4 / scale) * (1-weight);
+        let weight = 0.3;
+        let lineWidth = (4 * weight) + (4 / scale) * (1 - weight);
         let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
         op = 1 - op;
         op = Math.max(op, 0.075)
@@ -1143,7 +1163,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 );
                 ctx.fill();
 
-                ctx.globalAlpha=0.05;
+                ctx.globalAlpha = 0.05;
 
                 ctx.beginPath();
                 ctx.arc(
@@ -1153,7 +1173,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     0,
                     angle
                 );
-              //  ctx.fill();
+                //  ctx.fill();
             }
 
             i++

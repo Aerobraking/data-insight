@@ -103,6 +103,7 @@ ipcRenderer.on("msg-main",
                     path: pathF,
                     stats:
                     {
+                        amount: { value: 0, type: StatsType.SUM },
                         size: { value: 0, type: StatsType.SUM },
                         mtime: { value: 0, type: StatsType.MEDIAN },
                         atime: { value: 0, type: StatsType.MEDIAN },
@@ -123,6 +124,7 @@ ipcRenderer.on("msg-main",
                         folderStat.stats.ctime.value += isNaN(stats.birthtimeMs) ? 0 : stats.birthtimeMs; // creation time
                     }
                 }
+                folderStat.stats.amount.value = fileCount;
 
                 if (fileCount > 0) {
                     folderStat.stats.mtime.value /= fileCount;

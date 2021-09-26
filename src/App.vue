@@ -324,7 +324,7 @@ div .prevent-input {
 }
 .noUi-vertical .noUi-handle {
   width: 28px;
-  height: 34px;
+  height: 20px; // 34
   right: -6px;
   top: -17px;
 }

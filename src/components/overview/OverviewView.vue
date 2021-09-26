@@ -2,6 +2,7 @@
   <div @drop.stop="drop" class="overview-viewport">
     <div class="filter-settings">
       <div class="slider"></div>
+      <div class="options"></div>
     </div>
 
     <div class="overview-search">
@@ -130,37 +131,71 @@ export default defineComponent({
     };
   },
   mounted() {
+    /**
+     * Anzahl
+     * Größe
+     * Alter
+     *
+     *
+     * */
+
     var sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
+    // var slider = noUiSlider.create(sliderDiv, {
+    //   start: [0, 1024 * 1024 * 1024],
+    //   connect: true,
+    //   behaviour: "drag",
+    //   orientation: "vertical",
+    //   margin: 1024 * 1024 * 4,
+    //   range: {
+    //     min: 0, // kb
+    //     "20%": [1024 * 1024 * 32], // mb
+    //     "40%": [1024 * 1024 * 256], // mb
+    //     "60%": [1024 * 1024 * 1024], // gb
+    //     "80%": [1024 * 1024 * 1024 * 16], // gb
+    //     max: [1024 * 1024 * 1024 * 1024], // tb
+    //   },
+    //   pips: {
+    //     mode: PipsMode.Range,
+    //     density: 2,
+    //     format: {
+    //       to: (value: number) => {
+    //         if (value < 1024) {
+    //           return "1 MB";
+    //         } else if (value < 1024 * 1024) {
+    //           return value / Math.pow(1024, 1) + " KB";
+    //         } else if (value < 1024 * 1024 * 1024) {
+    //           return value / Math.pow(1024, 2) + " MB";
+    //         } else if (value < 1024 * 1024 * 1024 * 1024) {
+    //           return value / Math.pow(1024, 3) + " GB";
+    //         } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
+    //           return value / Math.pow(1024, 4) + " TB";
+    //         }
+    //         return value + " Bytes";
+    //       },
+    //     },
+    //   },
+    // });
     var slider = noUiSlider.create(sliderDiv, {
-      start: [0, 1024 * 1024 * 1024],
+      start: [0, 128],
       connect: true,
+      behaviour: "drag",
       orientation: "vertical",
+      margin: 4,
       range: {
         min: 0, // kb
-        "20%": [1024 * 1024 * 32], // mb
-        "40%": [1024 * 1024 * 256], // mb
-        "60%": [1024 * 1024 * 1024], // gb
-        "80%": [1024 * 1024 * 1024 * 16], // gb
-        max: [1024 * 1024 * 1024 * 1024], // tb
+        "80%": [1024 * 2], // gb
+        max: [1024 * 16], // tb
       },
       pips: {
         mode: PipsMode.Range,
-        density: 2,
+        density: 8,
         format: {
           to: (value: number) => {
-            if (value < 1024) {
-              return "1 MB";
-            } else if (value < 1024 * 1024) {
-              return value / Math.pow(1024, 1) + " KB";
-            } else if (value < 1024 * 1024 * 1024) {
-              return value / Math.pow(1024, 2) + " MB";
-            } else if (value < 1024 * 1024 * 1024 * 1024) {
-              return value / Math.pow(1024, 3) + " GB";
-            } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
-              return value / Math.pow(1024, 4) + " TB";
+            if (value >= 1024 * 16) {
+              return "> " + value;
             }
-            return value + " Bytes";
+            return value;
           },
         },
       },
@@ -173,7 +208,8 @@ export default defineComponent({
 
       if (_this.overviewEngine) {
         _this.overviewEngine.setColorScale<FolderNode>(
-          "size",
+          // "size",
+          "amount",
           Number(min),
           Number(max),
           (node: FolderNode, stat: number, min: number, max: number) => {
@@ -187,6 +223,18 @@ export default defineComponent({
       }
     }, 128);
 
+    let values: string[] = [];
+    const steps = 5;
+    for (let i = 0; i <= steps; i++) {
+      const percent = Math.floor(100 * (i / steps));
+      values.push(`${d3.interpolateWarm(i / steps)} ${percent}%`);
+    }
+
+    const style = "linear-gradient( 0deg, " + values.join(", ") + ")";
+    console.log(style);
+
+    let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
+    divs[0].style.backgroundImage = style; 
     slider.on(
       "update.one",
       (
@@ -382,6 +430,14 @@ export default defineComponent({
   z-index: 6000;
   .slider {
     height: 100%;
+  }
+  .options {
+    position: absolute;
+    background: #fff;
+    left: 100%;
+    top: 0;
+    height: 250px;
+    width: 150px;
   }
 }
 
