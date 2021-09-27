@@ -9,8 +9,62 @@ import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
 import { Stats, StatsType } from "./OverviewInterfaces";
 import { IframeOutline } from "mdue";
+import rectCollide from "@/utils/ForceCollideRect";
 
+export class RectangleCollide implements SimulationNodeDatum {
 
+    width: number = 100;
+    height: number = 100;
+    /**
+     * Node’s zero-based index into nodes array. This property is set during the initialization process of a simulation.
+     */
+    index?: number | undefined;
+    /**
+     * Node’s current y-position
+     */
+    private _x?: number | undefined;
+    public get x(): number | undefined {
+        return 0;
+    }
+    public set x(value: number | undefined) {
+        this._x = value;
+    }
+    y?: number | undefined;
+    /**
+     * Node’s current x-velocity
+     */
+    vx?: number | undefined;
+    /**
+     * Node’s current y-velocity
+     */
+    private _vy?: number | undefined;
+    public get vy(): number | undefined {
+        return this._vy;
+    }
+    public set vy(value: number | undefined) {
+        this._vy = value;
+        const diff = this._vy && this._vyOld ? this._vy - this._vyOld : 0;
+        /**
+         * Add velocity too nodes
+         */
+        this._vyOld = this._vy;
+    }
+    _vyOld?: number | undefined;
+    /**
+     * Node’s fixed x-position (if position was fixed)
+     */
+    private _fx?: number | null | undefined;
+    public get fx(): number | null | undefined {
+        return 0;
+    }
+    public set fx(value: number | null | undefined) {
+        this._fx = value;
+    }
+    /**
+     * Node’s fixed y-position (if position was fixed)
+     */
+    fy?: number | null | undefined;
+}
 
 export abstract class AbstractNode implements SimulationNodeDatum {
 
@@ -165,6 +219,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
      * Node’s current x-position
      */
     private _x?: number | undefined;
+
+
 
     public get name(): string {
         return this._name;
@@ -614,6 +670,17 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     tick() {
 
+        let simulationC = d3
+            .forceSimulation([] as Array<D>)
+            .force("column1", rectCollide(function (rect: AbstractNode) {
+                return [100, rect.forceRadius];
+            }).strength(0.3))
+            .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
+            .alphaMin(0.003)
+            .alphaTarget(0.004)
+            .stop();
+
+
         let y: ForceY<D> | undefined = this.simulation.force(
             "y"
         );
@@ -636,8 +703,8 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
 
         if (OverviewEngine.framecounter % 400 == 0) {
-        console.log("force update");
-        
+            console.log("force update");
+
         }
 
         this.simulation.tick();
