@@ -19,7 +19,6 @@ ipcRenderer.on("msg-main",
 
             console.log("Start folder sync");
 
-
             function countFolders(pathF: string, depth: number = 0): void {
 
                 let files: string[] = fs.readdirSync(pathF);
@@ -54,12 +53,24 @@ ipcRenderer.on("msg-main",
                 let files: string[] = fs.readdirSync(pathF);
                 let folders: string[] = [];
 
+                let folderCount = 0;
                 for (let i = 0; i < files.length; i++) {
                     const fileName = files[i];
                     const absolutePath = pathF + "/" + fileName;
                     const stats = fs.statSync(absolutePath);
                     if (stats.isDirectory() && fileName != "." && msg.depth < 100 && (msg.depth == 0 || depth < msg.depth)) {
-                        folders.push(absolutePath);
+                        folderCount++;
+                    }
+                }
+
+                if (folderCount < 50) {
+                    for (let i = 0; i < files.length; i++) {
+                        const fileName = files[i];
+                        const absolutePath = pathF + "/" + fileName;
+                        const stats = fs.statSync(absolutePath);
+                        if (stats.isDirectory() && fileName != "." && msg.depth < 100 && (msg.depth == 0 || depth < msg.depth)) {
+                            folders.push(absolutePath);
+                        }
                     }
                 }
 

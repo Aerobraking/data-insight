@@ -517,7 +517,8 @@ div .prevent-input {
   -webkit-transform: translate(0, -50%);
   transform: translate(0, -50%);
   top: 50%;
-  right: 120%;
+  // right: 120%;
+  left: 120%;
 }
 .noUi-horizontal .noUi-origin > .noUi-tooltip {
   -webkit-transform: translate(50%, 0);

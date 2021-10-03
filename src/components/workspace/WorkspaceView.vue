@@ -10,6 +10,7 @@
     <canvas class="workspace-canvas"></canvas>
 
     <panZoom
+      @dblclick="closeOverview"
       @paste="onPaste"
       @init="panHappen"
       @pan="onPanStart"
@@ -27,7 +28,7 @@
       }"
       selector=".zoomable"
     >
-      <div class="zoomable close-file-anim">
+      <div @dblclick="closeOverview" class="zoomable close-file-anim">
         <div class="rectangle-selection"></div>
         <div class="rectangle-selection-wrapper">
           <button class="ws-zoom-fixed resizer-bottom-right">
@@ -121,7 +122,7 @@
         <arrow-expand />
       </button> -->
 
-      <button :disabled="selectedEntriesCount < 2"><BorderAll /></button>
+      <!-- <button :disabled="selectedEntriesCount < 2"><BorderAll /></button> -->
       <button
         @click="setFocusOnNameInput(undefined)"
         :disabled="selectedEntriesCount != 1"
@@ -158,7 +159,7 @@ import {
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import WorkspacePlugin from "./Plugins/AbstractPlugin";
 import ReArrange from "./Plugins/Rearrange";
-import * as WSUtils from "./WorkspaceUtils"; 
+import * as WSUtils from "./WorkspaceUtils";
 import OverviewView from "./../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
@@ -206,7 +207,7 @@ import {
   FolderOutline,
   FileOutline,
   EmoticonHappyOutline,
-} from "mdue"; 
+} from "mdue";
 
 export default defineComponent({
   el: ".wrapper",
@@ -229,7 +230,7 @@ export default defineComponent({
     Overscan,
     Resize,
     wsentriesbookmarks,
-    wssearchlist, 
+    wssearchlist,
     OverviewView,
   },
   props: {
@@ -258,8 +259,10 @@ export default defineComponent({
     highlightSelection: boolean;
     divObserver: any;
     selectedEntriesCount: number;
+    overviewTimeout: any | undefined;
   } {
     return {
+      overviewTimeout: undefined,
       highlightSelection: true,
       activePlugin: null,
       searchString: "",
@@ -392,25 +395,50 @@ export default defineComponent({
         }, 400);
       }
     },
-    openOverview(e: MouseEvent, toggle: boolean = false): void {
+    openOverview(
+      e: MouseEvent,
+      toggle: boolean = false,
+      open: boolean = true
+    ): void {
       let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
 
       if (toggle) {
         this.model.overviewOpen = !this.model.overviewOpen;
-          e.stopPropagation();
+        e.stopPropagation();
       } else if (!this.model.overviewOpen) {
         this.model.overviewOpen = true;
         e.stopPropagation();
       }
-  
+
+      if (this.overviewTimeout) {
+        clearTimeout(this.overviewTimeout);
+      }
       if (this.model.overviewOpen) {
         div.classList.toggle("overview-hover", false);
       } else {
-        setTimeout(() => {
+        this.overviewTimeout = setTimeout(() => {
           div.classList.toggle("overview-hover", true);
-        }, 1500);
+          this.overviewTimeout = undefined;
+        }, 500);
       }
       e.preventDefault();
+    },
+    closeOverview(e: MouseEvent): void {
+      console.log("close");
+
+      let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
+
+      if (this.model.overviewOpen) {
+        this.model.overviewOpen = false;
+        e.stopPropagation();
+        if (this.overviewTimeout) {
+          clearTimeout(this.overviewTimeout);
+        }
+        this.overviewTimeout = setTimeout(() => {
+          div.classList.toggle("overview-hover", true);
+          this.overviewTimeout = undefined;
+        }, 500);
+      }
     },
     searchUpdate(): void {
       let models = this.model.entries;
@@ -719,7 +747,7 @@ export default defineComponent({
       if (!e.altKey && !e.ctrlKey) {
         switch (e.key) {
           case "s":
-            this.openOverview(new MouseEvent("down"),true);
+            this.openOverview(new MouseEvent("down"), true);
             break;
           case " ":
             if (e.repeat) {
@@ -1809,12 +1837,11 @@ svg {
 
 .overview {
   position: absolute;
-  right: 0px;
+  left: 98%;
   top: 0px;
-  margin: 35px;
-  margin-right: 7px;
-  height: 100px;
-  width: 100px;
+  margin: 0px;
+  height: 100%;
+  width: 98%;
   transition: all 0.25s;
   transition-timing-function: ease-in-out;
   overflow: hidden;
@@ -1823,26 +1850,17 @@ svg {
 
 .overview-hover {
   &:hover {
-    height: 140px;
-    width: 140px;
-    margin: 35px;
-    margin-right: 7px;
+    left: 92%;
     cursor: pointer;
   }
 }
 
 .ov-open {
-  right: 0px;
+  left: 0px;
   top: 0px;
   margin: 0px;
-  width: 100%;
+  width: 98%;
   height: 100%;
-
-  &:hover {
-    width: 100%;
-    height: 100%;
-    margin: 0px;
-  }
 }
 
 .search-not-found {

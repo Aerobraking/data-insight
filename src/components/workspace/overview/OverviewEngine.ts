@@ -466,23 +466,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         const pxScale = 1;//window.devicePixelRatio;
         if (!this.pauseHovering && _this.mousePosition && _this.mousePosition.x > 0 && _this.mousePosition.y > 0) {
 
-            // let mGraph = _this.screenToGraphCoords(_this.mousePosition);
-
             let n = this.getNodeAtMousePosition();
-
-            // n = undefined;
-            // for (let i = 0; i < _this.rootNodes.length; i++) {
-            //     const e = _this.rootNodes[i];
-            //     if (e.quadtree) {
-            //         let nFound = e.quadtree.find(mGraph.x, mGraph.y);
-            //         if (nFound) {
-            //             n = nFound;
-            //         }
-            //     }
-            //     // console.log(nFound);
-
-            // }
-
 
 
             if (n) {
@@ -492,7 +476,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     _this.setFilterList("hover", [...n.descendants(), ...n.parents()]);
                 }
             } else {
-                _this.setFilterList("hover", []);
                 _this.nodeHovered = undefined;
                 _this.setFilterList("hover");
                 _this.canvas.style.cursor = "auto";
@@ -605,6 +588,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         node.colorID = this.autocolor.register(node);
         this.updateNodeColorScale(node);
         this.updateColumns = true;
+        if (node.entry) {
+            node.x = this.getColumnX(node.entry, node);
+        }
+
     }
 
     /**
@@ -674,7 +661,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             const n = this.notFound.get(listOpacity[i]);
             if (n) {
                 n.o *= n.d ? stepPos : stepNeg;
-                n.o = Math.min(1, Math.max(0.05, n.o));
+                n.o = Math.min(1, Math.max(0.15, n.o));
                 if (n.o >= 1) {
                     this.notFound.delete(listOpacity[i]);
                 }
@@ -695,6 +682,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     public getColumnX(entry: AbstractOverviewEntry, n: AbstractNode) {
         let d = this.getColumnData(entry, n.depth);
         return n.parent && d ? d.x + entry.root.getX() : n.getX();
+    }
+    public getColumnXByDepth(entry: AbstractOverviewEntry, depth: number) {
+        let d = this.getColumnData(entry, depth);
+        return d ? d.x + entry.root.getX() : 0;
     }
 
     public getColumnWidth(entry: AbstractOverviewEntry, n: AbstractNode) {
@@ -889,9 +880,16 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             setWidths.set(n.depth, textWidth);
                         }
 
-                        let textw = (ctx.measureText(n.name).width * 2.5 + 70) * 2;
-                        textWidth.max = Math.max(textWidth.max, textw);
-                        textWidth.min = Math.min(textWidth.min, textw);
+                        if (n.depth == 0) {
+                            textWidth.max = 1600;
+                            textWidth.min = 1400;
+                        } else {
+                            let textw = (ctx.measureText(n.name).width * 2.5 + 70) * 2.2;
+                            textWidth.max = Math.max(textWidth.max, textw);
+                            textWidth.min = Math.min(textWidth.min, textw);
+                        }
+
+
 
                     }
 
@@ -909,9 +907,30 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 ctx.fillStyle = "rgb(170,170,170)";
 
+
+
                 this.drawLinks(ctx, isShadow, links, widths, entry);
                 this.drawNodes(ctx, isShadow, nodes, widths, entry);
                 this.drawText(ctx, isShadow, nodes, widths, entry);
+
+
+
+                const columnForces = Array.from(entry.columnForceMap.values());
+
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = "rgb(240,0,0)";
+
+                for (let i = 0; i < columnForces.length; i++) {
+                    // all node parents for one column
+                    const nodes = columnForces[i].nodes();
+
+                    for (let j = 0; nodes && j < nodes.length; j++) {
+                        const n = nodes[j];
+                        const x = this.getColumnXByDepth(entry, n.depth)
+
+                        // ctx. t(x, n.y ? n.y - n.radius : 0, 50, n.radius * 2);
+                    }
+                }
 
                 ctx.restore();
             }
@@ -951,7 +970,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
 
         let scale = this.transform ? this.transform.k : 1;
-        let weight = 0.3;
+        let weight = 0.7;
         let lineWidth = (4 * weight) + (4 / scale) * (1 - weight);
         let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
         op = 1 - op;
@@ -973,11 +992,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(end)) {
-                ctx.beginPath();
+
                 ctx.lineWidth = isShadow ? 10 : lineWidth;
 
-                let xStart = widths[start.depth] ? widths[start.depth].x : 0;
-                let xEnd = widths[end.depth] ? widths[end.depth].x : 0;
+                let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x : widths[start.depth].x + widths[start.depth].width * 0.36) : 0;
+                let xEnd = widths[end.depth] ? widths[end.depth].x - 150 : 0;
+                let xEndLine = widths[end.depth] ? widths[end.depth].x : 0;
 
                 if (start.isRoot()) {
                     ctx.strokeStyle = "#555";
@@ -992,16 +1012,27 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 interpolateWarm
                 interpolatePlasma
                 */
+                let colorStart = this.getColorForNode(start);
+                let colorEnd = this.getColorForNode(end);
 
-                grd.addColorStop(0.35, d3.interpolateWarm(1 - start.getRadius() / 250).replace(")", "," + op + ")").replace("(", "a("));
-                grd.addColorStop(0.7, d3.interpolateWarm(1 - end.getRadius() / 250));
+                grd.addColorStop(0.15, colorStart);
+                grd.addColorStop(0.45, colorEnd);
+
+
                 ctx.strokeStyle = grd;
 
                 if (isShadow) {
                     ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
                 }
-                // ctx.strokeStyle = d3.interpolateWarm(1 - end.getRadius() / 250);
-                ctx.strokeStyle = this.getColorForNode(end);
+
+                // ctx.strokeStyle = this.getColorForNode(end);
+                ctx.beginPath();
+                ctx.moveTo(widths[start.depth] ? widths[start.depth].x : 0, start.getY());
+                ctx.lineTo(xStart, start.getY());
+                //   ctx.stroke();
+
+                //   ctx.beginPath();
+                ctx.moveTo(xStart, start.getY());
 
                 ctx.moveTo(xStart, start.getY());
                 let midX = (xStart + xEnd) / 2;
@@ -1013,6 +1044,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     xEnd,
                     end.getY()
                 );
+                ctx.moveTo(xEnd, end.getY());
+                ctx.lineTo(xEndLine, end.getY());
                 ctx.stroke();
 
             }
@@ -1042,9 +1075,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             for (let j = 0; j < nodes.length; j++) {
                 const n = nodes[j];
                 const nodeValue = n.getStatsValue(this.colorSettings.attr);
+
+
                 const colorOld = this.getColorForNode(n);
-                if (nodeValue != undefined) {
-                    const colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                if (colorOld && nodeValue != undefined) {
+                    let colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                    colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
                     var scale = d3.scaleLinear<string>()
                         .domain([0, duration])
                         .range([colorOld, colorNew]);
@@ -1091,15 +1127,18 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     colorSettings: ColorStatsSettings<any> | undefined;
-
+    static hiddenColor: string = "rgb(25,25,25)";
     colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
     colorTransitionElapsed: number | undefined = 0;
     colorTransitionTarget: number = 400;
     colorNodeDefault: string = "rgb(200,200,200)";
-    colorNodeHiddenDefault: string = "rgba(200,200,200,0.075)";
     colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
 
     getColorForNode(n: AbstractNode): string {
+
+        if (n.flag == 1) {
+            // return "rgb(0,0,240)";
+        }
 
         if (this.colorTransitionElapsed != undefined) {
             let scale = this.colorTransitionMap.get(n);
@@ -1112,7 +1151,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             let c = this.colorNodeMap.get(n);
             if (c) {
                 if (c == "h") {
-                    return this.colorNodeHiddenDefault;
+                    return OverviewEngine.hiddenColor;
                 }
                 return c;
             }
@@ -1157,7 +1196,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 ctx.arc(
                     xPos,
                     n.getY(),
-                    isShadow ? r * 1.2 : r,
+                    r,
                     0,
                     angle
                 );
@@ -1165,15 +1204,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 ctx.globalAlpha = 0.05;
 
-                ctx.beginPath();
-                ctx.arc(
-                    xPos,
-                    n.getY(),
-                    n.forceRadius,
-                    0,
-                    angle
-                );
-                //  ctx.fill();
+                // ctx.fillRect(xPos, n.getY() - n.forceRadius, 50, n.forceRadius * 2);
+
             }
 
             i++
@@ -1191,7 +1223,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         let scale = this.transform ? this.transform.k : 1;
 
-        let op: number = scale >= 0.1 && scale <= 0.2 ? (scale - 0.1) * 10 : scale < 0.1 ? 0 : 1;
+        let op: number = scale >= 0.05 && scale <= 0.1 ? (scale - 0.05) * 20 : scale < 0.1 ? 0 : 1;
 
         // let textWidth:ColumnTextWidth = { min: 10000000, max: 0 };
         /**
@@ -1219,14 +1251,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     if (op > 0) {
                         ctx.textAlign = "left";
 
-                        let fontSize = isNodeHovered && !isShadow ? 18 : 24;
+                        let fontSize = isNodeHovered && !isShadow ? 34 : 30;
                         ctx.font = `${fontSize}px Lato`;
                         if (isShadow) {
                             ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
                         }
 
                         let xName = xPos + 100 * 1.1;
-                        let yName = n.getY() + fontSize / 4;
+                        let yName = n.getY() - fontSize / 2;
 
                         if (isShadow) {
                             ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
@@ -1251,9 +1283,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     }
 
                     let name = isNodeHovered && !isShadow && n.entry ? n.entry.path : n.name;
-                    let yName = n.getY() + translate;
+                    let yName = n.getY() - translate;
 
-                    xPos -= 100;
+                    xPos -= 120;
 
                     if (isShadow) {
                         ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
@@ -1264,7 +1296,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                         if (this.colorSettings) {
                             let value = n.getStatsValue(this.colorSettings.attr);
-                            let s = (value ? formatBytes(value, 2) : " - MB") + (n.entry ? "x: " + Math.floor(n.entry.x) + ", y: " + Math.floor(n.entry.y) : "");
+                            let s = (value ? formatBytes(value, 2) : " - MB")
+                                // + (n.entry ? "x: " + Math.floor(n.entry.x) + ", y: " + Math.floor(n.entry.y) : "")
+                                ;
                             ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
                         }
                     }

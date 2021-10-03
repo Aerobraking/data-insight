@@ -1,13 +1,11 @@
 <template>
   <div
-    ref="el"
-    @mouseup.stop
-    @mousedown.stop
-    @click.stop
+    ref="el" 
     v-on:dblclick.stop=""
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
   >
+
   <wsentrydisplayname :entry="entry"/>
    
     <div
@@ -16,6 +14,7 @@
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       class="ws-window-bar-top select-element selectable-highlight"
     ></div>
+
     <div class="search-bar">
       <button @click="folderBack">Go Up</button>
       <button @click="openDefault">Default</button>

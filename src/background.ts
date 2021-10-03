@@ -201,7 +201,7 @@ async function createWindow() {
   // Create the worker window.
   windowWorker = new BrowserWindow({
     title: "worker",
-    show: true,
+    show: false,
     webPreferences: {
       enableRemoteModule: true,
       webSecurity: false,

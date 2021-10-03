@@ -31,7 +31,7 @@
     ></div>
 
     <div @mousedown.stop @dblclick.capture.stop class="workspace-menu-bar">
-      <button>
+      <!-- <button>
         <Qrcode @dblclick.capture.stop @click="setMode1" />
       </button>
       <button>
@@ -39,7 +39,7 @@
       </button>
       <button>
         <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
-      </button>
+      </button> -->
       <button>
         <Pause
           @dblclick.capture.stop
@@ -141,65 +141,85 @@ export default defineComponent({
 
     var sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
-    // var slider = noUiSlider.create(sliderDiv, {
-    //   start: [0, 1024 * 1024 * 1024],
-    //   connect: true,
-    //   behaviour: "drag",
-    //   orientation: "vertical",
-    //   margin: 1024 * 1024 * 4,
-    //   range: {
-    //     min: 0, // kb
-    //     "20%": [1024 * 1024 * 32], // mb
-    //     "40%": [1024 * 1024 * 256], // mb
-    //     "60%": [1024 * 1024 * 1024], // gb
-    //     "80%": [1024 * 1024 * 1024 * 16], // gb
-    //     max: [1024 * 1024 * 1024 * 1024], // tb
-    //   },
-    //   pips: {
-    //     mode: PipsMode.Range,
-    //     density: 2,
-    //     format: {
-    //       to: (value: number) => {
-    //         if (value < 1024) {
-    //           return "1 MB";
-    //         } else if (value < 1024 * 1024) {
-    //           return value / Math.pow(1024, 1) + " KB";
-    //         } else if (value < 1024 * 1024 * 1024) {
-    //           return value / Math.pow(1024, 2) + " MB";
-    //         } else if (value < 1024 * 1024 * 1024 * 1024) {
-    //           return value / Math.pow(1024, 3) + " GB";
-    //         } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
-    //           return value / Math.pow(1024, 4) + " TB";
-    //         }
-    //         return value + " Bytes";
-    //       },
-    //     },
-    //   },
-    // });
     var slider = noUiSlider.create(sliderDiv, {
-      start: [0, 128],
+      start: [0, 1024 * 1024 * 1024],
       connect: true,
       behaviour: "drag",
       orientation: "vertical",
-      margin: 4,
+      margin: 1024 * 1024 * 4,
       range: {
         min: 0, // kb
-        "80%": [1024 * 2], // gb
-        max: [1024 * 16], // tb
+        "20%": [1024 * 1024 * 32], // mb
+        "40%": [1024 * 1024 * 256], // mb
+        "60%": [1024 * 1024 * 1024], // gb
+        "80%": [1024 * 1024 * 1024 * 16], // gb
+        max: [1024 * 1024 * 1024 * 64], // tb
       },
       pips: {
         mode: PipsMode.Range,
-        density: 8,
+        density: 2,
         format: {
           to: (value: number) => {
-            if (value >= 1024 * 16) {
-              return "> " + value;
+            if (value < 1024) {
+              return "1 MB";
+            } else if (value < 1024 * 1024) {
+              return value / Math.pow(1024, 1) + " KB";
+            } else if (value < 1024 * 1024 * 1024) {
+              return value / Math.pow(1024, 2) + " MB";
+            } else if (value < 1024 * 1024 * 1024 * 1024) {
+              return value / Math.pow(1024, 3) + " GB";
+            } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
+              return value / Math.pow(1024, 4) + " TB";
             }
-            return value;
+            return value + " Bytes";
           },
         },
       },
     });
+    // var slider = noUiSlider.create(sliderDiv, {
+    //   start: [0, 128],
+    //   connect: true,
+    //   behaviour: "drag",
+    //   orientation: "vertical",
+    //   tooltips: [
+    //     {
+    //       to: (value: number) => {
+    //         if (value >= 1024 * 16) {
+    //           return "> " + value;
+    //         }
+    //         return Math.floor(value);
+    //       },
+    //     },
+      
+    //     {
+    //       to: (value: number) => {
+    //         if (value >= 1024 * 16) {
+    //           return "> " + value;
+    //         }
+    //         return Math.floor(value);
+    //       },
+    //     },
+     
+    //   ],
+    //   margin: 4,
+    //   range: {
+    //     min: 0, // kb
+    //     "80%": [1024 * 2], // gb
+    //     max: [1024 * 16], // tb
+    //   },
+    //   pips: {
+    //     mode: PipsMode.Range,
+    //     density: 8,
+    //     format: {
+    //       to: (value: number) => {
+    //         if (value >= 1024 * 16) {
+    //           return "> " + value;
+    //         }
+    //         return value;
+    //       },
+    //     },
+    //   },
+    // });
 
     const _this = this;
 
@@ -209,11 +229,11 @@ export default defineComponent({
       if (_this.overviewEngine) {
         _this.overviewEngine.setColorScale<FolderNode>(
           // "size",
-          "amount",
+          "size",
           Number(min),
           Number(max),
           (node: FolderNode, stat: number, min: number, max: number) => {
-            stat = stat < min ? 0 : stat > max ? max : stat;
+            stat = stat < min ? 0 : stat > max ? max+1 : stat;
             return stat < min || stat > max
               ? "h"
               : d3.interpolateWarm(1 - stat / max);
@@ -234,7 +254,7 @@ export default defineComponent({
     console.log(style);
 
     let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
-    divs[0].style.backgroundImage = style; 
+    divs[0].style.backgroundImage = style;
     slider.on(
       "update.one",
       (
@@ -433,7 +453,7 @@ export default defineComponent({
   }
   .options {
     position: absolute;
-    background: #fff;
+  //  background: #fff;
     left: 100%;
     top: 0;
     height: 250px;

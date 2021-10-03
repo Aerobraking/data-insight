@@ -49,6 +49,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
 
     public initAfterLoading(): void {
         this.updateSimulationData();
+        this.updateColumnForces();
         for (let i = 0; i < this.nodes.length; i++) {
             const n = this.nodes[i];
             n.entry = this;
@@ -67,22 +68,20 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     // startTime: number = 0;
     // endTime: number = 0;
     @Exclude()
-    interval: any = setInterval(this.handleEvents.bind(this), 8);
+    interval: any = setInterval(this.handleEvents.bind(this), 70);
     @Exclude()
     eventStack: ({ path: string, type: "add" } | FolderStatsResult)[] = [];
 
     handleEvents(): void {
 
         s:
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 6; i++) {
             let event = this.eventStack.shift();
             if (event) {
                 switch (event.type) {
                     case "add":
                         this.addEntryPath(event.path);
-                        if (this.eventStack.length < 500) {
-                            break s;
-                        }
+                        break s;
                         break;
                     case "folderstats":
                         this.addStats(event.stats);
