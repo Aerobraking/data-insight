@@ -15,7 +15,7 @@
       class="ws-window-bar-top select-element selectable-highlight"
     ></div>
 
-    <div class="search-bar">
+    <!-- <div class="search-bar">
       <button @click="folderBack">Go Up</button>
       <button @click="openDefault">Default</button>
       <button @click="setDefault">Set Default</button>
@@ -27,7 +27,7 @@
         class=""
         placeholder="Search ..."
       />
-    </div>
+    </div> -->
 
     <div class="viewport" :class="{ opaque: opaque }">
       <div

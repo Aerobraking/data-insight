@@ -366,6 +366,8 @@ export default defineComponent({
         false
       );
     }
+
+          this.updateFixedZoomElements();
   },
   unmounted() {
     this.divObserver.disconnect();
@@ -615,6 +617,8 @@ export default defineComponent({
         }
       }
 
+      // bis 13 uhr 
+
       var mousePos = this.mousePositionLast;
       if (text != undefined) {
         if (text.includes("youtube.com")) {
@@ -631,6 +635,7 @@ export default defineComponent({
 
           this.$store.commit(MutationTypes.ADD_FILES, payload);
         } else {
+          return
           let listFiles: Array<WorkspaceEntry> = [];
           let payload = {
             model: <Workspace>this.model,
@@ -645,6 +650,8 @@ export default defineComponent({
           this.$store.commit(MutationTypes.ADD_FILES, payload);
         }
       }
+
+      this.updateFixedZoomElements();
     },
     keydown(e: KeyboardEvent) {
       if (
@@ -995,7 +1002,7 @@ export default defineComponent({
         }
       }
 
-      comp.drawCanvas();
+      // comp.drawCanvas();
     }, 10),
     mousemove: function (e: MouseEvent) {
       this.mousemoveThrottle(e, this);

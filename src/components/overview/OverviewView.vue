@@ -142,7 +142,7 @@ export default defineComponent({
     var sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
     var slider = noUiSlider.create(sliderDiv, {
-      start: [0, 1024 * 1024 * 1024],
+      start: [0, 1024 * 1024 * 1024 * 42],
       connect: true,
       behaviour: "drag",
       orientation: "vertical",
@@ -153,7 +153,7 @@ export default defineComponent({
         "40%": [1024 * 1024 * 256], // mb
         "60%": [1024 * 1024 * 1024], // gb
         "80%": [1024 * 1024 * 1024 * 16], // gb
-        max: [1024 * 1024 * 1024 * 64], // tb
+        max: [1024 * 1024 * 1024 * 512], // tb
       },
       pips: {
         mode: PipsMode.Range,
@@ -190,7 +190,7 @@ export default defineComponent({
     //         return Math.floor(value);
     //       },
     //     },
-      
+
     //     {
     //       to: (value: number) => {
     //         if (value >= 1024 * 16) {
@@ -199,7 +199,7 @@ export default defineComponent({
     //         return Math.floor(value);
     //       },
     //     },
-     
+
     //   ],
     //   margin: 4,
     //   range: {
@@ -233,7 +233,7 @@ export default defineComponent({
           Number(min),
           Number(max),
           (node: FolderNode, stat: number, min: number, max: number) => {
-            stat = stat < min ? 0 : stat > max ? max+1 : stat;
+            stat = stat < min ? 0 : stat > max ? max  : stat;
             return stat < min || stat > max
               ? "h"
               : d3.interpolateWarm(1 - stat / max);
@@ -415,6 +415,7 @@ export default defineComponent({
             let root: FolderOverviewEntry = new FolderOverviewEntry(p);
             root.setCoordinates(this.overviewEngine.screenToGraphCoords(e));
             root.engine = this.overviewEngine;
+            root.depth = 3;
             listEntries.push(root);
           }
         }
@@ -453,7 +454,7 @@ export default defineComponent({
   }
   .options {
     position: absolute;
-  //  background: #fff;
+    //  background: #fff;
     left: 100%;
     top: 0;
     height: 250px;

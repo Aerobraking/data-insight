@@ -57,8 +57,8 @@ export default function CollideExtend(radius: any | null = null) {
             if (listNodes != undefined && listNodes.length > 0) {
 
                 if (OverviewEngine.framecounter % 400 == 0) {
-                    console.log("column: " + i + " nodes: " + listNodes.length);
-                    console.log(" ");
+                    // console.log("column: " + i + " nodes: " + listNodes.length);
+                    // console.log(" ");
                 }
 
 

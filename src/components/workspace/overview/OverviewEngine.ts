@@ -423,7 +423,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.divObserver.disconnect();
     }
 
-    public setView(scale: number, x: number, y: number, duration: number = 500) {
+    public setView(scale: number, x: number, y: number, duration: number = 70) {
 
         let _this = this;
 
@@ -661,7 +661,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             const n = this.notFound.get(listOpacity[i]);
             if (n) {
                 n.o *= n.d ? stepPos : stepNeg;
-                n.o = Math.min(1, Math.max(0.15, n.o));
+                n.o = Math.min(1, Math.max(0.04, n.o));
                 if (n.o >= 1) {
                     this.notFound.delete(listOpacity[i]);
                 }
@@ -880,14 +880,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             setWidths.set(n.depth, textWidth);
                         }
 
-                        if (n.depth == 0) {
-                            textWidth.max = 1600;
-                            textWidth.min = 1400;
-                        } else {
-                            let textw = (ctx.measureText(n.name).width * 2.5 + 70) * 2.2;
-                            textWidth.max = Math.max(textWidth.max, textw);
-                            textWidth.min = Math.min(textWidth.min, textw);
-                        }
+                        // if (n.depth == 0) {
+                        //     textWidth.max = 1600;
+                        //     textWidth.min = 1400;
+                        // } else {
+                        let textw = (Math.max(ctx.measureText(n.name).width, 250) * 2.5 + 200) * 2.2;
+                        textWidth.max = Math.max(textWidth.max, textw);
+                        textWidth.min = Math.min(textWidth.min, textw);
+                        // }
 
 
 
@@ -995,9 +995,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 ctx.lineWidth = isShadow ? 10 : lineWidth;
 
+                var rStart = this.getRadius(start);
                 let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x : widths[start.depth].x + widths[start.depth].width * 0.36) : 0;
                 let xEnd = widths[end.depth] ? widths[end.depth].x - 150 : 0;
-                let xEndLine = widths[end.depth] ? widths[end.depth].x : 0;
+
+
+                var r = this.getRadius(end);
+
+                let xEndLine = widths[end.depth] ? widths[end.depth].x - r + 1 : 0;
 
                 if (start.isRoot()) {
                     ctx.strokeStyle = "#555";
@@ -1013,7 +1018,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 interpolatePlasma
                 */
                 let colorStart = this.getColorForNode(start);
-                let colorEnd = this.getColorForNode(end);
+
+                let colorEnd = this.getColorForNode(end,true);
+                if (colorEnd == "h") {
+                    colorStart = colorEnd;
+                }
 
                 grd.addColorStop(0.15, colorStart);
                 grd.addColorStop(0.45, colorEnd);
@@ -1025,13 +1034,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
                 }
 
-                // ctx.strokeStyle = this.getColorForNode(end);
-                ctx.beginPath();
-                ctx.moveTo(widths[start.depth] ? widths[start.depth].x : 0, start.getY());
-                ctx.lineTo(xStart, start.getY());
-                //   ctx.stroke();
 
-                //   ctx.beginPath();
+                ctx.beginPath();
+                ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, start.getY());
+                ctx.lineTo(xStart, start.getY());
+
                 ctx.moveTo(xStart, start.getY());
 
                 ctx.moveTo(xStart, start.getY());
@@ -1094,6 +1101,13 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.colorTransitionTarget = duration;
     }
 
+    private getRadius(node: AbstractNode, weight: number = 0.95): number {
+        let scale = this.transform ? this.transform.k > 1 ? 1 : this.transform.k : 1;
+        var r = node.getRadius();
+        r = (r * weight) + (r / scale) * (1 - weight);
+        return r;
+    }
+
 
     public updateNodeColorScale(node: AbstractNode | undefined = undefined): void {
 
@@ -1134,7 +1148,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     colorNodeDefault: string = "rgb(200,200,200)";
     colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
 
-    getColorForNode(n: AbstractNode): string {
+    getColorForNode(n: AbstractNode, getHiddenInfo: boolean = false): string {
 
         if (n.flag == 1) {
             // return "rgb(0,0,240)";
@@ -1151,7 +1165,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             let c = this.colorNodeMap.get(n);
             if (c) {
                 if (c == "h") {
-                    return OverviewEngine.hiddenColor;
+                    return getHiddenInfo ? "h" : OverviewEngine.hiddenColor;
                 }
                 return c;
             }
@@ -1163,15 +1177,13 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
 
 
-        var mycolor = d3.scaleLinear<string>()
-            .domain([0, 100, 250])
-            .range(["green", "yellow", "red"]);
-
+        ctx.lineWidth = 12;
         var angle = 2 * Math.PI;
         var i = 0, len = nodes.length;
         while (i < len) {
 
             const n = nodes[i];
+
             const opacity = this.notFound.get(n);
             if (!isShadow && opacity) {
                 ctx.globalAlpha = opacity.o;
@@ -1181,10 +1193,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
 
-                var r = isShadow ? 100 : n.getRadius();
+                var r = this.getRadius(n);
+
                 // ctx.fillStyle = mycolor((r / 250));
                 // ctx.fillStyle = d3.interpolateWarm(1 - r / 250);
                 ctx.fillStyle = this.getColorForNode(n);
+                ctx.strokeStyle = ctx.fillStyle;
 
                 if (isShadow) {
                     ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
@@ -1200,7 +1214,18 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     0,
                     angle
                 );
-                ctx.fill();
+
+
+                if (n.isCollection) {
+                    ctx.stroke();
+                } else {
+                    ctx.fill();
+                }
+
+
+
+
+                ctx.stroke();
 
                 ctx.globalAlpha = 0.05;
 
@@ -1260,13 +1285,20 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         let xName = xPos + 100 * 1.1;
                         let yName = n.getY() - fontSize / 2;
 
-                        if (isShadow) {
-                            ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                            ctx.fillRect(xName, n.getY() - fontSize, width, fontSize * 2);
-                        } else {
-                            ctx.fillStyle = "#fff";
-                            ctx.fillText(`${n.name}  `, xName, yName);
+
+                        ctx.fillStyle = "#fff";
+                        ctx.fillText(`${n.name}  `, xName, yName);
+
+
+                        if (this.colorSettings) {
+                            let value = n.getStatsValue(this.colorSettings.attr);
+                            let s = (value ? formatBytes(value, 2) : " - MB")
+                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 1);
+                            value = n.getStatsValue(this.colorSettings.attr, false);
+                            s = (value ? formatBytes(value, 2) : " - MB")
+                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 2);
                         }
+
                     }
 
                 } else {
@@ -1297,9 +1329,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         if (this.colorSettings) {
                             let value = n.getStatsValue(this.colorSettings.attr);
                             let s = (value ? formatBytes(value, 2) : " - MB")
-                                // + (n.entry ? "x: " + Math.floor(n.entry.x) + ", y: " + Math.floor(n.entry.y) : "")
-                                ;
-                            ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
+                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 1);
+                            value = n.getStatsValue(this.colorSettings.attr, false);
+                            s = (value ? formatBytes(value, 2) : " - MB")
+                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 2);
                         }
                     }
                 }

@@ -91,7 +91,7 @@ export class RectangleCollide<D extends AbstractNode> implements SimulationNodeD
         this._vy = value;
         const diff = this._vy && this._vyOld ? this._vy - this._vyOld : 0;
         if (OverviewEngine.framecounter % 400 == 0) {
-            console.log("diff: " + diff);
+            // console.log("diff: " + diff);
         }
         /**
          * Add velocity to nodes
@@ -203,7 +203,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
             this.forceRadius += 120;
         } else if (this.children.length == 1) {
             this.forceRadius = this.children[0].getRadius();
-            this.forceRadius *= 1.4;
+            this.forceRadius = 100;
         } else {
             this.forceRadius = 140;
         }
@@ -271,6 +271,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
      * Node’s current x-position
      */
     private _x?: number | undefined;
+    isCollection: boolean = false;
 
 
 
@@ -302,13 +303,23 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.simulation.tick();
     }
 
-    public getStatsValue(key: string): number | undefined {
-        if (this.statsRec) {
-            let e = this.statsRec.stats[key];
-            if (e) {
-                return e.value;
+    public getStatsValue(key: string, recursive: boolean = true): number | undefined {
+        if (recursive) {
+            if (this.statsRec) {
+                let e = this.statsRec.stats[key];
+                if (e) {
+                    return e.value;
+                }
+            }
+        } else {
+            if (this.stats) {
+                let e = this.stats.stats[key];
+                if (e) {
+                    return e.value;
+                }
             }
         }
+
         return undefined;
     }
 
@@ -557,10 +568,10 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
                 // reset the recursive stats so we can recalculate them
                 parent.statsRec = { path: "", stats: {} }
                 if (parent.stats) {
-                    Object.assign(parent.statsRec, parent.stats);
+                    parent.statsRec = JSON.parse(JSON.stringify(parent.stats));
                 }
-                let statsParent = parent.statsRec;
 
+                let statsParent = parent.statsRec;
 
                 /**
                  * We recalculate the stats for the node and then for all coming parent nodes.
@@ -573,8 +584,9 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
                         Object.keys(childStats.stats).forEach((key: string) => {
                             if (statsParent && childStats) {
                                 if (childStats.stats[key]) {
-                                    // init the value in the stats if not available yet
-                                    if (!statsParent.stats[key]) {
+
+                                    // init the value in the stats if not available yet 
+                                    if (statsParent.stats[key] == undefined) {
                                         statsParent.stats[key] = { value: 0, type: childStats.stats[key].type }
                                     }
                                     /**
@@ -620,7 +632,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     }
 
-    public addEntryPath(relativePath: string) {
+    public addEntryPath(relativePath: string, isCollection: boolean = false) {
         relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
 
         let folders: string[] = relativePath.split("/");
@@ -639,6 +651,11 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
                 foldersCreated = true;
                 childFound = this.createNode(f);
                 currentFolder.addChild(childFound);
+
+                if (i == folders.length - 1) {
+                    // the sumbmitted folder
+                    childFound.isCollection = isCollection;
+                }
             }
             currentFolder = childFound;
         }
@@ -846,21 +863,21 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
         }
 
-        if (OverviewEngine.framecounter % 60 == 0) {
-            console.log("vyMax: ");
-            console.log(vyMax);
-        }
+        // if (OverviewEngine.framecounter % 60 == 0) {
+        //     console.log("vyMax: ");
+        //     console.log(vyMax);
+        // }
 
 
         this.simulation.alpha(1);
         this.simulation.tick();
 
-        const columnForces = Array.from(this.columnForceMap.values());
+        // const columnForces = Array.from(this.columnForceMap.values());
 
-        for (let i = 0; i < columnForces.length; i++) {
-            const f = columnForces[i];
-            f.tick();
-        }
+        // for (let i = 0; i < columnForces.length; i++) {
+        //     const f = columnForces[i];
+        //     f.tick();
+        // }
 
         this.quadtree = d3.quadtree<D>()
             .x(function (d) { return d.getX(); })

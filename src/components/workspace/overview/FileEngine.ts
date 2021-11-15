@@ -2,12 +2,8 @@ import { AbstractNode, AbstractLink, AbstractOverviewEntry } from "./OverviewDat
 import { Exclude, Type } from "class-transformer";
 import chokidar, { FSWatcher, WatchOptions } from "chokidar";
 import pathNodejs from "path";
-import { fstat } from "original-fs";
-import fs from "fs";
 import { Instance } from "./FileSystemWatcher";
 import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./OverviewInterfaces";
-
-let c = 0;
 
 export class FolderNode extends AbstractNode {
     constructor(name: string) {
@@ -17,7 +13,6 @@ export class FolderNode extends AbstractNode {
 
 export class FolderLink extends AbstractLink<FolderNode>{
 }
-
 
 export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> implements FileSystemListener {
 
@@ -62,26 +57,26 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     }
 
     private ignoredFolders: string[] = [];
-    private _depth: number = 0;
+    private _depth: number = 5;
     @Exclude()
     renameMap: Map<string, NodeJS.Timeout> = new Map();
-    // startTime: number = 0;
-    // endTime: number = 0;
+
     @Exclude()
-    interval: any = setInterval(this.handleEvents.bind(this), 70);
+    interval: any = setInterval(this.handleEvents.bind(this), 100);
     @Exclude()
-    eventStack: ({ path: string, type: "add" } | FolderStatsResult)[] = [];
+    eventStack: (FolderSyncResult | FolderStatsResult)[] = [];
 
     handleEvents(): void {
 
         s:
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 10; i++) {
             let event = this.eventStack.shift();
             if (event) {
                 switch (event.type) {
-                    case "add":
-                        this.addEntryPath(event.path);
-                        break s;
+                    case "foldersync":
+                        const result: FolderSyncResult = event as unknown as FolderSyncResult;
+                        this.addEntryPath(result.path, result.collection);
+                        // break s;
                         break;
                     case "folderstats":
                         this.addStats(event.stats);
@@ -98,10 +93,11 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
 
         switch (e.type) {
             case "folderstats":
+
                 this.eventStack.push(e);
                 break;
             case "foldersync":
-                this.eventStack.push({ path: e.path, type: "add" });
+                this.eventStack.push(e);
                 break;
         }
 
@@ -110,7 +106,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
         return this.path;
     }
     getDepth(): number {
-        return this.depth;
+        return this._depth;
     }
     getID(): number {
         return this.id;

@@ -26,8 +26,10 @@ export interface FolderSyncResult extends MessageType {
     type: "foldersync",
     path: string,
     id: number // the id of the overview entry that listens to this syncing
-    childCount:number
+    childCount:number,
+    collection:boolean,
 }
+
 export interface FolderStatsResult extends MessageType {
     type: "folderstats",
     path: string,
