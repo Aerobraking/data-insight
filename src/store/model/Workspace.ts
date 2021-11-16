@@ -182,9 +182,9 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
 }
 
 export class WorkspaceEntryTextArea extends WorkspaceEntry {
-    constructor(text: string = "") {
+    constructor(text: string = "Hello <b>World</b>") {
         super("wsentrytextarea", true);
-        this.width = 400;
+        this.width = 450;
         this.height = 450;
         this.text = text;
     }
@@ -193,7 +193,7 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
         return "Found inside text";
     }
 
-    text: string = "";
+    text: string;
 
     public searchLogic(input: string): boolean {
         let found: boolean = super.searchLogic(input);

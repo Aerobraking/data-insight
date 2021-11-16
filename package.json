@@ -11,6 +11,9 @@
     "postuninstall": "electron-builder install-app-deps"
   },
   "main": "background.js",
+  "//dependencies": {
+    "//fsevents": "^2.3.2"
+  },
   "dependencies": {
     "@tinymce/tinymce-vue": "^4.0.4",
     "@viselect/vanilla": "^3.0.0-beta.9",
@@ -19,8 +22,9 @@
     "core-js": "^3.16.0",
     "d3": "^7.0.0",
     "force-graph": "github:aerobraking/force-graph",
-    "fsevents": "^2.3.2",
     "mdue": "^0.1.4",
+    "nouislider": "^15.5.0",
+    "pell": "^1.0.6",
     "plist": "^3.0.4",
     "reflect-metadata": "^0.1.13",
     "tinymce": "^5.8.2",

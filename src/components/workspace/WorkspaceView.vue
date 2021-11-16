@@ -83,16 +83,16 @@
     <div class="workspace-search" v-show="getShowUI">
       <div></div>
       <input
+        class="workspace-search-input"
+        type="search"
+        placeholder="Suche..."
+        v-model="searchString"
         @keydown.stop
         @keyup.stop
         @focus="searchfocusSet(true)"
         @blur="searchfocusSet(false)"
-        class="workspace-search-input"
-        type="search"
         @input="searchUpdate"
         @paste="onPaste"
-        v-model="searchString"
-        placeholder="Suche..."
       />
       <div></div>
       <wssearchlist
@@ -367,7 +367,7 @@ export default defineComponent({
       );
     }
 
-          this.updateFixedZoomElements();
+    this.updateFixedZoomElements();
   },
   unmounted() {
     this.divObserver.disconnect();
@@ -617,7 +617,7 @@ export default defineComponent({
         }
       }
 
-      // bis 13 uhr 
+      // bis 13 uhr
 
       var mousePos = this.mousePositionLast;
       if (text != undefined) {
@@ -635,7 +635,7 @@ export default defineComponent({
 
           this.$store.commit(MutationTypes.ADD_FILES, payload);
         } else {
-          return
+          return;
           let listFiles: Array<WorkspaceEntry> = [];
           let payload = {
             model: <Workspace>this.model,
@@ -1735,7 +1735,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   width: 100%;
   height: 100%;
   z-index: 500;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0);
   cursor: pointer;
   transition: background-color 0.4s ease-in-out !important;
   p {

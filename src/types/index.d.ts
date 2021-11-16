@@ -6,3 +6,4 @@ declare module '*.vue' {
 }
 declare module "scandirectory"
 declare module "d3-force-reuse"
+declare module "pell"

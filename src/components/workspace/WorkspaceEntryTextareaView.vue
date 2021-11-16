@@ -1,6 +1,5 @@
 <template>
   <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-textarea-wrapper">
-  
     <wsentrydisplayname :entry="entry" />
 
     <div
@@ -15,30 +14,17 @@
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
+    >
+      <span class="no-text" v-show="showEmpty()"># No Text</span>
+    </div>
+    <div
+      class="tox-tinymce"
+      @mousedown.left.shift.stop.exact
+      @mousedown.left.ctrl.stop.exact
+      @mousedown.left.stop.exact
+      @keydown.stop
+      @keyup.stop
     ></div>
-
-    <editor
-      @onSelectionChange="editorFocusLost"
-      @blur="editorFocusLost"
-      @onFocusOut="editorFocusLost"
-      @onBlur="editorFocusLost"
-      v-model="entry.text"
-      api-key="f80fnw85ov4rnalg9tap5g3uyl41b80o02set6klrlr4remw"
-      :init="{
-        height: 100,
-        menubar: true,
-        statusbar: false,
-        plugins: [
-          'advlist autolink lists link image charmap print preview anchor',
-          'searchreplace visualblocks code fullscreen',
-          'insertdatetime media table paste code help wordcount',
-        ],
-        toolbar:
-          'undo redo | formatselect | bold italic backcolor | \
-           alignleft aligncenter alignright alignjustify | \
-           bullist numlist outdent indent | ',
-      }"
-    />
   </div>
 </template>
 
@@ -59,6 +45,8 @@ import { defineComponent } from "vue";
 import { WorkspaceEntryTextArea } from "../../store/model/Workspace";
 import { setupEntry } from "./WorkspaceUtils";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import pell, { exec } from "pell";
+
 export default defineComponent({
   name: "wsentrytextarea",
   components: {
@@ -67,7 +55,7 @@ export default defineComponent({
   },
   data() {
     return {};
-  },  
+  },
   setup(props) {
     return setupEntry(props);
   },
@@ -76,10 +64,77 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-    // this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
+    let _this: any = this;
+
+    const editor = pell.init({
+      // <HTMLElement>, required
+      element: _this.$el.getElementsByClassName("tox-tinymce")[0],
+
+      // <Function>, required
+      // Use the output html, triggered by element's `oninput` event
+      onChange: (html: any) => {
+        _this.$props.entry.text = html;
+        _this.isEmpty = html;
+        console.log(html);
+      },
+
+      // <string>, optional, default = 'div'
+      // Instructs the editor which element to inject via the return key
+      defaultParagraphSeparator: "div",
+
+      // <boolean>, optional, default = false
+      // Outputs <span style="font-weight: bold;"></span> instead of <b></b>
+      styleWithCSS: false,
+
+      // <Array[string | Object]>, string if overwriting, object if customizing/creating
+      // action.name<string> (only required if overwriting)
+      // action.icon<string> (optional if overwriting, required if custom action)
+      // action.title<string> (optional)
+      // action.result<Function> (required)
+      // Specify the actions you specifically want (in order)
+      actions: [
+        "bold",
+        "italic",
+        "underline",
+        "strikethrough",
+        {
+          name: "paragraph",
+          result: () => {
+            exec("fontSize", "3");
+            exec("paragraph");
+          },
+        },
+        {
+          name: "heading1",
+          result: () => exec("fontSize", "6"),
+        },
+        {
+          name: "heading2",
+          result: () => exec("fontSize", "7"),
+        },
+        "olist",
+        "ulist",
+      ],
+
+      // classes<Array[string]> (optional)
+      // Choose your custom class names
+      classes: {
+        actionbar: "pell-actionbar",
+        button: "pell-button",
+        content: "pell-content",
+        selected: "pell-button-selected",
+      },
+    });
+
+    editor.content.innerHTML = this.$props.entry
+      ? this.$props.entry.text
+      : "No text yet";
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
+    showEmpty() {
+      return this.$props.entry?.text.length == 0;
+    },
     editorFocusLost() {},
     entrySelectedLocal(type: "add" | "single" | "flip") {
       // @ts-ignore: Unreachable code error
@@ -96,9 +151,71 @@ export default defineComponent({
 </script>
   
 <style  lang="scss">
+.no-text {
+  position: absolute;
+  top: 65px;
+  left: 10px;
+  color: white;
+  text-align: left;
+  opacity: 0.6;
+}
 .tox-tinymce {
   height: initial !important;
   flex: 1 !important;
+  display: flex;
+  flex-flow: column;
+  overflow: hidden;
+}
+
+.pell-content {
+  height: initial !important;
+  flex: 1 !important;
+  color: floralwhite;
+  padding: 10px;
+  outline: none;
+  overflow: hidden;
+  white-space: nowrap;
+  background: transparent;
+  transform: scale(3);
+  transform-origin: top left;
+  transition: all 0.4s ease-in-out;
+}
+
+.workspace-is-selected .pell-content {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.pell-actionbar {
+  overflow: hidden;
+  white-space: nowrap;
+  background: transparent;
+  height: 30px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.4s ease-in-out;
+}
+
+.workspace-is-selected .pell-actionbar {
+  border-bottom: 2px solid rgb(239, 239, 239);
+}
+
+.pell-button {
+  color: transparent;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  font-size: 14px;
+  margin-top: 0px;
+  border: none;
+  cursor: pointer;
+  height: 30px;
+  outline: 0;
+  width: 30px;
+  vertical-align: bottom;
+  transition: all 0.4s ease-in-out;
+}
+
+.workspace-is-selected .pell-button {
+  color: floralwhite !important;
 }
 </style>
 <style scoped lang="scss">
@@ -114,7 +231,7 @@ export default defineComponent({
   height: 850px;
   background-size: cover;
   box-sizing: border-box;
-  background-color: #f1f1f105;
+  background-color: #f1f1f100;
   border-radius: 0;
   padding: 0;
   margin: 0;
