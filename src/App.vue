@@ -100,6 +100,8 @@ export default defineComponent({
       });
     },
     keyPressed(e: KeyboardEvent) {
+      console.log("keypressed app");
+      
       if (e.ctrlKey) {
         switch (e.key) {
           case "t":

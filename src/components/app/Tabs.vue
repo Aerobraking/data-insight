@@ -18,11 +18,15 @@
       <p>+</p>
     </div>
 
-    <!-- <a class="tab-create" @click="createOverviewTab()"> +O </a> -->
-    <draggable
+    <!-- 
+    Dragging of Tabs disabled for the moment, because it there are some 
+    rendering problems occuring with it. Needs to be investigated later.
+    -->
+    <!-- <draggable
       v-model="getlist"
       @start="drag = true"
       @end="drag = false"
+      :disabled="true"
       item-key="order"
       v-bind="dragOptions"
       tag="transition-group"
@@ -43,12 +47,12 @@
             readonly="true"
             v-model="element.name"
           />
-          <!-- <a
+          <!- <a
             class="copy"
             v-show="element.isActive"
             @click.self="copyTab(index)"
             >C</a
-          > -->
+          > ->
           <a
             class="delete"
             v-show="element.isActive"
@@ -57,7 +61,29 @@
           >
         </div>
       </template>
-    </draggable>
+    </draggable> -->
+
+    <!-- Version without dragging -->
+    <div
+      v-for="(element, index) in getlist"
+      :key="element.key"
+      class="tab-entry close-file-anim"
+      :class="{ 'tab-selected': element.isActive }"
+      @click="selectTab(index)"
+    >
+      <input
+        @keydown.stop
+        @keyup.stop
+        @dblclick.self="edit"
+        v-on:keyup.enter="editFinish"
+        @blur="editFinish"
+        readonly="true"
+        v-model="element.name"
+      />
+      <a class="delete" v-show="element.isActive" @click.self="deleteTab(index)"
+        >X</a
+      >
+    </div>
   </div>
 
   <workspaceview
@@ -178,7 +204,7 @@ export default defineComponent({
       this.$store.commit(MutationTypes.SELECT_WORKSPACE, { index: i });
     },
     copyTab(i: number) {
-      this.$store.commit(MutationTypes.COPY_WORKSPACE , { index: i });
+      this.$store.commit(MutationTypes.COPY_WORKSPACE, { index: i });
     },
     deleteTab(i: number) {
       this.$store.commit(MutationTypes.DELETE_WORKSPACE, { index: i });

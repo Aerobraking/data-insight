@@ -1,6 +1,11 @@
-
 <template>
   <div
+    @mousedown="mousedown"
+    @mousemove="mousemove"
+    @mouseup="mouseup"
+    @keydown="keydown"
+    @keyup="keyup"
+    @paste="onPaste"
     @click.stop
     @dragover="dragover"
     @dragleave="dragleave"
@@ -15,6 +20,7 @@
       @init="panHappen"
       @pan="onPanStart"
       @zoom="onZoom"
+      tabIndex="0"
       :options="{
         zoomDoubleClickSpeed: 1,
         minZoom: 0.03,
@@ -285,22 +291,16 @@ export default defineComponent({
     };
   },
   watch: {
+    "model.isActive": function (newValue: boolean, oldValue: boolean) {
+      if (newValue) {
+        this.setFocusToWorkspace();
+      }
+    },
     highlightSelection(newValue: boolean, oldValue: boolean) {
       this.updateSelectionWrapper();
     },
   },
   mounted() {
-    window.addEventListener("paste", (event: any) => {
-      this.onPaste(event);
-    });
-
-    window.addEventListener("mousedown", this.mousedown, false);
-    window.addEventListener("mousemove", this.mousemove, false);
-    window.addEventListener("mouseup", this.mouseup, false);
-
-    window.addEventListener("keydown", this.keydown, false);
-    window.addEventListener("keyup", this.keyup, false);
-
     /**
      * Listen for resizing of the canvas parent element
      */
@@ -368,6 +368,8 @@ export default defineComponent({
     }
 
     this.updateFixedZoomElements();
+
+    this.setFocusToWorkspace();
   },
   unmounted() {
     this.divObserver.disconnect();
@@ -388,6 +390,14 @@ export default defineComponent({
   },
   inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
   methods: {
+    /**
+     * When a workspace gets active, the focus is not on its div, which prevents the keylisteners from working. Prevent this by calling this method when the workspace gets active.
+     */
+    setFocusToWorkspace(): void {
+      setTimeout(() => {
+        this.$el.getElementsByClassName("vue-pan-zoom-scene")[0].focus();
+      }, 10);
+    },
     searchfocusSet(f: boolean): void {
       if (f) {
         this.searchfocus = true;
@@ -587,6 +597,109 @@ export default defineComponent({
       //   );
       // }
     },
+    createEntry<T extends WorkspaceEntry>(
+      type: "frame" | "text" | "youtube" | "image",
+      useMousePosition: boolean = false,
+      path: string = ""
+    ): T {
+      let viewport = this.getViewport();
+      let doPositioning = true;
+      let listFiles: Array<WorkspaceEntry> = [];
+      let payload = {
+        model: <Workspace>this.model,
+        listFiles,
+      };
+      switch (type) {
+        case "image":
+          listFiles.push(new WorkspaceEntryImage(path, true));
+          break;
+        case "youtube":
+          listFiles.push(new WorkspaceEntryYoutube());
+          break;
+        case "text":
+          listFiles.push(new WorkspaceEntryTextArea());
+          break;
+        case "frame":
+          let frame = new WorkspaceEntryFrame();
+          listFiles.push(frame);
+
+          if (this.getSelectedEntries().length > 0) {
+            let x = Infinity,
+              y = Infinity,
+              x2 = -Infinity,
+              y2 = -Infinity;
+
+            Array.from(this.getSelectedEntries()).forEach((el) => {
+              let coord = this.getCoordinatesFromElement(el);
+
+              x = x > coord.x ? coord.x : x;
+              y = y > coord.y ? coord.y : y;
+
+              x2 = x2 < coord.x2 ? coord.x2 : x2;
+              y2 = y2 < coord.y2 ? coord.y2 : y2;
+            });
+
+            let padding = 80;
+            frame.x = x - padding;
+            frame.y = y - padding;
+            frame.width = Math.abs(x2 - x) + padding * 2;
+            frame.height = Math.abs(y2 - y) + padding * 2;
+            doPositioning = false;
+          }
+          break;
+        default:
+          break;
+      }
+
+      if (doPositioning) {
+        listFiles.forEach((f) => {
+          if (useMousePosition) {
+            f.x = this.mousePositionLast.x;
+            f.y = this.mousePositionLast.y;
+          } else {
+            f.x = viewport.x + viewport.w / 2 - f.width / 2;
+            f.y = viewport.y + viewport.h / 2 - f.height / 2;
+          }
+        });
+      }
+
+      this.$store.commit(MutationTypes.ADD_FILES, payload);
+
+      return listFiles[0] as T;
+    },
+    startDrag: function (e: MouseEvent) {
+      this.selectionDragActive = true;
+
+      /**
+       * Start dragging of the current selection with left mouse button + ctrl or
+       */
+      this.dragMoveRel = { x: e.clientX, y: e.clientY };
+
+      this.dragSelection = Array.from(
+        this.getSelectedEntries()
+      ) as HTMLElement[];
+
+      WSUtils.Events.dragStarting(this.dragSelection, this);
+
+      this.dragSelection.push(this.getSelectionWrapper());
+
+      this.preventInput(true);
+    },
+    startSelectionDrag(mousePosition: { x: number; y: number }) {
+      /**
+       * Start dragging of the current selection with left mouse button + ctrl or
+       */
+      this.dragSelection = Array.from(
+        this.getSelectedEntries()
+      ) as HTMLElement[];
+
+      WSUtils.Events.dragStarting(this.dragSelection, this);
+
+      this.dragSelection.push(this.getSelectionWrapper());
+
+      this.dragMoveRel = mousePosition;
+      this.selectionDragActive = true;
+    },
     onPaste(e: ClipboardEvent) {
       e.preventDefault();
       let text = e.clipboardData?.getData("text");
@@ -653,6 +766,18 @@ export default defineComponent({
 
       this.updateFixedZoomElements();
     },
+    preventEvent(e: any): boolean {
+      var functionName: string = e.type as string;
+
+      return (
+        this.model.isActive &&
+        this.activePlugin &&
+        // @ts-ignore: Unreachable code error
+        this.activePlugin[functionName] &&
+        // @ts-ignore: Unreachable code error
+        (this.activePlugin[functionName](e) as boolean)
+      );
+    },
     keydown(e: KeyboardEvent) {
       if (
         e.key == "Escape" &&
@@ -662,12 +787,7 @@ export default defineComponent({
         this.cancelPlugin();
       }
 
-      if (
-        !this.model.isActive ||
-        (this.activePlugin && this.activePlugin.keydown(e))
-      ) {
-        return;
-      }
+      if (this.preventEvent(e)) return;
 
       if (e.ctrlKey && !e.repeat) {
         switch (e.key) {
@@ -789,12 +909,8 @@ export default defineComponent({
       }
     },
     keyup(e: KeyboardEvent) {
-      if (
-        !this.model.isActive ||
-        (this.activePlugin && this.activePlugin.keyup(e))
-      ) {
-        return;
-      }
+      if (this.preventEvent(e)) return;
+
       if (!e.altKey && !e.ctrlKey) {
         switch (e.key) {
           case " ":
@@ -815,116 +931,8 @@ export default defineComponent({
 
       this.drawCanvas();
     },
-    createEntry<T extends WorkspaceEntry>(
-      type: "frame" | "text" | "youtube" | "image",
-      useMousePosition: boolean = false,
-      path: string = ""
-    ): T {
-      let viewport = this.getViewport();
-      let doPositioning = true;
-      let listFiles: Array<WorkspaceEntry> = [];
-      let payload = {
-        model: <Workspace>this.model,
-        listFiles,
-      };
-      switch (type) {
-        case "image":
-          listFiles.push(new WorkspaceEntryImage(path, true));
-          break;
-        case "youtube":
-          listFiles.push(new WorkspaceEntryYoutube());
-          break;
-        case "text":
-          listFiles.push(new WorkspaceEntryTextArea());
-          break;
-        case "frame":
-          let frame = new WorkspaceEntryFrame();
-          listFiles.push(frame);
-
-          if (this.getSelectedEntries().length > 0) {
-            let x = Infinity,
-              y = Infinity,
-              x2 = -Infinity,
-              y2 = -Infinity;
-
-            Array.from(this.getSelectedEntries()).forEach((el) => {
-              let coord = this.getCoordinatesFromElement(el);
-
-              x = x > coord.x ? coord.x : x;
-              y = y > coord.y ? coord.y : y;
-
-              x2 = x2 < coord.x2 ? coord.x2 : x2;
-              y2 = y2 < coord.y2 ? coord.y2 : y2;
-            });
-
-            let padding = 80;
-            frame.x = x - padding;
-            frame.y = y - padding;
-            frame.width = Math.abs(x2 - x) + padding * 2;
-            frame.height = Math.abs(y2 - y) + padding * 2;
-            doPositioning = false;
-          }
-          break;
-        default:
-          break;
-      }
-
-      if (doPositioning) {
-        listFiles.forEach((f) => {
-          if (useMousePosition) {
-            f.x = this.mousePositionLast.x;
-            f.y = this.mousePositionLast.y;
-          } else {
-            f.x = viewport.x + viewport.w / 2 - f.width / 2;
-            f.y = viewport.y + viewport.h / 2 - f.height / 2;
-          }
-        });
-      }
-
-      this.$store.commit(MutationTypes.ADD_FILES, payload);
-
-      return listFiles[0] as T;
-    },
-    startDrag: function (e: MouseEvent) {
-      this.selectionDragActive = true;
-
-      /**
-       * Start dragging of the current selection with left mouse button + ctrl or
-       */
-      this.dragMoveRel = { x: e.clientX, y: e.clientY };
-
-      this.dragSelection = Array.from(
-        this.getSelectedEntries()
-      ) as HTMLElement[];
-
-      WSUtils.Events.dragStarting(this.dragSelection, this);
-
-      this.dragSelection.push(this.getSelectionWrapper());
-
-      this.preventInput(true);
-    },
-    startSelectionDrag(mousePosition: { x: number; y: number }) {
-      /**
-       * Start dragging of the current selection with left mouse button + ctrl or
-       */
-      this.dragSelection = Array.from(
-        this.getSelectedEntries()
-      ) as HTMLElement[];
-
-      WSUtils.Events.dragStarting(this.dragSelection, this);
-
-      this.dragSelection.push(this.getSelectionWrapper());
-
-      this.dragMoveRel = mousePosition;
-      this.selectionDragActive = true;
-    },
     mousedown: function (e: MouseEvent) {
-      if (
-        !this.model.isActive ||
-        (this.activePlugin && this.activePlugin.mousedown(e))
-      ) {
-        return;
-      }
+      if (this.preventEvent(e)) return;
 
       if (this.spacePressed) {
         this.spacePressed = false;
@@ -968,12 +976,16 @@ export default defineComponent({
       }
     },
     mousemoveThrottle: _.throttle((e: MouseEvent, comp: any) => {
+      console.log("mousemove: " + e.x + " name: " + comp.$props.model.name);
+
       if (
         !comp.model.isActive ||
         (comp.activePlugin && comp.activePlugin.mousemove(e))
       ) {
         return;
       }
+
+      console.log("mousemove ACTIVE " + comp.$props.model.name);
 
       comp.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
       comp.mousePositionLast = comp.getPositionInWorkspace(e);
@@ -1005,15 +1017,11 @@ export default defineComponent({
       // comp.drawCanvas();
     }, 10),
     mousemove: function (e: MouseEvent) {
+      if (this.preventEvent(e)) return;
       this.mousemoveThrottle(e, this);
     },
     mouseup: function (e: MouseEvent) {
-      if (
-        !this.model.isActive ||
-        (this.activePlugin && this.activePlugin.mouseup(e))
-      ) {
-        return;
-      }
+      if (this.preventEvent(e)) return;
 
       let selectionRectangle: any = this.getSelectionRectangle();
 
@@ -1050,9 +1058,8 @@ export default defineComponent({
       this.selectionDragActive = false;
     },
     beforeWheelHandler(e: any) {
-      if (this.activePlugin && this.activePlugin.mouseWheel(e)) {
-        return true;
-      }
+      if (this.preventEvent(e)) return true;
+
       this.spacePressed = false;
       this.getEntries().forEach((e) => {
         e.classList.toggle("prevent-input", false);
@@ -1061,17 +1068,14 @@ export default defineComponent({
       return shouldIgnore;
     },
     beforeMouseDownHandler(e: any) {
-      if (this.activePlugin && this.activePlugin.mousedownPan(e)) {
-        return true;
-      }
+      if (this.preventEvent(e)) return true;
+
       var shouldIgnore: boolean = !(e.altKey || e.button == 1);
 
       return shouldIgnore;
     },
     dragover(e: any) {
-      if (this.activePlugin && this.activePlugin.dragover(e)) {
-        return;
-      }
+      if (this.preventEvent(e)) return;
 
       this.$el
         .getElementsByClassName("svg-download")[0]
@@ -1080,17 +1084,15 @@ export default defineComponent({
       e.preventDefault();
     },
     dragleave(e: any) {
-      if (this.activePlugin && this.activePlugin.dragleave(e)) {
-        return;
-      }
+      if (this.preventEvent(e)) return;
+
       this.$el
         .getElementsByClassName("svg-download")[0]
         .classList.toggle("pulsating", false);
     },
     drop(e: DragEvent) {
-      if (this.activePlugin && this.activePlugin.drop(e)) {
-        return;
-      }
+      if (this.preventEvent(e)) return;
+
       this.$el
         .getElementsByClassName("svg-download")[0]
         .classList.toggle("pulsating", false);

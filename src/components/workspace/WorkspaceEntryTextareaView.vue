@@ -17,8 +17,9 @@
     >
       <span class="no-text" v-show="showEmpty()"># No Text</span>
     </div>
+
     <div
-      class="tox-tinymce"
+      class="text-editor-div"
       @mousedown.left.shift.stop.exact
       @mousedown.left.ctrl.stop.exact
       @mousedown.left.stop.exact
@@ -29,17 +30,6 @@
 </template>
 
 <script lang="ts">
-/*
-
- @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.stop.exact="entrySelectedLocal('single')"
-    @click.stop
-
-<textarea  v-model="entry.text"
-     v-on:keyup.stop placeholder="Title"></textarea>
-*/
-const { shell } = require("electron"); // deconstructing assignment
-
 import Editor from "@tinymce/tinymce-vue";
 import { defineComponent } from "vue";
 import { WorkspaceEntryTextArea } from "../../store/model/Workspace";
@@ -53,9 +43,6 @@ export default defineComponent({
     editor: Editor,
     wsentrydisplayname,
   },
-  data() {
-    return {};
-  },
   setup(props) {
     return setupEntry(props);
   },
@@ -66,32 +53,15 @@ export default defineComponent({
   mounted() {
     let _this: any = this;
 
+    /**
+     * Create and add the text editor instance
+     */
     const editor = pell.init({
-      // <HTMLElement>, required
-      element: _this.$el.getElementsByClassName("tox-tinymce")[0],
-
-      // <Function>, required
-      // Use the output html, triggered by element's `oninput` event
+      element: _this.$el.getElementsByClassName("text-editor-div")[0],
       onChange: (html: any) => {
         _this.$props.entry.text = html;
         _this.isEmpty = html;
-        console.log(html);
       },
-
-      // <string>, optional, default = 'div'
-      // Instructs the editor which element to inject via the return key
-      defaultParagraphSeparator: "div",
-
-      // <boolean>, optional, default = false
-      // Outputs <span style="font-weight: bold;"></span> instead of <b></b>
-      styleWithCSS: false,
-
-      // <Array[string | Object]>, string if overwriting, object if customizing/creating
-      // action.name<string> (only required if overwriting)
-      // action.icon<string> (optional if overwriting, required if custom action)
-      // action.title<string> (optional)
-      // action.result<Function> (required)
-      // Specify the actions you specifically want (in order)
       actions: [
         "bold",
         "italic",
@@ -115,9 +85,6 @@ export default defineComponent({
         "olist",
         "ulist",
       ],
-
-      // classes<Array[string]> (optional)
-      // Choose your custom class names
       classes: {
         actionbar: "pell-actionbar",
         button: "pell-button",
@@ -126,6 +93,11 @@ export default defineComponent({
       },
     });
 
+    _this.$el.getElementsByClassName("pell-content")[0].spellcheck=false;
+
+    /**
+     * add content from the model after init
+     */
     editor.content.innerHTML = this.$props.entry
       ? this.$props.entry.text
       : "No text yet";
@@ -143,10 +115,7 @@ export default defineComponent({
     doubleClick(e: MouseEvent) {
       e.preventDefault();
     },
-    clickStart(e: MouseEvent) {},
   },
-  computed: {},
-  created() {},
 });
 </script>
   
@@ -159,7 +128,8 @@ export default defineComponent({
   text-align: left;
   opacity: 0.6;
 }
-.tox-tinymce {
+
+.text-editor-div {
   height: initial !important;
   flex: 1 !important;
   display: flex;
@@ -218,6 +188,7 @@ export default defineComponent({
   color: floralwhite !important;
 }
 </style>
+
 <style scoped lang="scss">
 .ws-entry-textarea-wrapper {
   display: flex;
