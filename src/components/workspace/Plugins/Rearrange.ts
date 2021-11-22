@@ -23,9 +23,7 @@ export default class ReArrange extends Plugin {
 
         this.mouseStart = undefined;
         this.selection = workspace.getSelectedEntries();
-
-
-
+ 
         this.selection = this.selection.sort(function (a: HTMLElement, b: HTMLElement) {
             let classNameA = "", classNameB = "";
 
@@ -86,6 +84,7 @@ export default class ReArrange extends Plugin {
     averageWidth: number = 0;
 
     public isModal(): boolean { return true; }
+
     public cancel(): boolean {
 
         for (let index = 0; index < this.selection.length; index++) {
@@ -103,7 +102,9 @@ export default class ReArrange extends Plugin {
 
         this.finish();
         return true;
+
     }
+
     public finish(): boolean {
         this.workspace.preventInput(false);
         this.workspace.highlightSelection = true;
@@ -131,9 +132,8 @@ export default class ReArrange extends Plugin {
 
         return true;
     }
+
     private fitElementSize(): void {
-
-
 
         if (this.fitSize) {
             /**
@@ -271,12 +271,12 @@ export default class ReArrange extends Plugin {
     public drop(e: any): boolean {
         return true;
     }
-    public mouseWheel(e: any): boolean {
+
+    public wheel(e: any): boolean {
         this.padding += e.deltaY / 10;
         this.padding = this.padding < 0 ? 0 : this.padding;
         this.updateview();
         return true;
     }
-
 
 }

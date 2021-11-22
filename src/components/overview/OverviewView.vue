@@ -176,51 +176,7 @@ export default defineComponent({
         },
       },
     });
-    // var slider = noUiSlider.create(sliderDiv, {
-    //   start: [0, 128],
-    //   connect: true,
-    //   behaviour: "drag",
-    //   orientation: "vertical",
-    //   tooltips: [
-    //     {
-    //       to: (value: number) => {
-    //         if (value >= 1024 * 16) {
-    //           return "> " + value;
-    //         }
-    //         return Math.floor(value);
-    //       },
-    //     },
-
-    //     {
-    //       to: (value: number) => {
-    //         if (value >= 1024 * 16) {
-    //           return "> " + value;
-    //         }
-    //         return Math.floor(value);
-    //       },
-    //     },
-
-    //   ],
-    //   margin: 4,
-    //   range: {
-    //     min: 0, // kb
-    //     "80%": [1024 * 2], // gb
-    //     max: [1024 * 16], // tb
-    //   },
-    //   pips: {
-    //     mode: PipsMode.Range,
-    //     density: 8,
-    //     format: {
-    //       to: (value: number) => {
-    //         if (value >= 1024 * 16) {
-    //           return "> " + value;
-    //         }
-    //         return value;
-    //       },
-    //     },
-    //   },
-    // });
-
+      
     const _this = this;
 
     const filterfunc = _.throttle((stats: string, min: number, max: number) => {

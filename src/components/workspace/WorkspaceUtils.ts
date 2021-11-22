@@ -41,9 +41,9 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
         if (true && el != null && el.value != null) {
 
             el.value.querySelectorAll("div.ws-entry .wsentry-displayname")
-            .forEach((e:any) => {
-              e.classList.toggle("prevent-input", true);
-            });
+                .forEach((e: any) => {
+                    e.classList.toggle("prevent-input", true);
+                });
 
             el.value.style.transform = `translate3d(${e.x}px, ${e.y}px,0px)`;
 
@@ -56,9 +56,9 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
             if (text != undefined) {
 
-               // text.classList.toggle("prevent-input", true);
+                // text.classList.toggle("prevent-input", true);
 
-              //  text.readOnly = true;
+                //  text.readOnly = true;
 
                 const inputId = ref(e.displayname);
                 text.value = inputId.value;
@@ -72,7 +72,7 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
                 // text.addEventListener("dblclick", function (e: MouseEvent) {
                 //  //   text.readOnly = false;
                 //     console.log("double click");
-                    
+
                 //   //  e.preventDefault();
                 // }, true);
                 // text.addEventListener("focusout", function (e: FocusEvent) {
@@ -96,10 +96,13 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 }
 
 export interface Listener {
-    dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void;
-    prepareFileSaving(): void;
-    zoom(transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc): void;
-    pluginStarted(modal: boolean): void;
+
+
+    dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
+    prepareFileSaving?: () => void;
+    zoom?: (transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc) => void;
+    pluginStarted?: (modal: boolean) => void;
+
 }
 
 export interface WorkspaceViewIfc {
@@ -155,7 +158,6 @@ export function insideRect(
 
 export class Dispatcher {
 
-
     private static _instance = new Dispatcher();
     private constructor() { }
 
@@ -167,23 +169,23 @@ export class Dispatcher {
 
     pluginStarted(modal: boolean): void {
         this.callbacks.forEach((c) => {
-            c.pluginStarted(modal);
+            if (c.pluginStarted) c.pluginStarted(modal);
         });
     }
 
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {
-            c.dragStarting(selection, workspace);
+            if (c.dragStarting) c.dragStarting(selection, workspace); 
         });
     }
     zoom(workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {
-            c.zoom(workspace.getCurrentTransform(), workspace);
+            if (c.zoom) c.zoom(workspace.getCurrentTransform(), workspace);
         });
     }
     prepareFileSaving(): void {
         this.callbacks.forEach((c) => {
-            c.prepareFileSaving();
+            if (c.prepareFileSaving)   c.prepareFileSaving();
         });
     }
 

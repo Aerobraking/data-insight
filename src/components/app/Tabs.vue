@@ -79,6 +79,7 @@
         @blur="editFinish"
         readonly="true"
         v-model="element.name"
+        ondragstart="return false"
       />
       <a class="delete" v-show="element.isActive" @click.self="deleteTab(index)"
         >X</a
@@ -115,9 +116,6 @@ import * as WSUtils from "./../workspace/WorkspaceUtils";
 import { ArrowCollapseUp } from "mdue";
 _.once(() => {
   WSUtils.Events.registerCallback({
-    zoom(transform: { x: number; y: number; scale: number }): void {},
-    dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {},
-    prepareFileSaving(): void {},
     pluginStarted(modal: boolean): void {
       document.getElementById("tabs")?.classList.toggle("prevent-input", modal);
     },

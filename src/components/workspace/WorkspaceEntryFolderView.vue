@@ -1,13 +1,19 @@
 <template>
   <div
-    ref="el" 
+    ref="el"
     v-on:dblclick.stop=""
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
+    @keydown.capture="keydown"
+    tabindex="-1"
+    @drop.capture.stop="drop"
+    @mouseup="mouseup"
+    @mousemove="mousemove"
+    @mouseenter="mouseenter"
+    @mouseleave="mouseleave"
   >
+    <wsentrydisplayname :entry="entry" />
 
-  <wsentrydisplayname :entry="entry"/>
-   
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
@@ -34,6 +40,7 @@
         v-show="showTiles"
         class="tile-wrapper container green"
         :options="{ selectables: '.selectable' }"
+        @mousedown.left.stop="clearSelection"
       >
         <keep-alive>
           <wsfolderfile
@@ -43,6 +50,7 @@
             @dblclick="folderOpen(file)"
             :key="file.id"
             :name="file.id"
+            @itemClicked="itemClicked"
           >
           </wsfolderfile>
         </keep-alive>
@@ -95,7 +103,7 @@ import {
   WorkspaceEntryFolderWindow,
 } from "../../store/model/Workspace";
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
- 
+import { ipcRenderer } from "electron";
 
 function readFiles(
   dir: string,
@@ -134,18 +142,22 @@ export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
     wsfolderfile,
-    wsentrydisplayname
+    wsentrydisplayname,
   },
   data(): {
     showTiles: boolean;
     opaque: boolean;
+    dragActive: boolean;
     searchstring: string;
     parentDir: string;
     list: Array<FolderWindowFile>;
     selected: Set<any>;
+    lastItemSelected: HTMLElement | undefined;
   } {
     return {
+      lastItemSelected: undefined,
       showTiles: true,
+      dragActive: false,
       opaque: true,
       searchstring: "",
       parentDir: "",
@@ -165,15 +177,12 @@ export default defineComponent({
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
-    // this.$el.style.transform = `translate3d(${this.$props.entry?.x}px, ${this.$props.entry?.y}px,0px)`;
-
     this.updateFileList();
-
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
-  inject: ["entrySelected", "entrySelected"],
+  inject: ["entrySelected", "setFocusToWorkspace"],
   watch: {
-    // whenever question changes, this function will run
+    // whenever the current folder path changes, update the file list
     "entry.path": function (newPath: string, oldPath: string) {
       watcher.FileSystemWatcher.unregisterPath(oldPath, this.watcherEvent);
       watcher.FileSystemWatcher.registerPath(newPath, this.watcherEvent);
@@ -181,9 +190,35 @@ export default defineComponent({
     },
   },
   methods: {
+    drop(e: DragEvent) {
+      console.log("paste in folder");
+
+      if (e.dataTransfer && e.dataTransfer.types.includes("Files")) {
+        for (let index = 0; index < e.dataTransfer.files.length; index++) {
+          const f = e.dataTransfer.files[index];
+
+          const fileStat = fs.lstatSync(f.path);
+          const p = path.normalize(f.path).replace(/\\/g, "/");
+
+          if (fileStat.isDirectory()) {
+          } else {
+            const filename = path.basename(p);
+            fs.copyFile(
+              p,
+              path.join(this.entry.path, filename),
+              fs.constants.COPYFILE_EXCL,
+              (err: NodeJS.ErrnoException | null) => {}
+            );
+          }
+        }
+      }
+    },
     watcherEvent() {
+      console.log("watcherEvent");
+      
       this.updateFileList();
     },
+
     scrolling(e: WheelEvent) {
       /**
        * Todo: disable scrolling when zoom factor is too small
@@ -240,20 +275,112 @@ export default defineComponent({
         console.error("no access! " + this.entry.path);
       }
     },
-    selectEntry(select: "add" | "rem" | "flip") {
-      switch (select) {
-        case "add":
-          this.$el.classList.add("workspace-is-selected");
-          break;
-        case "rem":
-          this.$el.classList.remove("workspace-is-selected");
-          break;
-        case "flip":
-          this.$el.classList.toggle("workspace-is-selected");
-          break;
+    getEntries: function (): HTMLElement[] {
+      return Array.from(this.$el.querySelectorAll(".tile")) as HTMLElement[];
+    },
+    getModelEntriesFromView(listViews: HTMLElement[]): FolderWindowFile[] {
+      let list: FolderWindowFile[] = [];
+
+      for (let index = 0; index < listViews.length; index++) {
+        const v = listViews[index];
+        let id = Number(v.getAttribute("name"));
+        let e = this.list.find((e) => e.id === id);
+        if (e != undefined) {
+          list.push(e);
+        }
+      }
+
+      return list;
+    },
+    setFocusToThis() {
+      setTimeout(() => {
+        this.$el.focus();
+      }, 10);
+    },
+    mouseup(e: MouseEvent) {
+      this.dragActive = false;
+    },
+    mouseenter(e: MouseEvent) {
+      this.setFocusToThis();
+    },
+    mouseleave(e: MouseEvent) {
+      // @ts-ignore: Unreachable code error
+      this.setFocusToWorkspace();
+    },
+    mousemove(e: MouseEvent) {
+      if (this.dragActive) {
+        let listFilesToDrag: string[] = [];
+        let listItems: FolderWindowFile[] = this.getModelEntriesFromView(
+          this.getEntries()
+        );
+
+        for (let index = 0; index < listItems.length; index++) {
+          const e = listItems[index];
+          const view = this.getEntries()[index];
+          if (view.classList.contains("item-selected")) {
+            listFilesToDrag.push(e.path);
+          }
+        }
+
+        if (listFilesToDrag.length > 0) {
+          ipcRenderer.send("ondragstart", listFilesToDrag);
+          this.dragActive = false;
+        }
       }
     },
-    modifySelection(elements: []) {},
+    keydown(e: KeyboardEvent) {
+      if (e.ctrlKey) {
+        switch (e.key.toUpperCase()) {
+          case "A":
+            this.toggleAll(true);
+            e.stopPropagation();
+            break;
+          case "D":
+            this.toggleAll(false);
+            e.stopPropagation();
+            break;
+          default:
+            break;
+        }
+      }
+    },
+    toggleAll(select: boolean | undefined = undefined) {
+      if (select != undefined) {
+        this.getEntries().forEach((e) =>
+          e.classList.toggle("item-selected", select)
+        );
+      } else {
+        this.getEntries().forEach((e) => e.classList.toggle("item-selected"));
+      }
+    },
+    itemClicked(
+      item: FolderWindowFile,
+      el: HTMLElement,
+      type: "control" | "shift" | "single"
+    ) {
+      switch (type) {
+        case "single":
+          this.toggleAll(false);
+          el.classList.add("item-selected");
+          break;
+        case "control":
+          el.classList.toggle("item-selected");
+          break;
+        case "shift":
+          const entries = this.getEntries();
+          if (this.lastItemSelected) {
+            const i1 = entries.indexOf(this.lastItemSelected),
+              i2 = entries.indexOf(el);
+            var sliced = entries.slice(Math.min(i1, i2), Math.max(i1, i2));
+
+            sliced.forEach((e) => e.classList.add("item-selected"));
+          }
+          el.classList.add("item-selected");
+          break;
+      }
+      this.lastItemSelected = el;
+      this.dragActive = true;
+    },
     folderBack() {
       if (this.entry != undefined) {
         this.entry.path = path.dirname(this.entry.path);
@@ -275,7 +402,6 @@ export default defineComponent({
       }
     },
   },
-
   computed: {
     getFileList(): Array<FolderWindowFile> {
       this.list
@@ -303,6 +429,9 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.item-selected {
+  background: rgba(46, 115, 252, 0.11);
+}
 .container {
   user-select: none;
   pointer-events: all;

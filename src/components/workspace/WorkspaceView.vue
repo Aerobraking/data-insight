@@ -6,6 +6,7 @@
     @keydown="keydown"
     @keyup="keyup"
     @paste="onPaste"
+    @wheel="wheel"
     @click.stop
     @dragover="dragover"
     @dragleave="dragleave"
@@ -301,6 +302,8 @@ export default defineComponent({
     },
   },
   mounted() {
+    let _this = this;
+
     /**
      * Listen for resizing of the canvas parent element
      */
@@ -313,12 +316,13 @@ export default defineComponent({
 
         //  vm.getCanvas().style.width = `${w}px`;
         // vm.getCanvas().style.width = `${h}px`;
-        vm.getCanvas().width = w;
-        vm.getCanvas().height = h;
+        _this.getCanvas().width = w;
+        _this.getCanvas().height = h;
 
-        vm.drawCanvas();
+        _this.drawCanvas();
       }
     });
+
     this.divObserver.observe(this.$el);
 
     this.selectionWrapperResizer = new ResizerComplex(
@@ -340,7 +344,6 @@ export default defineComponent({
       }
     );
 
-    let vm = this;
     // window.onresize = function () {
     //   vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
     //   vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
@@ -348,8 +351,8 @@ export default defineComponent({
     //   vm.getCanvas().height = vm.$el.clientHeight;
     // };
 
-    vm.getCanvas().width = vm.$el.clientWidth;
-    vm.getCanvas().height = vm.$el.clientHeight;
+    _this.getCanvas().width = _this.$el.clientWidth;
+    _this.getCanvas().height = _this.$el.clientHeight;
 
     this.drawCanvas();
 
@@ -370,6 +373,20 @@ export default defineComponent({
     this.updateFixedZoomElements();
 
     this.setFocusToWorkspace();
+
+    WSUtils.Events.registerCallback({
+      pluginStarted(modal: boolean): void {
+        const instances = _this.$el.querySelectorAll(
+          ".workspace-menu-bar, .bookmarks"
+        );
+
+        for (let i = 0; i < instances.length; i++) {
+          const element = instances[i];
+          element.classList.toggle("prevent-input", modal);
+          element.classList.toggle("search-not-found", modal);
+        }
+      },
+    });
   },
   unmounted() {
     this.divObserver.disconnect();
@@ -384,8 +401,9 @@ export default defineComponent({
   },
   provide() {
     return {
-      startDrag: this.startDrag,
       entrySelected: this.entrySelected,
+      setFocusToWorkspace: this.setFocusToWorkspace,
+      mouseupWorkspace: this.mouseup,
     };
   },
   inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
@@ -479,7 +497,7 @@ export default defineComponent({
     },
     drawCanvas() {
       if (this.model.overviewOpen) {
-        return;
+        //   return;
       }
 
       let canvas: HTMLCanvasElement = this.getCanvas() as HTMLCanvasElement;
@@ -667,24 +685,6 @@ export default defineComponent({
 
       return listFiles[0] as T;
     },
-    startDrag: function (e: MouseEvent) {
-      this.selectionDragActive = true;
-
-      /**
-       * Start dragging of the current selection with left mouse button + ctrl or
-       */
-      this.dragMoveRel = { x: e.clientX, y: e.clientY };
-
-      this.dragSelection = Array.from(
-        this.getSelectedEntries()
-      ) as HTMLElement[];
-
-      WSUtils.Events.dragStarting(this.dragSelection, this);
-
-      this.dragSelection.push(this.getSelectionWrapper());
-
-      this.preventInput(true);
-    },
     startSelectionDrag(mousePosition: { x: number; y: number }) {
       /**
        * Start dragging of the current selection with left mouse button + ctrl or
@@ -769,14 +769,15 @@ export default defineComponent({
     preventEvent(e: any): boolean {
       var functionName: string = e.type as string;
 
-      return (
-        this.model.isActive &&
-        this.activePlugin &&
-        // @ts-ignore: Unreachable code error
-        this.activePlugin[functionName] &&
-        // @ts-ignore: Unreachable code error
-        (this.activePlugin[functionName](e) as boolean)
-      );
+      if (this.model.isActive && this.activePlugin) {
+        return (
+          // @ts-ignore: Unreachable code error
+          this.activePlugin[functionName] &&
+          // @ts-ignore: Unreachable code error
+          (this.activePlugin[functionName](e) as boolean)
+        );
+      }
+      return false;
     },
     keydown(e: KeyboardEvent) {
       if (
@@ -958,6 +959,11 @@ export default defineComponent({
         return;
       }
 
+      if (e.altKey) {
+        this.startFileDrag();
+        return;
+      }
+
       if (e.button == 0) {
         if (!e.ctrlKey) {
           this.dragStart = this.getPositionInWorkspace(e);
@@ -976,17 +982,6 @@ export default defineComponent({
       }
     },
     mousemoveThrottle: _.throttle((e: MouseEvent, comp: any) => {
-      console.log("mousemove: " + e.x + " name: " + comp.$props.model.name);
-
-      if (
-        !comp.model.isActive ||
-        (comp.activePlugin && comp.activePlugin.mousemove(e))
-      ) {
-        return;
-      }
-
-      console.log("mousemove ACTIVE " + comp.$props.model.name);
-
       comp.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
       comp.mousePositionLast = comp.getPositionInWorkspace(e);
 
@@ -1014,7 +1009,7 @@ export default defineComponent({
         }
       }
 
-      // comp.drawCanvas();
+      comp.drawCanvas();
     }, 10),
     mousemove: function (e: MouseEvent) {
       if (this.preventEvent(e)) return;
@@ -1057,8 +1052,11 @@ export default defineComponent({
 
       this.selectionDragActive = false;
     },
-    beforeWheelHandler(e: any) {
+    wheel: function (e: WheelEvent) {
       if (this.preventEvent(e)) return true;
+    },
+    beforeWheelHandler(e: any) {
+      if (this.model.isActive && this.activePlugin) return true;
 
       this.spacePressed = false;
       this.getEntries().forEach((e) => {
@@ -1068,9 +1066,9 @@ export default defineComponent({
       return shouldIgnore;
     },
     beforeMouseDownHandler(e: any) {
-      if (this.preventEvent(e)) return true;
+      if (this.model.isActive && this.activePlugin) return true;
 
-      var shouldIgnore: boolean = !(e.altKey || e.button == 1);
+      var shouldIgnore: boolean = !(/*e.altKey ||*/ (e.button == 1));
 
       return shouldIgnore;
     },
@@ -1556,9 +1554,7 @@ export default defineComponent({
     getCoordinatesFromElement(e: any): ElementDimension {
       return getCoordinatesFromElement(e);
     },
-    startFileDrag: function (e: MouseEvent) {
-      e.preventDefault();
-
+    startFileDrag: function () {
       let list = this.getModelEntriesFromView(this.getSelectedEntries());
       let listFilesToDrag: string[] = [];
 
@@ -1566,9 +1562,6 @@ export default defineComponent({
         const e = list[index];
         listFilesToDrag.push(...e.getFilesForDragging());
       }
-
-      console.log("send files to drag");
-      console.log(listFilesToDrag);
 
       if (listFilesToDrag.length > 0) {
         ipcRenderer.send("ondragstart", listFilesToDrag);

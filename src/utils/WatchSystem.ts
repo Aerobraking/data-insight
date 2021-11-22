@@ -8,7 +8,7 @@ interface Hash {
 }
 
 export class Watcher {
- 
+
     private hash: Map<String, { (): void; }[]> = new Map();
     private static _instance = new Watcher();
     private watcher: FSWatcher;
@@ -49,6 +49,10 @@ export class Watcher {
 
         let dir: string = pathSys.dirname(path);
 
+        dir = pathSys.normalize(dir).replace(/\\/g, "/");
+
+        console.log(dir);
+
         let listCallbacks: { (): void; }[] | undefined = this.hash.get(dir); //get
         if (listCallbacks != undefined) {
             for (let index = 0; index < listCallbacks.length; index++) {
@@ -64,6 +68,8 @@ export class Watcher {
 
     registerPath(path: string, callback: () => void) {
 
+        path = pathSys.normalize(path).replace(/\\/g, "/");
+
         let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
 
 
@@ -77,6 +83,8 @@ export class Watcher {
             }
             this.hash.set(path, listCallbacks);
         }
+
+        console.log("register: " + path);
 
         listCallbacks.push(callback);
 

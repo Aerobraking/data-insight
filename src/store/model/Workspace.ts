@@ -156,7 +156,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
             this.videoId = match[2];
             return match[2];
         } else {
-            return null;
+            return this.url;
         }
     }
 
@@ -171,7 +171,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
         /**
          * sandbox tags prevent opening any links to other websites.
          */
-        return '<iframe  sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" '
+        return '<iframe  sandbox="allow-presentation allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" '
             + 'src="https://www.youtube-nocookie.com/embed/' + this.getId() + '" title="YouTube video player" frameborder="0" allow="accelerometer; '
             + 'autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
     }

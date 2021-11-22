@@ -28,6 +28,6 @@ export default abstract class {
     };
 
     public abstract drop(e: any): boolean;
-    public abstract mouseWheel(e: any): boolean;
+    public abstract wheel(e: any): boolean;
 
 }

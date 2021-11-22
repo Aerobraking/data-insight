@@ -7,11 +7,10 @@
     ref="el"
     class="ws-entry-file-wrapper select-element sizefixed"
     :style="{
-      transform: 'translate3d(' + getX() + 'px, ' + getY() + 'px' + ', 0)',
+      transform: 'translate3d(0px, 0px' + ', 0)',
     }"
   >
     <wsentrydisplayname :entry="entry" />
-
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>
   </div>
@@ -45,23 +44,18 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-    let c: any = this.$el;
-    // this.$el.style.transform = `translate3d(${this.$props.entry.x}px, ${this.$props.entry.y}px,0px)`;
+    let _this: any = this;
 
     icons.IconHandler.registerPath(this.entry.path, (url: string) => {
       var img = new Image();
 
       img.src = url;
 
-      c.getElementsByClassName("file-symbol")[0].style.backgroundImage =
+      _this.$el.getElementsByClassName("file-symbol")[0].style.backgroundImage =
         "url('" + img.src + "')";
     });
   },
-  inject: [
-    "entrySelected",
-    "entrySelected",
-    //   "startDrag", "startDrag ",
-  ],
+  inject: ["entrySelected", "entrySelected"],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip", event: MouseEvent) {
       // @ts-ignore: Unreachable code error
@@ -74,36 +68,14 @@ export default defineComponent({
 
     doubleClick(e: MouseEvent) {
       e.preventDefault();
-
-      //shell.showItemInFolder('filepath') // Show the given file in a file manager. If possible, select the file.
-
       shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.
-    },
-    clickStart(e: MouseEvent) {
-      // this.$store.dispatch("setIsSelected", {
-      //   name: this.file.key,
-      //   add: e.ctrlKey,
-      //   viewKey: this.viewKey,
-      // });
-    },
-
-    getX() {
-      // return (
-      //   this.file.x - (this.file.isSelected ? this.$store.state.dragOffsetX : 0)
-      // );
-    },
-    getY() {
-      // return (
-      //   this.file.y - (this.file.isSelected ? this.$store.state.dragOffsetY : 0)
-      // );
     },
   },
   computed: {},
   created() {},
 });
 </script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+ 
 <style scoped lang="scss">
 .ws-entry-file-wrapper {
   z-index: 100;

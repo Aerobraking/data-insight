@@ -5,7 +5,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 import { utcFormat } from 'd3'
 import { InsightFile } from './store/state'
-var fs = require("fs");
+import fs from "fs";
 import path from "path";
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // Scheme must be registered before the app is ready
@@ -22,21 +22,21 @@ function getTempFilePath(): string {
 
 ipcMain.on('msg-worker', (event, arg) => {
   // win?.webContents.send("msg-worker", arg)
-  
+
 
   webContents.getAllWebContents().forEach(wc => {
     wc.send('msg-worker', arg);
   })
 });
- 
+
 ipcMain.on('msg-main', (event: any, arg: any) => {
-   
+
 
   webContents.getAllWebContents().forEach(wc => {
     wc.send('msg-main', arg);
   })
 })
-
+   
 ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
 
   filePaths.forEach(function (e: string, index: number, theArray: string[]) {
@@ -44,18 +44,34 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
     filePaths[index] = e.replaceAll("\\", "/");
   });
 
-  console.log("start file drag: ");
-  console.log(filePaths);
+  if (filePaths.length > 0) {
 
-  event.sender.startDrag({
-    files: filePaths,
-    icon: "C:/OneDrive/Fotografie/Export/2015-05-02-18-26-01.jpg"
-  })
+    console.log(filePaths);
+ 
+    event.sender.startDrag({
+      files: filePaths,
+      icon: "E:/content-copy.png"
+    })
+
+  }
+
+})
+
+ipcMain.on('copy-files', (event: any, args: { filePaths: string[], targetDir: string }) => {
+
+  for (let i = 0; i < args.filePaths.length; i++) {
+    const abspath = args.filePaths[i];
+    const filename = path.basename(abspath);
+    fs.copyFile(abspath, path.join(args.targetDir, filename), fs.constants.COPYFILE_EXCL, (err: NodeJS.ErrnoException | null) => { });
+  }
+
+
 })
 
 ipcMain.on('open-insight-file', (event: any, arg: any) => {
   openFile();
 })
+
 ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
 
   if (win) {
@@ -142,7 +158,7 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
       wc.send('fire-file-saved', filepath);
     })
   }
- 
+
   if (win) {
     if (isTemp
     ) {
@@ -196,7 +212,7 @@ async function createWindow() {
   console.log((process.env
     .ELECTRON_NODE_INTEGRATION as unknown) as boolean);
   console.log(!process.env.ELECTRON_NODE_INTEGRATION);
-  
+
 
   // Create the worker window.
   windowWorker = new BrowserWindow({
@@ -209,7 +225,7 @@ async function createWindow() {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegrationInWorker: true,
       nodeIntegration: true,
-      contextIsolation:false
+      contextIsolation: false
     }
   })
 
@@ -269,7 +285,7 @@ async function createWindow() {
         {
           label: 'Dev Tools',
           click() {
-            if (win&& windowWorker) {
+            if (win && windowWorker) {
               win.webContents.openDevTools();
               windowWorker.webContents.openDevTools();
             }
@@ -286,12 +302,12 @@ async function createWindow() {
   ])
   Menu.setApplicationMenu(menu);
 
-  if (process.env.WEBPACK_DEV_SERVER_URL) { 
+  if (process.env.WEBPACK_DEV_SERVER_URL) {
     windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage')
     // Load the url of the dev server if in development mode
     win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
     if (!process.env.IS_TEST) win.webContents.openDevTools()
-  } else { 
+  } else {
     createProtocol('app')
     // Load the index.html when not in development
     windowWorker.loadURL('app://./worker.html')

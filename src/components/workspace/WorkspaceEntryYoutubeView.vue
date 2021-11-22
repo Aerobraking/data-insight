@@ -5,10 +5,8 @@
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
     @click.stop
-    v-on:dblclick="doubleClick"
     class="ws-entry-youtube-wrapper"
   >
- 
     <wsentrydisplayname :entry="entry" />
 
     <div
@@ -17,11 +15,23 @@
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       class="ws-window-bar-top select-element selectable-highlight"
     ></div>
+    <input
+      @mousedown.stop
+      @mousemove.stop
+      @keydown.stop
+      @keyup.stop
+      @paste.stop
+      class="url-input"
+      :class="{ showURL: entry.url.length == 0 }"
+      type="text"
+      v-model="entry.url"
+      placeholder="Enter URL or simply the video id from the URL"
+    />
 
     <div
       class="editor-enabler"
-      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-      @mousedown.left.stop.exact="entrySelectedLocal('single')"
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip', $event)"
+      @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"
     ></div>
 
     <div class="inner-wrapper"></div>
@@ -38,8 +48,13 @@ import { resize } from "../../utils/resize";
  */
 function htmlToElement(html: string) {
   var template = document.createElement("template");
-  html = html.trim(); // Never return a text node of whitespace as the result
-  template.innerHTML = html;
+  try {
+    html = html.trim(); // Never return a text node of whitespace as the result
+    template.innerHTML = html;
+  } catch (error) {
+    console.log("feeeeehler");
+  }
+
   return template.content.firstChild;
 }
 
@@ -52,7 +67,7 @@ export default defineComponent({
   data() {
     return {};
   },
-  components: { 
+  components: {
     wsentrydisplayname,
   },
   setup(props) {
@@ -62,6 +77,31 @@ export default defineComponent({
     entry: WorkspaceEntryYoutube,
     viewKey: Number,
   },
+  watch: {
+    "entry.url": function (newValue: string, oldValue: string) {
+      if (newValue != oldValue) {
+        this.$el.getElementsByClassName("inner-wrapper")[0].innerHTML = "";
+
+        let iframe: any = htmlToElement(
+          this.entry ? this.entry.getHtmlCode() : "<div>Video not found.</div>"
+        );
+
+        if (iframe.attachEvent) {
+          iframe.attachEvent("onerror ", function () {
+            alert("Local iframe is now loaded.1");
+
+            setTimeout(() => {}, 50);
+          });
+        } else {
+          iframe.onerror = function () {
+            alert("Local iframe is now loaded.2");
+          };
+        }
+
+        this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
+      }
+    },
+  },
   mounted() {
     let iframe: any = htmlToElement(
       this.entry != undefined
@@ -70,17 +110,21 @@ export default defineComponent({
     );
 
     this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
-
-    // resize(this.$el);
   },
-  inject: ["entrySelected", "entrySelected"],
+  inject: ["entrySelected", "entrySelected", "mouseupWorkspace"],
   methods: {
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(
+      type: "add" | "single" | "flip",
+      e: MouseEvent | undefined
+    ) {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
+
+      if (e) {
+        // @ts-ignore: Unreachable code error
+        this.mouseupWorkspace(e);
+      }
     },
-    doubleClick(e: MouseEvent) {},
-    clickStart(e: MouseEvent) {},
   },
   computed: {},
   created() {},
@@ -88,6 +132,35 @@ export default defineComponent({
 </script>
  
 <style lang="scss">
+.url-input {
+  height: 25px;
+  outline: none;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.showURL {
+  opacity: 1 !important;
+}
+
+.workspace-is-selected .url-input {
+  opacity: 1;
+}
+
+.inner-wrapper {
+  position: relative;
+  width: 100%;
+  flex: 1 !important;
+  pointer-events: none;
+  transition: pointer-events 5000ms;
+  transition-delay: 5000ms;
+}
+
+.workspace-is-selected .inner-wrapper {
+  pointer-events: all;
+}
+
 .ws-entry-youtube-wrapper {
   display: flex;
   flex-flow: column;
@@ -99,12 +172,6 @@ export default defineComponent({
   height: 180px;
   background-size: cover;
   box-sizing: border-box;
-
-  .inner-wrapper {
-    position: relative;
-    width: 100%;
-    flex: 1 !important;
-  }
 
   iframe,
   object,

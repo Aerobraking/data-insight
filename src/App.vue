@@ -21,7 +21,7 @@ export default defineComponent({
   },
   computed: {},
   mounted() {
-    window.addEventListener("keydown", this.keyPressed, false);
+    window.addEventListener("keydown", this.keydown, false);
     const c = this;
 
     ipcRenderer.on(
@@ -99,8 +99,7 @@ export default defineComponent({
         chooseFile: chooseFile,
       });
     },
-    keyPressed(e: KeyboardEvent) {
-      console.log("keypressed app");
+    keydown(e: KeyboardEvent) { 
       
       if (e.ctrlKey) {
         switch (e.key) {

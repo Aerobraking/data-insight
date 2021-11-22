@@ -20,6 +20,7 @@
 
     <div
       class="text-editor-div"
+      ondragstart="return false"
       @mousedown.left.shift.stop.exact
       @mousedown.left.ctrl.stop.exact
       @mousedown.left.stop.exact
@@ -94,6 +95,7 @@ export default defineComponent({
     });
 
     _this.$el.getElementsByClassName("pell-content")[0].spellcheck=false;
+    _this.$el.getElementsByClassName("pell-content")[0].ondragstart="return false";
 
     /**
      * add content from the model after init

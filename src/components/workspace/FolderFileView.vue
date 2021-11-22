@@ -1,5 +1,11 @@
 <template>
-  <div class="folder-file">
+  <div
+    @mousedown.left.shift.stop.exact="itemClicked('shift')"
+    @mousedown.left.ctrl.stop.exact="itemClicked('control')"
+    @mousedown.left.stop.exact="itemClicked('single')"
+    @dragstart="dragstart"
+    class="folder-file"
+  >
     <div class="folder-file-symbol"></div>
     <p>{{ entry.filename }}</p>
   </div>
@@ -45,7 +51,28 @@ export default defineComponent({
     }
   },
 
-  methods: {},
+  methods: {
+    dragstart(e: DragEvent) { 
+      
+      this.$emit("dragstarted", this.entry, this.$el, e);
+    },
+    itemClicked(type: "control" | "shift" | "single") { 
+
+      this.$emit("itemClicked", this.entry, this.$el, type);
+      switch (type) {
+        case "single":
+          // this.getEntries().forEach((e) =>
+          //   e.classList.remove("workspace-is-selected")
+          // );
+
+          break;
+        case "control":
+          break;
+        case "shift":
+          break;
+      }
+    },
+  },
 });
 </script>
 
@@ -78,7 +105,7 @@ export default defineComponent({
     width: 75px;
     display: block;
     background-size: cover;
-    background-color: #f1f1f100;
+    background-color: transparent;
     border: none;
     clear: both;
     border: none;
