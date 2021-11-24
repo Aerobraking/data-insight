@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-const { shell } = require("electron"); // deconstructing assignment
+const { shell } = require("electron");  
 
 import * as cache from "./../../utils/ImageCache";
 import { defineComponent } from "vue";

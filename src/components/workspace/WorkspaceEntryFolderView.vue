@@ -21,26 +21,44 @@
       class="ws-window-bar-top select-element selectable-highlight"
     ></div>
 
-    <!-- <div class="search-bar">
-      <button @click="folderBack">Go Up</button>
-      <button @click="openDefault">Default</button>
-      <button @click="setDefault">Set Default</button>
-      <button @click="showTiles = !showTiles">View</button>
-      <button @click="opaque = !opaque">Opaque</button>
+    <div @mousedown.stop @mousemove.stop class="search-bar">
+      <!-- <button @click="showTiles = !showTiles">View</button>
+      <button @click="opaque = !opaque">Opaque</button> -->
+      <button><ArrowUp @click="folderBack" /></button>
+      <button>
+        <HomeOutline
+          class="showHome"
+          @mouseenter="showHome(true)"
+          @mouseleave="showHome(false)"
+          @click="openDefault"
+        />
+      </button>
+      <button>
+        <HomeImportOutline
+          @mouseenter="showNewHome(true)"
+          @mouseleave="showNewHome(false)"
+          @click="setDefault"
+        />
+      </button>
       <input
+        @keydown.stop
+        @keyup.stop
+        @mousedown.stop
+        @mousemove.stop
         v-on:keyup.stop
         v-model="searchstring"
         class=""
         placeholder="Search ..."
       />
-    </div> -->
+    </div>
+    <div @mousedown.stop @mousemove.stop class="breadcrumbs"></div>
 
     <div class="viewport" :class="{ opaque: opaque }">
       <div
         v-show="showTiles"
         class="tile-wrapper container green"
         :options="{ selectables: '.selectable' }"
-        @mousedown.left.stop="clearSelection"
+        @mousedown.left.stop="toggleAll(false)"
       >
         <keep-alive>
           <wsfolderfile
@@ -90,11 +108,10 @@
     @mousemove.stop
 
 */
-const { shell } = require("electron"); // deconstructing assignment
-import SelectionArea from "@viselect/vanilla";
+const path = require("path");
+const { shell } = require("electron");
 import * as watcher from "./../../utils/WatchSystem";
 import fs from "fs";
-const path = require("path");
 import wsfolderfile from "./FolderFileView.vue";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import { defineComponent } from "vue";
@@ -105,42 +122,15 @@ import {
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 import { ipcRenderer } from "electron";
 
-function readFiles(
-  dir: string,
-  processFile: (filepath: string, name: string, ext: string, stat: any) => void
-) {
-  // read directory
-  fs.readdir(dir, (error: any, fileNames: any) => {
-    if (error) throw error;
-
-    fileNames.forEach((filename: any) => {
-      // get current file name
-      const name = path.parse(filename).name;
-      // get current file extension
-      const ext = path.parse(filename).ext;
-      // get current file path
-      const filepath = path.resolve(dir, filename);
-
-      // get information about the file
-      fs.stat(filepath, function (error: any, stat: any) {
-        if (error) throw error;
-
-        // check if the current path is a file or a folder
-        const isFile = stat.isFile();
-
-        // exclude folders
-        if (isFile) {
-          // callback, do something with the file
-          processFile(filepath, name, ext, stat);
-        }
-      });
-    });
-  });
-}
-
+import { HomeOutline, HomeImportOutline, ArrowLeft, ArrowUp } from "mdue";
+  
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
+    ArrowUp,
+    ArrowLeft,
+    HomeOutline,
+    HomeImportOutline,
     wsfolderfile,
     wsentrydisplayname,
   },
@@ -149,7 +139,6 @@ export default defineComponent({
     opaque: boolean;
     dragActive: boolean;
     searchstring: string;
-    parentDir: string;
     list: Array<FolderWindowFile>;
     selected: Set<any>;
     lastItemSelected: HTMLElement | undefined;
@@ -160,7 +149,6 @@ export default defineComponent({
       dragActive: false,
       opaque: true,
       searchstring: "",
-      parentDir: "",
       list: [],
       selected: new Set(),
     };
@@ -177,7 +165,7 @@ export default defineComponent({
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
-    this.updateFileList();
+    this.updateUI();
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
   inject: ["entrySelected", "setFocusToWorkspace"],
@@ -186,7 +174,7 @@ export default defineComponent({
     "entry.path": function (newPath: string, oldPath: string) {
       watcher.FileSystemWatcher.unregisterPath(oldPath, this.watcherEvent);
       watcher.FileSystemWatcher.registerPath(newPath, this.watcherEvent);
-      this.updateFileList();
+      this.updateUI();
     },
   },
   methods: {
@@ -214,9 +202,7 @@ export default defineComponent({
       }
     },
     watcherEvent() {
-      console.log("watcherEvent");
-      
-      this.updateFileList();
+      this.updateUI();
     },
 
     scrolling(e: WheelEvent) {
@@ -239,19 +225,85 @@ export default defineComponent({
     setDefault() {
       if (this.$props.entry != undefined) {
         this.$props.entry.defaultPath = this.$props.entry?.path;
+        this.showNewHome(false); // update highlighting
       }
     },
-    updateFileList(): void {
+    showNewHome(show: boolean) {
+      show = show && this.entry.path != this.entry.defaultPath;
+      const div: Element = this.$el.getElementsByClassName("breadcrumbs")[0];
+      div.classList.toggle("highlight-path", show);
+      const divHome: Element = this.$el.getElementsByClassName("showHome")[0];
+      divHome.classList.toggle("move-home-button", show);
+    },
+    showHome(show: boolean) {
+      if (show) {
+        this.updateBreadcrumps(this.entry.defaultPath);
+      } else {
+        this.updateBreadcrumps(this.entry.path);
+      }
+    },
+    updateBreadcrumps(p: string) {
+      const _this = this;
+
+      const div: Element = this.$el.getElementsByClassName("breadcrumbs")[0];
+
+      let listFolders: string[] = p.trim().split("/");
+
+      listFolders = listFolders.filter((s) => s.trim().length > 0);
+
+      div.innerHTML = "";
+
+      let listFoldersRelative: string[] = [];
+
+      for (let i = 0; i < listFolders.length; i++) {
+        const f = listFolders[i];
+        listFoldersRelative.push(f.trim());
+        var para = document.createElement("button");
+        para.setAttribute("path", listFoldersRelative.join("/"));
+        para.classList.add("crumb");
+        var node = document.createTextNode(f);
+        para.appendChild(node);
+        div.appendChild(para);
+
+        para.addEventListener("click", function (e: MouseEvent) {
+          console.log("clicked: " + (e.target as Element).getAttribute("path"));
+          const p = (e.target as Element).getAttribute("path");
+          if (p) {
+            _this.entry.path = p;
+          }
+        });
+
+        if (i < listFolders.length - 1) {
+          para = document.createElement("button");
+          para.classList.add("crumb-separator");
+          node = document.createTextNode("/");
+          para.appendChild(node);
+          div.appendChild(para);
+        }
+      }
+
+      div.scrollLeft = div.scrollWidth;
+    },
+    updateUI(): void {
+      /**
+       * Update breadcrumbs
+       */
+      this.updateBreadcrumps(this.entry.path);
+
+      /**
+       * Update file list
+       */
       this.list = [];
       let c = this;
 
-      const dir = this.entry.path;
+      let dir = this.entry.path;
+      dir = dir.endsWith("/") ? dir.slice(0, -1) : dir;
 
       try {
-        fs.accessSync(this.entry.path, fs.constants.R_OK);
+        fs.accessSync(dir, fs.constants.R_OK);
 
-        if (fs.existsSync(this.entry.path)) {
-          fs.readdirSync(this.entry.path).forEach((file: any) => {
+        if (fs.existsSync(dir)) {
+          fs.readdirSync(dir).forEach((file: string) => {
             let filePath = path.join(dir, file);
             filePath = path.normalize(filePath).replace(/\\/g, "/");
 
@@ -300,10 +352,24 @@ export default defineComponent({
     mouseup(e: MouseEvent) {
       this.dragActive = false;
     },
+    /**
+     * When the bookmark name is edited, we don't alter the focused object
+     * because the user may enter/leave the folder div with the mouse while editing
+     */
+    cancelFocusEvent(): boolean {
+      var x = document.activeElement;
+      return (
+        x != undefined &&
+        x instanceof Element &&
+        x.classList.contains("wsentry-displayname")
+      );
+    },
     mouseenter(e: MouseEvent) {
+      if (this.cancelFocusEvent()) return;
       this.setFocusToThis();
     },
     mouseleave(e: MouseEvent) {
+      if (this.cancelFocusEvent()) return;
       // @ts-ignore: Unreachable code error
       this.setFocusToWorkspace();
     },
@@ -381,11 +447,16 @@ export default defineComponent({
       this.lastItemSelected = el;
       this.dragActive = true;
     },
+    setPath(path: string) {
+      this.entry.path = path;
+    },
     folderBack() {
-      if (this.entry != undefined) {
+      if (
+        this.entry != undefined &&
+        this.entry.path.split("/").length - 1 > 0
+      ) {
         this.entry.path = path.dirname(this.entry.path);
         let l = this.entry.path.split("/");
-        this.parentDir = l[l.length - 1];
       }
     },
     folderOpen(folder: FolderWindowFile | String) {
@@ -393,12 +464,13 @@ export default defineComponent({
         if (folder instanceof FolderWindowFile) {
           if (folder.isDirectory) {
             this.entry.path = folder.path;
+          } else {
+            shell.openPath(folder.path);
           }
         } else {
           this.entry.path = <string>folder;
         }
         let l = this.entry.path.split("/");
-        this.parentDir = l[l.length - 1];
       }
     },
   },
@@ -422,16 +494,14 @@ export default defineComponent({
       return this.list;
     },
   },
-
-  created() {},
 });
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style lang="scss">
 .item-selected {
   background: rgba(46, 115, 252, 0.11);
 }
+
 .container {
   user-select: none;
   pointer-events: all;
@@ -444,16 +514,16 @@ export default defineComponent({
 }
 
 .ws-folder-window-wrapper {
-  table {
-    width: 100%;
-  }
+  outline: none;
+  display: flex;
+  flex-flow: column;
+
   z-index: 100;
   resize: both;
   height: 600px;
   width: 600px;
   min-width: 200px;
   min-height: 200px;
-  // will-change: transform;
 
   position: absolute;
   color: #f1f1f1;
@@ -464,26 +534,99 @@ export default defineComponent({
   text-align: left;
   vertical-align: top;
 
+  table {
+    width: 100%;
+  }
+
   .viewport {
     padding: 10px;
     overflow-y: auto;
     overflow-x: hidden;
-    //   display: none;
     height: calc(100% - #{25px * 3+20});
+    flex: 1 !important;
+    height: initial !important;
+    border: none;
+    border-top: 1px solid #949494;
   }
 
   .search-bar {
-    width: 70%;
-    height: 25px;
+    height: 34px;
+    border-top: 1px solid #949494;
 
+    button {
+      cursor: pointer;
+      background: transparent;
+      padding: 0;
+      margin: 0px 7px 0px 7px;
+      height: 100%;
+      svg {
+        vertical-align: middle;
+        font-size: 24px;
+        padding: 0 10 0 10;
+        color: #444;
+        margin: 0;
+      }
+    }
     input,
     input:focus {
-      background: white;
+      outline: none;
+      margin: 0;
+      padding: 0;
+      padding-left: 10px;
       height: 100%;
+      top: 0;
+      background: white;
       border-radius: 0px;
-      border: 1px solid #949494;
+      border: 0px solid #949494;
+      border-left: 1px solid #949494;
     }
   }
+}
+
+.breadcrumbs {
+  height: 20px;
+  border: none;
+  border-top: 1px solid #949494;
+  padding: 0px 0px 0px 0px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+@mixin crumbbase($padding: 8px) {
+  height: 100%;
+  margin: 0 0px 0 0px;
+  background: #fff;
+  padding: 0px $padding 0px $padding;
+  position: relative;
+  top: -2px;
+  transition: all 0.2s ease-out;
+}
+
+.move-home-button {
+  transform: scale(1.5, 1.5) !important;
+  color: rgba(27, 126, 255, 0.418) !important;
+}
+
+.crumb {
+  @include crumbbase();
+  cursor: pointer;
+  &:hover {
+    background: #ddd;
+  }
+}
+
+.highlight-path .crumb {
+  background: rgba(27, 126, 255, 0.418) !important;
+}
+
+.crumb-separator {
+  @include crumbbase(4px);
+  cursor: initial;
+}
+
+.highlight-path .crumb-separator {
+  background: rgba(27, 126, 255, 0.418) !important;
 }
 
 .opaque {
@@ -496,10 +639,12 @@ $tile-size: 150px;
 
 .tile-wrapper {
   height: 100%;
-  display: grid;
-  grid-gap: 15px;
-  grid-template-columns: repeat(auto-fit, minmax($tile-size, 1fr));
-
+  display: flex;
+  flex-flow: row wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
   .tile {
     // background: #c4262600;
     // height: $tile-size;
@@ -525,11 +670,5 @@ $tile-size: 150px;
   .opaque {
     background-color: #5a5a5a00;
   }
-}
-
-.workspace-is-selected {
-  // .selectable-highlight {
-  //   background-color: #f81fc2;
-  // }
 }
 </style>

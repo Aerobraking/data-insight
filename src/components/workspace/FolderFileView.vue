@@ -6,7 +6,7 @@
     @dragstart="dragstart"
     class="folder-file"
   >
-    <div class="folder-file-symbol"></div>
+    <div class="folder-file-image"></div>
     <p>{{ entry.filename }}</p>
   </div>
 </template>
@@ -29,12 +29,19 @@ export default defineComponent({
   mounted() {
     let el: any = this.$el;
 
-    if (cache.isImageTypeSupported(this.entry.path)) {
+    const div: Element =
+      this.$el.getElementsByClassName("folder-file-image")[0];
+
+    const isImage: boolean = cache.isImageTypeSupported(this.entry.path);
+
+    div.classList.add(isImage ? "folder-file-preview" : "folder-file-icon");
+
+    if (isImage) {
       cache.ImageCache.registerPath(this.entry.path, {
         callback: (url: string, type: "small" | "medium" | "original") => {
           if (type == "small") {
             el.getElementsByClassName(
-              "folder-file-symbol"
+              "folder-file-image"
             )[0].style.backgroundImage = url;
           }
         },
@@ -45,19 +52,17 @@ export default defineComponent({
         var img = new Image();
         img.src = url;
         el.getElementsByClassName(
-          "folder-file-symbol"
+          "folder-file-image"
         )[0].style.backgroundImage = "url('" + img.src + "')";
       });
     }
   },
 
   methods: {
-    dragstart(e: DragEvent) { 
-      
+    dragstart(e: DragEvent) {
       this.$emit("dragstarted", this.entry, this.$el, e);
     },
-    itemClicked(type: "control" | "shift" | "single") { 
-
+    itemClicked(type: "control" | "shift" | "single") {
       this.$emit("itemClicked", this.entry, this.$el, type);
       switch (type) {
         case "single":
@@ -84,8 +89,8 @@ export default defineComponent({
   color: #f1f1f1;
   padding: 10px;
   height: 180px;
-
   box-sizing: border-box;
+  margin: 5px;
 
   p {
     width: 150px;
@@ -100,9 +105,7 @@ export default defineComponent({
     text-align: center;
   }
 
-  .folder-file-symbol {
-    height: 75px;
-    width: 75px;
+  @mixin preview() {
     display: block;
     background-size: cover;
     background-color: transparent;
@@ -110,6 +113,17 @@ export default defineComponent({
     clear: both;
     border: none;
     margin: 0 auto;
+  }
+
+  .folder-file-icon {
+    @include preview();
+    height: 75px;
+    width: 75px;
+  }
+  .folder-file-preview {
+    @include preview();
+    height: 120px;
+    width: 145px;
   }
 }
 </style>

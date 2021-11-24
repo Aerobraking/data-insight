@@ -97,15 +97,6 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         this.height = 600;
         this.imageCreated = false;
         this.isClipboard = clipboard;
-
-        // ImageCache.registerPath(this.getURL(), {
-        //     callback: (
-        //       url: string,
-        //       type: "small" | "medium" | "original"
-        //     ) => {},
-        //     callbackSize: (dim: ImageDim) => {},
-        //   }
-        //   );
     }
 
     public searchResultString(): string {
