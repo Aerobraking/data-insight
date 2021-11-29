@@ -41,6 +41,13 @@
           <button class="ws-zoom-fixed resizer-bottom-right">
             <ResizeBottomRight />
           </button>
+          <button
+            class="ws-zoom-fixed selection-system-drag"
+            @mousedown.capture.stop="startFileDrag()"
+            @click.capture.stop
+          >
+            <FileOutline />
+          </button>
         </div>
 
         <keep-alive>
@@ -119,6 +126,8 @@
       <button>
         <Overscan @click="showAll" />
       </button>
+      <button><FileOutline @click="createEntry('files')" /></button>
+      <button><FolderOutline @click="createEntry('folders')" /></button>
       <button><Group @click="createEntry('frame')" /></button>
       <button><youtube @click="createEntry('youtube')" /></button>
       <button><CommentTextOutline @click="createEntry('text')" /></button>
@@ -344,12 +353,15 @@ export default defineComponent({
       }
     );
 
-    // window.onresize = function () {
-    //   vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
-    //   vm.getCanvas().style.width = `${vm.$el.clientWidth}px`;
-    //   vm.getCanvas().width = vm.$el.clientWidth;
-    //   vm.getCanvas().height = vm.$el.clientHeight;
-    // };
+    ipcRenderer.on(
+      "files-selected",
+      function (event: any, data: { files: string[]; directory: string }) {
+        if (_this.model.isActive) {
+          _this.addEntriesToWorkspace(data.files, [], "center", true);
+          _this.model.folderSelectionPath = data.directory;
+        }
+      }
+    );
 
     _this.getCanvas().width = _this.$el.clientWidth;
     _this.getCanvas().height = _this.$el.clientHeight;
@@ -616,10 +628,10 @@ export default defineComponent({
       // }
     },
     createEntry<T extends WorkspaceEntry>(
-      type: "frame" | "text" | "youtube" | "image",
+      type: "files" | "folders" | "frame" | "text" | "youtube" | "image",
       useMousePosition: boolean = false,
       path: string = ""
-    ): T {
+    ): T | undefined {
       let viewport = this.getViewport();
       let doPositioning = true;
       let listFiles: Array<WorkspaceEntry> = [];
@@ -628,6 +640,13 @@ export default defineComponent({
         listFiles,
       };
       switch (type) {
+        case "files":
+        case "folders":
+          ipcRenderer.send("select-files", {
+            type: type,
+            path: this.model.folderSelectionPath,
+          });
+          break;
         case "image":
           listFiles.push(new WorkspaceEntryImage(path, true));
           break;
@@ -642,32 +661,38 @@ export default defineComponent({
           listFiles.push(frame);
 
           if (this.getSelectedEntries().length > 0) {
-            let x = Infinity,
-              y = Infinity,
-              x2 = -Infinity,
-              y2 = -Infinity;
+            const dimension = this.getBoundsForEntries(
+              this.getSelectedEntries()
+            );
 
-            Array.from(this.getSelectedEntries()).forEach((el) => {
-              let coord = this.getCoordinatesFromElement(el);
+            // let x = Infinity,
+            //   y = Infinity,
+            //   x2 = -Infinity,
+            //   y2 = -Infinity;
 
-              x = x > coord.x ? coord.x : x;
-              y = y > coord.y ? coord.y : y;
+            // Array.from(this.getSelectedEntries()).forEach((el) => {
+            //   let coord = this.getCoordinatesFromElement(el);
 
-              x2 = x2 < coord.x2 ? coord.x2 : x2;
-              y2 = y2 < coord.y2 ? coord.y2 : y2;
-            });
+            //   x = x > coord.x ? coord.x : x;
+            //   y = y > coord.y ? coord.y : y;
+
+            //   x2 = x2 < coord.x2 ? coord.x2 : x2;
+            //   y2 = y2 < coord.y2 ? coord.y2 : y2;
+            // });
 
             let padding = 80;
-            frame.x = x - padding;
-            frame.y = y - padding;
-            frame.width = Math.abs(x2 - x) + padding * 2;
-            frame.height = Math.abs(y2 - y) + padding * 2;
+            frame.x = dimension.x - padding;
+            frame.y = dimension.y - padding;
+            frame.width = dimension.w + padding * 2;
+            frame.height = dimension.h + padding * 2;
             doPositioning = false;
           }
           break;
         default:
           break;
       }
+
+      if (!listFiles) return undefined;
 
       if (doPositioning) {
         listFiles.forEach((f) => {
@@ -684,6 +709,37 @@ export default defineComponent({
       this.$store.commit(MutationTypes.ADD_FILES, payload);
 
       return listFiles[0] as T;
+    },
+    getBoundsForEntries(
+      listEntries: Array<WorkspaceEntry | HTMLElement>
+    ): ElementDimension {
+      let x = Infinity,
+        y = Infinity,
+        x2 = -Infinity,
+        y2 = -Infinity;
+
+      listEntries.forEach((e) => {
+        if (e instanceof WorkspaceEntry) {
+          x = x > e.x ? e.x : x;
+          y = y > e.y ? e.y : y;
+          x2 = x2 < e.x + e.width ? e.x + e.width : x2;
+          y2 = y2 < e.y + e.height ? e.y + e.height : y2;
+        } else if (e instanceof HTMLElement) {
+          const c = this.getCoordinatesFromElement(e);
+          x = x > c.x ? c.x : x;
+          y = y > c.y ? c.y : y;
+          x2 = x2 < c.x2 ? c.x2 : x2;
+          y2 = y2 < c.y2 ? c.y2 : y2;
+        }
+      });
+      return {
+        x: x,
+        y: y,
+        x2: x2,
+        y2: y2,
+        w: Math.abs(x2 - x),
+        h: Math.abs(y2 - y),
+      };
     },
     startSelectionDrag(mousePosition: { x: number; y: number }) {
       /**
@@ -716,12 +772,12 @@ export default defineComponent({
               true,
               smallURl
             );
-            if (blob) {
+            if (blob && imageEntry) {
               var reader = new FileReader();
               reader.readAsDataURL(blob);
               reader.onloadend = function () {
                 var base64data = reader.result;
-                imageEntry.blob = base64data as string;
+                if (imageEntry) imageEntry.blob = base64data as string;
               };
             }
 
@@ -729,8 +785,6 @@ export default defineComponent({
           }
         }
       }
-
-      // bis 13 uhr
 
       var mousePos = this.mousePositionLast;
       if (text != undefined) {
@@ -982,6 +1036,7 @@ export default defineComponent({
       }
     },
     mousemoveThrottle: _.throttle((e: MouseEvent, comp: any) => {
+      
       comp.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
       comp.mousePositionLast = comp.getPositionInWorkspace(e);
 
@@ -1095,52 +1150,70 @@ export default defineComponent({
         .getElementsByClassName("svg-download")[0]
         .classList.toggle("pulsating", false);
       e.preventDefault();
-      let listFiles: Array<WorkspaceEntry> = [];
 
       if (e.dataTransfer) {
         if (e.dataTransfer.types.includes("text/plain")) {
           let t = new WorkspaceEntryTextArea();
           t.text = e.dataTransfer.getData("text");
-          listFiles.push(t);
+          this.addEntriesToWorkspace([], [t], "mouse");
+          return;
         } else if (e.dataTransfer.types.includes("Files")) {
+          let listFiles: Array<string> = [];
+
           for (let index = 0; index < e.dataTransfer.files.length; index++) {
             const f = e.dataTransfer.files[index];
+            listFiles.push(f.path);
+          }
+          this.addEntriesToWorkspace(listFiles, [], "mouse");
+        }
+      }
+    },
+    addEntriesToWorkspace(
+      listFilePaths: string[],
+      listFiles: WorkspaceEntry[] = [],
+      position: "center" | "mouse",
+      positionAsCenter: boolean = false
+    ): void {
+      for (let index = 0; index < listFilePaths.length; index++) {
+        const f = listFilePaths[index];
 
-            const fileStat = fs.lstatSync(f.path);
-            const p = path.normalize(f.path).replace(/\\/g, "/");
+        const fileStat = fs.lstatSync(f);
+        const p = f.normalize().replace(/\\/g, "/");
 
-            if (fileStat.isDirectory()) {
-              listFiles.push(new WorkspaceEntryFolderWindow(p));
-            } else {
-              if (
-                f.path.endsWith("jpg") ||
-                f.path.endsWith("jpeg") ||
-                f.path.endsWith("gif") ||
-                f.path.endsWith("png")
-              ) {
-                listFiles.push(new WorkspaceEntryImage(p));
-              } else if (f.path.endsWith("ins")) {
-                // @ts-ignore: Unreachable code error
-                this.loadInsightFileFromPath(p);
-              } else {
-                listFiles.push(new WorkspaceEntryFile(p));
-              }
-            }
+        if (fileStat.isDirectory()) {
+          listFiles.push(new WorkspaceEntryFolderWindow(p));
+        } else {
+          if (
+            p.endsWith("jpg") ||
+            p.endsWith("jpeg") ||
+            p.endsWith("gif") ||
+            p.endsWith("png")
+          ) {
+            listFiles.push(new WorkspaceEntryImage(p));
+          } else if (p.endsWith("ins")) {
+            // @ts-ignore: Unreachable code error
+            this.loadInsightFileFromPath(p);
+            return;
+          } else {
+            listFiles.push(new WorkspaceEntryFile(p));
           }
         }
       }
 
-      // get drop position
-      var rect = this.$el.getBoundingClientRect();
-      // var rect = { left: 0, top: 0 };
-      // correct coordinates by using the scaling factor of the zooming.
-      var x = this.getPositionInWorkspace(e).x; //x position within the element.
-      var y = this.getPositionInWorkspace(e).y; //y position within the element.
+      var x = 0,
+        y = 0;
 
-      var payload = {
-        model: <Workspace>this.model,
-        listFiles,
-      };
+      switch (position) {
+        case "mouse":
+          var x = this.mousePositionLast.x;
+          var y = this.mousePositionLast.y;
+          break;
+        case "center":
+        default:
+          x = this.getViewport().x + this.getViewport().w / 2;
+          y = this.getViewport().y + this.getViewport().h / 2;
+          break;
+      }
 
       let tileCount = Math.ceil(Math.sqrt(listFiles.length)) - 1;
       var offsetWMax = 0;
@@ -1174,7 +1247,20 @@ export default defineComponent({
         }
       }
 
-      this.$store.commit(MutationTypes.ADD_FILES, payload);
+      if (positionAsCenter) {
+        const dimension = this.getBoundsForEntries(listFiles);
+
+        for (let i = 0; i < listFiles.length; i++) {
+          const e = listFiles[i];
+          e.x -= dimension.w / 2;
+          e.y -= dimension.h / 2;
+        }
+      }
+
+      this.$store.commit(MutationTypes.ADD_FILES, {
+        model: <Workspace>this.model,
+        listFiles,
+      });
     },
     getBounds(entries: HTMLElement[] | HTMLElement): ElementDimension {
       let x = Infinity,
@@ -1943,6 +2029,22 @@ div .resizer-bottom-right {
   height: auto;
   svg {
     cursor: se-resize;
+    font-size: 24px;
+    margin: 0;
+    color: #fff;
+    padding: 0;
+  }
+}
+div .selection-system-drag {
+  @include theme;
+  top: 0;
+  left: -25px;
+  transform-origin: right top;
+  cursor: grab;
+  width: auto;
+  height: auto;
+  svg {
+    cursor: grab;
     font-size: 24px;
     margin: 0;
     color: #fff;

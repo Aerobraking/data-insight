@@ -324,6 +324,7 @@ export class Workspace extends View {
     overview: Overview;
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.666 }
     overviewOpen: boolean;
+    folderSelectionPath: string | undefined = undefined;
 
     @Type(() => WorkspaceEntry, {
         keepDiscriminatorProperty: true,

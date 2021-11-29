@@ -36,7 +36,7 @@ ipcMain.on('msg-main', (event: any, arg: any) => {
     wc.send('msg-main', arg);
   })
 })
-   
+
 ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
 
   filePaths.forEach(function (e: string, index: number, theArray: string[]) {
@@ -47,10 +47,10 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
   if (filePaths.length > 0) {
 
     console.log(filePaths);
- 
+
     event.sender.startDrag({
       files: filePaths,
-      icon: "E:/content-copy.png"
+      icon: "C:/content-copy.png"
     })
 
   }
@@ -68,9 +68,6 @@ ipcMain.on('copy-files', (event: any, args: { filePaths: string[], targetDir: st
 
 })
 
-ipcMain.on('open-insight-file', (event: any, arg: any) => {
-  openFile();
-})
 
 ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
 
@@ -79,9 +76,18 @@ ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
   }
 })
 
+
+ipcMain.on('open-insight-file', (event: any, arg: any) => {
+  openFile();
+})
+
 function openFile(filePath: string | undefined = undefined) {
   if (!filePath) {
+    const homeDir = require('os').homedir();
+    const directory = `${homeDir}/Desktop`;
+
     const files = dialog.showOpenDialogSync({
+      defaultPath: directory,
       filters: [{ name: "Insight File Type", extensions: ["ins"] }],
       properties: ["openFile", "openFile"],
     });
@@ -90,12 +96,41 @@ function openFile(filePath: string | undefined = undefined) {
     filePath = files[0];
   }
 
-
   webContents.getAllWebContents().forEach(wc => {
     wc.send('insight-file-selected', filePath);
   })
 
+}
 
+
+ipcMain.on('select-files', (event: any, arg: { type: "folders" | "files", path: string | undefined }) => {
+  selectFiles(arg);
+})
+
+function selectFiles(arg: { type: "folders" | "files", path: string | undefined }) {
+
+  if (!arg.path) {
+    const homeDir = require('os').homedir(); // See: https://www.npmjs.com/package/os
+    arg.path = `${homeDir}/Desktop`;
+  }
+
+  if (win) {
+    const files = dialog.showOpenDialogSync(win, {
+
+      defaultPath: arg.path,
+      buttonLabel: arg.type == "folders" ?"Add Folders to Workspace":"Add Files to Workspace",
+      title: "Select Content for the Workspace",
+      properties: [arg.type == "folders" ? "openDirectory" : "openFile", "multiSelections"],
+    });
+
+    if (!files) { return; }
+
+    const directoryOfSelection = path.dirname(files[0]);
+
+    webContents.getAllWebContents().forEach(wc => {
+      wc.send('files-selected', { files: files, directory: directoryOfSelection });
+    })
+  }
 }
 
 /**

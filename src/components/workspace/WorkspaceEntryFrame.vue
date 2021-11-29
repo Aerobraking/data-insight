@@ -1,11 +1,7 @@
 <template>
   <div
     ref="el"
-    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.stop.exact="entrySelectedLocal('single')"
-    @click.stop
-    class="ws-entry-frame-wrapper select-element"
+    class="ws-entry-frame-wrapper"
   >
     <wsentrydisplayname :entry="entry" />
   </div>
