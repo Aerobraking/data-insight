@@ -276,8 +276,13 @@ export default defineComponent({
     divObserver: any;
     selectedEntriesCount: number;
     overviewTimeout: any | undefined;
+    ignoreFileDrop: boolean;
   } {
     return {
+      /**
+       * ignores a file drop once when true, then it is set to false.
+       */
+      ignoreFileDrop: false,
       overviewTimeout: undefined,
       highlightSelection: true,
       activePlugin: null,
@@ -1036,7 +1041,6 @@ export default defineComponent({
       }
     },
     mousemoveThrottle: _.throttle((e: MouseEvent, comp: any) => {
-      
       comp.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
       comp.mousePositionLast = comp.getPositionInWorkspace(e);
 
@@ -1145,6 +1149,11 @@ export default defineComponent({
     },
     drop(e: DragEvent) {
       if (this.preventEvent(e)) return;
+
+      if (this.ignoreFileDrop) {
+        this.ignoreFileDrop = false;
+        return;
+      }
 
       this.$el
         .getElementsByClassName("svg-download")[0]
@@ -1650,6 +1659,7 @@ export default defineComponent({
       }
 
       if (listFilesToDrag.length > 0) {
+        this.ignoreFileDrop = true;
         ipcRenderer.send("ondragstart", listFilesToDrag);
       }
     },
