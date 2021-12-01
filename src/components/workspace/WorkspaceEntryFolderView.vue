@@ -4,8 +4,8 @@
     v-on:dblclick.stop=""
     :class="{ opaque: opaque }"
     class="ws-folder-window-wrapper"
-    @keydown.capture="keydown"
     tabindex="-1"
+    @keydown="keydown"
     @drop.capture.stop="drop"
     @mouseup="mouseup"
     @mousemove="mousemove"
@@ -40,16 +40,17 @@
           @click="setDefault"
         />
       </button>
-      <input
-        @keydown.stop
-        @keyup.stop
+      <button><FolderPlusOutline @click="createFolder" /></button>
+      <button><DeleteEmptyOutline @click="deleteSelection" /></button>
+      <!-- <input
+        @keydown.capture.stop
+        @keyup.capture.stop
         @mousedown.stop
         @mousemove.stop
-        v-on:keyup.stop
         v-model="searchstring"
         class=""
         placeholder="Search ..."
-      />
+      /> -->
     </div>
     <div @mousedown.stop @mousemove.stop class="breadcrumbs"></div>
 
@@ -122,17 +123,26 @@ import {
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 import { ipcRenderer } from "electron";
 
-import { HomeOutline, HomeImportOutline, ArrowLeft, ArrowUp } from "mdue";
-  
+import {
+  DeleteEmptyOutline,
+  HomeOutline,
+  HomeImportOutline,
+  ArrowLeft,
+  ArrowUp,
+  FolderPlusOutline,
+} from "mdue";
+
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
+    FolderPlusOutline,
     ArrowUp,
     ArrowLeft,
     HomeOutline,
     HomeImportOutline,
     wsfolderfile,
     wsentrydisplayname,
+    DeleteEmptyOutline,
   },
   data(): {
     showTiles: boolean;
@@ -165,7 +175,14 @@ export default defineComponent({
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
+    const _this = this;
     this.updateUI();
+    ipcRenderer.on(
+      "move-to-trash-finished",
+      function (event: any, directory: string) {
+        if (_this.entry.path == directory) _this.updateUI();
+      }
+    );
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
   inject: ["entrySelected", "setFocusToWorkspace"],
@@ -204,7 +221,6 @@ export default defineComponent({
     watcherEvent() {
       this.updateUI();
     },
-
     scrolling(e: WheelEvent) {
       /**
        * Todo: disable scrolling when zoom factor is too small
@@ -311,6 +327,8 @@ export default defineComponent({
               fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
 
               const fileStat = fs.lstatSync(filePath);
+              console.log(filePath);
+              
               this.list.push(
                 new FolderWindowFile(
                   filePath,
@@ -343,6 +361,43 @@ export default defineComponent({
       }
 
       return list;
+    },
+    createFolder() {
+      for (let i = 0; i < 500; i++) {
+        const element = 500;
+        const p = path.join(
+          this.entry.path,
+          "New Folder" + (i == 0 ? "" : " " + i)
+        );
+        if (!fs.existsSync(p)) {
+          fs.mkdirSync(p);
+          setTimeout(() => {
+            this.updateUI();
+          }, 80);
+          return;
+        }
+      }
+    },
+    deleteSelection() {
+      let listFilesToDrag: string[] = [];
+      let listItems: FolderWindowFile[] = this.getModelEntriesFromView(
+        this.getEntries()
+      );
+
+      for (let index = 0; index < listItems.length; index++) {
+        const e = listItems[index];
+        const view = this.getEntries()[index];
+        if (view.classList.contains("item-selected")) {
+          listFilesToDrag.push(e.path);
+        }
+      }
+
+      if (listFilesToDrag.length > 0) {
+        ipcRenderer.send("move-to-trash", {
+          filePaths: listFilesToDrag,
+          targetDir: this.entry.path,
+        });
+      }
     },
     setFocusToThis() {
       setTimeout(() => {

@@ -32,6 +32,9 @@ addEventListener('message', async function (e: MessageEvent) {
 
     if (e.data.msg == "create") {
 
+        console.log(e.data.path);
+        console.log(e.data);
+        
         const response = await fetch(e.data.path)
 
         const blob = await response.blob()

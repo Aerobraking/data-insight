@@ -1,19 +1,20 @@
 'use strict'
 
-import { ipcMain, app, protocol, BrowserWindow, dialog, webContents, Menu, nativeImage } from 'electron'
+import { ipcMain, app, protocol, BrowserWindow, dialog, webContents, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
-import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
-import { utcFormat } from 'd3'
-import { InsightFile } from './store/state'
 import fs from "fs";
 import path from "path";
+const trash = require('trash');
+
+let win: BrowserWindow | null;
+let windowWorker: BrowserWindow | null;
+const FileEnding: string = ".ins";
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
-
-const FileEnding: string = ".ins";
 
 function getTempFilePath(): string {
   const userdata = app.getPath('userData');
@@ -21,17 +22,12 @@ function getTempFilePath(): string {
 }
 
 ipcMain.on('msg-worker', (event, arg) => {
-  // win?.webContents.send("msg-worker", arg)
-
-
   webContents.getAllWebContents().forEach(wc => {
     wc.send('msg-worker', arg);
   })
 });
 
 ipcMain.on('msg-main', (event: any, arg: any) => {
-
-
   webContents.getAllWebContents().forEach(wc => {
     wc.send('msg-main', arg);
   })
@@ -45,37 +41,50 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
   });
 
   if (filePaths.length > 0) {
-
-    console.log(filePaths);
-
     event.sender.startDrag({
       files: filePaths,
       icon: "C:/content-copy.png"
     })
+  }
 
+})
+
+/**
+ * Usage of the trash lib: https://github.com/sindresorhus/trash
+ */
+ipcMain.on('move-to-trash', (event: any, args: { filePaths: string[], targetDir: string }) => {
+
+  args.filePaths.forEach(function (e: string, index: number, theArray: string[]) {
+    args.filePaths[index] = e.replaceAll("\\\\", "/");
+    args.filePaths[index] = e.replaceAll("\\", "/");
+  });
+
+  if (args.filePaths.length > 0) {
+    trash(args.filePaths).catch((error: any) => {
+      console.log(error);
+    })
+      .finally(() => {
+        if (win) {
+          win.webContents.send('move-to-trash-finished', args.targetDir);
+        }
+      });
   }
 
 })
 
 ipcMain.on('copy-files', (event: any, args: { filePaths: string[], targetDir: string }) => {
-
   for (let i = 0; i < args.filePaths.length; i++) {
     const abspath = args.filePaths[i];
     const filename = path.basename(abspath);
     fs.copyFile(abspath, path.join(args.targetDir, filename), fs.constants.COPYFILE_EXCL, (err: NodeJS.ErrnoException | null) => { });
   }
-
-
 })
 
-
 ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
-
   if (win) {
     win.setTitle(arg.filePath && arg.filePath.length > 0 ? "Data Insight: " + path.parse(path.basename(arg.filePath)).name : "Data Insight: " + "New File");
   }
 })
-
 
 ipcMain.on('open-insight-file', (event: any, arg: any) => {
   openFile();
@@ -102,7 +111,6 @@ function openFile(filePath: string | undefined = undefined) {
 
 }
 
-
 ipcMain.on('select-files', (event: any, arg: { type: "folders" | "files", path: string | undefined }) => {
   selectFiles(arg);
 })
@@ -118,7 +126,7 @@ function selectFiles(arg: { type: "folders" | "files", path: string | undefined 
     const files = dialog.showOpenDialogSync(win, {
 
       defaultPath: arg.path,
-      buttonLabel: arg.type == "folders" ?"Add Folders to Workspace":"Add Files to Workspace",
+      buttonLabel: arg.type == "folders" ? "Add Folders to Workspace" : "Add Files to Workspace",
       title: "Select Content for the Workspace",
       properties: [arg.type == "folders" ? "openDirectory" : "openFile", "multiSelections"],
     });
@@ -143,7 +151,6 @@ function selectFiles(arg: { type: "folders" | "files", path: string | undefined 
  * 
  * 
  */
-
 ipcMain.on('save-insight-file', (event: any, arg:
   { json: string, temp: boolean, path: string, chooseFile: boolean }) => {
   const userdata = app.getPath('userData');
@@ -214,13 +221,8 @@ function fireFileSaveEvent(chooseFile: boolean) {
 function fireNewFileEvent() {
   webContents.getAllWebContents().forEach(wc => {
     wc.send('fire-new-file', "");
-
   })
 }
-
-let win: BrowserWindow | null;
-let windowWorker: BrowserWindow | null;
-
 
 async function createWindow() {
 
@@ -351,7 +353,6 @@ async function createWindow() {
 
   openFile(getTempFilePath());
 }
-
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
