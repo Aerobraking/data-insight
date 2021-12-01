@@ -53,5 +53,8 @@
     "vue-cli-plugin-electron-builder": "~2.0.0",
     "vue-loader-v16": "^16.0.0-beta.5.4",
     "worker-plugin": "^5.0.1"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
   }
 }

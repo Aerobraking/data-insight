@@ -31,8 +31,11 @@ function calculateAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: 
 addEventListener('message', async function (e: MessageEvent) {
 
     if (e.data.msg == "create") {
-        
-        const response = await fetch("file://"+e.data.path)
+  
+        /**
+         * Making sure we have a url to a file.
+         */
+        const response = await fetch(e.data.path.startsWith("file://") ? e.data.path : "file://" + e.data.path)
 
         const blob = await response.blob()
 
