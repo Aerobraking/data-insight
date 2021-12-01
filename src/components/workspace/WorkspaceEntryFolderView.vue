@@ -196,7 +196,6 @@ export default defineComponent({
   },
   methods: {
     drop(e: DragEvent) {
-      console.log("paste in folder");
 
       if (e.dataTransfer && e.dataTransfer.types.includes("Files")) {
         for (let index = 0; index < e.dataTransfer.files.length; index++) {
@@ -282,7 +281,6 @@ export default defineComponent({
         div.appendChild(para);
 
         para.addEventListener("click", function (e: MouseEvent) {
-          console.log("clicked: " + (e.target as Element).getAttribute("path"));
           const p = (e.target as Element).getAttribute("path");
           if (p) {
             _this.entry.path = p;
@@ -327,7 +325,6 @@ export default defineComponent({
               fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
 
               const fileStat = fs.lstatSync(filePath);
-              console.log(filePath);
               
               this.list.push(
                 new FolderWindowFile(
