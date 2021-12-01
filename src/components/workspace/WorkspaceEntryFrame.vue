@@ -1,9 +1,13 @@
 <template>
-  <div
-    ref="el"
-    class="ws-entry-frame-wrapper"
-  >
+  <div ref="el" class="ws-entry-frame-wrapper">
     <wsentrydisplayname :entry="entry" />
+
+    <div
+      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.stop.exact="entrySelectedLocal('single')"
+      class="ws-window-bar-top select-element selectable-highlight ws-zoom-fixed"
+    ></div>
   </div>
 </template>
 
@@ -79,8 +83,7 @@ export default defineComponent({
     viewKey: Number,
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
-  mounted() {
-  },
+  mounted() {},
   inject: ["entrySelected", "entrySelected"],
   methods: {
     entrySelectedLocal(type: "add" | "single" | "flip") {
@@ -114,6 +117,7 @@ export default defineComponent({
   margin: 0;
   overflow: visible;
   z-index: 10;
+  overflow: hidden;
 }
 </style>
 

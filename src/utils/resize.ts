@@ -139,6 +139,8 @@ export interface ResizerComplexOwner {
     getCurrentTransform(): { scale: number; x: number; y: number };
 }
 
+const maxSize: number = 30000;
+
 export class ResizerComplex {
 
     startX: number = 0;
@@ -264,8 +266,26 @@ export class ResizerComplex {
             let scaleW = elementSizeCurrent.w / this.elementSizeStart.w;
             let scaleH = elementSizeCurrent.h / this.elementSizeStart.h;
 
+            let maxSizeReached = false;
+            for (let i = 0; i < this.listChildren.length && !maxSizeReached; i++) {
+                const element: HTMLElement = this.listChildren[i];
+                const dimE = this.listChildrenDimensions[i];
+
+                /**
+                 * ignore not selected elements in frame elements when alt key is pressed.
+                 */
+                if (e.altKey && !element.classList.contains("workspace-is-selected")) {
+                    continue;
+                }
+
+                const eW = dimE.w * scaleW;
+                const eH = dimE.h * scaleH;
+
+                maxSizeReached = eW > maxSize || eH > maxSize;
+            }
+
             // resize the children
-            for (let i = 0; i < this.listChildren.length; i++) {
+            for (let i = 0; i < this.listChildren.length && !maxSizeReached; i++) {
 
                 const element: HTMLElement = this.listChildren[i];
                 const dimE = this.listChildrenDimensions[i];
@@ -277,23 +297,30 @@ export class ResizerComplex {
                     continue;
                 }
 
+
+
+                const eW = dimE.w * scaleW;
+                const eH = dimE.h * scaleH;
+
+                if (eW > maxSize || eH > maxSize) {
+                    break;
+                }
+
                 /**
-                 * Based on the distance to the origin of the resize rectangle, we calculate the new position
-                 */
+              * Based on the distance to the origin of the resize rectangle, we calculate the new position
+              */
                 set3DPosition(element,
                     this.elementSizeStart.x + ((dimE.x - this.elementSizeStart.x) * scaleW),
                     this.elementSizeStart.y + ((dimE.y - this.elementSizeStart.y) * scaleH)
                 );
 
-                const eW = dimE.w * scaleW;
-                const eH = dimE.h * scaleH;
-
-                if (!element.classList.contains("sizefixed") && eW < 14000 && eH < 14000) {
+                if (!element.classList.contains("sizefixed")) {
                     /**
                      * the width/height act as vectors that can be scaled directly
                      */
                     setSize(element, eW, eH);
                 }
+
 
             }
         }
