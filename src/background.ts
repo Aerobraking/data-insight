@@ -9,7 +9,15 @@ const trash = require('trash');
 let win: BrowserWindow | null;
 let windowWorker: BrowserWindow | null;
 const FileEnding: string = ".ins";
+/**
+ * Error launching app
+ * 
+ * Unable to find Electron app at /Users/krecker/Documents/code/ma-data-insight/dist_electron
 
+Cannot find module '/Users/krecker/Documents/code/ma-data-insight/dist_electron'
+Require stack:
+- /Users/krecker/Documents/code/ma-data-insight/node_modules/electron/dist/Electron.app/Contents/Resources/default_app.asar/main.js
+ */
 const isDevelopment = process.env.NODE_ENV !== 'production'
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
