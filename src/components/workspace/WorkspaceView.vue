@@ -13,150 +13,158 @@
     @drop="drop"
     class="wrapper"
   >
-    <canvas class="workspace-canvas"></canvas>
-
-    <panZoom
-      @dblclick="closeOverview"
-      @paste="onPaste"
-      @init="panHappen"
-      @pan="onPanStart"
-      @zoom="onZoom"
-      tabIndex="0"
-      :options="{
-        zoomDoubleClickSpeed: 1,
-        minZoom: 0.03,
-        maxZoom: 2,
-        bounds: false,
-        initialX: model.viewportTransform.x,
-        initialY: model.viewportTransform.y,
-        initialZoom: model.viewportTransform.scale,
-        beforeWheel: beforeWheelHandler,
-        beforeMouseDown: beforeMouseDownHandler,
-      }"
-      selector=".zoomable"
-    >
-      <div @dblclick="closeOverview" class="zoomable close-file-anim">
-        <div class="rectangle-selection"></div>
-        <div class="rectangle-selection-wrapper">
-          <button class="ws-zoom-fixed resizer-bottom-right">
-            <ResizeBottomRight />
-          </button>
-          <button
-            class="ws-zoom-fixed selection-system-drag"
-            @mousedown.capture.stop="startFileDrag()"
-            @click.capture.stop
+    <splitpanes class="default-theme">
+      <pane>
+        <div class="workspace-split-wrapper">
+          <canvas class="workspace-canvas"></canvas>
+          <panZoom
+            @dblclick="closeOverview"
+            @paste="onPaste"
+            @init="panHappen"
+            @pan="onPanStart"
+            @zoom="onZoom"
+            tabIndex="0"
+            :options="{
+              zoomDoubleClickSpeed: 1,
+              minZoom: 0.03,
+              maxZoom: 2,
+              bounds: false,
+              initialX: model.viewportTransform.x,
+              initialY: model.viewportTransform.y,
+              initialZoom: model.viewportTransform.scale,
+              beforeWheel: beforeWheelHandler,
+              beforeMouseDown: beforeMouseDownHandler,
+            }"
+            selector=".zoomable"
           >
-            <FileOutline />
-          </button>
-        </div>
+            <div @dblclick="closeOverview" class="zoomable close-file-anim">
+              <div class="rectangle-selection"></div>
+              <div class="rectangle-selection-wrapper">
+                <button class="ws-zoom-fixed resizer-bottom-right">
+                  <ResizeBottomRight />
+                </button>
+                <button
+                  class="ws-zoom-fixed selection-system-drag"
+                  @mousedown.capture.stop="startFileDrag()"
+                  @click.capture.stop
+                >
+                  <FileOutline />
+                </button>
+              </div>
 
-        <keep-alive>
-          <component
-            class="ws-entry"
-            v-for="e in model.entries"
-            :name="e.id"
-            :key="e.id"
-            :entry="e"
-            :viewId="model.id"
-            :workspace="this"
-            v-bind:is="e.componentname"
-            ref="wsentry"
+              <keep-alive>
+                <component
+                  class="ws-entry"
+                  v-for="e in model.entries"
+                  :name="e.id"
+                  :key="e.id"
+                  :entry="e"
+                  :viewId="model.id"
+                  :workspace="this"
+                  v-bind:is="e.componentname"
+                  ref="wsentry"
+                >
+                </component>
+              </keep-alive>
+
+              <div
+                :class="{ 'blend-out': model.entries.length > 0 }"
+                class="welcome-message"
+              >
+                <h2>
+                  Let's drop some files to get going!
+                  <EmoticonHappyOutline class="svg-smile" />
+                </h2>
+                <p>
+                  <FileOutline class="svg-file" />
+                  <FolderOutline class="svg-folder" />
+                </p>
+                <p><Download class="svg-download" /></p>
+              </div>
+            </div>
+          </panZoom>
+
+          <wsentriesbookmarks
+            :model="model"
+            @bookmarkclicked="moveToEntry"
+          ></wsentriesbookmarks>
+
+          <div class="workspace-search" v-show="getShowUI">
+            <div></div>
+            <input
+              class="workspace-search-input"
+              type="search"
+              placeholder="Suche..."
+              v-model="searchString"
+              @keydown.stop
+              @keyup.stop
+              @focus="searchfocusSet(true)"
+              @blur="searchfocusSet(false)"
+              @input="searchUpdate"
+              @paste="onPaste"
+            />
+            <div></div>
+            <wssearchlist
+              class="search-results"
+              v-if="searchActive"
+              :model="model"
+              :searchString="searchString"
+              @bookmarkclicked="moveToEntry"
+            ></wssearchlist>
+          </div>
+
+          <div
+            @mousedown.stop
+            class="workspace-menu-bar"
+            :class="{ 'workspace-menu-bar-hide': !getShowUI }"
           >
-          </component>
-        </keep-alive>
-
-        <div
-          :class="{ 'blend-out': model.entries.length > 0 }"
-          class="welcome-message"
-        >
-          <h2>
-            Let's drop some files to get going!
-            <EmoticonHappyOutline class="svg-smile" />
-          </h2>
-          <p>
-            <FileOutline class="svg-file" />
-            <FolderOutline class="svg-folder" />
-          </p>
-          <p><Download class="svg-download" /></p>
-        </div>
-      </div>
-    </panZoom>
-
-    <OverviewView
-      class="overview"
-      :class="{ 'ov-open': model.overviewOpen }"
-      @dblclick="openOverview"
-      :model="model"
-    />
-
-    <wsentriesbookmarks
-      :model="model"
-      @bookmarkclicked="moveToEntry"
-    ></wsentriesbookmarks>
-
-    <div class="workspace-search" v-show="getShowUI">
-      <div></div>
-      <input
-        class="workspace-search-input"
-        type="search"
-        placeholder="Suche..."
-        v-model="searchString"
-        @keydown.stop
-        @keyup.stop
-        @focus="searchfocusSet(true)"
-        @blur="searchfocusSet(false)"
-        @input="searchUpdate"
-        @paste="onPaste"
-      />
-      <div></div>
-      <wssearchlist
-        class="search-results"
-        v-if="searchActive"
-        :model="model"
-        :searchString="searchString"
-        @bookmarkclicked="moveToEntry"
-      ></wssearchlist>
-    </div>
-
-    <div
-      @mousedown.stop
-      class="workspace-menu-bar"
-      :class="{ 'workspace-menu-bar-hide': !getShowUI }"
-    >
-      <button><Overscan @click="showAll" /></button>
-      <button><FileOutline @click="createEntry('files')" /></button>
-      <button><FolderOutline @click="createEntry('folders')" /></button>
-      <button><Group @click="createEntry('frame')" /></button>
-      <button><youtube @click="createEntry('youtube')" /></button>
-      <button><CommentTextOutline @click="createEntry('text')" /></button>
-      <!-- <button
+            <button><Overscan @click="showAll" /></button>
+            <button><FileOutline @click="createEntry('files')" /></button>
+            <button><FolderOutline @click="createEntry('folders')" /></button>
+            <button><Group @click="createEntry('frame')" /></button>
+            <button><youtube @click="createEntry('youtube')" /></button>
+            <button><CommentTextOutline @click="createEntry('text')" /></button>
+            <!-- <button
         style="transform: rotate(90deg)"
         :disabled="selectedEntriesCount == 0"
       >
         <arrow-expand />
       </button> -->
 
-      <!-- <button :disabled="selectedEntriesCount < 2"><BorderAll /></button> -->
-      <button
-        @click="setFocusOnNameInput(undefined)"
-        :disabled="selectedEntriesCount != 1"
-      >
-        <FormTextbox />
-      </button>
-      <button
-        @click="toggleNameResizing()"
-        :disabled="selectedEntriesCount != 1"
-      >
-        <FormatSize />
-      </button>
-      <button :disabled="selectedEntriesCount == 0">
-        <delete-empty-outline @click="deleteSelection" />
-      </button>
-    </div>
+            <!-- <button :disabled="selectedEntriesCount < 2"><BorderAll /></button> -->
+            <button
+              @click="setFocusOnNameInput(undefined)"
+              :disabled="selectedEntriesCount != 1"
+            >
+              <FormTextbox />
+            </button>
+            <button
+              @click="toggleNameResizing()"
+              :disabled="selectedEntriesCount != 1"
+            >
+              <FormatSize />
+            </button>
+            <button :disabled="selectedEntriesCount == 0">
+              <delete-empty-outline @click="deleteSelection" />
+            </button>
+          </div>
+        </div>
+      </pane>
+      <pane>
+        <OverviewView
+          class="overview"
+          :class="{ 'ov-open': model.overviewOpen }"
+          @dblclick="openOverview"
+          :model="model"
+        />
+      </pane>
+    </splitpanes>
   </div>
 </template>
 
 <script lang="ts">
+import { Splitpanes, Pane } from "splitpanes";
+import "splitpanes/dist/splitpanes.css";
 import { ipcRenderer } from "electron";
 import {
   EntryCollection,
@@ -226,6 +234,8 @@ export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    Pane,
+    Splitpanes,
     EmoticonHappyOutline,
     Download,
     FolderOutline,
@@ -1933,15 +1943,19 @@ svg {
   }
 }
 
+.workspace-split-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .overview {
-  position: absolute;
-  left: 98%;
+  position: relative;
+  left: 0%;
   top: 0px;
   margin: 0px;
   height: 100%;
-  width: 98%;
-  transition: all 0.25s;
-  transition-timing-function: ease-in-out;
+  width: 100%;
   overflow: hidden;
   z-index: 1000;
 }
