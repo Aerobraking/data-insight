@@ -1,7 +1,7 @@
+
 export function isImageTypeSupported(path: string): boolean {
     return ['.apng', '.png', '.jpg', '.jpeg', '.avif', '.gif', '.svg', '.webp', '.bmp', '.tiff', '.tif'].some(char => path.toLowerCase().endsWith(char));
 }
-
 
 export interface ImageListener {
     callback: (url: string, type: "small" | "medium" | "original") => void;
@@ -16,7 +16,6 @@ export interface ImageDim {
 
 const os = require('os')
 const cpuCount = os.cpus().length
-
 
 export class Cache {
 
@@ -38,7 +37,6 @@ export class Cache {
             });
             w.onmessage = (e: any) => {
                 // Grab the message data from the event
-
 
                 if (e.data.type == "size") {
 

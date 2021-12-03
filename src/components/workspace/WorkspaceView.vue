@@ -2139,6 +2139,7 @@ A top selection bar for entries to make them more easily selectable.
   width: 100%;
   height: 25px;
   transition: background-color 0.4s ease-in-out !important;
+  transform-origin: top left;
   //  background-color: rgb(255, 255, 255);
 }
 

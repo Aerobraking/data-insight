@@ -160,19 +160,20 @@ function selectFiles(arg: { type: "folders" | "files", path: string | undefined 
  * 
  */
 ipcMain.on('save-insight-file', (event: any, arg:
-  { json: string, temp: boolean, path: string, chooseFile: boolean }) => {
-  const userdata = app.getPath('userData');
-  console.log(userdata);
+  { json: string, temp: boolean, path: string, chooseFile: boolean, executeSave: boolean }) => {
+ 
   if (arg.temp) {
     saveFile(arg.json, getTempFilePath(), true);
   } else {
-    if (!arg.chooseFile && arg.path && arg.path.length != 0 && fs.existsSync(arg.path)) {
+    if (!arg.chooseFile && arg.path && arg.path.length != 0 && (arg.executeSave || fs.existsSync(arg.path))) {
       saveFile(arg.json, arg.path);
     } else {
       dialog.showSaveDialog({}).then((result) => {
         if (result.canceled) { return; }
         if (result.filePath) {
-          saveFile(arg.json, result.filePath);
+          webContents.getAllWebContents().forEach(wc => {
+            wc.send('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));
+          })
         }
       }).catch((err) => {
         console.log(err);
@@ -189,15 +190,18 @@ ipcMain.on('closed', _ => {
   }
 });
 
-function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
-
-  console.log("save file: " + filepath);
-
+function checkExtention(filepath: string) {
+  filepath = path.normalize(filepath).replace(/\\/g, "/");
   let ext = path.extname(filepath);
-
   if (ext !== ".ins") {
     filepath += ".ins";
   }
+  return filepath;
+}
+
+function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
+
+  filepath = checkExtention(filepath);
 
   fs.writeFile(filepath, jsonData, (err: any) => {
     console.log(err);
@@ -218,7 +222,6 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
     }
   }
 
-  console.log("file saved");
 }
 
 function fireFileSaveEvent(chooseFile: boolean) {
@@ -226,9 +229,26 @@ function fireFileSaveEvent(chooseFile: boolean) {
     wc.send('fire-file-save', chooseFile);
   })
 }
+
 function fireNewFileEvent() {
   webContents.getAllWebContents().forEach(wc => {
     wc.send('fire-new-file', "");
+  })
+}
+
+var args = process.argv;
+
+app.on('open-file', (event, path) => {
+  args = [path];
+});
+
+ipcMain.on('get-args', (event: any, arg: any) => {
+  sendArgs();
+})
+
+function sendArgs() {
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send('send-args', args);
   })
 }
 

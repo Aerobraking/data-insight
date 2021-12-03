@@ -22,34 +22,59 @@ export default defineComponent({
   computed: {},
   mounted() {
     window.addEventListener("keydown", this.keydown, false);
-    const c = this;
+    const _this = this;
 
     ipcRenderer.on(
       "fire-file-save",
       function (event: any, chooseFile: boolean) {
-        c.saveFile(false, chooseFile);
+        _this.saveFile(false, chooseFile, false);
       }
     );
 
     ipcRenderer.on("fire-new-file", function (event: any, file: string) {
-      c.loadInsightFile(new InsightFile());
+      _this.loadInsightFile(new InsightFile());
     });
 
     ipcRenderer.on("fire-file-saved", function (event: any, filepath: string) {
-      c.$store.state.loadedFile.settings.filePath = filepath;
+      _this.$store.state.loadedFile.settings.filePath = filepath;
     });
+
+    ipcRenderer.on(
+      "fire-file-save-path-selected",
+      function (event: any, filepath: string) {
+        _this.$store.state.loadedFile.settings.filePath = filepath;
+        _this.saveFile(false, false, true);
+      }
+    );
 
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
-        c.loadInsightFileFromPath(file);
+        _this.loadInsightFileFromPath(file);
       }
     );
 
     ipcRenderer.on("app-close", (_) => {
-      c.saveFile(true);
+      _this.saveFile(true);
       ipcRenderer.send("closed");
     });
+
+    ipcRenderer.on("send-args", (event: any, args: string[]) => {
+      for (let i = 0; i < args.length; i++) {
+        const a = args[i];
+
+        try {
+          if (fs.existsSync(a) && a.endsWith(".ins")) {
+            _this.loadInsightFileFromPath(a);
+            return;
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    });
+
+    ipcRenderer.send("get-args", {});
   },
   provide() {
     return {
@@ -81,13 +106,17 @@ export default defineComponent({
         tabs.forEach((t) => {
           t.classList.remove("close-file");
         });
-      }, 500);
 
-      ipcRenderer.send("insight-file-loaded", {
-        filePath: file.settings.filePath,
-      });
+        ipcRenderer.send("insight-file-loaded", {
+          filePath: file.settings.filePath,
+        });
+      }, 500);
     },
-    saveFile(temp: boolean = false, chooseFile: boolean = false) {
+    saveFile(
+      temp: boolean = false,
+      chooseFile: boolean = false,
+      executeSave: boolean = false
+    ) {
       WSUtils.Events.prepareFileSaving();
 
       let jsonString = serialize(this.$store.state.loadedFile);
@@ -97,10 +126,10 @@ export default defineComponent({
         temp: temp,
         path: this.$store.state.loadedFile.settings.filePath,
         chooseFile: chooseFile,
+        executeSave: executeSave,
       });
     },
-    keydown(e: KeyboardEvent) { 
-      
+    keydown(e: KeyboardEvent) {
       if (e.ctrlKey) {
         switch (e.key) {
           case "t":
@@ -216,7 +245,6 @@ div .resizer {
 div .prevent-input {
   pointer-events: none;
 }
-
 
 /**
 
@@ -337,16 +365,16 @@ div .prevent-input {
  * Giving the connect element a border radius causes issues with using transform: scale
  */
 .noUi-target {
-  background: #FAFAFA;
+  background: #fafafa;
   border-radius: 4px;
-  border: 1px solid #D3D3D3;
-  box-shadow: inset 0 1px 1px #F0F0F0, 0 3px 6px -5px #BBB;
+  border: 1px solid #d3d3d3;
+  box-shadow: inset 0 1px 1px #f0f0f0, 0 3px 6px -5px #bbb;
 }
 .noUi-connects {
   border-radius: 3px;
 }
 .noUi-connect {
-  background: #3FB8AF;
+  background: #3fb8af;
 }
 /* Handles and cursors;
  */
@@ -357,14 +385,14 @@ div .prevent-input {
   cursor: ns-resize;
 }
 .noUi-handle {
-  border: 1px solid #D9D9D9;
+  border: 1px solid #d9d9d9;
   border-radius: 3px;
-  background: #FFF;
+  background: #fff;
   cursor: default;
-  box-shadow: inset 0 0 1px #FFF, inset 0 1px 7px #EBEBEB, 0 3px 6px -3px #BBB;
+  box-shadow: inset 0 0 1px #fff, inset 0 1px 7px #ebebeb, 0 3px 6px -3px #bbb;
 }
 .noUi-active {
-  box-shadow: inset 0 0 1px #FFF, inset 0 1px 7px #DDD, 0 3px 6px -3px #BBB;
+  box-shadow: inset 0 0 1px #fff, inset 0 1px 7px #ddd, 0 3px 6px -3px #bbb;
 }
 /* Handle stripes;
  */
@@ -375,7 +403,7 @@ div .prevent-input {
   position: absolute;
   height: 14px;
   width: 1px;
-  background: #E8E7E6;
+  background: #e8e7e6;
   left: 14px;
   top: 6px;
 }
@@ -395,7 +423,7 @@ div .prevent-input {
 /* Disabled state;
  */
 [disabled] .noUi-connect {
-  background: #B8B8B8;
+  background: #b8b8b8;
 }
 [disabled].noUi-target,
 [disabled].noUi-handle,
@@ -431,13 +459,13 @@ div .prevent-input {
  */
 .noUi-marker {
   position: absolute;
-  background: #CCC;
+  background: #ccc;
 }
 .noUi-marker-sub {
-  background: #AAA;
+  background: #aaa;
 }
 .noUi-marker-large {
-  background: #AAA;
+  background: #aaa;
 }
 /* Horizontal layout;
  *
@@ -500,7 +528,7 @@ div .prevent-input {
 .noUi-tooltip {
   display: block;
   position: absolute;
-  border: 1px solid #D9D9D9;
+  border: 1px solid #d9d9d9;
   border-radius: 3px;
   background: #fff;
   color: #000;
@@ -533,5 +561,4 @@ div .prevent-input {
   top: auto;
   right: 28px;
 }
-
 </style>
