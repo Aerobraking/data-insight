@@ -31,12 +31,7 @@
     ></div>
 
     <div @mousedown.stop @dblclick.capture.stop class="workspace-menu-bar">
-      <!-- <button>
-        <Qrcode @dblclick.capture.stop @click="setMode1" />
-      </button>
-      <button>
-        <Qrcode @dblclick.capture.stop @click="setMode2" />
-      </button>
+      <!--
       <button>
         <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
       </button> -->
@@ -46,11 +41,13 @@
           @click="overviewEngine.engineActive = !overviewEngine.engineActive"
         />
       </button>
+      <button><FolderOutline @click="selectFolders()" /></button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import { ipcRenderer } from "electron";
 import { Workspace } from "@/store/model/Workspace";
 import {
   FolderNode,
@@ -67,31 +64,11 @@ import { Instance } from "../workspace/overview/OverviewTransferHandler";
 import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 const fs = require("fs");
 import path from "path";
-import {
-  FormTextbox,
-  Resize,
-  CommentTextOutline,
-  Overscan,
-  Youtube,
-  Pause,
-  Qrcode,
-  Table,
-  Group,
-  ArrowExpand,
-  DeleteEmptyOutline,
-  BorderAll,
-  ResizeBottomRight,
-  FormatSize,
-  Download,
-  FolderOutline,
-  FileOutline,
-  EmoticonHappyOutline,
-} from "mdue";
+import { Pause, Qrcode, FolderOutline } from "mdue";
 import {
   AbstractNode,
   AbstractOverviewEntry,
 } from "../workspace/overview/OverviewData";
-import scandir from "scandirectory";
 import * as d3 from "d3";
 import _ from "underscore";
 
@@ -100,6 +77,7 @@ export default defineComponent({
   components: {
     Qrcode,
     Pause,
+    FolderOutline,
   },
   props: {
     model: {
@@ -131,13 +109,7 @@ export default defineComponent({
     };
   },
   mounted() {
-    /**
-     * Anzahl
-     * Größe
-     * Alter
-     *
-     *
-     * */
+    const _this = this;
 
     var sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
@@ -176,20 +148,15 @@ export default defineComponent({
         },
       },
     });
-      
-    const _this = this;
 
     const filterfunc = _.throttle((stats: string, min: number, max: number) => {
-      console.log("set filter");
-
       if (_this.overviewEngine) {
         _this.overviewEngine.setColorScale<FolderNode>(
-          // "size",
           "size",
           Number(min),
           Number(max),
           (node: FolderNode, stat: number, min: number, max: number) => {
-            stat = stat < min ? 0 : stat > max ? max  : stat;
+            stat = stat < min ? 0 : stat > max ? max : stat;
             return stat < min || stat > max
               ? "h"
               : d3.interpolateWarm(1 - stat / max);
@@ -207,7 +174,6 @@ export default defineComponent({
     }
 
     const style = "linear-gradient( 0deg, " + values.join(", ") + ")";
-    console.log(style);
 
     let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
     divs[0].style.backgroundImage = style;
@@ -260,7 +226,6 @@ export default defineComponent({
     );
 
     this.wsListener = {
-      dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {},
       /**
        * Update the model coordinates with the current ones from the html view.
        */
@@ -268,12 +233,19 @@ export default defineComponent({
         Instance.transferData(_this.model.overview);
         console.log(_this.model.overview);
       },
-      zoom(
-        transform: { x: number; y: number; scale: number },
-        workspace: WorkspaceViewIfc
-      ): void {},
-      pluginStarted(modal: boolean): void {},
     };
+
+    ipcRenderer.on(
+      "files-selected",
+      function (
+        event: any,
+        data: { target: string; files: string[]; directory: string }
+      ) {
+        if (_this.model.isActive && data.target == "o" + _this.model.id) {
+          _this.addFolders(data.files, { x: 0, y: 0 });
+        }
+      }
+    );
 
     WSUtils.Events.registerCallback(this.wsListener);
   },
@@ -285,6 +257,13 @@ export default defineComponent({
   },
   computed: {},
   methods: {
+    selectFolders() {
+      ipcRenderer.send("select-files", {
+        target: "o" + this.model.id,
+        type: "folders",
+        path: this.model.folderSelectionPath,
+      });
+    },
     searchUpdate() {
       let lowercase = this.searchString.toLowerCase().trim();
       let nodesMatching: AbstractNode[] = [];
@@ -350,9 +329,7 @@ export default defineComponent({
         );
       }
     },
-    drop(e: DragEvent) {
-      e.preventDefault();
-
+    addFolders(listFolders: string[], pos: { x: number; y: number }) {
       let listEntries: FolderOverviewEntry[] = Instance.getData(
         this.idOverview
       );
@@ -360,20 +337,17 @@ export default defineComponent({
       /**
        * create the entries based on the dropped files.
        */
-      if (e.dataTransfer && this.overviewEngine) {
-        for (let index = 0; index < e.dataTransfer?.files.length; index++) {
-          const f = e.dataTransfer?.files[index];
 
-          const p = path.normalize(f.path).replace(/\\/g, "/");
-
-          const fileStat = fs.lstatSync(p);
-          if (fileStat.isDirectory()) {
-            let root: FolderOverviewEntry = new FolderOverviewEntry(p);
-            root.setCoordinates(this.overviewEngine.screenToGraphCoords(e));
-            root.engine = this.overviewEngine;
-            root.depth = 3;
-            listEntries.push(root);
-          }
+      for (let index = 0; index < listFolders.length; index++) {
+        const f = listFolders[index];
+        const p = path.normalize(f).replace(/\\/g, "/");
+        const fileStat = fs.lstatSync(p);
+        if (fileStat.isDirectory()) {
+          let root: FolderOverviewEntry = new FolderOverviewEntry(p);
+          root.setCoordinates(pos);
+          root.engine = this.overviewEngine;
+          root.depth = 3;
+          listEntries.push(root);
         }
       }
 
@@ -390,6 +364,26 @@ export default defineComponent({
       for (let i = 0; i < listEntries.length; i++) {
         const e = listEntries[i];
         e.startWatcher();
+      }
+    },
+    drop(e: DragEvent) {
+      e.preventDefault();
+
+      let listFolders: string[] = [];
+
+      /**
+       * create the entries based on the dropped files.
+       */
+      if (e.dataTransfer && this.overviewEngine) {
+        for (let index = 0; index < e.dataTransfer?.files.length; index++) {
+          const f = e.dataTransfer?.files[index];
+          listFolders.push(f.path);
+        }
+
+        this.addFolders(
+          listFolders,
+          this.overviewEngine.screenToGraphCoords(e)
+        );
       }
     },
   },

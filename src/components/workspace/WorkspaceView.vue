@@ -123,9 +123,7 @@
       class="workspace-menu-bar"
       :class="{ 'workspace-menu-bar-hide': !getShowUI }"
     >
-      <button>
-        <Overscan @click="showAll" />
-      </button>
+      <button><Overscan @click="showAll" /></button>
       <button><FileOutline @click="createEntry('files')" /></button>
       <button><FolderOutline @click="createEntry('folders')" /></button>
       <button><Group @click="createEntry('frame')" /></button>
@@ -157,7 +155,6 @@
     </div>
   </div>
 </template>
-
 
 <script lang="ts">
 import { ipcRenderer } from "electron";
@@ -360,8 +357,11 @@ export default defineComponent({
 
     ipcRenderer.on(
       "files-selected",
-      function (event: any, data: { files: string[]; directory: string }) {
-        if (_this.model.isActive) {
+      function (
+        event: any,
+        data: { target: string; files: string[]; directory: string }
+      ) {
+        if (_this.model.isActive && data.target == "w" + _this.model.id) {
           _this.addEntriesToWorkspace(data.files, [], "center", true);
           _this.model.folderSelectionPath = data.directory;
         }

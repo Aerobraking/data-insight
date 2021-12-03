@@ -119,11 +119,11 @@ function openFile(filePath: string | undefined = undefined) {
 
 }
 
-ipcMain.on('select-files', (event: any, arg: { type: "folders" | "files", path: string | undefined }) => {
+ipcMain.on('select-files', (event: any, arg: { target: "", type: "folders" | "files", path: string | undefined }) => {
   selectFiles(arg);
 })
 
-function selectFiles(arg: { type: "folders" | "files", path: string | undefined }) {
+function selectFiles(arg: { target: "", type: "folders" | "files", path: string | undefined }) {
 
   if (!arg.path) {
     const homeDir = require('os').homedir(); // See: https://www.npmjs.com/package/os
@@ -132,7 +132,6 @@ function selectFiles(arg: { type: "folders" | "files", path: string | undefined 
 
   if (win) {
     const files = dialog.showOpenDialogSync(win, {
-
       defaultPath: arg.path,
       buttonLabel: arg.type == "folders" ? "Add Folders to Workspace" : "Add Files to Workspace",
       title: "Select Content for the Workspace",
@@ -144,7 +143,7 @@ function selectFiles(arg: { type: "folders" | "files", path: string | undefined 
     const directoryOfSelection = path.dirname(files[0]);
 
     webContents.getAllWebContents().forEach(wc => {
-      wc.send('files-selected', { files: files, directory: directoryOfSelection });
+      wc.send('files-selected', { files: files, directory: directoryOfSelection, target: arg.target });
     })
   }
 }
@@ -161,7 +160,7 @@ function selectFiles(arg: { type: "folders" | "files", path: string | undefined 
  */
 ipcMain.on('save-insight-file', (event: any, arg:
   { json: string, temp: boolean, path: string, chooseFile: boolean, executeSave: boolean }) => {
- 
+
   if (arg.temp) {
     saveFile(arg.json, getTempFilePath(), true);
   } else {
