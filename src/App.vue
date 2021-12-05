@@ -302,7 +302,7 @@ div .prevent-input {
   width: 100%;
 }
 .noUi-origin {
-  height: 10%;
+  height: 100%;
   width: 10%;
 }
 /* Offset direction

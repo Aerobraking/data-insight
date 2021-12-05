@@ -1,11 +1,16 @@
 <template>
-  <div @drop.stop="drop" class="overview-viewport">
+  <div
+    @mouseenter="setFocusToOverview()"
+    tabIndex="1"
+    @drop.stop="drop"
+    class="overview-viewport"
+  >
     <div class="filter-settings">
       <div class="slider"></div>
       <div class="options"></div>
     </div>
 
-    <div class="overview-search">
+    <!-- <div class="overview-search">
       <div></div>
       <input
         @keydown.stop
@@ -15,19 +20,12 @@
         v-model="searchString"
         placeholder="Suche..."
       />
-
-      <!-- <wssearchlist
-        class="search-results"
-        v-if="searchActive"
-        :model="model"
-        :searchString="searchString"
-        @bookmarkclicked="moveToEntry"
-      ></wssearchlist> -->
-    </div>
+    </div> -->
 
     <div
       :class="{ 'prevent-input': !model.overviewOpen }"
       class="overview-wrapper"
+      @mousedown="mousedown"
     ></div>
 
     <div @mousedown.stop @dblclick.capture.stop class="workspace-menu-bar">
@@ -43,10 +41,22 @@
       </button>
       <button><FolderOutline @click="selectFolders()" /></button>
     </div>
+
+    <button class="pane-button-ov">
+      <FormatHorizontalAlignCenter
+        v-show="model.paneSize == 0"
+        @click="paneButtonClicked()"
+      />
+      <ArrowCollapseRight
+        v-show="model.paneSize > 0"
+        @click="paneButtonClicked()"
+      />
+    </button>
   </div>
 </template>
 
 <script lang="ts">
+const fs = require("fs");
 import { ipcRenderer } from "electron";
 import { Workspace } from "@/store/model/Workspace";
 import {
@@ -62,9 +72,15 @@ import {
 } from "../workspace/overview/OverviewEngine";
 import { Instance } from "../workspace/overview/OverviewTransferHandler";
 import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
-const fs = require("fs");
+
 import path from "path";
-import { Pause, Qrcode, FolderOutline } from "mdue";
+import {
+  Pause,
+  Qrcode,
+  FolderOutline,
+  FormatHorizontalAlignCenter,
+  ArrowCollapseRight,
+} from "mdue";
 import {
   AbstractNode,
   AbstractOverviewEntry,
@@ -78,10 +94,16 @@ export default defineComponent({
     Qrcode,
     Pause,
     FolderOutline,
+    FormatHorizontalAlignCenter,
+    ArrowCollapseRight,
   },
   props: {
     model: {
       type: Workspace,
+      required: true,
+    },
+    searchstring: {
+      type: String,
       required: true,
     },
   },
@@ -92,20 +114,26 @@ export default defineComponent({
         this.overviewEngine.enablePainting = newValue;
       }
     },
+    "model.paneSize": function (newValue: number, oldValue: number) {
+      this.model.overviewOpen = newValue < 100;
+    },
+    searchstring: function (newValue: String, oldValue: String) {
+      this.searchUpdate();
+    },
   },
   data(): {
     overviewEngine: OverviewEngine | undefined;
     state: EngineState;
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
-    searchString: string;
+    selection: AbstractOverviewEntry[];
   } {
     return {
+      selection: [],
       idOverview: 0,
       wsListener: undefined,
       overviewEngine: undefined,
       state: new EngineState(),
-      searchString: "",
     };
   },
   mounted() {
@@ -114,11 +142,11 @@ export default defineComponent({
     var sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
     var slider = noUiSlider.create(sliderDiv, {
-      start: [0, 1024 * 1024 * 1024 * 42],
+      start: [0, 1024 * 1024 * 1024 * 512],
       connect: true,
       behaviour: "drag",
       orientation: "vertical",
-      margin: 1024 * 1024 * 4,
+      margin: 1024 * 1024 * 8,
       range: {
         min: 0, // kb
         "20%": [1024 * 1024 * 32], // mb
@@ -257,6 +285,21 @@ export default defineComponent({
   },
   computed: {},
   methods: {
+    mousedown(e: MouseEvent): void {
+      const node = this.overviewEngine?.getNodeAtMousePosition();
+
+      if (node) {
+        
+      }
+    },
+    setFocusToOverview(): void {
+      setTimeout(() => {
+        this.$el.focus();
+      }, 2);
+    },
+    paneButtonClicked(e: MouseEvent) {
+      this.model.paneSize = this.model.paneSize == 0 ? 50 : 100;
+    },
     selectFolders() {
       ipcRenderer.send("select-files", {
         target: "o" + this.model.id,
@@ -265,7 +308,7 @@ export default defineComponent({
       });
     },
     searchUpdate() {
-      let lowercase = this.searchString.toLowerCase().trim();
+      let lowercase = this.searchstring.toLowerCase().trim();
       let nodesMatching: AbstractNode[] = [];
 
       if (lowercase.length > 0) {
@@ -394,7 +437,7 @@ export default defineComponent({
 <style   lang="scss">
 .filter-settings {
   position: absolute;
-  top: 60px;
+  top: 150px;
   left: 40px;
   width: 150px;
   height: 70%;

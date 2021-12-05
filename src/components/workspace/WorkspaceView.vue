@@ -1,21 +1,51 @@
 <template>
-  <div
-    @mousedown="mousedown"
-    @mousemove="mousemove"
-    @mouseup="mouseup"
-    @keydown="keydown"
-    @keyup="keyup"
-    @paste="onPaste"
-    @wheel="wheel"
-    @click.stop
-    @dragover="dragover"
-    @dragleave="dragleave"
-    @drop="drop"
-    class="wrapper"
-  >
-    <splitpanes class="default-theme">
-      <pane>
-        <div class="workspace-split-wrapper">
+  <div @keydown="keydownGlobal" class="wrapper">
+    <div class="workspace-search" v-show="getShowUI">
+      <div></div>
+      <input
+        class="workspace-search-input"
+        type="search"
+        placeholder="Suche..."
+        v-model="searchString"
+        @keydown.stop
+        @keyup.stop
+        @focus="searchfocusSet(true)"
+        @blur="searchfocusSet(false)"
+        @input="searchUpdate"
+        @paste="onPaste"
+      />
+      <div></div>
+      <wssearchlist
+        class="search-results"
+        v-if="searchActive"
+        :model="model"
+        :searchString="searchString"
+        @bookmarkclicked="moveToEntry"
+      ></wssearchlist>
+    </div>
+
+    <splitpanes
+      @ready="modifyPanes($event)"
+      :dbl-click-splitter="false"
+      @resize="model.paneSize = $event[0].size"
+      class="default-theme splitpane"
+    >
+      <pane :size="model.paneSize">
+        <div
+          @mousedown="mousedown"
+          @mousemove="mousemove"
+          @mouseup="mouseup"
+          @mouseenter="setFocusToWorkspace()"
+          @keydown="keydown"
+          @keyup="keyup"
+          @paste="onPaste"
+          @wheel="wheel"
+          @click.stop
+          @dragover="dragover"
+          @dragleave="dragleave"
+          @drop="drop"
+          class="workspace-split-wrapper"
+        >
           <canvas class="workspace-canvas"></canvas>
           <panZoom
             @dblclick="closeOverview"
@@ -27,7 +57,7 @@
             :options="{
               zoomDoubleClickSpeed: 1,
               minZoom: 0.03,
-              maxZoom: 2,
+              maxZoom: 15,
               bounds: false,
               initialX: model.viewportTransform.x,
               initialY: model.viewportTransform.y,
@@ -83,35 +113,21 @@
               </div>
             </div>
           </panZoom>
-
           <wsentriesbookmarks
             :model="model"
             @bookmarkclicked="moveToEntry"
           ></wsentriesbookmarks>
 
-          <div class="workspace-search" v-show="getShowUI">
-            <div></div>
-            <input
-              class="workspace-search-input"
-              type="search"
-              placeholder="Suche..."
-              v-model="searchString"
-              @keydown.stop
-              @keyup.stop
-              @focus="searchfocusSet(true)"
-              @blur="searchfocusSet(false)"
-              @input="searchUpdate"
-              @paste="onPaste"
+          <button class="pane-button-ws">
+            <FormatHorizontalAlignCenter
+              v-show="model.paneSize == 100"
+              @click="paneButtonClicked()"
             />
-            <div></div>
-            <wssearchlist
-              class="search-results"
-              v-if="searchActive"
-              :model="model"
-              :searchString="searchString"
-              @bookmarkclicked="moveToEntry"
-            ></wssearchlist>
-          </div>
+            <ArrowCollapseLeft
+              v-show="model.paneSize < 100"
+              @click="paneButtonClicked()"
+            />
+          </button>
 
           <div
             @mousedown.stop
@@ -150,12 +166,14 @@
           </div>
         </div>
       </pane>
-      <pane>
+
+      <pane :size="100 - model.paneSize">
         <OverviewView
           class="overview"
           :class="{ 'ov-open': model.overviewOpen }"
           @dblclick="openOverview"
           :model="model"
+          :searchstring="searchString"
         />
       </pane>
     </splitpanes>
@@ -228,6 +246,8 @@ import {
   FolderOutline,
   FileOutline,
   EmoticonHappyOutline,
+  FormatHorizontalAlignCenter,
+  ArrowCollapseLeft,
 } from "mdue";
 
 export default defineComponent({
@@ -236,6 +256,8 @@ export default defineComponent({
   components: {
     Pane,
     Splitpanes,
+    FormatHorizontalAlignCenter,
+    ArrowCollapseLeft,
     EmoticonHappyOutline,
     Download,
     FolderOutline,
@@ -334,17 +356,32 @@ export default defineComponent({
         e.target; // div element
         let w = Math.max(10, e.contentRect.width);
         let h = Math.max(10, e.contentRect.height);
-
-        //  vm.getCanvas().style.width = `${w}px`;
-        // vm.getCanvas().style.width = `${h}px`;
         _this.getCanvas().width = w;
         _this.getCanvas().height = h;
-
         _this.drawCanvas();
+      }
+
+      const menu: HTMLElement =
+        this.$el.getElementsByClassName("workspace-menu-bar")[0];
+
+      if (menu) {
+        const listSvgs = menu.getElementsByTagName("svg");
+
+        const scale = Math.max(Math.min(menu.clientWidth / 1000, 1), 0.5);
+        const scaleMargin = Math.max(Math.min(menu.clientWidth / 1500, 1), 0.1);
+
+        for (let i = 0; i < listSvgs.length; i++) {
+          const s = listSvgs[i];
+          s.style.fontSize = scale * 34 + "px";
+          s.style.marginLeft = scaleMargin * 15 + "px";
+          s.style.marginRight = scaleMargin * 15 + "px";
+        }
       }
     });
 
-    this.divObserver.observe(this.$el);
+    this.divObserver.observe(
+      this.$el.getElementsByClassName("workspace-split-wrapper")[0]
+    );
 
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),
@@ -378,8 +415,8 @@ export default defineComponent({
       }
     );
 
-    _this.getCanvas().width = _this.$el.clientWidth;
-    _this.getCanvas().height = _this.$el.clientHeight;
+    _this.getCanvas().width = this.getWorkspaceWrapper().clientWidth;
+    _this.getCanvas().height = this.getWorkspaceWrapper().clientHeight;
 
     this.drawCanvas();
 
@@ -435,13 +472,34 @@ export default defineComponent({
   },
   inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
   methods: {
+    modifyPanes(e: any): void {
+      for (
+        let i = 0;
+        i < this.$el.getElementsByClassName("splitpanes__splitter").length;
+        i++
+      ) {
+        const s: HTMLElement = this.$el.getElementsByClassName(
+          "splitpanes__splitter"
+        )[i];
+
+        ["mousedown", "mousemove"].forEach((evt: any) => {
+          s.addEventListener(
+            evt,
+            (e: MouseEvent) => {
+              e.stopPropagation();
+            },
+            false
+          );
+        });
+      }
+    },
     /**
      * When a workspace gets active, the focus is not on its div, which prevents the keylisteners from working. Prevent this by calling this method when the workspace gets active.
      */
     setFocusToWorkspace(): void {
       setTimeout(() => {
         this.$el.getElementsByClassName("vue-pan-zoom-scene")[0].focus();
-      }, 10);
+      }, 2);
     },
     searchfocusSet(f: boolean): void {
       if (f) {
@@ -459,43 +517,18 @@ export default defineComponent({
     ): void {
       let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
 
-      if (toggle) {
-        this.model.overviewOpen = !this.model.overviewOpen;
-        e.stopPropagation();
-      } else if (!this.model.overviewOpen) {
-        this.model.overviewOpen = true;
-        e.stopPropagation();
-      }
-
-      if (this.overviewTimeout) {
-        clearTimeout(this.overviewTimeout);
-      }
-      if (this.model.overviewOpen) {
-        div.classList.toggle("overview-hover", false);
-      } else {
-        this.overviewTimeout = setTimeout(() => {
-          div.classList.toggle("overview-hover", true);
-          this.overviewTimeout = undefined;
-        }, 500);
-      }
       e.preventDefault();
     },
     closeOverview(e: MouseEvent): void {
-      console.log("close");
-
       let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
-
-      if (this.model.overviewOpen) {
-        this.model.overviewOpen = false;
-        e.stopPropagation();
-        if (this.overviewTimeout) {
-          clearTimeout(this.overviewTimeout);
-        }
-        this.overviewTimeout = setTimeout(() => {
-          div.classList.toggle("overview-hover", true);
-          this.overviewTimeout = undefined;
-        }, 500);
-      }
+    },
+    paneButtonClicked(size: number | undefined = undefined) {
+      this.model.paneSize =
+        size != undefined
+          ? size
+          : this.model.paneSize == 0 || this.model.paneSize == 100
+          ? 50
+          : 0;
     },
     searchUpdate(): void {
       let models = this.model.entries;
@@ -848,6 +881,27 @@ export default defineComponent({
       }
       return false;
     },
+    keydownGlobal(e: KeyboardEvent) {
+      /**
+       * No ... key down
+       */
+      if (!e.altKey && !e.ctrlKey) {
+        switch (e.key) {
+          case "q":
+            this.paneButtonClicked(100);
+            e.stopPropagation();
+            break;
+          case "w":
+            this.paneButtonClicked(50);
+            e.stopPropagation();
+            break;
+          case "e":
+            this.paneButtonClicked(0);
+            e.stopPropagation();
+            break;
+        }
+      }
+    },
     keydown(e: KeyboardEvent) {
       if (
         e.key == "Escape" &&
@@ -859,6 +913,9 @@ export default defineComponent({
 
       if (this.preventEvent(e)) return;
 
+      /**
+       * Control key down
+       */
       if (e.ctrlKey && !e.repeat) {
         switch (e.key) {
           case "a":
@@ -913,6 +970,9 @@ export default defineComponent({
         return;
       }
 
+      /**
+       * Alt key down
+       */
       if (e.altKey) {
         switch (e.key) {
           case "1":
@@ -941,11 +1001,11 @@ export default defineComponent({
         }
       }
 
+      /**
+       * No ... key down
+       */
       if (!e.altKey && !e.ctrlKey) {
         switch (e.key) {
-          case "s":
-            this.openOverview(new MouseEvent("down"), true);
-            break;
           case " ":
             if (e.repeat) {
               return;
@@ -1009,7 +1069,7 @@ export default defineComponent({
         this.getEntries().forEach((e) => {
           e.classList.toggle("prevent-input", false);
         });
-        let rect: ClientRect = this.$el.getBoundingClientRect();
+        let rect: DOMRect = this.getWorkspaceWrapper().getBoundingClientRect();
         let bound = this.getPanzoomRect({
           x: this.mousePositionLast.x - rect.width / 2,
           y: this.mousePositionLast.y - rect.height / 2,
@@ -1411,20 +1471,20 @@ export default defineComponent({
         let x =
           (-coordinates.x - coordinates.w / 2) *
             this.getCurrentTransform().scale +
-          this.$el.clientWidth / 2;
+          this.getWorkspaceWrapper().clientWidth / 2;
         let y =
           (-coordinates.y - coordinates.w / 2) *
             this.getCurrentTransform().scale +
-          this.$el.clientHeight / 2;
+          this.getWorkspaceWrapper().clientHeight / 2;
 
         if (zoom) {
           if (smooth) {
-            this.panZoomInstance.setMaxZoom(1);
+            this.panZoomInstance.setMaxZoom(15);
             this.panZoomInstance
               .smoothShowRectangle(rect)
               .then((f: boolean) => {});
           } else {
-            this.panZoomInstance.setMaxZoom(1);
+            this.panZoomInstance.setMaxZoom(15);
             this.panZoomInstance.showRectangle(rect).then((f: boolean) => {});
           }
         } else {
@@ -1567,7 +1627,7 @@ export default defineComponent({
       this.activePlugin = null;
     },
     getPositionInWorkspace(e: { clientX: number; clientY: number }) {
-      var rect = this.$el.getBoundingClientRect();
+      var rect = this.getWorkspaceWrapper().getBoundingClientRect();
 
       // correct coordinates by using the scaling factor of the zooming.
       var x =
@@ -1610,6 +1670,9 @@ export default defineComponent({
     },
     getSelectionWrapper: function (): HTMLElement {
       return this.$el.querySelectorAll(".rectangle-selection-wrapper")[0];
+    },
+    getWorkspaceWrapper: function (): HTMLElement {
+      return this.$el.querySelectorAll(".workspace-split-wrapper")[0];
     },
     getSelectedEntries: function (): HTMLElement[] {
       return Array.from(
@@ -1801,6 +1864,12 @@ var switcher = false;
 <style   lang="scss">
 $color-Selection: rgba(57, 215, 255, 0.3);
 
+.splitpane {
+  flex: 1 !important;
+  width: 100%;
+  height: initial !important;
+}
+
 .workspace-menu-bar {
   position: absolute;
   z-index: 800;
@@ -1808,6 +1877,7 @@ $color-Selection: rgba(57, 215, 255, 0.3);
   left: 0;
   text-align: center;
   width: 100%;
+  white-space: nowrap;
 
   button {
     outline: none;
@@ -1960,6 +2030,29 @@ svg {
   z-index: 1000;
 }
 
+.pane-button-ws {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  color: white;
+  background: transparent;
+  svg {
+    margin: 0;
+    transition: all 0.4 ease-out;
+  }
+}
+
+.pane-button-ov {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  color: white;
+  background: transparent;
+  svg {
+    margin: 0;
+  }
+}
+
 .overview-hover {
   &:hover {
     left: 92%;
@@ -1981,13 +2074,14 @@ svg {
 }
 
 .workspace-search {
-  position: absolute;
+  position: relative;
   border: none;
   background: #fff;
   padding-top: 0px;
   padding-bottom: 0px;
   width: 100%;
   z-index: 800;
+  height: 28px;
 
   button {
     border: none;
@@ -2194,6 +2288,9 @@ visually highlights elements for selection with a hover effect
   flex: 1 !important;
   width: 100%;
   height: initial !important;
+
+  display: flex;
+  flex-flow: column;
   position: relative;
   background-color: rgba(53, 53, 53, 0);
   outline: none;

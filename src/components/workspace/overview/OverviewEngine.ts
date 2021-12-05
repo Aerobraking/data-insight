@@ -226,123 +226,150 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             _this.setView(1, pos.x, pos.y, 400);
         });
 
+        d3.select(this.canvas).on('mousedown', function (e: MouseEvent) {
+
+
+            /**
+             * Left click
+             */
+            if (e.button == 0) {
+
+                const node: AbstractNode = _this.getNodeAtMousePosition();
+                if (e.shiftKey) {
+                    if (node && !_this.selection.includes(node)) _this.selection.push(node);
+                } else if (e.ctrlKey) {
+                    if (node) _this.selection.includes(node) ? _this.selection.splice(_this.selection.indexOf(node), 1) : _this.selection.push(node);
+                } else {
+                    _this.selection = [];
+                    if (node) _this.selection.push(node);
+                }
+
+                const listSelection = [];
+                for (let i = 0; i < _this.selection.length; i++) {
+                    const n = _this.selection[i];
+                    listSelection.push(...n.descendants(), ...n.parents());
+                }
+                listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
+
+            }
+        });
+
         // Setup node drag interaction
         d3.select(this.canvas).on("mousemove", function (e: MouseEvent) {
             var rect = _this.canvas.getBoundingClientRect();
             _this.mousePosition = { x: e.clientX - rect.left, y: e.clientY - rect.top };
             _this.hoverFinder(_this);
-        })
-            .call(
-                d3.drag<HTMLCanvasElement, unknown>().subject(() => {
-                    const obj = this.getNodeAtMousePosition();
-                    if (obj.isRoot()) {
-                        return obj.entry;
-                    }
-                    return obj; // Only drag nodes
-                })
-                    .on('start', ev => {
-                        this.canvas.classList.add('grabbable');
+        }).call(
+            d3.drag<HTMLCanvasElement, unknown>().subject(() => {
+                const obj = this.getNodeAtMousePosition();
+                if (obj && obj.isRoot()) {
+                    return obj.entry;
+                }
+                return obj; // Only drag nodes
+            })
+                .on('start', ev => {
+                    this.canvas.classList.add('grabbable');
 
-                        _this.pauseHovering = true;
-
-
-                        const obj = ev.subject;
-                        obj.__initialDragPos = {
-                            x: obj.x,
-                            y: obj.y,
-                            fx: obj instanceof AbstractOverviewEntry ? obj.x : obj.fx,
-                            fy: obj instanceof AbstractOverviewEntry ? obj.y : obj.fy
-                        };
+                    _this.pauseHovering = true;
 
 
-                        if (obj instanceof AbstractOverviewEntry) {
+                    const obj = ev.subject;
+                    obj.__initialDragPos = {
+                        x: obj.x,
+                        y: obj.y,
+                        fx: obj instanceof AbstractOverviewEntry ? obj.x : obj.fx,
+                        fy: obj instanceof AbstractOverviewEntry ? obj.y : obj.fy
+                    };
 
 
-                        } else {
-                            const node = ev.subject as AbstractNode;
-                            node.fy = node.y; // Fix points
-
-                            if (node.entry) {
-                                node.entry.isSimulationActive = false;
-                            }
-
-                            let children = node.descendants(false);
-                            for (let i = 0; i < children.length; i++) {
-                                const child: any = children[i];
-                                child.__initialDragPos = { x: child.x, y: child.y, fx: child.fx, fy: child.fy };
-                                if (!ev.active) {
-                                    child.fy = child.y; // Fix points
-                                }
-                            }
-
-                        }
+                    if (obj instanceof AbstractOverviewEntry) {
 
 
-                    })
-                    .on('drag', ev => {
-                        const obj = ev.subject;
-
-                        const initPos = obj.__initialDragPos;
-                        const dragPos = ev;
-
-                        const k = d3.zoomTransform(this.canvas).k;
-
-                        let diffX = (dragPos.x - initPos.x) / k;
-                        let diffY = (dragPos.y - initPos.y) / k;
-
-                        if (obj instanceof AbstractOverviewEntry) {
-                            obj.setCoordinates({ x: initPos.x + diffX, y: initPos.y + diffY })
-
-                        } else {
-                            const node = ev.subject as AbstractNode;
-                            /**
-                             * the root can be moved in any direction and moves the whole tree with it
-                             */
-                            node.fy = node.y = initPos.y + diffY;
-
-                            let children = node.descendants(false);
-                            for (let i = 0; i < children.length; i++) {
-                                const child: any = children[i];
-                                const childInitPos = child.__initialDragPos;
-                                child.fy = child.y = childInitPos.y + diffY;
-                            }
-
-                            // prevent freeze while dragging
-                            node.entry?.simulation.alpha(1);  // prevent freeze while dragging
-                        }
-
-
-                    })
-                    .on('end', ev => {
-                        _this.pauseHovering = false;
-                        this.canvas.classList.remove('grabbable');
-
-                        const obj = ev.subject; const node = ev.subject as AbstractNode;
-                        const initPos = obj.__initialDragPos;
-
-
-                        delete (obj.__initialDragPos);
-
-                        if (obj instanceof AbstractOverviewEntry) {
-                            return;
-                        }
+                    } else {
+                        const node = ev.subject as AbstractNode;
+                        node.fy = node.y; // Fix points
 
                         if (node.entry) {
-                            node.entry.isSimulationActive = true;
+                            node.entry.isSimulationActive = false;
                         }
 
-                        if (initPos.fy === undefined) { obj.fy = undefined; }
+                        let children = node.descendants(false);
+                        for (let i = 0; i < children.length; i++) {
+                            const child: any = children[i];
+                            child.__initialDragPos = { x: child.x, y: child.y, fx: child.fx, fy: child.fy };
+                            if (!ev.active) {
+                                child.fy = child.y; // Fix points
+                            }
+                        }
+
+                    }
+
+
+                })
+                .on('drag', ev => {
+                    const obj = ev.subject;
+
+                    const initPos = obj.__initialDragPos;
+                    const dragPos = ev;
+
+                    const k = d3.zoomTransform(this.canvas).k;
+
+                    let diffX = (dragPos.x - initPos.x) / k;
+                    let diffY = (dragPos.y - initPos.y) / k;
+
+                    if (obj instanceof AbstractOverviewEntry) {
+                        obj.setCoordinates({ x: initPos.x + diffX, y: initPos.y + diffY })
+
+                    } else {
+                        const node = ev.subject as AbstractNode;
+                        /**
+                         * the root can be moved in any direction and moves the whole tree with it
+                         */
+                        node.fy = node.y = initPos.y + diffY;
 
                         let children = node.descendants(false);
                         for (let i = 0; i < children.length; i++) {
                             const child: any = children[i];
                             const childInitPos = child.__initialDragPos;
-                            if (childInitPos.fy === undefined) { child.fy = undefined; }
-                            delete (child.__initialDragPos);
+                            child.fy = child.y = childInitPos.y + diffY;
                         }
 
-                    })
-            );
+                        // prevent freeze while dragging
+                        node.entry?.simulation.alpha(1);  // prevent freeze while dragging
+                    }
+
+
+                })
+                .on('end', ev => {
+                    _this.pauseHovering = false;
+                    this.canvas.classList.remove('grabbable');
+
+                    const obj = ev.subject; const node = ev.subject as AbstractNode;
+                    const initPos = obj.__initialDragPos;
+
+
+                    delete (obj.__initialDragPos);
+
+                    if (obj instanceof AbstractOverviewEntry) {
+                        return;
+                    }
+
+                    if (node.entry) {
+                        node.entry.isSimulationActive = true;
+                    }
+
+                    if (initPos.fy === undefined) { obj.fy = undefined; }
+
+                    let children = node.descendants(false);
+                    for (let i = 0; i < children.length; i++) {
+                        const child: any = children[i];
+                        const childInitPos = child.__initialDragPos;
+                        if (childInitPos.fy === undefined) { child.fy = undefined; }
+                        delete (child.__initialDragPos);
+                    }
+
+                })
+        );
 
         // Setup zoom / pan interaction
         this.zoom = d3.zoom<HTMLCanvasElement, HTMLCanvasElement>()
@@ -373,13 +400,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
-    getNodeAtMousePosition = () => {
-        // let obj = null;
-        // const pxScale = 1;//window.devicePixelRatio;
-        // const px: any = (this.mousePosition.x > 0 && this.mousePosition.y > 0)
-        //     ? this.contextShadow.getImageData(this.mousePosition.x * pxScale, this.mousePosition.y * pxScale, 1, 1)
-        //     : null;
-        // px && (obj = this.autocolor.lookup(px.data));
+    public getNodeAtMousePosition = () => {
 
         let mGraph = this.screenToGraphCoords(this.mousePosition);
         let scale = this.transform ? Math.max(40 / this.transform.k, 50) : 200;
@@ -399,7 +420,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         // return obj != null ? obj : undefined;
 
     };
-
 
     public graphToScreenCoords(c: MouseEvent | { x: number, y: number }) {
         const t = d3.zoomTransform(this.canvas);
@@ -426,8 +446,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     public setView(scale: number, x: number, y: number, duration: number = 70) {
 
         let _this = this;
-
-
 
         // setter
         if (_this.transform !== undefined) {
@@ -468,17 +486,19 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             let n = this.getNodeAtMousePosition();
 
+            _this.canvas.style.cursor = n ? "move" : "auto";
 
-            if (n) {
+            if (n && this.selection.length == 0) {
                 if (n != _this.nodeHovered) {
                     _this.nodeHovered = n;
-                    _this.canvas.style.cursor = "pointer";
-                    _this.setFilterList("hover", [...n.descendants(), ...n.parents()]);
+                    _this.listnodesHovered = [];
+                    _this.listnodesHovered.push(...n.descendants(), ...n.parents());
+                    // _this.setFilterList("hover", [...n.descendants(), ...n.parents()]);
                 }
             } else {
                 _this.nodeHovered = undefined;
                 _this.setFilterList("hover");
-                _this.canvas.style.cursor = "auto";
+                _this.listnodesHovered = [];
             }
         }
     };
@@ -486,7 +506,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     pauseHovering: boolean = false;
 
 
-
+    selection: AbstractNode[] = [];
     mousePosition: { x: number, y: number } = { x: 0, y: 0 };
     autocolor: ColorTracker = new ColorTracker();
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
@@ -496,6 +516,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     divObserver: ResizeObserver;
     canvas: HTMLCanvasElement;
     nodeHovered: AbstractNode | undefined;
+    listnodesHovered: AbstractNode[] = [];
 
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
@@ -527,8 +548,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             for (let i = 1; i < lists.length; i++) {
                 this.nodeFiltered = this.nodeFiltered.filter(value => lists[i].includes(value));
             }
-
-
         }
 
         if (this.nodeFiltered.length > 0) {
@@ -550,7 +569,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             this.notFound.set(n, { o, d: false });
                         }
                     } else {
-
                         if (this.notFound.has(n)) {
                             // node is in blending mode, so make it blending in
                             let o = this.notFound.get(n)?.o;
@@ -914,22 +932,24 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 this.drawText(ctx, isShadow, nodes, widths, entry);
 
 
+                if (entry && entry.columnForceMap) {
 
-                const columnForces = Array.from(entry.columnForceMap.values());
+                    // const columnForces = Array.from(entry.columnForceMap.values());
 
-                ctx.globalAlpha = 0.3;
-                ctx.fillStyle = "rgb(240,0,0)";
+                    // ctx.globalAlpha = 0.3;
+                    // ctx.fillStyle = "rgb(240,0,0)";
 
-                for (let i = 0; i < columnForces.length; i++) {
-                    // all node parents for one column
-                    const nodes = columnForces[i].nodes();
+                    // for (let i = 0; i < columnForces.length; i++) {
+                    //     // all node parents for one column
+                    //     const nodes = columnForces[i].nodes();
 
-                    for (let j = 0; nodes && j < nodes.length; j++) {
-                        const n = nodes[j];
-                        const x = this.getColumnXByDepth(entry, n.depth)
+                    //     for (let j = 0; nodes && j < nodes.length; j++) {
+                    //         const n = nodes[j];
+                    //         const x = this.getColumnXByDepth(entry, n.depth)
 
-                        // ctx. t(x, n.y ? n.y - n.radius : 0, 50, n.radius * 2);
-                    }
+                    //         // ctx. t(x, n.y ? n.y - n.radius : 0, 50, n.radius * 2);
+                    //     }
+                    // }
                 }
 
                 ctx.restore();
@@ -1010,7 +1030,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 let grd = ctx.createLinearGradient(xStart, 0, xEnd, 0);
 
-
                 /*
                 a = r * r * PI
                 250 * 0.4 = 
@@ -1019,7 +1038,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 */
                 let colorStart = this.getColorForNode(start);
 
-                let colorEnd = this.getColorForNode(end,true);
+                let colorEnd = this.getColorForNode(end, true);
                 if (colorEnd == "h") {
                     colorStart = colorEnd;
                 }
@@ -1084,7 +1103,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 const nodeValue = n.getStatsValue(this.colorSettings.attr);
 
 
-                const colorOld = this.getColorForNode(n);
+                const colorOld = this.getColorForNode(n, false, false);
                 if (colorOld && nodeValue != undefined) {
                     let colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);
                     colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
@@ -1107,7 +1126,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         r = (r * weight) + (r / scale) * (1 - weight);
         return r;
     }
-
 
     public updateNodeColorScale(node: AbstractNode | undefined = undefined): void {
 
@@ -1148,7 +1166,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     colorNodeDefault: string = "rgb(200,200,200)";
     colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
 
-    getColorForNode(n: AbstractNode, getHiddenInfo: boolean = false): string {
+    getColorForNode(n: AbstractNode, getHiddenInfo: boolean = false, hoverHighlighting: boolean = true): string {
 
         if (n.flag == 1) {
             // return "rgb(0,0,240)";
@@ -1158,7 +1176,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             let scale = this.colorTransitionMap.get(n);
             if (scale) {
                 const color = scale(this.colorTransitionElapsed);
-                // console.log(color);
+                if (hoverHighlighting && this.listnodesHovered.includes(n)) {
+                    return d3.rgb(color).brighter().formatRgb();
+                }
                 return color;
             }
         } else {
@@ -1167,10 +1187,15 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 if (c == "h") {
                     return getHiddenInfo ? "h" : OverviewEngine.hiddenColor;
                 }
+                if (hoverHighlighting && this.listnodesHovered.includes(n)) {
+                    c = d3.rgb(c).brighter().formatRgb();
+                }
                 return c;
             }
         }
-
+        if (hoverHighlighting && this.listnodesHovered.includes(n)) {
+            return d3.rgb(this.colorNodeDefault).brighter().formatRgb();
+        }
         return this.colorNodeDefault;
     }
 
@@ -1195,8 +1220,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 var r = this.getRadius(n);
 
-                // ctx.fillStyle = mycolor((r / 250));
-                // ctx.fillStyle = d3.interpolateWarm(1 - r / 250);
                 ctx.fillStyle = this.getColorForNode(n);
                 ctx.strokeStyle = ctx.fillStyle;
 
@@ -1218,18 +1241,19 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 if (n.isCollection) {
                     ctx.stroke();
+                    r*=0.5;
+                    ctx.stroke();
                 } else {
                     ctx.fill();
                 }
 
-
-
-
-                ctx.stroke();
+                if (this.selection.includes(n)) {
+                    r *= 1.3;
+                    ctx.strokeStyle = "white";
+                    ctx.stroke();
+                }
 
                 ctx.globalAlpha = 0.05;
-
-                // ctx.fillRect(xPos, n.getY() - n.forceRadius, 50, n.forceRadius * 2);
 
             }
 

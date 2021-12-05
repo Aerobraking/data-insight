@@ -15,13 +15,26 @@ module.exports = {
       fsevents: "require('fseventselectron')"
     }
   },
- 
   pluginOptions: {
     electronBuilder: {
+      builderOptions: {
+        productName: "Data Insights", 
+        appId: 'com.aerobraking.datainsights',
+        win: {
+          "target": [
+            "nsis"
+          ],
+          icon: 'public/icon.png',
+          "requestedExecutionLevel": "requireAdministrator"
+        },
+        "nsis": {
+          "installerIcon": "public/icon.ico",
+          "uninstallerIcon": "public/icon.ico",
+          "uninstallDisplayName": "Data Insights", 
+        }
+      },
       nodeIntegration: true,
       nodeIntegrationInWorker: true
-      //preload: 'src/preload.js',
-      // Or, for multiple preload files:
     }
   }
 }

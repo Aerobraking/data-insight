@@ -317,12 +317,13 @@ export class Workspace extends View {
         this.name = name;
         this.type = "workspace";
         this.overview = new Overview();
-        this.overviewOpen = false;
+        this.overviewOpen = true;
     }
 
     @Type(() => Overview)
     overview: Overview;
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.666 }
+    paneSize: number = 100;
     overviewOpen: boolean;
     folderSelectionPath: string | undefined = undefined;
 

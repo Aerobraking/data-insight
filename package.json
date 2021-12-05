@@ -1,6 +1,17 @@
 {
   "name": "master-data-insight",
-  "version": "0.1.0",
+  "homepage": "https://github.com/Aerobraking/ma-data-insight",
+  "description": "A modern File Manager",
+  "bugs": {
+    "url": "https://github.com/Aerobraking/ma-data-insight/issues",
+    "email": "project@hostname.com"
+  },
+  "author": {
+    "name": "Konnie Recker",
+    "email": "k@kwwr.de",
+    "url": "http://aerobraking.de/"
+  },
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -10,10 +21,7 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps"
   },
-  "main": "background.js",
-  "//dependencies": {
-    "//fsevents": "^2.3.2"
-  },
+  "main": "background.js", 
   "dependencies": {
     "@tinymce/tinymce-vue": "^4.0.4",
     "@types/splitpanes": "^2.2.1",

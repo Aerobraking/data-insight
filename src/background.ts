@@ -206,6 +206,8 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
     console.log(err);
   });
 
+  app.addRecentDocument(filepath);
+
   if (!isTemp) {
     webContents.getAllWebContents().forEach(wc => {
       wc.send('fire-file-saved', filepath);
@@ -239,6 +241,7 @@ var args = process.argv;
 
 app.on('open-file', (event, path) => {
   args = [path];
+  openFile(path);
 });
 
 ipcMain.on('get-args', (event: any, arg: any) => {
@@ -250,6 +253,8 @@ function sendArgs() {
     wc.send('send-args', args);
   })
 }
+
+var menu: Menu;
 
 async function createWindow() {
 
@@ -300,22 +305,33 @@ async function createWindow() {
     }
   });
   // win.setMenuBarVisibility(false)
-  var menu = Menu.buildFromTemplate([
+  menu = Menu.buildFromTemplate([
     {
       label: 'Menu',
       submenu: [
         {
-          role: "togglefullscreen",
-          accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
-          label: 'Fullscreen'
-        },
-        {
           accelerator: process.platform === 'darwin' ? 'Ctrl+N' : 'Ctrl+N',
-          label: 'New File',
+          label: 'New',
           click() {
             fireNewFileEvent();
           }
         },
+        {
+          accelerator: process.platform === 'darwin' ? 'Ctrl+O' : 'Ctrl+O',
+          label: 'Open',
+          click() {
+            openFile();
+          }
+        },
+        {
+          label: "Open Recent",
+          role: "recentDocuments",
+          submenu: [{
+            label: "Clear Recent",
+            role: "clearRecentDocuments"
+          }]
+        },
+       
         {
           accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
           label: 'Save',
@@ -331,11 +347,9 @@ async function createWindow() {
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+O' : 'Ctrl+O',
-          label: 'Open',
-          click() {
-            openFile();
-          }
+          role: "togglefullscreen",
+          accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
+          label: 'Fullscreen'
         },
         {
           label: 'Reload Page',
@@ -364,6 +378,7 @@ async function createWindow() {
       ]
     }
   ])
+
   Menu.setApplicationMenu(menu);
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
