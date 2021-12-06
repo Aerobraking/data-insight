@@ -5,6 +5,7 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import fs from "fs";
 import path from "path";
 const trash = require('trash');
+var usbDetect = require('usb-detection');
 
 let win: BrowserWindow | null;
 let windowWorker: BrowserWindow | null;
@@ -24,21 +25,30 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
 
+function sendToRender(id: string, ...args: any[]) {
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send(id, args);
+  })
+}
+
+
 function getTempFilePath(): string {
   const userdata = app.getPath('userData');
   return userdata + path.sep + "temp-file" + FileEnding;
 }
 
 ipcMain.on('msg-worker', (event, arg) => {
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('msg-worker', arg);
-  })
+  // webContents.getAllWebContents().forEach(wc => {
+  //   wc.send('msg-worker', arg);
+  // })
+  sendToRender("msg-worker", arg);
 });
 
 ipcMain.on('msg-main', (event: any, arg: any) => {
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('msg-main', arg);
-  })
+  // webContents.getAllWebContents().forEach(wc => {
+  //   wc.send('msg-main', arg);
+  // })
+  sendToRender("msg-main", arg);
 })
 
 ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
@@ -56,6 +66,26 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
   }
 
 })
+
+function detectUSBEvents() {
+
+  usbDetect.startMonitoring();
+
+
+  // Detect add or remove (change)
+  usbDetect.on('change', function (device: any) {
+    setTimeout(() => {
+      sendToRender("usb-update");
+    }, 500);
+
+    console.log("change usb");
+    console.log('change', device);
+  });
+
+  //usbDetect.stopMonitoring()
+}
+
+detectUSBEvents();
 
 /**
  * Usage of the trash lib: https://github.com/sindresorhus/trash
@@ -331,7 +361,7 @@ async function createWindow() {
             role: "clearRecentDocuments"
           }]
         },
-       
+
         {
           accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
           label: 'Save',

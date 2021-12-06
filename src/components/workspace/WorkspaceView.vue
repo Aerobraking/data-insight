@@ -47,6 +47,7 @@
           class="workspace-split-wrapper"
         >
           <canvas class="workspace-canvas"></canvas>
+
           <panZoom
             @dblclick="closeOverview"
             @paste="onPaste"
@@ -113,6 +114,7 @@
               </div>
             </div>
           </panZoom>
+
           <wsentriesbookmarks
             :model="model"
             @bookmarkclicked="moveToEntry"
@@ -692,6 +694,7 @@ export default defineComponent({
         case "folders":
           ipcRenderer.send("select-files", {
             type: type,
+            target: "w" + this.model.id,
             path: this.model.folderSelectionPath,
           });
           break;
@@ -1110,35 +1113,35 @@ export default defineComponent({
         }
       }
     },
-    mousemoveThrottle: _.throttle((e: MouseEvent, comp: any) => {
-      comp.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
-      comp.mousePositionLast = comp.getPositionInWorkspace(e);
+    mousemoveThrottle: _.throttle((e: MouseEvent, _this: any) => {
+      _this.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
+      _this.mousePositionLast = _this.getPositionInWorkspace(e);
 
-      let selectionRectangle: any = comp.getSelectionRectangle();
+      let selectionRectangle: any = _this.getSelectionRectangle();
 
       function updateSelectionRectangle() {
-        let w = -1 * (comp.dragStart.x - comp.getPositionInWorkspace(e).x);
-        let h = -1 * (comp.dragStart.y - comp.getPositionInWorkspace(e).y);
+        let w = -1 * (_this.dragStart.x - _this.getPositionInWorkspace(e).x);
+        let h = -1 * (_this.dragStart.y - _this.getPositionInWorkspace(e).y);
 
-        let rectX = w < 0 ? comp.dragStart.x + w : comp.dragStart.x;
-        let rectY = h < 0 ? comp.dragStart.y + h : comp.dragStart.y;
+        let rectX = w < 0 ? _this.dragStart.x + w : _this.dragStart.x;
+        let rectY = h < 0 ? _this.dragStart.y + h : _this.dragStart.y;
 
         selectionRectangle.style.transform = `translate3d(${rectX}px, ${rectY}px,0px)`;
         selectionRectangle.style.width = Math.abs(w) + "px";
         selectionRectangle.style.height = Math.abs(h) + "px";
       }
 
-      if (comp.selectionDragActive) {
-        comp.preventInput(true);
-        comp.updateSelectionDrag(e, comp);
+      if (_this.selectionDragActive) {
+        _this.preventInput(true);
+        _this.updateSelectionDrag(e, _this);
       } else {
         if (selectionRectangle.style.visibility === "visible") {
-          comp.isSelectionEvent = true;
+          _this.isSelectionEvent = true;
           updateSelectionRectangle();
         }
       }
 
-      comp.drawCanvas();
+      _this.drawCanvas();
     }, 10),
     mousemove: function (e: MouseEvent) {
       if (this.preventEvent(e)) return;
@@ -1201,8 +1204,14 @@ export default defineComponent({
 
       return shouldIgnore;
     },
-    dragover(e: any) {
+    dragover(e: DragEvent) {
       if (this.preventEvent(e)) return;
+
+      /**
+       * mousemove Events are not fired while dragging, so we update the position here.
+       */
+      this.mousePositionLastRaw = { x: e.clientX, y: e.clientY };
+      this.mousePositionLast = this.getPositionInWorkspace(e);
 
       this.$el
         .getElementsByClassName("svg-download")[0]
@@ -1284,8 +1293,8 @@ export default defineComponent({
 
       switch (position) {
         case "mouse":
-          var x = this.mousePositionLast.x;
-          var y = this.mousePositionLast.y;
+          x = this.mousePositionLast.x;
+          y = this.mousePositionLast.y;
           break;
         case "center":
         default:

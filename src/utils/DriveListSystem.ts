@@ -1,15 +1,16 @@
-import { FSWatcher } from "chokidar";
 
-import chokidar from "chokidar";
-import fs from "fs";
 const drivelist = require("drivelist");
+import { ipcRenderer } from "electron";
 
 async function getDrives() {
+    listDrives = [];
     const drives = await drivelist.list();
     console.log(drives);
     for (let i = 0; i < drives.length; i++) {
-        const d = drives[i]; 
-        listDrives.push(new Drive(d.mountpoints[0].path.replace("\\","/"), Math.round(d.size )));
+        const d = drives[i];
+        if (d.size && d.size > 0) {
+            listDrives.push(new Drive(d.mountpoints[0].path.replace("\\", "/"), Math.round(d.size)));
+        }
     }
 }
 
@@ -28,7 +29,7 @@ export class Drive {
     size: number;
 }
 
-const listDrives: Drive[] = [];
+var listDrives: Drive[] = [];
 
 interface Hash {
     [details: string]: { (): void; }[];
@@ -36,9 +37,20 @@ interface Hash {
 
 export class DriveListSystem {
 
-    private hash: Map<String, { (): void; }[]> = new Map();
+    private hash: Map<String, { (): void; }> = new Map();
     private static _instance = new DriveListSystem();
     private constructor() {
+        const _this = this;
+        ipcRenderer.on("usb-update", function (event: any) {
+            getDrives().finally(() => {
+                setTimeout(() => {
+                    for (let [key, value] of _this.hash) {
+                        value();
+                    }
+                }, 250);
+            });
+        }
+        );
 
     }
 
@@ -46,76 +58,16 @@ export class DriveListSystem {
         return listDrives;
     }
 
-    private callUpdate(path: string): void {
-
-        // try {
-        //     path = path.replace(/\\/g, "/");
-
-        //     path = path.endsWith("/") ? path.slice(0, -1) : path;
-
-        //     console.log(path);
-
-        //     let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
-        //     if (listCallbacks != undefined) {
-        //         for (let index = 0; index < listCallbacks.length; index++) {
-        //             const c = listCallbacks[index];
-        //             c();
-        //         }
-        //     }
-        // } catch (err) {
-        //     console.error("no access!");
-        // }
-    }
-
     static get instance() {
         return this._instance;
     }
 
-    registerPath(path: string, callback: () => void) {
-
-        // path = path.replace(/\\/g, "/");
-
-        // try {
-
-        //     let listCallbacks: { (): void; }[] | undefined = this.hash.get(path);
-
-        //     if (listCallbacks == undefined) {
-        //         listCallbacks = [];
-
-        //         path = path.endsWith("/") ? path.slice(0, -1) : path;
-
-        //         fs.accessSync(path, fs.constants.R_OK);
-        //         this.watcher.add(path);
-
-        //         this.hash.set(path, listCallbacks);
-
-        //     }
-
-        //     listCallbacks.push(callback);
-        // } catch (err) {
-        //     console.error("no access!");
-        // }
-
+    register(id: string, callback: () => void) {
+        this.hash.set(id, callback);
     }
 
-    unregisterPath(path: string, callback: () => void) {
-
-        // path = path.replace(/\\/g, "/");
-
-        // let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
-
-        // if (listCallbacks != undefined) {
-        //     const index = listCallbacks.indexOf(callback);
-        //     if (index > -1) {
-        //         listCallbacks.splice(index, 1);
-        //     }
-
-        //     if (listCallbacks.length == 0) {
-        //         this.watcher.unwatch(path);
-        //         this.hash.delete(path);
-        //     }
-        // }
-
+    unregister(id: string) {
+        this.hash.delete(id);
     }
 
 }

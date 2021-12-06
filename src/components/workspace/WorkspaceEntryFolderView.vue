@@ -189,7 +189,11 @@ export default defineComponent({
       }
     );
 
+    DriveListSystemInstance.register(this.entry.id + "", this.watcherEvent);
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
+  },
+  unmounted() {
+    DriveListSystemInstance.unregister(this.entry.id + "");
   },
   inject: ["entrySelected", "setFocusToWorkspace"],
   watch: {
@@ -339,7 +343,7 @@ export default defineComponent({
        */
       this.list = [];
 
-      if (this.entry.path == DriveListRoot) { 
+      if (this.entry.path == DriveListRoot) {
         for (let i = 0; i < DriveListSystemInstance.getDrives().length; i++) {
           const d = DriveListSystemInstance.getDrives()[i];
           this.list.push(new FolderWindowFile(d.name, true, d.size));
