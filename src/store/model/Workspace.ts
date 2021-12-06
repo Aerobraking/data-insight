@@ -297,6 +297,7 @@ export class FolderWindowFile {
 
     constructor(path: string, isDirectory: boolean, size: number) {
         this.path = path;
+        path = path.endsWith("/") ? path.slice(0, -1) : path;
         this.filename = _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found";
         this.isDirectory = isDirectory;
         this.size = size;

@@ -111,6 +111,7 @@
 */
 const path = require("path");
 const { shell } = require("electron");
+
 import * as watcher from "./../../utils/WatchSystem";
 import fs from "fs";
 import wsfolderfile from "./FolderFileView.vue";
@@ -121,8 +122,12 @@ import {
   WorkspaceEntryFolderWindow,
 } from "../../store/model/Workspace";
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
+import {
+  Drive,
+  DriveListRoot,
+  DriveListSystemInstance,
+} from "./../../utils/DriveListSystem";
 import { ipcRenderer } from "electron";
-
 import {
   DeleteEmptyOutline,
   HomeOutline,
@@ -183,6 +188,7 @@ export default defineComponent({
         if (_this.entry.path == directory) _this.updateUI();
       }
     );
+
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
   inject: ["entrySelected", "setFocusToWorkspace"],
@@ -196,7 +202,6 @@ export default defineComponent({
   },
   methods: {
     drop(e: DragEvent) {
-
       if (e.dataTransfer && e.dataTransfer.types.includes("Files")) {
         for (let index = 0; index < e.dataTransfer.files.length; index++) {
           const f = e.dataTransfer.files[index];
@@ -270,13 +275,38 @@ export default defineComponent({
 
       let listFoldersRelative: string[] = [];
 
+      var para = document.createElement("button");
+      para = document.createElement("button");
+      para.setAttribute("path", DriveListRoot);
+      para.classList.add("crumb");
+      var node = document.createTextNode("Drives");
+      para.appendChild(node);
+      div.appendChild(para);
+
+      para.addEventListener("click", function (e: MouseEvent) {
+        const p = (e.target as Element).getAttribute("path");
+        if (p) {
+          _this.entry.path = p;
+        }
+      });
+
+      if (this.entry.path == DriveListRoot) {
+        return;
+      }
+
+      para = document.createElement("button");
+      para.classList.add("crumb-separator");
+      node = document.createTextNode("/");
+      para.appendChild(node);
+      div.appendChild(para);
+
       for (let i = 0; i < listFolders.length; i++) {
         const f = listFolders[i];
         listFoldersRelative.push(f.trim());
-        var para = document.createElement("button");
+        para = document.createElement("button");
         para.setAttribute("path", listFoldersRelative.join("/"));
         para.classList.add("crumb");
-        var node = document.createTextNode(f);
+        node = document.createTextNode(f);
         para.appendChild(node);
         div.appendChild(para);
 
@@ -308,7 +338,14 @@ export default defineComponent({
        * Update file list
        */
       this.list = [];
-      let c = this;
+
+      if (this.entry.path == DriveListRoot) { 
+        for (let i = 0; i < DriveListSystemInstance.getDrives().length; i++) {
+          const d = DriveListSystemInstance.getDrives()[i];
+          this.list.push(new FolderWindowFile(d.name, true, d.size));
+        }
+        return;
+      }
 
       let dir = this.entry.path;
       dir = dir.endsWith("/") ? dir.slice(0, -1) : dir;
@@ -325,7 +362,7 @@ export default defineComponent({
               fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
 
               const fileStat = fs.lstatSync(filePath);
-              
+
               this.list.push(
                 new FolderWindowFile(
                   filePath,
@@ -509,6 +546,8 @@ export default defineComponent({
       ) {
         this.entry.path = path.dirname(this.entry.path);
         let l = this.entry.path.split("/");
+      } else {
+        this.entry.path = DriveListRoot;
       }
     },
     folderOpen(folder: FolderWindowFile | String) {
