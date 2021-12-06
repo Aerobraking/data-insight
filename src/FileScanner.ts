@@ -2,8 +2,7 @@
 import 'reflect-metadata';
 
 import fs from "fs";
-// var fs = require("fs")
-import { ipcRenderer } from "electron"; 
+import { ipcRenderer } from "electron";
 import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult } from './components/workspace/overview/OverviewInterfaces';
 export function startListener() {
 
@@ -32,7 +31,7 @@ export function startListener() {
 
                 function visitFolder(pathF: string, depth: number = 0): FolderStat {
 
-                    let sync: FolderSyncResult = { id: msg.id, path: pathF, type: "foldersync" };
+                    let sync: FolderSyncResult = { childCount: 0, collection: false, id: msg.id, path: pathF, type: "foldersync" };
                     // @ts-ignore: Unreachable code error
                     ipcRenderer.send('msg-worker', sync);
                     // postMessage(sync);

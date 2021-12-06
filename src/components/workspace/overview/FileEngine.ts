@@ -90,33 +90,30 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     }
 
     event(e: FolderStatsResult | FolderSyncResult): void {
-
         switch (e.type) {
             case "folderstats":
-
                 this.eventStack.push(e);
                 break;
             case "foldersync":
                 this.eventStack.push(e);
                 break;
         }
-
     }
+
     getPath(): string {
         return this.path;
     }
+
     getDepth(): number {
         return this._depth;
     }
+    
     getID(): number {
         return this.id;
     }
 
     startWatcher(): void {
-
-
-        console.log("start watcher");
-
+   
         /**
          * this starts the syncing of the folder for this entry.
          */

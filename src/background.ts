@@ -26,28 +26,32 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 function sendToRender(id: string, ...args: any[]) {
+  // if (win) {
+  //   win.webContents.send("log", id + args.join(" # "));
+  //   if (windowWorker) {
+  //     win.webContents.send("log", "send to worker window");
+  //     windowWorker.webContents.send("log", id + args.join(" # "));
+  //   }
+  // }
+
   webContents.getAllWebContents().forEach(wc => {
-    wc.send(id, args);
+    wc.send(id, ...args);
+  })
+  webContents.getAllWebContents().forEach(wc => {
+    wc.send("log", id + args.join(" # "));
   })
 }
-
 
 function getTempFilePath(): string {
   const userdata = app.getPath('userData');
   return userdata + path.sep + "temp-file" + FileEnding;
 }
 
-ipcMain.on('msg-worker', (event, arg) => {
-  // webContents.getAllWebContents().forEach(wc => {
-  //   wc.send('msg-worker', arg);
-  // })
+ipcMain.on('msg-worker', (event: any, arg: any) => {
   sendToRender("msg-worker", arg);
 });
 
 ipcMain.on('msg-main', (event: any, arg: any) => {
-  // webContents.getAllWebContents().forEach(wc => {
-  //   wc.send('msg-main', arg);
-  // })
   sendToRender("msg-main", arg);
 })
 
@@ -57,6 +61,7 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
     filePaths[index] = e.replaceAll("\\\\", "/");
     filePaths[index] = e.replaceAll("\\", "/");
   });
+
 
   if (filePaths.length > 0) {
     event.sender.startDrag({
@@ -71,15 +76,11 @@ function detectUSBEvents() {
 
   usbDetect.startMonitoring();
 
-
   // Detect add or remove (change)
   usbDetect.on('change', function (device: any) {
     setTimeout(() => {
       sendToRender("usb-update");
     }, 500);
-
-    console.log("change usb");
-    console.log('change', device);
   });
 
   //usbDetect.stopMonitoring()
@@ -102,9 +103,10 @@ ipcMain.on('move-to-trash', (event: any, args: { filePaths: string[], targetDir:
       console.log(error);
     })
       .finally(() => {
-        if (win) {
-          win.webContents.send('move-to-trash-finished', args.targetDir);
-        }
+        sendToRender('move-to-trash-finished', args.targetDir);
+        // if (win) {
+        //   win.webContents.send('move-to-trash-finished', args.targetDir);
+        // }
       });
   }
 
@@ -143,9 +145,11 @@ function openFile(filePath: string | undefined = undefined) {
     filePath = files[0];
   }
 
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('insight-file-selected', filePath);
-  })
+  sendToRender('insight-file-selected', filePath);
+
+  // webContents.getAllWebContents().forEach(wc => {
+  //   wc.send('insight-file-selected', filePath);
+  // })
 
 }
 
@@ -172,9 +176,11 @@ function selectFiles(arg: { target: "", type: "folders" | "files", path: string 
 
     const directoryOfSelection = path.dirname(files[0]);
 
-    webContents.getAllWebContents().forEach(wc => {
-      wc.send('files-selected', { files: files, directory: directoryOfSelection, target: arg.target });
-    })
+    sendToRender('files-selected', { files: files, directory: directoryOfSelection, target: arg.target });
+
+    // webContents.getAllWebContents().forEach(wc => {
+    //   wc.send('files-selected', { files: files, directory: directoryOfSelection, target: arg.target });
+    // })
   }
 }
 
@@ -200,9 +206,11 @@ ipcMain.on('save-insight-file', (event: any, arg:
       dialog.showSaveDialog({}).then((result) => {
         if (result.canceled) { return; }
         if (result.filePath) {
-          webContents.getAllWebContents().forEach(wc => {
-            wc.send('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));
-          })
+          sendToRender('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));
+
+          // webContents.getAllWebContents().forEach(wc => {
+          //   wc.send('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));
+          // })
         }
       }).catch((err) => {
         console.log(err);
@@ -239,9 +247,11 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
   app.addRecentDocument(filepath);
 
   if (!isTemp) {
-    webContents.getAllWebContents().forEach(wc => {
-      wc.send('fire-file-saved', filepath);
-    })
+    sendToRender('fire-file-saved', filepath);
+
+    // webContents.getAllWebContents().forEach(wc => {
+    //   wc.send('fire-file-saved', filepath);
+    // })
   }
 
   if (win) {
@@ -256,15 +266,19 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
 }
 
 function fireFileSaveEvent(chooseFile: boolean) {
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('fire-file-save', chooseFile);
-  })
+  sendToRender('fire-file-save', chooseFile);
+
+  // webContents.getAllWebContents().forEach(wc => {
+  //   wc.send('fire-file-save', chooseFile);
+  // })
 }
 
 function fireNewFileEvent() {
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('fire-new-file', "");
-  })
+  sendToRender('fire-new-file', "");
+
+  // webContents.getAllWebContents().forEach(wc => {
+  //   wc.send('fire-new-file', "");
+  // })
 }
 
 var args = process.argv;
@@ -275,14 +289,16 @@ app.on('open-file', (event, path) => {
 });
 
 ipcMain.on('get-args', (event: any, arg: any) => {
-  sendArgs();
+  // sendArgs();
+  sendToRender('send-args', args);
 })
 
-function sendArgs() {
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send('send-args', args);
-  })
-}
+// function sendArgs() {
+//   sendToRender('send-args', args);
+//   // webContents.getAllWebContents().forEach(wc => {
+//   //   wc.send('send-args', args);
+//   // })
+// }
 
 var menu: Menu;
 
@@ -306,25 +322,20 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
-
-  console.log("nodeingetragtion: ");
-  console.log((process.env
-    .ELECTRON_NODE_INTEGRATION as unknown) as boolean);
-  console.log(!process.env.ELECTRON_NODE_INTEGRATION);
-
-
+  
   // Create the worker window.
   windowWorker = new BrowserWindow({
     title: "worker",
-    show: false,
+    show: !true,
     webPreferences: {
       enableRemoteModule: true,
       webSecurity: false,
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegrationInWorker: true,
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: (process.env
+        .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
+      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
 
@@ -418,8 +429,8 @@ async function createWindow() {
     if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
     createProtocol('app')
-    // Load the index.html when not in development
-    windowWorker.loadURL('app://./worker.html')
+    // Load the index.html when not in development 
+    windowWorker.loadURL(`app://./subpage.html`)
     win.loadURL('app://./index.html')
   }
 

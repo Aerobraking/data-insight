@@ -36,8 +36,7 @@ export interface FolderStatsResult extends MessageType {
     stats: FolderStat,
     id: number // the id of the overview entry that listens to this syncing
 }
-
-
+ 
 export enum StatsType {
     MEDIAN,
     SUM

@@ -14,6 +14,10 @@ import { View } from "./store/model/DataModel";
 
 var fs = require("fs");
 
+ipcRenderer.on("log", (event, log) => {
+  console.log("log", log);
+});
+
 export default defineComponent({
   name: "App",
   components: {
@@ -221,15 +225,6 @@ body {
   width: 100%;
   position: absolute;
   overflow: hidden;
-}
-
-.vue-pan-zoom-scene {
-  outline: none;
-  width: 100%;
-  height: 100%;
-  position: fixed;
-  padding: 0;
-  margin: 0;
 }
 
 div .resizer {

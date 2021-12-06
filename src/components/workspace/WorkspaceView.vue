@@ -49,7 +49,6 @@
           <canvas class="workspace-canvas"></canvas>
 
           <panZoom
-            @dblclick="closeOverview"
             @paste="onPaste"
             @init="panHappen"
             @pan="onPanStart"
@@ -68,7 +67,7 @@
             }"
             selector=".zoomable"
           >
-            <div @dblclick="closeOverview" class="zoomable close-file-anim">
+            <div  class="zoomable close-file-anim">
               <div class="rectangle-selection"></div>
               <div class="rectangle-selection-wrapper">
                 <button class="ws-zoom-fixed resizer-bottom-right">
@@ -171,9 +170,7 @@
 
       <pane :size="100 - model.paneSize">
         <OverviewView
-          class="overview"
-          :class="{ 'ov-open': model.overviewOpen }"
-          @dblclick="openOverview"
+          class="overview" 
           :model="model"
           :searchstring="searchString"
         />
@@ -511,18 +508,6 @@ export default defineComponent({
           this.searchfocus = false;
         }, 400);
       }
-    },
-    openOverview(
-      e: MouseEvent,
-      toggle: boolean = false,
-      open: boolean = true
-    ): void {
-      let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
-
-      e.preventDefault();
-    },
-    closeOverview(e: MouseEvent): void {
-      let div: HTMLElement = this.$el.getElementsByClassName("overview")[0];
     },
     paneButtonClicked(size: number | undefined = undefined) {
       this.model.paneSize =
@@ -2061,22 +2046,7 @@ svg {
     margin: 0;
   }
 }
-
-.overview-hover {
-  &:hover {
-    left: 92%;
-    cursor: pointer;
-  }
-}
-
-.ov-open {
-  left: 0px;
-  top: 0px;
-  margin: 0px;
-  width: 98%;
-  height: 100%;
-}
-
+  
 .search-not-found {
   opacity: 0.05;
   pointer-events: none;
@@ -2337,10 +2307,11 @@ visually highlights elements for selection with a hover effect
   outline: none;
   width: 100%;
   height: 100%;
-  position: fixed;
+  position: absolute;
   padding: 0;
   margin: 0;
 }
+
 .position-zero {
   width: 100px;
   height: 100px;

@@ -462,6 +462,10 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         this.path = path;
         this.root = root;
         this.id = Math.floor(Math.random() * 10000000);
+        // @ts-ignore: Unreachable code error
+        this.root.entry = this;
+
+        this.nodes = this.root.descendants();
 
         this.root.fx = 0;
         this.root.fy = 0;
@@ -553,7 +557,6 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
 
     }
-
 
     public addStats(stats: Stats) {
         let node = this.getNodeByPath(stats.path);
@@ -858,9 +861,6 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             let vy: number = this.nodes[i].vy ? this.nodes[i].vy as number : 0;
             vy = Math.abs(vy);
             vyMax = vy > vyMax ? vy : vyMax;
-
-
-
         }
 
         // if (OverviewEngine.framecounter % 60 == 0) {

@@ -1,10 +1,18 @@
+
+console.log("Init second window code 1");
+
 import 'reflect-metadata';
 import fs from 'fs';
-// var fs = require("fs")
 import { ipcRenderer } from "electron";
 import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult } from './components/workspace/overview/OverviewInterfaces';
 
 
+console.log("Init second window code 2");
+
+
+ipcRenderer.on("log", (event, log) => {
+    console.log("log", log);
+});
 
 /**
  * We scan the complete folder and send back first the folder structure and then the stats for each folder based on their files
@@ -194,7 +202,7 @@ ipcRenderer.on("msg-main",
                     if (fileCount > 0) {
                         folderStat.stats.mtime.value /= fileCount;
                         folderStat.stats.atime.value /= fileCount;
-                        folderStat.stats.ctime.value /= fileCount; 
+                        folderStat.stats.ctime.value /= fileCount;
                     }
 
 
@@ -210,7 +218,7 @@ ipcRenderer.on("msg-main",
                         stats: folderStat,
                         path: pathF
                     }
- 
+
                     ipcRenderer.send('msg-worker', result);
 
 

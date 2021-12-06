@@ -1,8 +1,10 @@
 <template>
   <div
     @mouseenter="setFocusToOverview()"
+    @drop.capture="drop"
+    @dragenter.stop.prevent
+    @dragover.stop.prevent
     tabIndex="1"
-    @drop.stop="drop"
     class="overview-viewport"
   >
     <div class="filter-settings">
@@ -22,11 +24,7 @@
       />
     </div> -->
 
-    <div
-      :class="{ 'prevent-input': !model.overviewOpen }"
-      class="overview-wrapper"
-      @mousedown="mousedown"
-    ></div>
+    <div class="overview-wrapper" @mousedown="mousedown"></div>
 
     <div @mousedown.stop @dblclick.capture.stop class="workspace-menu-bar">
       <!--
@@ -111,7 +109,7 @@ export default defineComponent({
     // only draw the canvas when the overview is visibile
     "model.overviewOpen": function (newValue: boolean, oldValue: boolean) {
       if (this.overviewEngine) {
-        this.overviewEngine.enablePainting = newValue;
+        this.overviewEngine.enablePainting = true;
       }
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
@@ -253,10 +251,10 @@ export default defineComponent({
       1000
     );
 
+    /**
+     * Update the model coordinates with the current ones from the html view.
+     */
     this.wsListener = {
-      /**
-       * Update the model coordinates with the current ones from the html view.
-       */
       prepareFileSaving(): void {
         Instance.transferData(_this.model.overview);
         console.log(_this.model.overview);
@@ -289,7 +287,6 @@ export default defineComponent({
       const node = this.overviewEngine?.getNodeAtMousePosition();
 
       if (node) {
-        
       }
     },
     setFocusToOverview(): void {
@@ -377,10 +374,11 @@ export default defineComponent({
         this.idOverview
       );
 
+      console.log(pos);
+
       /**
        * create the entries based on the dropped files.
        */
-
       for (let index = 0; index < listFolders.length; index++) {
         const f = listFolders[index];
         const p = path.normalize(f).replace(/\\/g, "/");
@@ -410,8 +408,6 @@ export default defineComponent({
       }
     },
     drop(e: DragEvent) {
-      e.preventDefault();
-
       let listFolders: string[] = [];
 
       /**
@@ -422,7 +418,7 @@ export default defineComponent({
           const f = e.dataTransfer?.files[index];
           listFolders.push(f.path);
         }
-
+  
         this.addFolders(
           listFolders,
           this.overviewEngine.screenToGraphCoords(e)
@@ -433,7 +429,6 @@ export default defineComponent({
 });
 </script>
 
- 
 <style   lang="scss">
 .filter-settings {
   position: absolute;

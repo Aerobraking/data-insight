@@ -18,7 +18,6 @@ import { FolderWindowFile } from "../../store/model/Workspace";
 import * as icons from "./../../utils/IconHandler";
 export default defineComponent({
   name: "wsfolderfile",
-
   props: {
     entry: {
       type: FolderWindowFile,

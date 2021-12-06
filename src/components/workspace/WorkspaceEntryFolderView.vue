@@ -41,6 +41,7 @@
         />
       </button>
       <button><FolderPlusOutline @click="createFolder" /></button>
+      <button><Monitor @click="openFolderInOS" /></button>
       <button><DeleteEmptyOutline @click="deleteSelection" /></button>
       <!-- <input
         @keydown.capture.stop
@@ -134,12 +135,14 @@ import {
   HomeImportOutline,
   ArrowLeft,
   ArrowUp,
+  Monitor,
   FolderPlusOutline,
 } from "mdue";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
+    Monitor,
     FolderPlusOutline,
     ArrowUp,
     ArrowLeft,
@@ -245,6 +248,9 @@ export default defineComponent({
       if (this.$props.entry != undefined) {
         this.folderOpen(this.$props.entry.defaultPath);
       }
+    },
+    openFolderInOS(){
+       shell.openPath(this.entry.path);
     },
     setDefault() {
       if (this.$props.entry != undefined) {

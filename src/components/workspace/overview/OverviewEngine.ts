@@ -92,7 +92,7 @@ export interface ColorStatsSettings<N> {
     colorFunction: (node: N, stat: number, min: number, max: number) => string
 }
 
-
+export const COLUMNWIDTH = 700;
 
 
 export class OverviewEngine implements EntryListener<AbstractNode>{
@@ -252,6 +252,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
 
             }
+        });
+
+        d3.select(this.canvas).on('drop', function (e: DragEvent) {
+
+            console.log(e);
+
         });
 
         // Setup node drag interaction
@@ -433,7 +439,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     public screenToGraphCoords(c: MouseEvent | { x: number, y: number }) {
         const t = d3.zoomTransform(this.canvas);
         if (c instanceof MouseEvent) {
-            return { x: (c.clientX - t.x) / t.k, y: (c.clientY - t.y) / t.k };
+            let rect = this.canvas.getBoundingClientRect();
+            let x = c.clientX - rect.left;
+            let y = c.clientY - rect.top;
+            return { x: (x - t.x) / t.k, y: (y - t.y) / t.k };
         } else {
             return { x: (c.x - t.x) / t.k, y: (c.y - t.y) / t.k };
         }
@@ -504,8 +513,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     };
 
     pauseHovering: boolean = false;
-
-
     selection: AbstractNode[] = [];
     mousePosition: { x: number, y: number } = { x: 0, y: 0 };
     autocolor: ColorTracker = new ColorTracker();
@@ -524,7 +531,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     engineActive: boolean = true;
     public showShadow: boolean = false;
     private _rootNodes: any[] = [];
-
 
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
@@ -656,9 +662,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             }
         }
 
-
         if (this.colorTransitionElapsed != undefined) {
-
             this.colorTransitionElapsed += OverviewEngine.delta;
 
             if (this.colorTransitionElapsed > this.colorTransitionTarget) {
@@ -687,7 +691,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         }
 
         if (this.enablePainting) {
-            // render the canvas
+            // render the canvas 
+
             this.drawCanvas(this.context);
             // render the shadow canvas
             if (OverviewEngine.framecounter % 3 == 0) {
@@ -698,45 +703,45 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     public getColumnX(entry: AbstractOverviewEntry, n: AbstractNode) {
-        let d = this.getColumnData(entry, n.depth);
-        return n.parent && d ? d.x + entry.root.getX() : n.getX();
+
+        return n.depth * COLUMNWIDTH;
+
+        // let d = this.getColumnData(entry, n.depth);
+        // return n.parent && d ? d.x + entry.root.getX() : n.getX();
     }
     public getColumnXByDepth(entry: AbstractOverviewEntry, depth: number) {
-        let d = this.getColumnData(entry, depth);
-        return d ? d.x + entry.root.getX() : 0;
+
+        return depth * COLUMNWIDTH;
+        // let d = this.getColumnData(entry, depth);
+        // return d ? d.x + entry.root.getX() : 0;
     }
 
-    public getColumnWidth(entry: AbstractOverviewEntry, n: AbstractNode) {
-        let d = this.getColumnData(entry, n.depth);
-        return n.parent && d ? d.width : 200;
-    }
+
 
     mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
     setWidthsTween: Map<AbstractOverviewEntry, Map<number, Tween<any>>> = new Map();
 
     public getColumnData(entry: AbstractOverviewEntry, depth: number, create: boolean = true) {
 
-        let entryColumns = this.mapEntryColumns.get(entry.id);
-        if (!entryColumns) {
-            entryColumns = new Map();
-            this.mapEntryColumns.set(entry.id, entryColumns);
-        }
+        return { x: depth * COLUMNWIDTH, width: COLUMNWIDTH };
 
-        // if (depth == 0) {
-        //     return { x: entry.root.getX(), width: 200 };
+        // let entryColumns = this.mapEntryColumns.get(entry.id);
+        // if (!entryColumns) {
+        //     entryColumns = new Map();
+        //     this.mapEntryColumns.set(entry.id, entryColumns);
         // }
 
-        let data = entryColumns.get(depth);
-        if (!data && create) {
-            data = { x: 0, width: 100 };
-            const dataPrev = this.getColumnDataRawByID(entry.id, depth - 1);
-            if (dataPrev) {
-                data.x = dataPrev.x + dataPrev.width;
-            }
+        // let data = entryColumns.get(depth);
+        // if (!data && create) {
+        //     data = { x: 0, width: 100 };
+        //     const dataPrev = this.getColumnDataRawByID(entry.id, depth - 1);
+        //     if (dataPrev) {
+        //         data.x = dataPrev.x + dataPrev.width;
+        //     }
 
-            entryColumns.set(depth, data);
-        }
-        return data;
+        //     entryColumns.set(depth, data);
+        // }
+        // return data;
     }
 
     public getColumnDataRaw(entry: AbstractOverviewEntry, depth: number) {
@@ -744,10 +749,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     public getColumnDataRawByID(id: number, depth: number) {
-
-        // if (depth == 0) {
-        //     return { x: entry.root.getX(), width: 200 };
-        // }
 
         let entryColumns = this.mapEntryColumns.get(id);
         if (!entryColumns) {
@@ -867,7 +868,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 let widths: { x: number, width: number }[] = [];
 
-                for (let i = 0, e = true; e; i++) {
+                for (let i = 0, e = true; i < 40; i++) {
                     let w = this.getColumnData(entry, i, false);
                     if (w) {
                         widths[i] = w;
@@ -877,55 +878,47 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 /**
                  * Update column metrics
                  */
-                if (this.updateColumns || true) {
+                // if (this.updateColumns || true) {
 
-                    ctx.font = `${13}px Lato`;
-                    ctx.fillStyle = "#fff";
+                //     ctx.font = `${13}px Lato`;
+                //     ctx.fillStyle = "#fff";
 
-                    /**
-                     * collection of all column width for the current entry
-                     */
-                    let setWidths: Map<number, ColumnTextWidth> = new Map();
+                //     /**
+                //      * collection of all column width for the current entry
+                //      */
+                //     let setWidths: Map<number, ColumnTextWidth> = new Map();
 
-                    for (let i = 0; i < nodes.length && !isShadow; i++) {
-                        const n = nodes[i];
-                        let isNodeHovered = this.nodeHovered == n;
+                //     for (let i = 0; i < nodes.length && !isShadow; i++) {
+                //         const n = nodes[i];
+                //         let isNodeHovered = this.nodeHovered == n;
 
-                        let textWidth: ColumnTextWidth | undefined = setWidths.get(n.depth);
+                //         let textWidth: ColumnTextWidth | undefined = setWidths.get(n.depth);
 
-                        if (!textWidth) {
-                            textWidth = { min: 10000000, max: 0, depth: n.depth };
-                            setWidths.set(n.depth, textWidth);
-                        }
+                //         if (!textWidth) {
+                //             textWidth = { min: 10000000, max: 0, depth: n.depth };
+                //             textWidth = { min: 800, max: 800, depth: n.depth };
+                //             setWidths.set(n.depth, textWidth);
+                //         }
 
-                        // if (n.depth == 0) {
-                        //     textWidth.max = 1600;
-                        //     textWidth.min = 1400;
-                        // } else {
-                        let textw = (Math.max(ctx.measureText(n.name).width, 250) * 2.5 + 200) * 2.2;
-                        textWidth.max = Math.max(textWidth.max, textw);
-                        textWidth.min = Math.min(textWidth.min, textw);
-                        // }
+                //         // let textw = (Math.max(ctx.measureText(n.name).width, 250) * 2.5 + 200) * 2.2;
+                //         // textWidth.max = Math.max(textWidth.max, textw);
+                //         // textWidth.min = Math.min(textWidth.min, textw);
 
+                //     }
 
+                //     let depths: number[] = Array.from(setWidths.keys());
+                //     depths.sort();
 
-                    }
+                //     for (let d = 0; d < depths.length; d++) {
+                //         const element = setWidths.get(d);
+                //         if (element) {
+                //             this.setColumnTextWidth(entry, element);
+                //         }
+                //     }
 
-                    let depths: number[] = Array.from(setWidths.keys());
-                    depths.sort();
-
-                    for (let d = 0; d < depths.length; d++) {
-                        const element = setWidths.get(d);
-                        if (element) {
-                            this.setColumnTextWidth(entry, element);
-                        }
-                    }
-
-                }
+                // }
 
                 ctx.fillStyle = "rgb(170,170,170)";
-
-
 
                 this.drawLinks(ctx, isShadow, links, widths, entry);
                 this.drawNodes(ctx, isShadow, nodes, widths, entry);
@@ -1052,8 +1045,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 if (isShadow) {
                     ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
                 }
-
-
+ 
                 ctx.beginPath();
                 ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, start.getY());
                 ctx.lineTo(xStart, start.getY());
@@ -1080,17 +1072,17 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     /**
-           * wir speichern die farben für jede node ab und aktualisieren sie bei jedem update von nodes.
-           * 
-           * ändern wir die render eigenschaften, speichern wir die neuen farben in einer 2. map und erstellen
-           * für jede node ein d3.scaleLinear mit den beiden farben.
-           * 
-           * dann starten wir ne duration mit der wir uns dann die aktuelle farbe holen. 
-           * 
-           * werden die render settings wieder geändert, speichern wir die aktuelle farbe bei der duration als neue start
-           * farbe 
-           * 
-           */
+     * wir speichern die farben für jede node ab und aktualisieren sie bei jedem update von nodes.
+     * 
+     * ändern wir die render eigenschaften, speichern wir die neuen farben in einer 2. map und erstellen
+     * für jede node ein d3.scaleLinear mit den beiden farben.
+     * 
+     * dann starten wir ne duration mit der wir uns dann die aktuelle farbe holen. 
+     * 
+     * werden die render settings wieder geändert, speichern wir die aktuelle farbe bei der duration als neue start
+     * farbe 
+     * 
+     */
     public setColorScale<N extends AbstractNode>(statAttribute: string, min: number, max: number, getColor: (node: N, stat: number, min: number, max: number) => string, duration: number = 400): void {
 
         this.colorSettings = { attr: statAttribute, min: min, max: max, colorFunction: getColor };
@@ -1241,7 +1233,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 if (n.isCollection) {
                     ctx.stroke();
-                    r*=0.5;
+                    r *= 0.5;
                     ctx.stroke();
                 } else {
                     ctx.fill();
