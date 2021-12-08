@@ -4,7 +4,7 @@ import * as d3f from "d3-force-reuse";
 import { SimulationNodeDatum, SimulationLinkDatum, ForceCenter, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";
 import { FolderNode, FolderOverviewEntry } from "./FileEngine";
 import path from "path";
-import { OverviewEngine } from "./OverviewEngine";
+import { COLUMNWIDTH, OverviewEngine } from "./OverviewEngine";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
 import { Stats, StatsType } from "./OverviewInterfaces";
@@ -329,7 +329,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     public get x(): number | undefined {
         // let x = this.parent ? this.entry ? this.entry?.getColumnX(this) : 200 * this.depth : this._x;
-        let x = this.parent ? 500000 * this.depth : this._x;
+        let x = this.parent ? COLUMNWIDTH * this.depth : this._x;
         x = this._x ? this._x : x;
         return x;
     }
@@ -360,7 +360,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     fy?: number | null | undefined;
 
     public getX() {
-        return this._x ? this._x : 0;
+        return COLUMNWIDTH * this.depth;
+        // return this._x ? this._x : 0;
     }
 
     public getY() {
@@ -826,16 +827,6 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     tick() {
 
-
-        // let c: any = this.simulation.force("collide");
-
-        // if (c) {
-        //     c.radius(function (d: any) {
-        //         // return Math.max(120,d.forceRadius);
-        //         return 120;
-        //     }).strength(0.3)
-        // }
-
         let y: ForceY<D> | undefined = this.simulation.force(
             "y"
         );
@@ -884,6 +875,9 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             .y(function (d) { return d.getY(); });
 
         this.quadtree.addAll(this.nodes);
+ 
+        // console.log("update qTree", this.nodes.length);
+
 
     }
 }

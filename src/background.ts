@@ -33,13 +33,16 @@ function sendToRender(id: string, ...args: any[]) {
   //     windowWorker.webContents.send("log", id + args.join(" # "));
   //   }
   // }
-
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send(id, ...args);
+  BrowserWindow.getAllWindows().forEach(w=>{
+    w.webContents.send(id, ...args);
+    w.webContents.send("log", id + args.join(" # "));
   })
-  webContents.getAllWebContents().forEach(wc => {
-    wc.send("log", id + args.join(" # "));
-  })
+  // webContents.getAllWebContents().forEach(wc => {
+  //   wc.send(id, ...args);
+  // })
+  // webContents.getAllWebContents().forEach(wc => {
+  //   wc.send("log", id + args.join(" # "));
+  // })
 }
 
 function getTempFilePath(): string {
@@ -83,11 +86,8 @@ function detectUSBEvents() {
     }, 500);
   });
 
-  //usbDetect.stopMonitoring()
 }
-
-detectUSBEvents();
-
+ 
 /**
  * Usage of the trash lib: https://github.com/sindresorhus/trash
  */
@@ -104,9 +104,6 @@ ipcMain.on('move-to-trash', (event: any, args: { filePaths: string[], targetDir:
     })
       .finally(() => {
         sendToRender('move-to-trash-finished', args.targetDir);
-        // if (win) {
-        //   win.webContents.send('move-to-trash-finished', args.targetDir);
-        // }
       });
   }
 
@@ -146,11 +143,6 @@ function openFile(filePath: string | undefined = undefined) {
   }
 
   sendToRender('insight-file-selected', filePath);
-
-  // webContents.getAllWebContents().forEach(wc => {
-  //   wc.send('insight-file-selected', filePath);
-  // })
-
 }
 
 ipcMain.on('select-files', (event: any, arg: { target: "", type: "folders" | "files", path: string | undefined }) => {
@@ -177,10 +169,6 @@ function selectFiles(arg: { target: "", type: "folders" | "files", path: string 
     const directoryOfSelection = path.dirname(files[0]);
 
     sendToRender('files-selected', { files: files, directory: directoryOfSelection, target: arg.target });
-
-    // webContents.getAllWebContents().forEach(wc => {
-    //   wc.send('files-selected', { files: files, directory: directoryOfSelection, target: arg.target });
-    // })
   }
 }
 
@@ -207,10 +195,6 @@ ipcMain.on('save-insight-file', (event: any, arg:
         if (result.canceled) { return; }
         if (result.filePath) {
           sendToRender('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));
-
-          // webContents.getAllWebContents().forEach(wc => {
-          //   wc.send('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));
-          // })
         }
       }).catch((err) => {
         console.log(err);
@@ -248,10 +232,6 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
 
   if (!isTemp) {
     sendToRender('fire-file-saved', filepath);
-
-    // webContents.getAllWebContents().forEach(wc => {
-    //   wc.send('fire-file-saved', filepath);
-    // })
   }
 
   if (win) {
@@ -267,18 +247,10 @@ function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
 
 function fireFileSaveEvent(chooseFile: boolean) {
   sendToRender('fire-file-save', chooseFile);
-
-  // webContents.getAllWebContents().forEach(wc => {
-  //   wc.send('fire-file-save', chooseFile);
-  // })
 }
 
 function fireNewFileEvent() {
   sendToRender('fire-new-file', "");
-
-  // webContents.getAllWebContents().forEach(wc => {
-  //   wc.send('fire-new-file', "");
-  // })
 }
 
 var args = process.argv;
@@ -288,27 +260,23 @@ app.on('open-file', (event, path) => {
   openFile(path);
 });
 
-ipcMain.on('get-args', (event: any, arg: any) => {
-  // sendArgs();
+ipcMain.on('get-args', (event: any, arg: any) => { 
   sendToRender('send-args', args);
 })
-
-// function sendArgs() {
-//   sendToRender('send-args', args);
-//   // webContents.getAllWebContents().forEach(wc => {
-//   //   wc.send('send-args', args);
-//   // })
-// }
 
 var menu: Menu;
 
 async function createWindow() {
+
+  detectUSBEvents();
 
   // Create the browser window.
   win = new BrowserWindow({
     title: "Data Insight",
     width: 1400,
     height: 800,
+    minWidth: 400,
+    minHeight: 400, 
     x: 10,
     y: 10,
     webPreferences: {
@@ -322,7 +290,7 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
-  
+
   // Create the worker window.
   windowWorker = new BrowserWindow({
     title: "worker",
@@ -340,11 +308,13 @@ async function createWindow() {
   })
 
   win.on('close', (e) => {
+    usbDetect.stopMonitoring();
     if (win) {
       e.preventDefault();
       win.webContents.send('app-close');
     }
   });
+
   // win.setMenuBarVisibility(false)
   menu = Menu.buildFromTemplate([
     {
@@ -472,11 +442,13 @@ if (isDevelopment) {
   if (process.platform === 'win32') {
     process.on('message', (data) => {
       if (data === 'graceful-exit') {
+        usbDetect.stopMonitoring()
         app.quit()
       }
     })
   } else {
     process.on('SIGTERM', () => {
+      usbDetect.stopMonitoring()
       app.quit()
     })
   }

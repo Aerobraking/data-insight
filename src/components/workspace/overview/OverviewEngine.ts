@@ -94,7 +94,6 @@ export interface ColorStatsSettings<N> {
 
 export const COLUMNWIDTH = 700;
 
-
 export class OverviewEngine implements EntryListener<AbstractNode>{
 
 
@@ -107,7 +106,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     private static fpsInterval: number = 0;
     private static now: number = 0;
     private static then: number = 0;
-    private static timeLastFrame: number = 0;
     private static elapsed: number = 0;
     // milliseconds till last frame
     private static delta: number = 0;
@@ -115,7 +113,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     private static startClock(): void {
         OverviewEngine.fpsInterval = 1000 / 144;
         OverviewEngine.then = performance.now();
-        OverviewEngine.timeLastFrame = performance.now();
         OverviewEngine.tickClock();
     }
 
@@ -228,13 +225,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         d3.select(this.canvas).on('mousedown', function (e: MouseEvent) {
 
-
             /**
              * Left click
              */
             if (e.button == 0) {
 
-                const node: AbstractNode = _this.getNodeAtMousePosition();
+                const node: AbstractNode | undefined = _this.getNodeAtMousePosition();
                 if (e.shiftKey) {
                     if (node && !_this.selection.includes(node)) _this.selection.push(node);
                 } else if (e.ctrlKey) {
@@ -406,10 +402,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
-    public getNodeAtMousePosition = () => {
+    public getNodeAtMousePosition(): AbstractNode | undefined {
 
         let mGraph = this.screenToGraphCoords(this.mousePosition);
-        let scale = this.transform ? Math.max(40 / this.transform.k, 50) : 200;
+        let scale = this.transform ? Math.max(40 / this.transform.k, 100) : 200;
         let n = undefined;
         for (let i = 0; this.transform && this.transform.k > 0.005 && i < this.rootNodes.length; i++) {
             const e = this.rootNodes[i];
@@ -490,10 +486,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     hoverFinder(_this: this) {
-        const pxScale = 1;//window.devicePixelRatio;
-        if (!this.pauseHovering && _this.mousePosition && _this.mousePosition.x > 0 && _this.mousePosition.y > 0) {
+        const pxScale = 1; //window.devicePixelRatio;
+        if (!this.pauseHovering && _this.mousePosition && _this.mousePosition.x >= 0 && _this.mousePosition.y >= 0) {
 
-            let n = this.getNodeAtMousePosition();
+            let n: AbstractNode | undefined = this.getNodeAtMousePosition();
 
             _this.canvas.style.cursor = n ? "move" : "auto";
 
@@ -656,11 +652,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     public tick(): void {
 
-        if (this.engineActive) {
-            for (let index = 0; index < this._rootNodes.length; index++) {
-                this._rootNodes[index].tick();
-            }
+
+        for (let index = 0; index < this._rootNodes.length; index++) { 
+            this._rootNodes[index].tick();
         }
+
 
         if (this.colorTransitionElapsed != undefined) {
             this.colorTransitionElapsed += OverviewEngine.delta;
@@ -1045,7 +1041,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 if (isShadow) {
                     ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
                 }
- 
+
                 ctx.beginPath();
                 ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, start.getY());
                 ctx.lineTo(xStart, start.getY());
@@ -1333,7 +1329,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     let name = isNodeHovered && !isShadow && n.entry ? n.entry.path : n.name;
                     let yName = n.getY() - translate;
 
-                    xPos -= 120;
+                    xPos -= 140;
 
                     if (isShadow) {
                         ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
@@ -1345,10 +1341,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         if (this.colorSettings) {
                             let value = n.getStatsValue(this.colorSettings.attr);
                             let s = (value ? formatBytes(value, 2) : " - MB")
-                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 1);
+                            ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
                             value = n.getStatsValue(this.colorSettings.attr, false);
                             s = (value ? formatBytes(value, 2) : " - MB")
-                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 2);
+                            ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);
                         }
                     }
                 }

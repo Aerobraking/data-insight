@@ -9,7 +9,7 @@
   >
     <div class="filter-settings">
       <div class="slider"></div>
-      <div class="options"></div>
+      <!-- <div class="options"></div> -->
     </div>
 
     <!-- <div class="overview-search">
