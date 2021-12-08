@@ -653,7 +653,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     public tick(): void {
 
 
-        for (let index = 0; index < this._rootNodes.length; index++) { 
+        for (let index = 0; index < this._rootNodes.length; index++) {
             this._rootNodes[index].tick();
         }
 
@@ -1108,11 +1108,16 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.colorTransitionTarget = duration;
     }
 
-    private getRadius(node: AbstractNode, weight: number = 0.95): number {
+    private getFixedSize(value: number, min: number = value, max: number = Infinity) {
+
+        return Math.max(min, Math.min(value / d3.zoomTransform(this.canvas).k, max));
+    }
+
+    private getRadius(node: AbstractNode, padding: number = 0, weight: number = 0.95): number {
         let scale = this.transform ? this.transform.k > 1 ? 1 : this.transform.k : 1;
-        var r = node.getRadius();
+        var r = node.getRadius() + padding;
         r = (r * weight) + (r / scale) * (1 - weight);
-        return r;
+        return Math.max(1, r);
     }
 
     public updateNodeColorScale(node: AbstractNode | undefined = undefined): void {
@@ -1148,11 +1153,16 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     colorSettings: ColorStatsSettings<any> | undefined;
     static hiddenColor: string = "rgb(25,25,25)";
+    static colorSelection: string = "rgb(57, 215, 255)";
     colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
     colorTransitionElapsed: number | undefined = 0;
     colorTransitionTarget: number = 400;
     colorNodeDefault: string = "rgb(200,200,200)";
     colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
+
+    private isHoveredNode(n: any) {
+        return this.nodeHovered == n;
+    }
 
     getColorForNode(n: AbstractNode, getHiddenInfo: boolean = false, hoverHighlighting: boolean = true): string {
 
@@ -1189,9 +1199,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
 
-
-        ctx.lineWidth = 12;
-        var angle = 2 * Math.PI;
+        ctx.lineWidth = this.getFixedSize(12, 10, 26);
+        const angle = 2 * Math.PI;
         var i = 0, len = nodes.length;
         while (i < len) {
 
@@ -1204,7 +1213,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 ctx.globalAlpha = 1;
             }
 
-            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
+            if (this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
 
                 var r = this.getRadius(n);
 
@@ -1218,26 +1227,35 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 let xPos = widths[n.depth] ? widths[n.depth].x : 0;
 
                 ctx.beginPath();
-                ctx.arc(
-                    xPos,
-                    n.getY(),
-                    r,
-                    0,
-                    angle
-                );
-
 
                 if (n.isCollection) {
-                    ctx.stroke();
-                    r *= 0.5;
+                    ctx.arc(
+                        xPos, n.getY(),
+                        Math.max(1, r - ctx.lineWidth / 2),
+                        0, angle
+                    );
                     ctx.stroke();
                 } else {
+                    ctx.arc(
+                        xPos,n.getY(),
+                        r,
+                        0,angle
+                    );
                     ctx.fill();
                 }
 
                 if (this.selection.includes(n)) {
-                    r *= 1.3;
-                    ctx.strokeStyle = "white";
+
+                    ctx.beginPath();
+
+                    ctx.arc(
+                        xPos,
+                        n.getY(),
+                        Math.max(1, r - ctx.lineWidth / 2),
+                        0,
+                        angle
+                    );
+                    ctx.strokeStyle = OverviewEngine.colorSelection;
                     ctx.stroke();
                 }
 
@@ -1248,10 +1266,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             i++
         }
 
-    }
-
-    private isHoveredNode(n: any) {
-        return this.nodeHovered == n;
     }
 
     drawText(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
@@ -1278,65 +1292,32 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             let isNodeHovered = this.isHoveredNode(n);
 
+            var r = this.getRadius(n, 5);
+
+
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
 
                 let xPos = widths[n.depth] ? widths[n.depth].x : 0;
-                let width = widths[n.depth] ? widths[n.depth].width : 10;
 
                 if (!n.isRoot()) {
 
                     if (op > 0) {
                         ctx.textAlign = "left";
 
-                        let fontSize = isNodeHovered && !isShadow ? 34 : 30;
+                        let fontSize = 30;
                         ctx.font = `${fontSize}px Lato`;
-                        if (isShadow) {
-                            ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                        }
 
-                        let xName = xPos + 100 * 1.1;
+
+                        xPos += r;
                         let yName = n.getY() - fontSize / 2;
 
 
                         ctx.fillStyle = "#fff";
-                        ctx.fillText(`${n.name}  `, xName, yName);
-
-
-                        if (this.colorSettings) {
-                            let value = n.getStatsValue(this.colorSettings.attr);
-                            let s = (value ? formatBytes(value, 2) : " - MB")
-                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 1);
-                            value = n.getStatsValue(this.colorSettings.attr, false);
-                            s = (value ? formatBytes(value, 2) : " - MB")
-                            ctx.fillText(s.trim(), xPos + 100 * 1.1, yName + (fontSize + 4) * 2);
+                        if (this.selection.includes(n)) {
+                            ctx.fillStyle = OverviewEngine.colorSelection;
                         }
+                        ctx.fillText(`${n.name}  `, xPos, yName);
 
-                    }
-
-                } else {
-
-                    ctx.globalAlpha = 1;
-                    ctx.textAlign = "right";
-
-                    let fontSize = 16 / scale;
-                    let translate = (fontSize) / 4;
-
-                    ctx.font = `${fontSize}px Lato`;
-                    if (isShadow) {
-                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                    }
-
-                    let name = isNodeHovered && !isShadow && n.entry ? n.entry.path : n.name;
-                    let yName = n.getY() - translate;
-
-                    xPos -= 140;
-
-                    if (isShadow) {
-                        ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
-                        ctx.fillRect(xPos, n.getY() - fontSize, ctx.measureText(n.name).width, fontSize * 2);
-                    } else {
-                        ctx.fillStyle = "#fff";
-                        ctx.fillText(name, xPos, yName);
 
                         if (this.colorSettings) {
                             let value = n.getStatsValue(this.colorSettings.attr);
@@ -1346,7 +1327,43 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                             s = (value ? formatBytes(value, 2) : " - MB")
                             ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);
                         }
+
                     }
+
+                } else {
+
+                    ctx.globalAlpha = 1;
+                    ctx.textAlign = "right";
+
+                    let fontSize = this.getFixedSize(16);
+                    let translate = (fontSize) / 4;
+
+                    ctx.font = `${fontSize}px Lato`;
+
+                    let name = (isNodeHovered || this.selection.includes(n)) && n.entry ? n.entry.path : n.name;
+                    let yName = n.getY() + translate;
+
+
+                    xPos -= r;
+                    console.log(r);
+
+
+                    ctx.fillStyle = "#fff";
+                    if (this.selection.includes(n)) {
+                        ctx.fillStyle = OverviewEngine.colorSelection;
+                    }
+
+                    ctx.fillText(name, xPos, yName);
+
+                    if (this.colorSettings) {
+                        let value = n.getStatsValue(this.colorSettings.attr);
+                        let s = (value ? formatBytes(value, 2) : " - MB")
+                        ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
+                        value = n.getStatsValue(this.colorSettings.attr, false);
+                        s = (value ? formatBytes(value, 2) : " - MB")
+                        ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);
+                    }
+
                 }
             }
 

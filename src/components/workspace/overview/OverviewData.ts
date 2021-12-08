@@ -224,7 +224,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
             let part = this.getStatsValue("size");
             if (abs != undefined && part != undefined) {
                 let r = abs > 0 ? Math.sqrt(31415 * (part / abs) / Math.PI) : 1;
-                r = 100 * 0.2 + r * 0.8;
+                r = 100 * 0.1 + r * 0.9;
                 return Math.max(r, 16);
             }
         }
