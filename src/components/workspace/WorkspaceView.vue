@@ -202,8 +202,7 @@ import OverviewView from "./../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
 import { defineComponent } from "vue";
-import {
-  editElementDimension,
+import { 
   ElementDimension,
   getCoordinatesFromElement,
   ResizerComplex,
@@ -2228,6 +2227,11 @@ div .resizer-top-left {
 
 .wrapper-highlight {
   border: 2px solid $color-Selection;
+}
+
+.vue-pan-zoom-item{
+  width: 100%;
+  height:100%;
 }
 
 /**

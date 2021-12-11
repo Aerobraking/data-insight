@@ -41,8 +41,8 @@
         />
       </button>
       <button><FolderPlusOutline @click="createFolder" /></button>
-      <button><Monitor @click="openFolderInOS" /></button>
-      <button><DeleteEmptyOutline @click="deleteSelection" /></button>
+      <button><MonitorDashboard @click="openFolderInOS" /></button>
+      <button><DeleteVariant @click="deleteSelection" /></button>
       <!-- <input
         @keydown.capture.stop
         @keyup.capture.stop
@@ -135,14 +135,16 @@ import {
   HomeImportOutline,
   ArrowLeft,
   ArrowUp,
-  Monitor,
+  MonitorDashboard,
+  DeleteVariant,
   FolderPlusOutline,
 } from "mdue";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
-    Monitor,
+    MonitorDashboard,
+    DeleteVariant,
     FolderPlusOutline,
     ArrowUp,
     ArrowLeft,
@@ -249,8 +251,8 @@ export default defineComponent({
         this.folderOpen(this.$props.entry.defaultPath);
       }
     },
-    openFolderInOS(){
-       shell.openPath(this.entry.path);
+    openFolderInOS() {
+      shell.openPath(this.entry.path);
     },
     setDefault() {
       if (this.$props.entry != undefined) {
@@ -369,8 +371,10 @@ export default defineComponent({
             filePath = path.normalize(filePath).replace(/\\/g, "/");
 
             try {
+              console.log("accessSync");
               fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
 
+              console.log("lstatSync");
               const fileStat = fs.lstatSync(filePath);
 
               this.list.push(
@@ -381,6 +385,8 @@ export default defineComponent({
                 )
               );
             } catch (err) {
+              console.log(err);
+              
               console.error("no access! " + filePath);
             }
           });
@@ -445,7 +451,7 @@ export default defineComponent({
     },
     setFocusToThis() {
       setTimeout(() => {
-        this.$el.focus();
+        this.$el.focus({preventScroll: true});
       }, 10);
     },
     mouseup(e: MouseEvent) {
