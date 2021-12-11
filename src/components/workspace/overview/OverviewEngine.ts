@@ -250,12 +250,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             }
         });
 
-        d3.select(this.canvas).on('drop', function (e: DragEvent) {
-
-            console.log(e);
-
-        });
-
         // Setup node drag interaction
         d3.select(this.canvas).on("mousemove", function (e: MouseEvent) {
             var rect = _this.canvas.getBoundingClientRect();
@@ -1207,7 +1201,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             const n = nodes[i];
 
             const opacity = this.notFound.get(n);
-            if (!isShadow && opacity) {
+            if (opacity) {
                 ctx.globalAlpha = opacity.o;
             } else {
                 ctx.globalAlpha = 1;
@@ -1237,9 +1231,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.stroke();
                 } else {
                     ctx.arc(
-                        xPos,n.getY(),
+                        xPos, n.getY(),
                         r,
-                        0,angle
+                        0, angle
                     );
                     ctx.fill();
                 }
@@ -1283,12 +1277,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         for (let i = 0; i < nodes.length; i++) {
             const n = nodes[i];
 
-            const opacity = this.notFound.get(n);
-            if (!isShadow && opacity) {
-                ctx.globalAlpha = opacity.o;
-            } else {
-                ctx.globalAlpha = op;
-            }
+
 
             let isNodeHovered = this.isHoveredNode(n);
 
@@ -1301,32 +1290,41 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 if (!n.isRoot()) {
 
+                    const opacity = this.notFound.get(n);
+                    if (opacity) {
+                        ctx.globalAlpha = opacity.o;
+                    } else {
+                        ctx.globalAlpha = op;
+                    }
+
                     if (op > 0) {
                         ctx.textAlign = "left";
 
-                        let fontSize = 30;
+
+                        let fontSize = this.getFixedSize(20, 20, 35);
+                        let translate = (fontSize) / 4;
                         ctx.font = `${fontSize}px Lato`;
 
 
                         xPos += r;
-                        let yName = n.getY() - fontSize / 2;
+                        let yName = n.getY() + translate;
 
 
                         ctx.fillStyle = "#fff";
                         if (this.selection.includes(n)) {
                             ctx.fillStyle = OverviewEngine.colorSelection;
                         }
-                        ctx.fillText(`${n.name}  `, xPos, yName);
+                        ctx.fillText(`${n.isCollection ? "+" + (n.collectionSize) : n.name}  `, xPos, yName);
 
 
-                        if (this.colorSettings) {
-                            let value = n.getStatsValue(this.colorSettings.attr);
-                            let s = (value ? formatBytes(value, 2) : " - MB")
-                            ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
-                            value = n.getStatsValue(this.colorSettings.attr, false);
-                            s = (value ? formatBytes(value, 2) : " - MB")
-                            ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);
-                        }
+                        // if (this.colorSettings) {
+                        //     let value = n.getStatsValue(this.colorSettings.attr);
+                        //     let s = (value ? formatBytes(value, 2) : " - MB")
+                        //     ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
+                        //     value = n.getStatsValue(this.colorSettings.attr, false);
+                        //     s = (value ? formatBytes(value, 2) : " - MB")
+                        //     ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);
+                        // }
 
                     }
 
@@ -1335,9 +1333,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.globalAlpha = 1;
                     ctx.textAlign = "right";
 
-                    let fontSize = this.getFixedSize(16);
+                    let fontSize = this.getFixedSize(20);
                     let translate = (fontSize) / 4;
-
                     ctx.font = `${fontSize}px Lato`;
 
                     let name = (isNodeHovered || this.selection.includes(n)) && n.entry ? n.entry.path : n.name;
@@ -1345,7 +1342,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
 
                     xPos -= r;
-                    console.log(r);
 
 
                     ctx.fillStyle = "#fff";
@@ -1356,9 +1352,13 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.fillText(name, xPos, yName);
 
                     if (this.colorSettings) {
+
                         let value = n.getStatsValue(this.colorSettings.attr);
                         let s = (value ? formatBytes(value, 2) : " - MB")
                         ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
+                        fontSize = this.getFixedSize(10);
+                        translate = (fontSize) / 4;
+                        ctx.font = `${fontSize}px Lato`;
                         value = n.getStatsValue(this.colorSettings.attr, false);
                         s = (value ? formatBytes(value, 2) : " - MB")
                         ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);

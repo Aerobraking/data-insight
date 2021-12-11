@@ -272,6 +272,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
      */
     private _x?: number | undefined;
     isCollection: boolean = false;
+    collectionSize: number = 0;
 
 
 
@@ -636,7 +637,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     }
 
-    public addEntryPath(relativePath: string, isCollection: boolean = false) {
+    public addEntryPath(relativePath: string, isCollection: boolean = false, collectionSize: number = 0) {
         relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
 
         let folders: string[] = relativePath.split("/");
@@ -659,6 +660,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
                 if (i == folders.length - 1) {
                     // the sumbmitted folder
                     childFound.isCollection = isCollection;
+                    childFound.collectionSize = collectionSize ? collectionSize : 0;
                 }
             }
             currentFolder = childFound;
@@ -669,6 +671,16 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             this.updateSimulationData(false);
         }
 
+    }
+
+    public getPathToNode(node: D) {
+        let path: string = this.path;
+        const parents = node.parents();
+        for (let i = parents.length - 1; i > 0; i--) {
+            const p = parents[i];
+            path += "/" + p.name;
+        }
+        return path;
     }
 
     public removeEntryPath(relativePath: string) {
@@ -875,7 +887,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
             .y(function (d) { return d.getY(); });
 
         this.quadtree.addAll(this.nodes);
- 
+
         // console.log("update qTree", this.nodes.length);
 
 

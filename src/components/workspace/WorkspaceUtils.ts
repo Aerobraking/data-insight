@@ -15,21 +15,13 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
     const el: any = ref(null);
 
     let listener = {
-        dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void { },
         /**
          * Update the model coordinates with the current ones from the html view.
          */
         prepareFileSaving(): void {
             let coords: ElementDimension = getCoordinatesFromElement(el.value);
             e.setDimensions(coords);
-        },
-        zoom(transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc): void {
-
-        },
-        pluginStarted(modal: boolean): void {
-
         }
-
     };
 
     onMounted(() => {
@@ -52,37 +44,17 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
                 el.value.style.height = e.height + "px";
             }
 
-            var text: HTMLInputElement = el.value.getElementsByClassName("wsentry-displayname")[0];
+            // var text: HTMLInputElement = el.value.getElementsByClassName("wsentry-displayname")[0];
 
-            if (text != undefined) {
-
-                // text.classList.toggle("prevent-input", true);
-
-                //  text.readOnly = true;
-
-                const inputId = ref(e.displayname);
-                text.value = inputId.value;
-
-                // text.addEventListener("mousedown", function (e: MouseEvent) {
-                //     //e.preventDefault();
-                // }, true);
+            // if (text != undefined) {
 
 
+            //     const inputId = ref(e.displayname);
+            //     text.value = inputId.value;
 
-                // text.addEventListener("dblclick", function (e: MouseEvent) {
-                //  //   text.readOnly = false;
-                //     console.log("double click");
 
-                //   //  e.preventDefault();
-                // }, true);
-                // text.addEventListener("focusout", function (e: FocusEvent) {
-                //  //   text.readOnly = true;
-                //     console.log("focusout");
-                //   //  e.preventDefault();
-                // }, true);
-
-                el.value.appendChild(text);
-            }
+            //     el.value.appendChild(text);
+            // }
         }
     });
     onBeforeUnmount(() => {
@@ -102,6 +74,7 @@ export interface Listener {
     prepareFileSaving?: () => void;
     zoom?: (transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc) => void;
     pluginStarted?: (modal: boolean) => void;
+    event?: (type: "fixedZoomUpdate") => void;
 
 }
 
@@ -175,7 +148,7 @@ export class Dispatcher {
 
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {
-            if (c.dragStarting) c.dragStarting(selection, workspace); 
+            if (c.dragStarting) c.dragStarting(selection, workspace);
         });
     }
     zoom(workspace: WorkspaceViewIfc): void {
@@ -185,7 +158,12 @@ export class Dispatcher {
     }
     prepareFileSaving(): void {
         this.callbacks.forEach((c) => {
-            if (c.prepareFileSaving)   c.prepareFileSaving();
+            if (c.prepareFileSaving) c.prepareFileSaving();
+        });
+    }
+    event(type: "fixedZoomUpdate"): void {
+        this.callbacks.forEach((c) => {
+            if (c.event) c.event(type);
         });
     }
 

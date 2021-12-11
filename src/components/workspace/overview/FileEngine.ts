@@ -75,7 +75,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
                 switch (event.type) {
                     case "foldersync":
                         const result: FolderSyncResult = event as unknown as FolderSyncResult;
-                        this.addEntryPath(result.path, result.collection);
+                        this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
                         // break s;
                         break;
                     case "folderstats":
@@ -107,13 +107,18 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     getDepth(): number {
         return this._depth;
     }
-    
+
     getID(): number {
         return this.id;
     }
 
+    loadCollection(node: FolderNode) {
+        Instance.syncFolderMan(this, this.getPathToNode(node), 1);
+        node.parent?.removeChild(node);
+    }
+
     startWatcher(): void {
-   
+
         /**
          * this starts the syncing of the folder for this entry.
          */

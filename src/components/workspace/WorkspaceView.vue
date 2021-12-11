@@ -67,7 +67,7 @@
             }"
             selector=".zoomable"
           >
-            <div  class="zoomable close-file-anim">
+            <div class="zoomable close-file-anim">
               <div class="rectangle-selection"></div>
               <div class="rectangle-selection-wrapper">
                 <button class="ws-zoom-fixed resizer-bottom-right">
@@ -155,14 +155,14 @@
             >
               <FormTextbox />
             </button>
-            <button
+            <!-- <button
               @click="toggleNameResizing()"
               :disabled="selectedEntriesCount != 1"
             >
               <FormatSize />
-            </button>
+            </button> -->
             <button :disabled="selectedEntriesCount == 0">
-              <delete-empty-outline @click="deleteSelection" />
+              <DeleteVariant @click="deleteSelection" />
             </button>
           </div>
         </div>
@@ -170,7 +170,7 @@
 
       <pane :size="100 - model.paneSize">
         <OverviewView
-          class="overview" 
+          class="overview"
           :model="model"
           :searchstring="searchString"
         />
@@ -247,6 +247,7 @@ import {
   EmoticonHappyOutline,
   FormatHorizontalAlignCenter,
   ArrowCollapseLeft,
+  DeleteVariant,
 } from "mdue";
 
 export default defineComponent({
@@ -255,6 +256,7 @@ export default defineComponent({
   components: {
     Pane,
     Splitpanes,
+    DeleteVariant,
     FormatHorizontalAlignCenter,
     ArrowCollapseLeft,
     EmoticonHappyOutline,
@@ -447,6 +449,13 @@ export default defineComponent({
           const element = instances[i];
           element.classList.toggle("prevent-input", modal);
           element.classList.toggle("search-not-found", modal);
+        }
+      },
+      event(type: "fixedZoomUpdate"): void {
+        if (_this.model.isActive) {
+          setTimeout(() => {
+            _this.updateFixedZoomElements();
+          }, 10);
         }
       },
     });
@@ -964,6 +973,16 @@ export default defineComponent({
       if (e.altKey) {
         switch (e.key) {
           case "1":
+        }
+      }
+
+      /**
+       * Shift key down
+       */
+      if (e.shiftKey) {
+        const number = e.code.replace("Digit", "");
+        switch (number) {
+          case "1":
           case "2":
           case "3":
           case "4":
@@ -972,19 +991,21 @@ export default defineComponent({
           case "7":
           case "8":
           case "9":
-            if (this.model) {
-              let index = 0,
-                indexModel = 0;
-
-              for (let entry of this.model.entries) {
-                index = entry.displayname.length > 0 ? index + 1 : index;
-                if (index === Number(e.key)) {
-                  this.moveToEntry({ zoom: false, index: indexModel });
-                  break;
-                }
-                indexModel++;
-              }
+            /**
+             * Shortcut for bookmark selection
+             */
+            const bookmarks: HTMLCollectionOf<Element> =
+              this.$el.getElementsByClassName("bookmark-entry");
+            let i: number = +number - 1;
+            if (i < bookmarks.length) { 
+              this.moveToEntry({
+                id: bookmarks[i].getAttribute("name"),
+                zoom: false,
+              });
             }
+            e.preventDefault();
+            e.stopPropagation();
+            return;
             break;
         }
       }
@@ -1499,7 +1520,7 @@ export default defineComponent({
       activateDrag: boolean = true
     ) {
       /**
-       * Do not select entries that do not fit to the search
+       * Do not select entries that don't fit to the search
        */
       entries = entries.filter(
         (e) => !e.classList.contains("search-not-found")
@@ -1519,13 +1540,41 @@ export default defineComponent({
           break;
       }
 
+      /**
+       * Mark a single selection with a css class
+       */
+      Array.from(document.getElementsByClassName("ws-entry")).forEach(
+        (e: any) => {
+          e.classList.remove("workspace-is-selected-single");
+        }
+      );
+      Array.from(
+        document.getElementsByClassName("ws-entry workspace-is-selected")
+      ).forEach((e: any) => {
+        e.classList.toggle(
+          "workspace-is-selected-single",
+          this.getSelectedEntries().length == 1
+        );
+      });
+
+      /**
+       *
+       */
       if (this.getSelectedEntries().length > 1) {
+        /**
+         * when more then one entry is selected,
+         */
         document
           .querySelectorAll("div.ws-entry .wsentry-displayname")
           .forEach((e) => {
             e.classList.toggle("prevent-input", true);
           });
       } else {
+        document
+          .querySelectorAll("div.ws-entry .wsentry-displayname")
+          .forEach((e) => {
+            e.classList.toggle("prevent-input", false);
+          });
         document
           .querySelectorAll(
             "div.ws-entry:not(.workspace-is-selected) .wsentry-displayname"
@@ -1549,14 +1598,14 @@ export default defineComponent({
       entry = entry ? entry : this.getSelectedEntries()[0];
 
       let input: HTMLInputElement = entry.getElementsByClassName(
-        "wsentry-displayname"
+        "wsentry-displayname-input"
       )[0] as HTMLInputElement;
 
       /**
        * Enable input element. Will be disabled again when the entry is deselected.
        */
       document
-        .querySelectorAll(".workspace-is-selected .wsentry-displayname")
+        .querySelectorAll(".workspace-is-selected .wsentry-displayname-input")
         .forEach((e) => {
           e.classList.toggle("prevent-input", false);
         });
@@ -1569,20 +1618,8 @@ export default defineComponent({
     },
     toggleNameResizing(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
-
-      let input: HTMLInputElement = entry.getElementsByClassName(
-        "wsentry-displayname"
-      )[0] as HTMLInputElement;
-
       let model = this.getModelEntryFromView(entry);
       model.displaynameResize = !model.displaynameResize;
-
-      setTimeout(() => {
-        this.updateFixedZoomElements();
-        if (!model.displaynameResize) {
-          input.style.transform = "scale(" + 1 + ", " + 1 + ")";
-        }
-      }, 10);
     },
     deleteSelection() {
       if (this.getSelectedEntries().length == 0) {
@@ -1843,7 +1880,6 @@ export default defineComponent({
         element.style.transform = "scale(" + s + "," + s + ")";
       }
     },
-
     preventInput(prevent: boolean): void {
       this.getEntries().forEach((e) => {
         e.classList.toggle("prevent-input", prevent);
@@ -2046,7 +2082,7 @@ svg {
     margin: 0;
   }
 }
-  
+
 .search-not-found {
   opacity: 0.05;
   pointer-events: none;
@@ -2134,8 +2170,8 @@ div .resizer-bottom-right {
 }
 div .selection-system-drag {
   @include theme;
-  top: 0;
-  left: -25px;
+  top: 35px;
+  left: -35px;
   transform-origin: right top;
   cursor: grab;
   width: auto;
@@ -2192,31 +2228,6 @@ div .resizer-top-left {
 
 .wrapper-highlight {
   border: 2px solid $color-Selection;
-}
-
-.wsentry-displayname {
-  transform-origin: left bottom;
-  position: absolute;
-  left: 0px;
-  margin-left: 1px;
-  top: -40px;
-  width: auto;
-  z-index: 20;
-
-  background-color: transparent;
-  border: none;
-  color: rgb(230, 230, 230);
-  font-size: 25pt;
-  overflow: visible;
-  outline: none;
-  transition: background-color 500ms linear;
-  input {
-    outline: none;
-    color: rgb(233, 214, 107);
-  }
-  // &:hover {
-  //   background-color: rgba(102, 224, 255, 0.479);
-  // }
 }
 
 /**

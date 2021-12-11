@@ -94,7 +94,7 @@ export default defineComponent({
   // images are behind the normal stuff to use them as a background
   z-index: 50;
   // border: 1px solid #aaa;
-  // background: rgb(120, 120, 120);
+  background: rgb(207, 207, 207);
   position: absolute;
   color: #f1f1f1;
   padding: 0px;

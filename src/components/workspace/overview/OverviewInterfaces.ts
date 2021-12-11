@@ -8,12 +8,13 @@ export interface FileSystemListener {
 }
 
 export interface MessageType {
-
+    type: "folderdeepsync" | "foldersync" | "folderstats",
 }
 
 export interface FolderSync extends MessageType {
     type: "folderdeepsync",
     depth: number,
+    collectionSize: number,
     path: string,
     id: number
 }
@@ -26,8 +27,8 @@ export interface FolderSyncResult extends MessageType {
     type: "foldersync",
     path: string,
     id: number // the id of the overview entry that listens to this syncing
-    childCount:number,
-    collection:boolean,
+    childCount: number,
+    collection: boolean,
 }
 
 export interface FolderStatsResult extends MessageType {
@@ -36,7 +37,7 @@ export interface FolderStatsResult extends MessageType {
     stats: FolderStat,
     id: number // the id of the overview entry that listens to this syncing
 }
- 
+
 export enum StatsType {
     MEDIAN,
     SUM

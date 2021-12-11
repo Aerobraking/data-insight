@@ -50,9 +50,9 @@ ipcRenderer.on("msg-main",
 
                 count += folders.length;
 
-                let depthChildren = depth + 1;
+                const depthChildren = depth + 1;
 
-                const isCollection: boolean = folders.length >= 50 || depthChildren > maxDepth || depthChildren > 100;
+                const isCollection: boolean = folders.length >= msg.collectionSize || depthChildren > maxDepth || depthChildren > 100;
 
                 listFoldersToSync.push({ id: msg.id, childCount: folders.length, path: pathCurrent, type: "foldersync", collection: isCollection });
 

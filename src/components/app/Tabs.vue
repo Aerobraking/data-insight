@@ -109,8 +109,7 @@ import workspaceview from "../workspace/WorkspaceView.vue";
 import overviewview from "../overview/OverviewView.vue";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import draggable from "vuedraggable";
-import _ from "underscore";
-import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
+import _ from "underscore"; 
 import * as WSUtils from "./../workspace/WorkspaceUtils";
 
 import { ArrowCollapseUp } from "mdue";

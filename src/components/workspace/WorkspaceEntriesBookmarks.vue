@@ -1,15 +1,4 @@
 <script lang="ts">
-const message: string[] = [
-  "vue.draggable",
-  "draggable",
-  "component",
-  "for",
-  "vue.js 2.0",
-  "based",
-  "on",
-  "Sortablejs",
-];
-
 import { Workspace, WorkspaceEntry } from "../../store/model/Workspace";
 import { defineComponent } from "vue";
 import draggable from "vuedraggable";
@@ -46,7 +35,7 @@ export default defineComponent({
             zoom: zoom,
           });
           this.clickTimer = null;
-        }, 5); //tolerance in ms
+        }, 5);
       } else {
         clearTimeout(this.clickTimer);
         this.clickTimer = null;
@@ -118,8 +107,7 @@ export default defineComponent({
     </draggable>
   </div>
 </template>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+ 
 <style scoped lang="scss">
 .bookmarks {
   position: absolute;
@@ -141,11 +129,9 @@ export default defineComponent({
 .bookmark-entry {
   color: #fff;
   cursor: pointer;
+  min-width: 250px;
   display: table;
   padding-top: 10px;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
   text-shadow: rgb(0, 0, 0) 0px 0 15px, rgb(0, 0, 0) 0px 0 4px;
   transition: transform 0.3s ease-in-out;

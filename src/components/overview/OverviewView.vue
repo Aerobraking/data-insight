@@ -38,6 +38,7 @@
         />
       </button>
       <button><FolderOutline @click="selectFolders()" /></button>
+      <button><FolderOutline @click="loadCollection()" /></button>
     </div>
 
     <button class="pane-button-ov">
@@ -68,8 +69,7 @@ import {
   EngineState,
   OverviewEngine,
 } from "../workspace/overview/OverviewEngine";
-import { Instance } from "../workspace/overview/OverviewTransferHandler";
-import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
+import { Instance } from "../workspace/overview/OverviewTransferHandler"; 
 
 import path from "path";
 import {
@@ -369,6 +369,15 @@ export default defineComponent({
         );
       }
     },
+    loadCollection() {
+      if (this.overviewEngine) {
+        let n: FolderNode = this.overviewEngine.selection[0] as FolderNode;
+
+        if (n && n.entry) {
+          n.entry.loadCollection(n);
+        }
+      }
+    },
     addFolders(listFolders: string[], pos: { x: number; y: number }) {
       let listEntries: FolderOverviewEntry[] = Instance.getData(
         this.idOverview
@@ -418,7 +427,7 @@ export default defineComponent({
           const f = e.dataTransfer?.files[index];
           listFolders.push(f.path);
         }
-  
+
         this.addFolders(
           listFolders,
           this.overviewEngine.screenToGraphCoords(e)
