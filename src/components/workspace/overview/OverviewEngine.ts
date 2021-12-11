@@ -210,6 +210,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 this.size.w = w;
                 this.size.h = h;
             }
+            this.tick();
         });
         this.divObserver.observe(div);
 

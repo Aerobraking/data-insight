@@ -69,7 +69,7 @@ import {
   EngineState,
   OverviewEngine,
 } from "../workspace/overview/OverviewEngine";
-import { Instance } from "../workspace/overview/OverviewTransferHandler"; 
+import { Instance } from "../workspace/overview/OverviewTransferHandler";
 
 import path from "path";
 import {
@@ -137,13 +137,34 @@ export default defineComponent({
   mounted() {
     const _this = this;
 
-    var sliderDiv = this.$el.getElementsByClassName("slider")[0];
+    const sliderDiv = this.$el.getElementsByClassName("slider")[0];
+
+    const format = (value: number) => {
+      value = Math.round(value);
+      console.log(value);
+      if (value < 1024) {
+        return "1 MB";
+      } else if (value < 1024 * 1024) {
+        return Math.round(value / Math.pow(1024, 1)) + " KB";
+      } else if (value < 1024 * 1024 * 1024) {
+        return Math.round(value / Math.pow(1024, 2)) + " MB";
+      } else if (value < 1024 * 1024 * 1024 * 1024) {
+        return Math.round(value / Math.pow(1024, 3)) + " GB";
+      } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
+        return Math.round(value / Math.pow(1024, 4)) + " TB";
+      }
+
+      return value + " Bytes";
+    };
 
     var slider = noUiSlider.create(sliderDiv, {
       start: [0, 1024 * 1024 * 1024 * 512],
       connect: true,
       behaviour: "drag",
       orientation: "vertical",
+      tooltips: {
+        to: format,
+      },
       margin: 1024 * 1024 * 8,
       range: {
         min: 0, // kb
@@ -157,20 +178,7 @@ export default defineComponent({
         mode: PipsMode.Range,
         density: 2,
         format: {
-          to: (value: number) => {
-            if (value < 1024) {
-              return "1 MB";
-            } else if (value < 1024 * 1024) {
-              return value / Math.pow(1024, 1) + " KB";
-            } else if (value < 1024 * 1024 * 1024) {
-              return value / Math.pow(1024, 2) + " MB";
-            } else if (value < 1024 * 1024 * 1024 * 1024) {
-              return value / Math.pow(1024, 3) + " GB";
-            } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
-              return value / Math.pow(1024, 4) + " TB";
-            }
-            return value + " Bytes";
-          },
+          to: format,
         },
       },
     });
@@ -441,9 +449,9 @@ export default defineComponent({
 <style   lang="scss">
 .filter-settings {
   position: absolute;
-  top: 150px;
-  left: 40px;
-  width: 150px;
+  top: 90px;
+  right: 5px;
+  width: 32px;
   height: 70%;
   z-index: 6000;
   .slider {

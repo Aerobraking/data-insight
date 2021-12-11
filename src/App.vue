@@ -520,8 +520,44 @@ div .prevent-input {
 .noUi-marker-vertical.noUi-marker-large {
   width: 15px;
 }
-.noUi-tooltip {
+
+/**
+Left Pips
+ */
+.noUi-pips-vertical {
+  padding: 0 20px !important;
+  height: 100%;
+  top: 0;
+  right: 150%;
+  left: initial !important;
+}
+.noUi-marker-vertical.noUi-marker {
+  width: 5px;
+  height: 2px;
+  margin-top: -1px;
+  right: 0px !important;
+}
+.noUi-value-vertical {
+  transform: translate(0, -50%);
+  padding-left: 0;
+  text-align: right !important;
+  min-width: 200px !important;
+  right: 21px !important;
+}
+.noUi-marker-vertical.noUi-marker-large {
+  width: 15px !important;
+}
+
+/**
+Tooltips
+ */
+
+.noUi-active .noUi-tooltip {
   display: block;
+}
+
+.noUi-tooltip {
+  display: none;
   position: absolute;
   border: 1px solid #d9d9d9;
   border-radius: 3px;
@@ -534,15 +570,15 @@ div .prevent-input {
 .noUi-horizontal .noUi-tooltip {
   -webkit-transform: translate(-50%, 0);
   transform: translate(-50%, 0);
-  left: 50%;
+  right: 50%;
   bottom: 120%;
 }
 .noUi-vertical .noUi-tooltip {
   -webkit-transform: translate(0, -50%);
   transform: translate(0, -50%);
   top: 50%;
-  // right: 120%;
-  left: 120%;
+  right: 120%;
+  //left: 120%;
 }
 .noUi-horizontal .noUi-origin > .noUi-tooltip {
   -webkit-transform: translate(50%, 0);

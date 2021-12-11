@@ -567,8 +567,8 @@ export default defineComponent({
         Math.max(15, 50 * (this.getCurrentTransform().scale * 10)),
         90
       );
-      b = 70;
-      context.fillStyle = "rgb(" + b + "," + b + "," + (b + 5) + ")";
+      b = 30;
+      context.fillStyle = "rgb(" + b + "," + b + "," + (b ) + ")";
 
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillRect(0, 0, canvas.width, canvas.height);
