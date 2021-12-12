@@ -1,6 +1,6 @@
 
 import { Overview } from "@/store/model/OverviewDataModel";
-import { ElementDimensionInstance } from "@/utils/resize";
+import { ElementDimension, ElementDimensionInstance } from "@/utils/resize";
 import { Exclude, Type } from "class-transformer";
 import * as d3 from "d3";
 import {
@@ -143,7 +143,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
-    constructor(div: HTMLElement, state: EngineState, overview: Overview) {
+    constructor(div: HTMLElement, overview: Overview) {
 
         if (!OverviewEngine.started) {
             OverviewEngine.startClock();
@@ -155,7 +155,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         var _this = this;
 
         this.overview = overview;
-        this.state = state
+
 
         let c = d3
             .select(div)
@@ -217,6 +217,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         d3.select(this.canvas).on('dblclick', function (e: MouseEvent) {
 
             var rect = _this.canvas.getBoundingClientRect();
+            // update saved internal canvas mouse position
             _this.mousePosition = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
             let pos = _this.screenToGraphCoords(e);
@@ -246,7 +247,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     const n = _this.selection[i];
                     listSelection.push(...n.descendants(), ...n.parents());
                 }
-                listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
+
+                // listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
 
             }
         });
@@ -392,9 +394,15 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.zoom.on("end", (event: any, d: HTMLCanvasElement) => {
             _this.pauseHovering = false;
         });
+
         let t = d3.zoomTransform(this.canvas);
 
 
+    }
+
+    public clearSelection() {
+        this.selection = [];
+        this.setFilterList("selection");
     }
 
     public getNodeAtMousePosition(): AbstractNode | undefined {
@@ -414,8 +422,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         }
 
         return n;
-        // return obj != null ? obj : undefined;
-
     };
 
     public graphToScreenCoords(c: MouseEvent | { x: number, y: number }) {
@@ -441,6 +447,39 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     public destroy() {
         this.divObserver.disconnect();
+    }
+
+    public getNodesBoundingBox(padding: number = 1): ElementDimension {
+
+        const d: ElementDimensionInstance = new ElementDimensionInstance(-Infinity, -Infinity, 0, 0, Infinity, Infinity);
+
+        for (let index = 0; index < this._rootNodes.length; index++) {
+
+            const e = this._rootNodes[index];
+            for (let j = 0; j < this._rootNodes[index].nodes.length; j++) {
+                const n = this._rootNodes[index].nodes[j];
+
+                const x = n.getX() + e.x;
+                const y = n.getY() + e.y;
+
+                d.x = d.x < x ? x : d.x;
+                d.x2 = d.x2 > x ? x : d.x2;
+                d.y = d.y < y ? y : d.y;
+                d.y2 = d.y2 > y ? y : d.y2;
+            }
+        }
+        d.calculateSize();
+        d.scaleFromCenter(padding);
+        return d;
+    }
+
+    public zoomToFit() {
+        this.setViewBox(this.getNodesBoundingBox(1.6));
+    }
+
+    public setViewBox(dim: ElementDimension) {
+        const scale = Math.min(Math.abs(this.canvas.width / dim.w), Math.abs(this.canvas.height / dim.h));
+        this.setView(scale, dim.x + dim.w / 2, +dim.y + dim.h / 2, 400);
     }
 
     public setView(scale: number, x: number, y: number, duration: number = 70) {
@@ -504,12 +543,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     };
 
     pauseHovering: boolean = false;
-    selection: AbstractNode[] = [];
+    public selection: AbstractNode[] = [];
     mousePosition: { x: number, y: number } = { x: 0, y: 0 };
     autocolor: ColorTracker = new ColorTracker();
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
-    overview: Overview;
-    state: EngineState;
+    overview: Overview; 
     size: ElementDimensionInstance;
     divObserver: ResizeObserver;
     canvas: HTMLCanvasElement;
@@ -521,7 +559,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     canvasShadow: HTMLCanvasElement;
     engineActive: boolean = true;
     public showShadow: boolean = false;
-    private _rootNodes: any[] = [];
+    private _rootNodes: AbstractOverviewEntry[] = [];
 
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
@@ -827,7 +865,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     updateColumns: boolean = true;
 
-
     private drawCanvas(ctx: CanvasRenderingContext2D, isShadow: boolean = false) {
 
         this.clearCanvas(ctx, this.size.w, this.size.h);
@@ -844,9 +881,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         if (this.rootNodes && this.transform) {
 
-            if (isShadow) {
-                ctx.fillStyle = "rgb(240,240,240)";
-                ctx.fillRect(-100, -100, 200, 200);
+            /** draw bounding box */
+            if (false) {
+                ctx.fillStyle = "rgba(240,240,240,0.3)";
+                const d = this.getNodesBoundingBox();
+                ctx.fillRect(d.x, d.y, d.w, d.h);
             }
 
             for (let index = 0; index < this.rootNodes.length; index++) {
@@ -997,12 +1036,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(end)) {
 
-                ctx.lineWidth = isShadow ? 10 : lineWidth;
-
                 var rStart = this.getRadius(start);
                 let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x : widths[start.depth].x + widths[start.depth].width * 0.36) : 0;
                 let xEnd = widths[end.depth] ? widths[end.depth].x - 150 : 0;
-
 
                 var r = this.getRadius(end);
 
@@ -1012,14 +1048,34 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.strokeStyle = "#555";
                 }
 
-                let grd = ctx.createLinearGradient(xStart, 0, xEnd, 0);
+                const drawCurve = () => {
+                    ctx.beginPath();
+                    ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, start.getY());
+                    ctx.lineTo(xStart, start.getY());
 
-                /*
-                a = r * r * PI
-                250 * 0.4 = 
-                interpolateWarm
-                interpolatePlasma
-                */
+                    ctx.moveTo(xStart, start.getY());
+
+                    ctx.moveTo(xStart, start.getY());
+                    let midX = (xStart + xEnd) / 2;
+                    ctx.bezierCurveTo(
+                        midX,
+                        start.getY(),
+                        midX,
+                        end.getY(),
+                        xEnd,
+                        end.getY()
+                    );
+                    ctx.moveTo(xEnd, end.getY());
+                    ctx.lineTo(xEndLine, end.getY());
+                    ctx.stroke();
+                }
+
+                if ((start.entry && this.selection.includes(start.entry.root))) {
+                    ctx.strokeStyle = OverviewEngine.colorSelection;
+                    ctx.lineWidth = lineWidth * 3.5;
+                    drawCurve();
+                }
+
                 let colorStart = this.getColorForNode(start);
 
                 let colorEnd = this.getColorForNode(end, true);
@@ -1027,35 +1083,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     colorStart = colorEnd;
                 }
 
+                const grd = ctx.createLinearGradient(xStart, 0, xEnd, 0);
                 grd.addColorStop(0.15, colorStart);
                 grd.addColorStop(0.45, colorEnd);
 
-
+                ctx.lineWidth = lineWidth;
                 ctx.strokeStyle = grd;
+                drawCurve();
 
-                if (isShadow) {
-                    ctx.strokeStyle = end.colorID ? end.colorID : "rgb(200,200,200)";
-                }
-
-                ctx.beginPath();
-                ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, start.getY());
-                ctx.lineTo(xStart, start.getY());
-
-                ctx.moveTo(xStart, start.getY());
-
-                ctx.moveTo(xStart, start.getY());
-                let midX = (xStart + xEnd) / 2;
-                ctx.bezierCurveTo(
-                    midX,
-                    start.getY(),
-                    midX,
-                    end.getY(),
-                    xEnd,
-                    end.getY()
-                );
-                ctx.moveTo(xEnd, end.getY());
-                ctx.lineTo(xEndLine, end.getY());
-                ctx.stroke();
 
             }
 
@@ -1239,7 +1274,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.fill();
                 }
 
-                if (this.selection.includes(n)) {
+                if (this.selection.includes(n) || (n.entry && this.selection.includes(n.entry.root))) {
 
                     ctx.beginPath();
 

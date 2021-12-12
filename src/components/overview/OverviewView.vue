@@ -31,23 +31,26 @@
       <button>
         <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
       </button> -->
-      <button>
+      <!-- <button>
         <Pause
           @dblclick.capture.stop
           @click="overviewEngine.engineActive = !overviewEngine.engineActive"
         />
-      </button>
+      </button> -->
+      <button><Overscan @click="showAll()" /></button>
       <button><FolderOutline @click="selectFolders()" /></button>
+      <button><DeleteEmptyOutline @click="deleteSelection()" /></button>
       <button><FolderOutline @click="loadCollection()" /></button>
+      <button><FolderOutline @click="createCollection()" /></button>
+      <button><FolderOutline @click="createRootFromNode()" /></button>
     </div>
-
     <button class="pane-button-ov">
       <FormatHorizontalAlignCenter
-        v-show="model.paneSize == 0"
+        v-show="model.paneSize <= 5"
         @click="paneButtonClicked()"
       />
       <ArrowCollapseRight
-        v-show="model.paneSize > 0"
+        v-show="model.paneSize > 5"
         @click="paneButtonClicked()"
       />
     </button>
@@ -56,6 +59,7 @@
 
 <script lang="ts">
 const fs = require("fs");
+const util = require("util");
 import { ipcRenderer } from "electron";
 import { Workspace } from "@/store/model/Workspace";
 import {
@@ -74,7 +78,9 @@ import { Instance } from "../workspace/overview/OverviewTransferHandler";
 import path from "path";
 import {
   Pause,
+  DeleteEmptyOutline,
   Qrcode,
+  Overscan,
   FolderOutline,
   FormatHorizontalAlignCenter,
   ArrowCollapseRight,
@@ -90,7 +96,9 @@ export default defineComponent({
   name: "App",
   components: {
     Qrcode,
+    Overscan,
     Pause,
+    DeleteEmptyOutline,
     FolderOutline,
     FormatHorizontalAlignCenter,
     ArrowCollapseRight,
@@ -108,8 +116,8 @@ export default defineComponent({
   watch: {
     // only draw the canvas when the overview is visibile
     "model.overviewOpen": function (newValue: boolean, oldValue: boolean) {
-      if (this.overviewEngine) {
-        this.overviewEngine.enablePainting = true;
+      if (Instance.getEngine(this.idOverview)) {
+       Instance.getEngine(this.idOverview).enablePainting = true;
       }
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
@@ -120,7 +128,7 @@ export default defineComponent({
     },
   },
   data(): {
-    overviewEngine: OverviewEngine | undefined;
+    // overviewEngine: OverviewEngine | undefined;
     state: EngineState;
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
@@ -130,7 +138,7 @@ export default defineComponent({
       selection: [],
       idOverview: 0,
       wsListener: undefined,
-      overviewEngine: undefined,
+      // overviewEngine: undefined,
       state: new EngineState(),
     };
   },
@@ -184,8 +192,8 @@ export default defineComponent({
     });
 
     const filterfunc = _.throttle((stats: string, min: number, max: number) => {
-      if (_this.overviewEngine) {
-        _this.overviewEngine.setColorScale<FolderNode>(
+      if (Instance.getEngine(this.idOverview)) {
+       Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
           "size",
           Number(min),
           Number(max),
@@ -231,22 +239,22 @@ export default defineComponent({
     Instance.storeData(this.model.overview);
     this.idOverview = this.model.overview.id;
 
-    this.overviewEngine = new OverviewEngine(
-      this.$el.getElementsByClassName("overview-wrapper")[0],
-      this.state,
-      this.model.overview
-    );
+    // Instance.getEngine(this.idOverview) = new OverviewEngine(
+    //   this.$el.getElementsByClassName("overview-wrapper")[0],
+    //   this.model.overview
+    // );
+    Instance.createEngine(this.idOverview,this.$el.getElementsByClassName("overview-wrapper")[0], this.model.overview);
+
+
 
     let a: FolderOverviewEntry[] = Instance.getData(this.idOverview);
-    if (this.overviewEngine) {
-      // debugger;
-      this.overviewEngine.rootNodes = a;
-    }
+   
+Instance.getEngine(this.idOverview).rootNodes=a;
     //          kb    mb      gb
     // 723889653
     let maxV = 1024 * 1024 * 1024;
 
-    this.overviewEngine.setColorScale<FolderNode>(
+    Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
       "size",
       0,
       maxV,
@@ -265,7 +273,6 @@ export default defineComponent({
     this.wsListener = {
       prepareFileSaving(): void {
         Instance.transferData(_this.model.overview);
-        console.log(_this.model.overview);
       },
     };
 
@@ -284,15 +291,34 @@ export default defineComponent({
     WSUtils.Events.registerCallback(this.wsListener);
   },
   unmounted() {
-    this.overviewEngine?.destroy();
+    Instance.getEngine(this.idOverview).destroy();
     if (this.wsListener) {
       WSUtils.Events.unregisterCallback(this.wsListener);
     }
   },
   computed: {},
   methods: {
+    showAll(): void {
+      Instance.getEngine(this.idOverview).zoomToFit();
+    },
+    deleteSelection(): void {
+      let l: FolderOverviewEntry[] = Instance.getData(this.idOverview);
+
+      if (Instance.getEngine(this.idOverview)) {
+        const o = Instance.getEngine(this.idOverview);
+        l = l.filter(
+          (e) =>
+            o.selection.filter((s) => s.entry && s.entry.id == e.id).length == 0
+        );
+        // update the data
+        Instance.setData(this.idOverview, l);
+        // tell the engine that we removed entries and clear selection
+        Instance.getEngine(this.idOverview).rootNodes = l;
+        Instance.getEngine(this.idOverview).clearSelection();
+      }
+    },
     mousedown(e: MouseEvent): void {
-      const node = this.overviewEngine?.getNodeAtMousePosition();
+      const node = Instance.getEngine(this.idOverview).getNodeAtMousePosition();
 
       if (node) {
       }
@@ -303,7 +329,7 @@ export default defineComponent({
       }, 2);
     },
     paneButtonClicked(e: MouseEvent) {
-      this.model.paneSize = this.model.paneSize == 0 ? 50 : 100;
+      this.model.paneSize = this.model.paneSize <= 5 ? 50 : 100;
     },
     selectFolders() {
       ipcRenderer.send("select-files", {
@@ -317,10 +343,10 @@ export default defineComponent({
       let nodesMatching: AbstractNode[] = [];
 
       if (lowercase.length > 0) {
-        if (this.overviewEngine) {
-          for (let i = 0; i < this.overviewEngine.rootNodes.length; i++) {
+        if (Instance.getEngine(this.idOverview)) {
+          for (let i = 0; i < Instance.getEngine(this.idOverview).rootNodes.length; i++) {
             const entry: AbstractOverviewEntry =
-              this.overviewEngine.rootNodes[i];
+              Instance.getEngine(this.idOverview).rootNodes[i];
 
             for (let j = 0; j < entry.nodes.length; j++) {
               const n = entry.nodes[j];
@@ -331,21 +357,23 @@ export default defineComponent({
             }
           }
         }
-        this.overviewEngine?.setFilterList("search", nodesMatching);
+        console.log(nodesMatching);
+        
+        Instance.getEngine(this.idOverview).setFilterList("search", nodesMatching);
       } else {
-        this.overviewEngine?.setFilterList("search");
+        Instance.getEngine(this.idOverview).setFilterList("search");
       }
     },
     toggleShadowCanvas() {
-      this.overviewEngine?.showShadowCanvas(!this.overviewEngine.showShadow);
+      Instance.getEngine(this.idOverview).showShadowCanvas(!Instance.getEngine(this.idOverview).showShadow);
 
-      console.log(this.overviewEngine?.rootNodes);
+      console.log(Instance.getEngine(this.idOverview).rootNodes);
     },
     setMode1() {
-      if (this.overviewEngine) {
+      if (Instance.getEngine(this.idOverview)) {
         let maxV = 1024 * 1024 * 512;
 
-        this.overviewEngine.setColorScale<FolderNode>(
+        Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
           "size",
           0,
           maxV,
@@ -360,10 +388,10 @@ export default defineComponent({
       }
     },
     setMode2() {
-      if (this.overviewEngine) {
+      if (Instance.getEngine(this.idOverview)) {
         let maxV = 1024 * 1024 * 50;
 
-        this.overviewEngine.setColorScale<FolderNode>(
+        Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
           "size",
           0,
           maxV,
@@ -378,42 +406,45 @@ export default defineComponent({
       }
     },
     loadCollection() {
-      if (this.overviewEngine) {
-        let n: FolderNode = this.overviewEngine.selection[0] as FolderNode;
+      if (Instance.getEngine(this.idOverview)) {
+        let n: FolderNode = Instance.getEngine(this.idOverview).selection[0] as FolderNode;
 
-        if (n && n.entry) {
+        if (n && n.isCollection && n.entry) {
           n.entry.loadCollection(n);
         }
       }
     },
-    addFolders(listFolders: string[], pos: { x: number; y: number }) {
+    createCollection() {
+      if (Instance.getEngine(this.idOverview)) {
+        let n: FolderNode = Instance.getEngine(this.idOverview).selection[0] as FolderNode;
+        !n.isCollection && n.parent ? n.createCollection() : 0;
+      }
+    },
+    createRootFromNode() {
+      if (Instance.getEngine(this.idOverview)) {
+        let n: FolderNode = Instance.getEngine(this.idOverview).selection[0] as FolderNode;
+        this.addFolders([n.getPath()], { x: n.getX(), y: n.getY() });
+      }
+    },
+    addEntries(entries: FolderOverviewEntry[], pos: { x: number; y: number }) {
       let listEntries: FolderOverviewEntry[] = Instance.getData(
         this.idOverview
       );
 
-      console.log(pos);
+      console.log("add entries");
+      
 
-      /**
-       * create the entries based on the dropped files.
-       */
-      for (let index = 0; index < listFolders.length; index++) {
-        const f = listFolders[index];
-        const p = path.normalize(f).replace(/\\/g, "/");
-        const fileStat = fs.lstatSync(p);
-        if (fileStat.isDirectory()) {
-          let root: FolderOverviewEntry = new FolderOverviewEntry(p);
-          root.setCoordinates(pos);
-          root.engine = this.overviewEngine;
-          root.depth = 3;
-          listEntries.push(root);
-        }
-      }
+      entries.forEach((e) => {
+        e.setCoordinates(pos);
+        e.engine = Instance.getEngine(this.idOverview);
+      });
 
+      listEntries.push(...entries);
       /**
        * register the entries to the engine
        */
-      if (this.overviewEngine) {
-        this.overviewEngine.rootNodes = listEntries;
+      if (Instance.getEngine(this.idOverview)) {
+        Instance.getEngine(this.idOverview).rootNodes = listEntries;
       }
 
       /**
@@ -424,13 +455,31 @@ export default defineComponent({
         e.startWatcher();
       }
     },
+    addFolders(listFolders: string[], pos: { x: number; y: number }) {
+      let listEntries: FolderOverviewEntry[] = [];
+
+      /**
+       * create the entries based on the dropped files.
+       */
+      for (let index = 0; index < listFolders.length; index++) {
+        const f = listFolders[index];
+        const p = path.normalize(f).replace(/\\/g, "/");
+        const fileStat = fs.lstatSync(p);
+        if (fileStat.isDirectory()) {
+          let root: FolderOverviewEntry = new FolderOverviewEntry(p);
+          root.depth = 3;
+          listEntries.push(root);
+        }
+      }
+      this.addEntries(listEntries, pos);
+    },
     drop(e: DragEvent) {
       let listFolders: string[] = [];
 
       /**
        * create the entries based on the dropped files.
        */
-      if (e.dataTransfer && this.overviewEngine) {
+      if (e.dataTransfer && Instance.getEngine(this.idOverview)) {
         for (let index = 0; index < e.dataTransfer?.files.length; index++) {
           const f = e.dataTransfer?.files[index];
           listFolders.push(f.path);
@@ -438,7 +487,7 @@ export default defineComponent({
 
         this.addFolders(
           listFolders,
-          this.overviewEngine.screenToGraphCoords(e)
+          Instance.getEngine(this.idOverview).screenToGraphCoords(e)
         );
       }
     },

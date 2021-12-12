@@ -48,6 +48,10 @@ ipcRenderer.on("msg-main",
                     }
                 }
 
+                console.log(pathCurrent);
+                console.log("Childrencount: ",folders.length);
+                
+
                 count += folders.length;
 
                 const depthChildren = depth + 1;

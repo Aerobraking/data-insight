@@ -46,7 +46,7 @@ export class FileSystemWatcher {
 
         this.hashDeepSync.set(listener.getID(), listener);
 
-        let msg: FolderSync = { type: "folderdeepsync", collectionSize: 50,path: listener.getPath(), depth: listener.getDepth(), id: listener.getID() }
+        let msg: FolderSync = { type: "folderdeepsync", collectionSize: 50, path: listener.getPath(), depth: listener.getDepth(), id: listener.getID() }
 
         /**
          * Ein neuer ordner wurde hinzugefügt, wir scannen ihn komplett.
@@ -54,10 +54,12 @@ export class FileSystemWatcher {
         ipcRenderer.send('msg-main', msg);
 
     }
+    
     syncFolderMan(listener: FileSystemListener, path: string, depth: number,): void {
 
 
         let msg: FolderSync = { type: "folderdeepsync", collectionSize: 5000, path: path, depth: depth, id: listener.getID() }
+        console.log(msg);
 
         /**
          * Ein neuer ordner wurde hinzugefügt, wir scannen ihn komplett.

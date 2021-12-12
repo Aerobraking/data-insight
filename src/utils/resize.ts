@@ -71,16 +71,19 @@ export interface ElementDimension {
 
 export class ElementDimensionInstance implements ElementDimension {
 
-    constructor(x: number,
-        y: number,
-        w: number,
-        h: number) {
+    constructor(x: number = 0,
+        y: number = 0,
+        w: number = 0,
+        h: number = 0,
+        x2:number=0,
+        y2:number=0,
+        ) {
         this.x = x;
         this.y = y;
         this.w = h;
         this.h = h;
-        this.x2 = 0;
-        this.y2 = 0;
+        this.x2 = x2;
+        this.y2 = y2;
     }
     x: number;
     y: number;
@@ -88,6 +91,22 @@ export class ElementDimensionInstance implements ElementDimension {
     h: number;
     x2: number;
     y2: number;
+
+    public calculateSize() {
+        this.w = this.x2 - this.x;
+        this.h = this.y2 - this.y;
+    }
+
+    public scaleFromCenter(s: number = 1) {
+        const oldW = this.w;
+        const oldH = this.h;
+        this.w *= s;
+        this.h *= s;
+        this.x -= ((this.w - oldW) / 2);
+        this.y -= ((this.h - oldH) / 2);
+        this.x2 += ((this.w - oldW) / 2);
+        this.y2 += ((this.h - oldH) / 2);
+    }
 }
 
 export function editElementDimension(d: ElementDimension, coord: (n: number) => number, size: (n: number) => number): void {

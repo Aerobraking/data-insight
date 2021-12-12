@@ -1,8 +1,10 @@
 import { Overview } from "@/store/model/OverviewDataModel";
 import { FolderOverviewEntry } from "./FileEngine";
+import { OverviewEngine } from "./OverviewEngine";
 
 export class OverviewTransferHandler {
 
+    private mapEngines: Map<number, OverviewEngine> = new Map();
     private hash: Map<number, FolderOverviewEntry[]> = new Map();
     private static _instance = new OverviewTransferHandler();
 
@@ -29,6 +31,9 @@ export class OverviewTransferHandler {
         }
         return a;
     }
+    setData(id: number, list: FolderOverviewEntry[]): void {
+        this.hash.set(id, list);
+    }
 
     storeData(o: Overview) {
         if (!this.hash.has(o.id)) {
@@ -36,8 +41,20 @@ export class OverviewTransferHandler {
             newArray.push(...o.rootNodes);
             o.rootNodes = [];
             this.hash.set(o.id, newArray);
-            console.log("stored: " + o.id);
         }
+    }
+
+    createEngine(id: number, div: HTMLElement, overview: Overview): Overview {
+        let overviewEngine = new OverviewEngine(
+            div,
+            overview
+        );
+        this.mapEngines.set(id, overviewEngine);
+        return overview;
+    }
+    getEngine(id: number): OverviewEngine {
+        let a = this.mapEngines.get(id);
+        return a as OverviewEngine;
     }
 
 }

@@ -113,8 +113,18 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     }
 
     loadCollection(node: FolderNode) {
-        Instance.syncFolderMan(this, this.getPathToNode(node), 1);
+        console.log(node);
+        
+        Instance.syncFolderMan(this, node.getPath(), 1);
         node.parent?.removeChild(node);
+    }
+
+    createCollection(node: FolderNode) {
+        node.createCollection();
+    }
+
+    stopWatcher(): void {
+
     }
 
     startWatcher(): void {

@@ -15,7 +15,7 @@ import { View } from "./store/model/DataModel";
 var fs = require("fs");
 
 ipcRenderer.on("log", (event, log) => {
-  console.log("log", log);
+  // console.log("log", log);
 });
 
 export default defineComponent({

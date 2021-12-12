@@ -173,11 +173,13 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.updateForce();
     }
 
-    public removeChild(c: this) {
+    public removeChild(c: any) {
         let index = this.children.indexOf(c);
         if (index > -1) {
             this.children.splice(index, 1);
-            this.entry?.nodeRemoved(c);
+            console.log(this);
+            console.log(this.entry);
+            this.entry?.nodeRemoved();
             this.updateSimulation();
             this.updateForce();
         }
@@ -274,7 +276,14 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     isCollection: boolean = false;
     collectionSize: number = 0;
 
-
+    public createCollection() {
+        this.collectionSize = this.children.length;
+        this.children = [];
+        this.isCollection = true;
+        this.entry?.nodeRemoved();
+        this.updateSimulation();
+        this.updateForce();
+    }
 
     public get name(): string {
         return this._name;
@@ -400,17 +409,30 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         return a;
     }
 
-    parents(addItself: boolean = false): Array<this> {
+    parents(addItself: boolean = false, addRoot: boolean = true): Array<this> {
         let a: Array<this> = [];
         let p = this;
         if (addItself) {
             a.push(p);
         }
         while (p.parent) {
-            a.push(p.parent);
+            if (addRoot || p.parent.parent) {
+                a.push(p.parent);
+            }
             p = p.parent;
         }
         return a;
+    }
+
+    getPath(): string {
+        let p = this.entry ? this.entry.path : "";
+        const desc = this.parents(true,false);
+        desc.reverse();
+        for (let i = 0; i < desc.length; i++) {
+            let e: this = desc[i];
+            p += "/" + e.name;
+        }
+        return p;
     }
 
     /**
@@ -673,15 +695,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     }
 
-    public getPathToNode(node: D) {
-        let path: string = this.path;
-        const parents = node.parents();
-        for (let i = parents.length - 1; i > 0; i--) {
-            const p = parents[i];
-            path += "/" + p.name;
-        }
-        return path;
-    }
+     
 
     public removeEntryPath(relativePath: string) {
 
@@ -723,7 +737,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         this.engine?.nodeUpdate();
     }
 
-    public nodeRemoved(c: D) {
+    public nodeRemoved() {
         this.updateSimulationData();
         this.updateColumnForces();
         this.engine?.nodeUpdate();
@@ -756,8 +770,6 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
         // }
     }
-
-
 
     /**
      * Updates the list of all nodes and links for this entry.
@@ -813,7 +825,6 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
 
     }
-
 
     /**
      * Updates the list of all nodes and links for this entry.

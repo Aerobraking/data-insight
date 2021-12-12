@@ -121,11 +121,11 @@
 
           <button class="pane-button-ws">
             <FormatHorizontalAlignCenter
-              v-show="model.paneSize == 100"
+              v-show="model.paneSize >= 95"
               @click="paneButtonClicked()"
             />
             <ArrowCollapseLeft
-              v-show="model.paneSize < 100"
+              v-show="model.paneSize < 95"
               @click="paneButtonClicked()"
             />
           </button>
@@ -135,7 +135,7 @@
             class="workspace-menu-bar"
             :class="{ 'workspace-menu-bar-hide': !getShowUI }"
           >
-            <button><Overscan @click="showAll" /></button>
+            <button><Overscan @click="showAll()" /></button>
             <button><FileOutline @click="createEntry('files')" /></button>
             <button><FolderOutline @click="createEntry('folders')" /></button>
             <button><Group @click="createEntry('frame')" /></button>
@@ -202,7 +202,7 @@ import OverviewView from "./../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
 import { defineComponent } from "vue";
-import { 
+import {
   ElementDimension,
   getCoordinatesFromElement,
   ResizerComplex,
@@ -519,11 +519,7 @@ export default defineComponent({
     },
     paneButtonClicked(size: number | undefined = undefined) {
       this.model.paneSize =
-        size != undefined
-          ? size
-          : this.model.paneSize == 0 || this.model.paneSize == 100
-          ? 50
-          : 0;
+        size != undefined ? size : this.model.paneSize >= 95 ? 50 : 0;
     },
     searchUpdate(): void {
       let models = this.model.entries;
@@ -568,7 +564,7 @@ export default defineComponent({
         90
       );
       b = 30;
-      context.fillStyle = "rgb(" + b + "," + b + "," + (b ) + ")";
+      context.fillStyle = "rgb(" + b + "," + b + "," + b + ")";
 
       context.clearRect(0, 0, canvas.width, canvas.height);
       context.fillRect(0, 0, canvas.width, canvas.height);
@@ -996,7 +992,7 @@ export default defineComponent({
             const bookmarks: HTMLCollectionOf<Element> =
               this.$el.getElementsByClassName("bookmark-entry");
             let i: number = +number - 1;
-            if (i < bookmarks.length) { 
+            if (i < bookmarks.length) {
               this.moveToEntry({
                 id: bookmarks[i].getAttribute("name"),
                 zoom: false,
@@ -1709,7 +1705,7 @@ export default defineComponent({
         this.$el.querySelectorAll(".workspace-is-selected")
       ) as HTMLElement[];
     },
-    getEntries: function (): HTMLElement[] {
+    getEntries(): HTMLElement[] {
       return Array.from(
         this.$el.querySelectorAll(".ws-entry")
       ) as HTMLElement[];
@@ -2042,6 +2038,11 @@ svg {
   }
 }
 
+.splitpanes__splitter {
+  background: #111 !important;
+  border: none !important;
+}
+
 .workspace-split-wrapper {
   position: relative;
   width: 100%;
@@ -2090,7 +2091,9 @@ svg {
 .workspace-search {
   position: relative;
   border: none;
-  background: #fff;
+  border-bottom: 1px solid #111;
+  border-top: 1px solid #111;
+  background: #111;
   padding-top: 0px;
   padding-bottom: 0px;
   width: 100%;
@@ -2112,28 +2115,26 @@ svg {
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr;
   input {
-    background: #eee;
+    background: #222;
     height: 28px;
     border: none;
     outline: none;
-    border-left: 1px solid #aaa;
-    border-right: 1px solid #aaa;
+    color: #eee;
+    border-left: 1px solid #333;
+    border-right: 1px solid #333;
     position: relative;
   }
   .search-results {
-    background: #fff;
+    background: #222;
     position: absolute;
     top: 100%;
     left: 33.33%;
     width: 33.33%;
-    color: #333;
+    color: #eee;
     overflow: hidden;
   }
 }
-
-.ws-zoom-fixed {
-}
-
+ 
 @mixin theme() {
   width: 15px;
   height: 15px;
@@ -2229,9 +2230,9 @@ div .resizer-top-left {
   border: 2px solid $color-Selection;
 }
 
-.vue-pan-zoom-item{
+.vue-pan-zoom-item {
   width: 100%;
-  height:100%;
+  height: 100%;
 }
 
 /**
