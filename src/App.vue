@@ -181,6 +181,20 @@ export default defineComponent({
             e.stopPropagation();
             break;
         }
+      }
+      if (e.altKey) {
+        switch (e.key) {
+          case "d":
+            // @ts-ignore: Unreachable code error
+            let show = !this.$store.getters.getShowUI;
+            this.$store.commit(MutationTypes.SHOW_UI, {
+              showUI: show,
+            });
+            break;
+
+          default:
+            break;
+        }
       } else {
         switch (e.key) {
           case "Delete":
@@ -211,7 +225,7 @@ export default defineComponent({
 body {
   margin: 0;
   padding: 0;
-  background-color: rgb(53, 53, 53);
+  background-color: #1d1d1d;
 }
 
 #app {
@@ -227,20 +241,22 @@ body {
   overflow: hidden;
 }
 
-div .resizer {
-  width: 10px;
-  height: 10px;
-  background: blue;
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  cursor: se-resize;
-}
-
 div .prevent-input {
   pointer-events: none;
 }
 
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  height: 20px;
+  width: 20px;
+  margin-left: 0.4em;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23777'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>");
+  cursor: pointer;
+
+  &:hover {
+    color: white;
+  }
+}
 /**
 
 

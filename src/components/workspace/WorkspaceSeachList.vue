@@ -1,12 +1,18 @@
 <script lang="ts">
 import { Workspace, WorkspaceEntry } from "../../store/model/Workspace";
 import { defineComponent } from "vue";
+import { FolderOverviewEntry } from "./overview/FileEngine";
+import { Instance } from "./overview/OverviewTransferHandler";
+import { AbstractNode } from "./overview/OverviewData";
 
 export default defineComponent({
   name: "wssearchlist",
   components: {},
   props: {
-    model: Workspace,
+    model: {
+      type: Workspace,
+      required: true,
+    },
     searchString: String,
     viewId: Number,
   },
@@ -18,33 +24,87 @@ export default defineComponent({
     };
   },
   methods: {
-    goToEntry(zoom: boolean, event: any) {
-      if (!this.clickTimer) {
-        this.clickTimer = setTimeout(() => {
+    goToEntry(zoom: boolean, event: any, e: any) {
+      const move = 80;
+
+      if (e instanceof WorkspaceEntry) {
+        if (!this.clickTimer) {
+          this.clickTimer = setTimeout(() => {
+            this.$emit("bookmarkclicked", {
+              id: event.target.getAttribute("name"),
+              zoom: zoom,
+            });
+            this.clickTimer = null;
+          }, 5); //tolerance in ms
+        } else {
+          clearTimeout(this.clickTimer);
+          this.clickTimer = null;
           this.$emit("bookmarkclicked", {
             id: event.target.getAttribute("name"),
             zoom: zoom,
           });
+        }
+
+        if (this.model.paneSize < 100 - move) {
+          this.model.paneSize = 100;
+        }
+      } else if (e instanceof AbstractNode) {
+        const engine = Instance.getEngine(this.model.overview.id);
+
+        if (!this.clickTimer) {
+          this.clickTimer = setTimeout(() => {
+            engine.setView(zoom ? 0.777 : undefined, e.getX(), e.getY(), 400);
+          }, 5);
+        } else {
+          clearTimeout(this.clickTimer);
           this.clickTimer = null;
-        }, 5); //tolerance in ms
-      } else {
-        clearTimeout(this.clickTimer);
-        this.clickTimer = null;
-        this.$emit("bookmarkclicked", {
-          id: event.target.getAttribute("name"),
-          zoom: zoom,
-        });
+          engine.setView(zoom ? 0.777 : undefined, e.getX(), e.getY(), 400);
+        }
+
+        if (this.model.paneSize > move) {
+          this.model.paneSize = 0;
+        }
       }
     },
   },
   computed: {
-    listFound: function (): WorkspaceEntry[] {
-      let c = this;
-      return c.searchString && c.searchString.trim().length > 0 && this.model
-        ? this.model?.entries.filter(function (number) {
-            return number.searchLogic(c.searchString ? c.searchString : "");
+    listFound: function (): (WorkspaceEntry | AbstractNode)[] {
+      let _this = this;
+
+      if (
+        _this.searchString &&
+        _this.searchString.trim().length > 0 &&
+        this.model
+      ) {
+        const s = _this.searchString.toLowerCase();
+
+        const list: (WorkspaceEntry | AbstractNode)[] = [];
+
+        list.push(
+          ...this.model.entries.filter(function (n) {
+            return n.searchLogic(s);
           })
-        : [];
+        );
+
+        let listEntries: FolderOverviewEntry[] = Instance.getData(
+          this.model.overview.id
+        );
+
+        for (let i = 0; i < listEntries.length; i++) {
+          const e = listEntries[i];
+
+          for (let j = 0; j < e.nodes.length; j++) {
+            const n = e.nodes[j];
+            if (n.name.toLowerCase().includes(s)) {
+              list.push(n);
+            }
+          }
+        }
+
+        return list;
+      } else {
+        return [];
+      }
     },
   },
 });
@@ -65,18 +125,24 @@ export default defineComponent({
       <tr
         @mousedown.left.stop
         @mouseup.stop
-        @click="goToEntry(false, $event)"
-        @dblclick="goToEntry(true, $event)"
+        v-for="e in listFound"
+        @click="goToEntry(false, $event, e)"
+        @dblclick="goToEntry(true, $event, e)"
         class="search-result-row"
-                                                     v-for="e in listFound"
         :name="e.id"
         :key="e.id"
-        :entry="e"
-        :viewId="model.id"
+        :viewId="e.id"
       >
-        <td>{{ e.typename }}</td>
-        <td>{{ e.searchResultString() }}</td>
-        <td>{{ e.displayname }}</td>
+        <template v-if="e.width != undefined">
+          <td>{{ e.typename }}</td>
+          <td>{{ e.searchResultString() }}</td>
+          <td>{{ e.displayname }}</td>
+        </template>
+        <template v-else>
+          <td>{{ "Node" }}</td>
+          <td>{{ e.getPath(false) }}</td>
+          <td>{{ e.entry.root.name }}</td>
+        </template>
       </tr>
     </keep-alive>
   </table>

@@ -24,9 +24,74 @@
       />
     </div> -->
 
+    <panZoom
+      @init="panHappen"
+      tabIndex="0"
+      :options="{
+        zoomDoubleClickSpeed: 1,
+        minZoom: 0.03,
+        maxZoom: 15,
+        bounds: false,
+        initialX: model.overview.viewportTransform.x,
+        initialY: model.overview.viewportTransform.y,
+        initialZoom: model.overview.viewportTransform.scale,
+      }"
+      selector=".zoomable"
+    >
+      <div class="zoomable close-file-anim">
+        <!-- <div class="rectangle-selection"></div> -->
+        <!-- <div class="rectangle-selection-wrapper">
+                <button class="ws-zoom-fixed resizer-bottom-right">
+                  <ResizeBottomRight />
+                </button>
+                <button
+                  class="ws-zoom-fixed selection-system-drag"
+                  @mousedown.capture.stop="startFileDrag()"
+                  @click.capture.stop
+                >
+                  <FileOutline />
+                </button>
+              </div> -->
+
+        <!-- <keep-alive>
+                <component
+                  class="ws-entry"
+                  v-for="e in model.entries"
+                  :name="e.id"
+                  :key="e.id"
+                  :entry="e"
+                  :viewId="model.id"
+                  :workspace="this"
+                  v-bind:is="e.componentname"
+                  ref="wsentry"
+                >
+                </component>
+              </keep-alive> -->
+
+        <div
+          :class="{ 'blend-out': model.entries.length > 0 }"
+          class="welcome-message"
+        >
+          <h2>
+            Let's drop some files to get going!
+            <EmoticonHappyOutline class="svg-smile" />
+          </h2>
+          <p>
+            <FolderOutline class="svg-folder" />
+          </p>
+          <p><Download class="svg-download" /></p>
+        </div>
+      </div>
+    </panZoom>
+
     <div class="overview-wrapper" @mousedown="mousedown"></div>
 
-    <div @mousedown.stop @dblclick.capture.stop class="workspace-menu-bar">
+    <div
+      @mousedown.stop
+      @dblclick.capture.stop
+      class="workspace-menu-bar"
+      :class="{ 'workspace-menu-bar-hide': !getShowUI }"
+    >
       <!--
       <button>
         <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
@@ -44,13 +109,17 @@
       <button><FolderOutline @click="createCollection()" /></button>
       <button><FolderOutline @click="createRootFromNode()" /></button>
     </div>
-    <button class="pane-button-ov">
+
+    <button
+      class="pane-button-ov"
+      :class="{ 'workspace-menu-bar-hide': !getShowUI }"
+    >
       <FormatHorizontalAlignCenter
-        v-show="model.paneSize <= 5"
+        v-show="model.paneSize <= 15"
         @click="paneButtonClicked()"
       />
       <ArrowCollapseRight
-        v-show="model.paneSize > 5"
+        v-show="model.paneSize > 15"
         @click="paneButtonClicked()"
       />
     </button>
@@ -80,6 +149,8 @@ import {
   Pause,
   DeleteEmptyOutline,
   Qrcode,
+  EmoticonHappyOutline,
+  Download,
   Overscan,
   FolderOutline,
   FormatHorizontalAlignCenter,
@@ -91,13 +162,16 @@ import {
 } from "../workspace/overview/OverviewData";
 import * as d3 from "d3";
 import _ from "underscore";
+import { set3DPosition } from "@/utils/resize";
 
 export default defineComponent({
   name: "App",
   components: {
     Qrcode,
+    EmoticonHappyOutline,
     Overscan,
     Pause,
+    Download,
     DeleteEmptyOutline,
     FolderOutline,
     FormatHorizontalAlignCenter,
@@ -117,28 +191,38 @@ export default defineComponent({
     // only draw the canvas when the overview is visibile
     "model.overviewOpen": function (newValue: boolean, oldValue: boolean) {
       if (Instance.getEngine(this.idOverview)) {
-       Instance.getEngine(this.idOverview).enablePainting = true;
+        Instance.getEngine(this.idOverview).enablePainting = true;
       }
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
       this.model.overviewOpen = newValue < 100;
+    },
+    "selection.y": function (newValue: number, oldValue: number) {
+      console.log(newValue);
+    },
+    "model.overview.viewportTransform": function (
+      newValue: { x: number; y: number; scale: number },
+      oldValue: { x: number; y: number; scale: number }
+    ) {
+      // sync the panzoom div content with the canvas viewport transformations
+      this.updateDivTransformation(newValue);
     },
     searchstring: function (newValue: String, oldValue: String) {
       this.searchUpdate();
     },
   },
   data(): {
-    // overviewEngine: OverviewEngine | undefined;
     state: EngineState;
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
-    selection: AbstractOverviewEntry[];
+    panZoomInstance: any;
+    selection: AbstractNode | undefined;
   } {
     return {
-      selection: [],
+      selection: undefined,
       idOverview: 0,
+      panZoomInstance: null,
       wsListener: undefined,
-      // overviewEngine: undefined,
       state: new EngineState(),
     };
   },
@@ -193,7 +277,7 @@ export default defineComponent({
 
     const filterfunc = _.throttle((stats: string, min: number, max: number) => {
       if (Instance.getEngine(this.idOverview)) {
-       Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
+        Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
           "size",
           Number(min),
           Number(max),
@@ -239,19 +323,16 @@ export default defineComponent({
     Instance.storeData(this.model.overview);
     this.idOverview = this.model.overview.id;
 
-    // Instance.getEngine(this.idOverview) = new OverviewEngine(
-    //   this.$el.getElementsByClassName("overview-wrapper")[0],
-    //   this.model.overview
-    // );
-    Instance.createEngine(this.idOverview,this.$el.getElementsByClassName("overview-wrapper")[0], this.model.overview);
+    Instance.createEngine(
+      this.idOverview,
+      this.$el.getElementsByClassName("overview-wrapper")[0],
+      this.model.overview
+    );
 
-
-
-    let a: FolderOverviewEntry[] = Instance.getData(this.idOverview);
-   
-Instance.getEngine(this.idOverview).rootNodes=a;
-    //          kb    mb      gb
-    // 723889653
+    Instance.getEngine(this.idOverview).rootNodes = Instance.getData(
+      this.idOverview
+    );
+    //         kb     mb     gb
     let maxV = 1024 * 1024 * 1024;
 
     Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
@@ -288,6 +369,21 @@ Instance.getEngine(this.idOverview).rootNodes=a;
       }
     );
 
+    // init view for div
+    this.updateDivTransformation(this.model.overview.viewportTransform);
+
+    set3DPosition(
+      this.$el.getElementsByClassName("welcome-message")[0],
+      -750,
+      -500
+    );
+
+    const l = (n: AbstractNode | undefined) => {
+      this.selection = n;
+    };
+
+    Instance.getEngine(this.idOverview).setSelectionListener(l);
+
     WSUtils.Events.registerCallback(this.wsListener);
   },
   unmounted() {
@@ -296,8 +392,25 @@ Instance.getEngine(this.idOverview).rootNodes=a;
       WSUtils.Events.unregisterCallback(this.wsListener);
     }
   },
-  computed: {},
+  computed: {
+    getShowUI(): boolean {
+      return this.$store.getters.getShowUI;
+    },
+  },
   methods: {
+    updateDivTransformation(value: { x: number; y: number; scale: number }) {
+      this.panZoomInstance.moveTo(value.x, value.y);
+      this.panZoomInstance.zoomAbs(value.x, value.y, value.scale);
+    },
+    panHappen: function (p: any, id: String) {
+      p.setTransformOrigin(null);
+      this.panZoomInstance = p;
+      p.set;
+      p.on("panzoompan", function (e: any) {});
+      p.on("onDoubleClick", function (e: any) {
+        return false;
+      });
+    },
     showAll(): void {
       Instance.getEngine(this.idOverview).zoomToFit();
     },
@@ -329,7 +442,7 @@ Instance.getEngine(this.idOverview).rootNodes=a;
       }, 2);
     },
     paneButtonClicked(e: MouseEvent) {
-      this.model.paneSize = this.model.paneSize <= 5 ? 50 : 100;
+      this.model.paneSize = this.model.paneSize <= 15 ? 50 : 100;
     },
     selectFolders() {
       ipcRenderer.send("select-files", {
@@ -344,9 +457,14 @@ Instance.getEngine(this.idOverview).rootNodes=a;
 
       if (lowercase.length > 0) {
         if (Instance.getEngine(this.idOverview)) {
-          for (let i = 0; i < Instance.getEngine(this.idOverview).rootNodes.length; i++) {
-            const entry: AbstractOverviewEntry =
-              Instance.getEngine(this.idOverview).rootNodes[i];
+          for (
+            let i = 0;
+            i < Instance.getEngine(this.idOverview).rootNodes.length;
+            i++
+          ) {
+            const entry: AbstractOverviewEntry = Instance.getEngine(
+              this.idOverview
+            ).rootNodes[i];
 
             for (let j = 0; j < entry.nodes.length; j++) {
               const n = entry.nodes[j];
@@ -358,14 +476,19 @@ Instance.getEngine(this.idOverview).rootNodes=a;
           }
         }
         console.log(nodesMatching);
-        
-        Instance.getEngine(this.idOverview).setFilterList("search", nodesMatching);
+
+        Instance.getEngine(this.idOverview).setFilterList(
+          "search",
+          nodesMatching
+        );
       } else {
         Instance.getEngine(this.idOverview).setFilterList("search");
       }
     },
     toggleShadowCanvas() {
-      Instance.getEngine(this.idOverview).showShadowCanvas(!Instance.getEngine(this.idOverview).showShadow);
+      Instance.getEngine(this.idOverview).showShadowCanvas(
+        !Instance.getEngine(this.idOverview).showShadow
+      );
 
       console.log(Instance.getEngine(this.idOverview).rootNodes);
     },
@@ -407,7 +530,8 @@ Instance.getEngine(this.idOverview).rootNodes=a;
     },
     loadCollection() {
       if (Instance.getEngine(this.idOverview)) {
-        let n: FolderNode = Instance.getEngine(this.idOverview).selection[0] as FolderNode;
+        let n: FolderNode = Instance.getEngine(this.idOverview)
+          .selection[0] as FolderNode;
 
         if (n && n.isCollection && n.entry) {
           n.entry.loadCollection(n);
@@ -416,13 +540,15 @@ Instance.getEngine(this.idOverview).rootNodes=a;
     },
     createCollection() {
       if (Instance.getEngine(this.idOverview)) {
-        let n: FolderNode = Instance.getEngine(this.idOverview).selection[0] as FolderNode;
+        let n: FolderNode = Instance.getEngine(this.idOverview)
+          .selection[0] as FolderNode;
         !n.isCollection && n.parent ? n.createCollection() : 0;
       }
     },
     createRootFromNode() {
       if (Instance.getEngine(this.idOverview)) {
-        let n: FolderNode = Instance.getEngine(this.idOverview).selection[0] as FolderNode;
+        let n: FolderNode = Instance.getEngine(this.idOverview)
+          .selection[0] as FolderNode;
         this.addFolders([n.getPath()], { x: n.getX(), y: n.getY() });
       }
     },
@@ -432,7 +558,6 @@ Instance.getEngine(this.idOverview).rootNodes=a;
       );
 
       console.log("add entries");
-      
 
       entries.forEach((e) => {
         e.setCoordinates(pos);
@@ -494,6 +619,17 @@ Instance.getEngine(this.idOverview).rootNodes=a;
   },
 });
 </script>
+
+
+<style scoped lang="scss">
+.vue-pan-zoom-item {
+  width: 100%;
+  height: 100%;
+  z-index: 700;
+  position: absolute;
+  pointer-events: none;
+}
+</style>
 
 <style   lang="scss">
 .filter-settings {

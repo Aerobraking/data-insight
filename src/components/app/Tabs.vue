@@ -11,7 +11,7 @@
   <div
     id="tabs"
     class="tabs-header"
-    v-show="getShowUI"
+    :class="{ 'tab-collapse-true': !getShowUI }"
     @mousewheel="scrollList"
   >
     <div class="tab-entry tab-create" @click="createWorkspaceTab()">
@@ -109,7 +109,7 @@ import workspaceview from "../workspace/WorkspaceView.vue";
 import overviewview from "../overview/OverviewView.vue";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import draggable from "vuedraggable";
-import _ from "underscore"; 
+import _ from "underscore";
 import * as WSUtils from "./../workspace/WorkspaceUtils";
 
 import { ArrowCollapseUp } from "mdue";
@@ -226,12 +226,12 @@ export default defineComponent({
   background-color: transparent;
   transition: all 0.2s ease-in-out;
   position: absolute;
-  right: 0px;
-  top: 0px;
-  z-index: 999;
+  right: -4px;
+  top: -2px;
+  z-index: 9999;
 
   svg {
-    font-size: 24px;
+    font-size: 20px;
     padding: 9px;
     margin: 0;
   }
@@ -283,20 +283,16 @@ export default defineComponent({
   font-weight: bold;
   transition: all 0.3s;
 }
-.tab-entry:hover .delete {
-  display: block;
-}
+
 .delete:hover {
   background-color: #808080;
 }
-.tab-entry:hover .copy {
-  display: block;
-}
+
 .copy:hover {
   background-color: #808080;
 }
 
-div.tabs-header {
+.tabs-header {
   display: block;
   margin: 0 0 0 0px;
   padding: 0;
@@ -304,10 +300,17 @@ div.tabs-header {
   background-color: rgb(100, 100, 100);
   position: relative;
   width: 100%;
-  height: 42px;
+  height: 32px;
   overflow: hidden;
   overflow-x: hidden;
   white-space: nowrap;
+
+  transform: none !important;
+  transition: height 0.2s ease-in-out;
+  &.tab-collapse-true {
+    transform: none !important;
+    height: 0px;
+  }
 }
 
 .close-file {
@@ -318,7 +321,7 @@ div.tabs-header {
 
 .tab-create {
   color: #fff;
-  width: 10px !important;
+  width: 0px !important;
   user-select: none;
 }
 
@@ -327,11 +330,11 @@ div.tabs-header {
   border: none;
   display: inline-block;
   outline: 0;
-  padding: 10px 15px 0px 15px;
-  height: 25px;
+  padding: 8px 15px 0px 15px;
+  height: 22px;
   border: none;
-  border-radius: 5px;
-  margin: 5px 0px 0 6px;
+  border-radius: 4px;
+  margin: 2px 0px 0 3px;
   background-color: rgb(73, 73, 73);
   position: relative;
   cursor: pointer;
@@ -365,7 +368,8 @@ div.tabs-header {
     color: #fff;
     border: none;
     margin: 0;
-    top: 4px;
+    top: 0px;
+    left: 9px;
     font-size: 22px;
   }
 
@@ -374,10 +378,17 @@ div.tabs-header {
   }
 }
 
+.tab-entry:hover .delete {
+  display: block;
+}
+.tab-entry:hover .copy {
+  display: block;
+}
+
 .tab-selected {
   color: lavender;
-  border-radius: 5px 5px 0 0;
-  background-color: rgb(36, 36, 36) !important;
+  border-radius: 4px 4px 0 0;
+  background-color: #1d1d1d !important;
   box-shadow: 4px;
 }
 

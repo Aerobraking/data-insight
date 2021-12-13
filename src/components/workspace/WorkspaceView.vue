@@ -119,13 +119,16 @@
             @bookmarkclicked="moveToEntry"
           ></wsentriesbookmarks>
 
-          <button class="pane-button-ws">
+          <button
+            class="pane-button-ws"
+            :class="{ 'workspace-menu-bar-hide': !getShowUI }"
+          >
             <FormatHorizontalAlignCenter
-              v-show="model.paneSize >= 95"
+              v-show="model.paneSize >= 85"
               @click="paneButtonClicked()"
             />
             <ArrowCollapseLeft
-              v-show="model.paneSize < 95"
+              v-show="model.paneSize < 85"
               @click="paneButtonClicked()"
             />
           </button>
@@ -208,14 +211,11 @@ import {
   ResizerComplex,
   set3DPosition,
 } from "@/utils/resize";
-import { InsightFile } from "@/store/state";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
 import { WorkspaceViewIfc } from "./WorkspaceUtils";
 import AbstractPlugin from "./Plugins/AbstractPlugin";
-import { OverviewEngine } from "./overview/OverviewEngine";
 const fs = require("fs");
-const path = require("path");
 let clipboard: EntryCollection;
 let points: { x: number; y: number; z: number }[] = [];
 
@@ -342,6 +342,26 @@ export default defineComponent({
     },
     highlightSelection(newValue: boolean, oldValue: boolean) {
       this.updateSelectionWrapper();
+    },
+    getShowUI(newValue: boolean, oldValue: boolean) {
+      console.log("getShowUI", newValue);
+
+      const bar: HTMLElement = this.$el.getElementsByClassName(
+        "splitpanes__splitter"
+      )[0];
+
+      bar.classList.toggle("splitpanes__splitter-hide", !newValue);
+    },
+    "model.paneSize": function (newValue: number, oldValue: number) {
+      // const o =
+      //   (this.getCanvas().width * 0.01 * (newValue - oldValue)) *
+      //   this.getCurrentTransform().scale /2;
+      // console.log("diff: ",newValue - oldValue, "scale: ",  this.getCurrentTransform().scale, "width: ",this.getCanvas().width );
+      // console.log(o);
+      // this.panZoomInstance.moveTo(
+      //   this.getCurrentTransform().x - o,
+      //   this.getCurrentTransform().y
+      // );
     },
   },
   mounted() {
@@ -519,7 +539,7 @@ export default defineComponent({
     },
     paneButtonClicked(size: number | undefined = undefined) {
       this.model.paneSize =
-        size != undefined ? size : this.model.paneSize >= 95 ? 50 : 0;
+        size != undefined ? size : this.model.paneSize >= 85 ? 50 : 0;
     },
     searchUpdate(): void {
       let models = this.model.entries;
@@ -879,7 +899,7 @@ export default defineComponent({
        */
       if (!e.altKey && !e.ctrlKey) {
         switch (e.key) {
-          case "q":
+          case "e":
             this.paneButtonClicked(100);
             e.stopPropagation();
             break;
@@ -887,7 +907,7 @@ export default defineComponent({
             this.paneButtonClicked(50);
             e.stopPropagation();
             break;
-          case "e":
+          case "q":
             this.paneButtonClicked(0);
             e.stopPropagation();
             break;
@@ -1410,7 +1430,6 @@ export default defineComponent({
         0.2
       );
       this.panZoomInstance.smoothShowRectangle(bound);
-      // this.panZoomInstance.showRectangle(bound);
     },
     getPanzoomRect(
       coordinates: ElementDimension,
@@ -1682,7 +1701,6 @@ export default defineComponent({
     panHappen: function (p: any, id: String) {
       p.setTransformOrigin(null);
       this.panZoomInstance = p;
-      p.set;
       p.on("panzoompan", function (e: any) {});
       p.on("onDoubleClick", function (e: any) {
         return false;
@@ -1955,7 +1973,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
 
 .workspace-menu-bar-hide {
   svg {
-    opacity: 0.05;
+    opacity: 0.02;
     &:hover {
       opacity: 1;
     }
@@ -2038,9 +2056,29 @@ svg {
   }
 }
 
+.splitpanes__pane {
+  background-color: #1d1d1d !important;
+}
+
 .splitpanes__splitter {
-  background: #111 !important;
+  background: #646464 !important;
+  min-width: 0px !important;
   border: none !important;
+  transition: all 0.4s ease-out !important;
+  &:hover {
+    background: white !important;
+  }
+  transition: width 0.2s ease-in-out;
+  &.splitpanes__splitter-hide {
+    width: 0px !important;
+  }
+}
+
+.splitpanes__splitter:after {
+  background-color: rgb(255 255 255 / 38%) !important;
+}
+.splitpanes__splitter:before {
+  background-color: rgb(255 255 255 / 38%) !important;
 }
 
 .workspace-split-wrapper {
@@ -2060,27 +2098,32 @@ svg {
   z-index: 1000;
 }
 
-.pane-button-ws {
+@mixin panebutton() {
   position: absolute;
-  right: 2px;
-  top: 2px;
+  z-index: 5000;
+
+  bottom: -6px;
   color: white;
   background: transparent;
   svg {
+    transition: color 0.4s ease-out;
     margin: 0;
-    transition: all 0.4 ease-out;
+    font-size: 20px;
+    color: #646464;
+    &:hover {
+      color: white;
+    }
   }
 }
 
+.pane-button-ws {
+  @include panebutton;
+  right: -2px;
+}
+
 .pane-button-ov {
-  position: absolute;
-  left: 2px;
-  top: 2px;
-  color: white;
-  background: transparent;
-  svg {
-    margin: 0;
-  }
+  @include panebutton;
+  left: -2px;
 }
 
 .search-not-found {
@@ -2089,15 +2132,15 @@ svg {
 }
 
 .workspace-search {
-  position: relative;
+  position: absolute;
   border: none;
-  border-bottom: 1px solid #111;
-  border-top: 1px solid #111;
-  background: #111;
+  border-bottom: none;
+  border-top: none;
+  background: none;
   padding-top: 0px;
   padding-bottom: 0px;
   width: 100%;
-  z-index: 800;
+  z-index: 4000;
   height: 28px;
 
   button {
@@ -2120,9 +2163,19 @@ svg {
     border: none;
     outline: none;
     color: #eee;
-    border-left: 1px solid #333;
-    border-right: 1px solid #333;
+    margin-top: 4px;
+    border: 1px solid #333;
+    border-radius: 4px;
     position: relative;
+    opacity: 0.3;
+    transition: opacity 0.3s ease-out;
+
+    &:hover {
+      opacity: 1;
+    }
+    &:focus {
+      opacity: 1;
+    }
   }
   .search-results {
     background: #222;
@@ -2134,7 +2187,7 @@ svg {
     overflow: hidden;
   }
 }
- 
+
 @mixin theme() {
   width: 15px;
   height: 15px;

@@ -156,7 +156,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         this.overview = overview;
 
-
         let c = d3
             .select(div)
             .append("canvas")
@@ -248,6 +247,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     listSelection.push(...n.descendants(), ...n.parents());
                 }
 
+                _this.fireSelectionUpdate();
                 // listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
 
             }
@@ -271,7 +271,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                     _this.pauseHovering = true;
 
-
                     const obj = ev.subject;
                     obj.__initialDragPos = {
                         x: obj.x,
@@ -280,9 +279,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         fy: obj instanceof AbstractOverviewEntry ? obj.y : obj.fy
                     };
 
-
                     if (obj instanceof AbstractOverviewEntry) {
-
 
                     } else {
                         const node = ev.subject as AbstractNode;
@@ -303,7 +300,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                     }
 
-
                 })
                 .on('drag', ev => {
                     const obj = ev.subject;
@@ -318,7 +314,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                     if (obj instanceof AbstractOverviewEntry) {
                         obj.setCoordinates({ x: initPos.x + diffX, y: initPos.y + diffY })
-
                     } else {
                         const node = ev.subject as AbstractNode;
                         /**
@@ -336,7 +331,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         // prevent freeze while dragging
                         node.entry?.simulation.alpha(1);  // prevent freeze while dragging
                     }
-
+                    _this.fireSelectionUpdate();
 
                 })
                 .on('end', ev => {
@@ -381,12 +376,13 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             }
             return true;
         });
-        this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
+
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
+        this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
         this.zoom.scaleExtent([0.02, 8]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
             let t = d3.zoomTransform(this.canvas);
-            this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
+            this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k }; 
         });
         this.zoom.on("start", (event: any, d: HTMLCanvasElement) => {
             _this.pauseHovering = true;
@@ -396,13 +392,24 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         });
 
         let t = d3.zoomTransform(this.canvas);
-
-
+        this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k }; 
     }
 
     public clearSelection() {
         this.selection = [];
         this.setFilterList("selection");
+        this.fireSelectionUpdate();
+    }
+
+    private fireSelectionUpdate() {
+        this.selectionListener ?
+            this.selectionListener(this.selection.length > 0 ? this.selection[0] : undefined) : 0;
+    }
+
+    private selectionListener: ((n: AbstractNode | undefined) => void) | undefined = undefined;
+
+    public setSelectionListener(l: (n: AbstractNode | undefined) => void) {
+        this.selectionListener = l;
     }
 
     public getNodeAtMousePosition(): AbstractNode | undefined {
@@ -482,14 +489,19 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.setView(scale, dim.x + dim.w / 2, +dim.y + dim.h / 2, 400);
     }
 
-    public setView(scale: number, x: number, y: number, duration: number = 70) {
+    public setView(scale: number | undefined = undefined, x: number, y: number, duration: number = 70) {
 
         let _this = this;
 
+  
+
         // setter
         if (_this.transform !== undefined) {
+
+            scale = scale==undefined? _this.transform.k: scale;
+
             if (duration == 0) { // no animation
-                setZoom({ k: _this.transform.k, x: x, y: y });
+                setZoom({ k: scale, x: x, y: y });
             } else {
                 new TWEEN.Tween({
                     k: _this.transform.k,
@@ -547,7 +559,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     mousePosition: { x: number, y: number } = { x: 0, y: 0 };
     autocolor: ColorTracker = new ColorTracker();
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
-    overview: Overview; 
+    overview: Overview;
     size: ElementDimensionInstance;
     divObserver: ResizeObserver;
     canvas: HTMLCanvasElement;
@@ -696,9 +708,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             if (this.colorTransitionElapsed > this.colorTransitionTarget) {
                 this.colorTransitionElapsed = undefined;
-                this.colorTransitionMap.clear();
-                console.log("clear transition");
-
+                this.colorTransitionMap.clear(); 
             }
         }
 
