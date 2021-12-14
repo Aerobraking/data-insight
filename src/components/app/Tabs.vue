@@ -3,9 +3,10 @@
   <button
     class="tab-collapse"
     @click="isCollapsed = toggleShowUI()"
-    :class="{ 'tab-collapse-true': !getShowUI }"
+    :class="{ 'tab-collapse-hide': !getShowUI }"
   >
-    <ArrowCollapseUp />
+    <EyeOutline v-if="getShowUI" />
+    <EyeOffOutline v-else />
   </button>
 
   <div
@@ -111,8 +112,7 @@ import { MutationTypes } from "@/store/mutations/mutation-types";
 import draggable from "vuedraggable";
 import _ from "underscore";
 import * as WSUtils from "./../workspace/WorkspaceUtils";
-
-import { ArrowCollapseUp } from "mdue";
+import { ArrowCollapseUp, EyeOutline, EyeOffOutline } from "mdue";
 _.once(() => {
   WSUtils.Events.registerCallback({
     pluginStarted(modal: boolean): void {
@@ -128,6 +128,8 @@ export default defineComponent({
     draggable,
     ArrowCollapseUp,
     workspaceview,
+    EyeOffOutline,
+    EyeOutline,
     overviewview,
     Startscreen,
   },
@@ -217,31 +219,35 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+$background: #1d1d1d;
+$base-color: rgb(100, 100, 100);
+
 .tab-collapse {
   outline: none;
   color: white;
   border: none;
   padding: 0;
+  height: 32px;
   margin: 0;
-  background-color: transparent;
+  background-color: $base-color;
   transition: all 0.2s ease-in-out;
   position: absolute;
-  right: -4px;
-  top: -2px;
+  right: 0px;
+  top: 0px;
   z-index: 9999;
+  opacity: 1;
 
   svg {
     font-size: 20px;
-    padding: 9px;
+    padding: 4px;
+    padding-top: 6px;
     margin: 0;
   }
 }
 
-.tab-collapse-true {
-  transform: rotate(180deg);
-  svg {
-    color: rgba(255, 255, 255, 0.089);
-  }
+.tab-collapse-hide {
+  opacity: 0.1;
+  background-color: transparent;
 }
 
 .delete {
@@ -297,7 +303,7 @@ export default defineComponent({
   margin: 0 0 0 0px;
   padding: 0;
   z-index: 100;
-  background-color: rgb(100, 100, 100);
+  background-color: $base-color;
   position: relative;
   width: 100%;
   height: 32px;
@@ -388,18 +394,18 @@ export default defineComponent({
 .tab-selected {
   color: lavender;
   border-radius: 4px 4px 0 0;
-  background-color: #1d1d1d !important;
+  background-color: $background !important;
   box-shadow: 4px;
 }
 
-@keyframes slide-up {
-  0% {
-    opacity: 0;
-    transform: translateX(-250px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
+// @keyframes slide-up {
+//   0% {
+//     opacity: 0;
+//     transform: translateX(-250px);
+//   }
+//   100% {
+//     opacity: 1;
+//     transform: translateX(0);
+//   }
+// }
 </style>

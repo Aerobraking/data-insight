@@ -7,8 +7,16 @@
     tabIndex="1"
     class="overview-viewport"
   >
-    <div class="filter-settings">
-      <div class="slider"></div>
+    <div
+      class="filter-settings"
+      :class="{ 'filter-settings-hide': !model.showFilterSettings }"
+    >
+      <button>
+        <TuneVerticalVariant
+          @click="model.showFilterSettings = !model.showFilterSettings"
+        />
+      </button>
+      <div v-show="model.showFilterSettings" class="slider"></div>
       <!-- <div class="options"></div> -->
     </div>
 
@@ -151,6 +159,7 @@ import {
   Qrcode,
   EmoticonHappyOutline,
   Download,
+  TuneVerticalVariant,
   Overscan,
   FolderOutline,
   FormatHorizontalAlignCenter,
@@ -168,6 +177,7 @@ export default defineComponent({
   name: "App",
   components: {
     Qrcode,
+    TuneVerticalVariant,
     EmoticonHappyOutline,
     Overscan,
     Pause,
@@ -634,13 +644,17 @@ export default defineComponent({
 <style   lang="scss">
 .filter-settings {
   position: absolute;
-  top: 90px;
-  right: 5px;
+  top: -1px;
+  right: 24px;
   width: 32px;
   height: 70%;
-  z-index: 6000;
+  z-index: 9900;
+  transition: all 0.2s ease-in-out;
   .slider {
     height: 100%;
+    margin-top: 20px;
+    transform-origin: top right;
+    transform: scale(0.8);
   }
   .options {
     position: absolute;
@@ -650,6 +664,31 @@ export default defineComponent({
     height: 250px;
     width: 150px;
   }
+
+  button {
+    outline: none;
+    color: white;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    svg {
+      font-size: 26px;
+    }
+  }
+
+  button:disabled,
+  button[disabled] {
+    pointer-events: none;
+    color: #ffffff50;
+    svg {
+      transform: scale(0.7);
+    }
+  }
+}
+
+.filter-settings-hide {
+  opacity: 0.2;
 }
 
 .overview-viewport {

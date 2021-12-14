@@ -234,7 +234,7 @@ body {
   font-family: Lato, Avenir, Helvetica, Arial, sans-serif;
   //  -webkit-font-smoothing: antialiased;
   //  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+  color: #E8EAED;
   height: 100%;
   width: 100%;
   position: absolute;
@@ -257,10 +257,34 @@ input[type="search"]::-webkit-search-cancel-button {
     color: white;
   }
 }
-/**
-
-
+/*
+#
+#
+#
+Scrollbar
+#
+#
+#
 */
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: rgb(22, 22, 22); 
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: rgb(49, 49, 49); 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(73, 73, 73); 
+}
 
 /* Functional styling;
  * These styles are required for noUiSlider to function.

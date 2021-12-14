@@ -15,13 +15,13 @@
         @paste="onPaste"
       />
       <div></div>
-      <wssearchlist
-        class="search-results"
-        v-if="searchActive"
-        :model="model"
-        :searchString="searchString"
-        @bookmarkclicked="moveToEntry"
-      ></wssearchlist>
+      <div class="search-results" v-if="searchActive">
+        <wssearchlist
+          :model="model"
+          :searchString="searchString"
+          @bookmarkclicked="moveToEntry"
+        ></wssearchlist>
+      </div>
     </div>
 
     <splitpanes
@@ -973,6 +973,12 @@ export default defineComponent({
                 listFiles: pastedEntries.entries,
               };
               this.$store.commit(MutationTypes.ADD_FILES, payload);
+              // select the pasted entries
+              setTimeout(() => {
+                const views = this.getViewsByModels(pastedEntries.entries);
+                this.clearSelection();
+                this.entriesSelected(views, "add", false);
+              }, 10);
 
               e.preventDefault();
               e.stopPropagation();
@@ -1763,6 +1769,17 @@ export default defineComponent({
 
       return null;
     },
+    getViewsByModels: function (entries: WorkspaceEntry[]): HTMLElement[] {
+      let list: HTMLElement[] = [];
+
+      for (let index = 0; index < entries.length; index++) {
+        const e = entries[index];
+        const v = this.getViewByID(e.id);
+        if (v) list.push(v);
+      }
+
+      return list;
+    },
     getCoordinatesFromElement(e: any): ElementDimension {
       return getCoordinatesFromElement(e);
     },
@@ -2048,8 +2065,9 @@ svg {
   margin: 5px 15px 5px 15px;
   padding: 5px;
   font-size: 32px;
-
-  transition: transform 0.2s ease-in-out;
+  opacity: 1;
+  transition: all 0.2s ease-in-out;
+  transition-property: opacity, transform;
   &:hover {
     color: #ccc;
     transform: scale(1.25);
@@ -2143,6 +2161,11 @@ svg {
   z-index: 4000;
   height: 28px;
 
+  pointer-events: none;
+  div {
+    pointer-events: none;
+  }
+
   button {
     border: none;
     height: 100%;
@@ -2158,6 +2181,7 @@ svg {
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr;
   input {
+    pointer-events: all;
     background: #222;
     height: 28px;
     border: none;
@@ -2183,8 +2207,11 @@ svg {
     top: 100%;
     left: 33.33%;
     width: 33.33%;
+    min-height: 10px;
+    max-height: 350px;
+    overflow-x: hidden;
+    overflow-y: auto;
     color: #eee;
-    overflow: hidden;
   }
 }
 

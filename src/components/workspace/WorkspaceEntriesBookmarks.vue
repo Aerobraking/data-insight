@@ -1,14 +1,15 @@
 <script lang="ts">
-import { Workspace, WorkspaceEntry } from "../../store/model/Workspace";
+import { Workspace } from "../../store/model/Workspace";
 import { defineComponent } from "vue";
 import draggable from "vuedraggable";
 import overviewview from "../overview/OverviewView.vue";
-
+import { PlaylistStar } from "mdue";
 export default defineComponent({
   name: "wsentriesbookmarks",
   components: {
     draggable,
     overviewview,
+    PlaylistStar,
   },
   props: {
     model: {
@@ -27,6 +28,7 @@ export default defineComponent({
     };
   },
   methods: {
+    toggleUI() {},
     goToEntry(zoom: boolean, event: any) {
       if (!this.clickTimer) {
         this.clickTimer = setTimeout(() => {
@@ -77,8 +79,10 @@ export default defineComponent({
  
  -->
 <template>
-  <div class="bookmarks">
-    <h3>Bookmarks</h3>
+  <div class="bookmarks" :class="{ 'bookmarks-hide': !model.showBookmarks }">
+    <button>
+      <PlaylistStar @click="model.showBookmarks = !model.showBookmarks" />
+    </button>
 
     <draggable
       v-model="myList"
@@ -99,7 +103,7 @@ export default defineComponent({
           :key="element.order"
           :entry="element"
           :viewId="model.id"
-          v-show="element.displayname.length > 0"
+          v-show="model.showBookmarks && element.displayname.length > 0"
         >
           {{ element.displayname }}
         </a>
@@ -111,11 +115,37 @@ export default defineComponent({
 <style scoped lang="scss">
 .bookmarks {
   position: absolute;
-  left: 10px;
-  top: 35px;
+  left: -13px;
+  top: -7px;
+  z-index: 8000;
+  transition: all 0.2s ease-in-out;
+  opacity: 1;
+  button {
+    outline: none;
+    color: white;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+  }
+
+  button:disabled,
+  button[disabled] {
+    pointer-events: none;
+    color: #ffffff50;
+    svg {
+      transform: scale(0.7);
+    }
+  }
 
   a {
     user-select: none;
+  }
+  a:before {
+    content: "-" !important;
+    background-size: cover;
+    display: inline-block;
+    width: 15px;
   }
   h3 {
     margin: 0;
@@ -126,19 +156,22 @@ export default defineComponent({
   }
 }
 
+.bookmarks-hide {
+  opacity: 0.2;
+}
+
 .bookmark-entry {
   color: #fff;
   cursor: pointer;
   min-width: 250px;
   display: table;
-  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 25px;
   user-select: none;
   text-shadow: rgb(0, 0, 0) 0px 0 15px, rgb(0, 0, 0) 0px 0 4px;
-  transition: transform 0.3s ease-in-out;
-  transform-origin: center left;
-
+  transform-origin: left center;
   &:hover {
-    transform: scale(1.3);
+    transform: scale(1.03);
   }
 }
 </style>

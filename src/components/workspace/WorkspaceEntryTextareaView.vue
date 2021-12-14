@@ -94,8 +94,9 @@ export default defineComponent({
       },
     });
 
-    _this.$el.getElementsByClassName("pell-content")[0].spellcheck=false;
-    _this.$el.getElementsByClassName("pell-content")[0].ondragstart="return false";
+    _this.$el.getElementsByClassName("pell-content")[0].spellcheck = false;
+    _this.$el.getElementsByClassName("pell-content")[0].ondragstart =
+      "return false";
 
     /**
      * add content from the model after init
@@ -126,7 +127,7 @@ export default defineComponent({
   position: absolute;
   top: 65px;
   left: 10px;
-  color: white;
+  color: #E8EAED;
   text-align: left;
   opacity: 0.6;
 }
@@ -136,13 +137,17 @@ export default defineComponent({
   flex: 1 !important;
   display: flex;
   flex-flow: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+.workspace-is-selected .text-editor-div {
+  overflow-y: auto;
 }
 
 .pell-content {
   height: initial !important;
   flex: 1 !important;
-  color: floralwhite;
+  color: #E8EAED;
   padding: 10px;
   outline: none;
   overflow: hidden;
