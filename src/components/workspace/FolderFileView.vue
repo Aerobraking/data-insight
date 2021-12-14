@@ -37,7 +37,7 @@ export default defineComponent({
 
     if (isImage) {
       cache.ImageCache.registerPath(this.entry.path, {
-        callback: (url: string, type: "small" | "medium" | "original") => {
+        callback: (url: string, type: "preview"|"small" | "medium" | "original") => {
           if (type == "small") {
             el.getElementsByClassName(
               "folder-file-image"

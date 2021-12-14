@@ -1,13 +1,13 @@
 
 <template>
-  <button
+  <!-- <button
     class="tab-collapse"
     @click="isCollapsed = toggleShowUI()"
     :class="{ 'tab-collapse-hide': !getShowUI }"
   >
     <EyeOutline v-if="getShowUI" />
     <EyeOffOutline v-else />
-  </button>
+  </button> -->
 
   <div
     id="tabs"
@@ -113,6 +113,7 @@ import draggable from "vuedraggable";
 import _ from "underscore";
 import * as WSUtils from "./../workspace/WorkspaceUtils";
 import { ArrowCollapseUp, EyeOutline, EyeOffOutline } from "mdue";
+import { ipcRenderer } from "electron";
 _.once(() => {
   WSUtils.Events.registerCallback({
     pluginStarted(modal: boolean): void {
@@ -169,6 +170,13 @@ export default defineComponent({
     getShowUI(): boolean {
       return this.$store.getters.getShowUI;
     },
+  },
+  mounted() {
+    const _this = this;
+    ipcRenderer.on("toggle-distract-mode", function (event: any, filepath: string) {
+      // @ts-ignore: Unreachable code error
+      _this.toggleShowUI();
+    });
   },
   methods: {
     toggleShowUI() {

@@ -118,7 +118,8 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         return this.isClipboard ? this.path : "file://" + this.path;
     }
 
-    blob: string = "";
+    previewBase64: string|undefined = undefined;
+    blob: string|undefined = undefined;
     isClipboard: boolean;
     name: string;
     path: string;

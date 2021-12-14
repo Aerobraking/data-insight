@@ -186,10 +186,10 @@ export default defineComponent({
         switch (e.key) {
           case "d":
             // @ts-ignore: Unreachable code error
-            let show = !this.$store.getters.getShowUI;
-            this.$store.commit(MutationTypes.SHOW_UI, {
-              showUI: show,
-            });
+            // let show = !this.$store.getters.getShowUI;
+            // this.$store.commit(MutationTypes.SHOW_UI, {
+            //   showUI: show,
+            // });
             break;
 
           default:

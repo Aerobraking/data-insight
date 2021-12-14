@@ -7,12 +7,14 @@
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       class="image-selector select-element"
-    ></div>
+    >
+      <div class="image-canvas"></div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-const { shell } = require("electron");  
+const { shell } = require("electron");
 
 import * as cache from "./../../utils/ImageCache";
 import { defineComponent } from "vue";
@@ -38,29 +40,41 @@ export default defineComponent({
     viewKey: Number,
   },
   mounted() {
-    let comp = this;
+    let _this = this;
     let path = this.entry?.getURL();
+    const div = _this.$el.getElementsByClassName("image-canvas")[0];
 
-    if (this.entry.isClipboard) {
-      console.log("create clipboard background image");
-
-      comp.$el.style.backgroundImage = "url( " + this.entry.path + ")";
+    if (this.entry.isClipboard) { 
+      _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
     } else {
-      cache.ImageCache.registerPath(path, {
-        callback: (url: string, type: "small" | "medium" | "original") => {
-          if (type == "medium") {
-            comp.$el.style.backgroundImage = url;
-          }
-        },
-        callbackSize: (dim: cache.ImageDim) => {
-          if (!comp.entry.imageCreated) {
-            let w: number = Number(comp.$el.offsetWidth);
-            comp.$el.style.width = w + "px";
-            comp.$el.style.height = w * dim.ratio + "px";
-            comp.entry.imageCreated = true;
-          }
-        },
-      });
+      setTimeout(() => {
+        if (this.entry.previewBase64) {
+          var img = new Image();
+          img.src = this.entry.previewBase64;
+          _this.$el.style.backgroundImage = "url('" + img.src + "')";
+        }
+        cache.ImageCache.registerPath(path, {
+          callback: (
+            url: string,
+            type: "preview" | "small" | "medium" | "original"
+          ) => {  
+            if (type == "medium") {
+              div.style.backgroundImage = url;
+              setTimeout(() => {
+                 _this.$el.style.backgroundImage = "";
+              }, 500);
+            }
+          },
+          callbackSize: (dim: cache.ImageDim) => {
+            if (!_this.entry.imageCreated) {
+              let w: number = Number(_this.$el.offsetWidth);
+              _this.$el.style.width = w + "px";
+              _this.$el.style.height = w * dim.ratio + "px";
+              _this.entry.imageCreated = true;
+            }
+          },
+        });
+      }, 33);
     }
   },
   inject: ["entrySelected", "entrySelected"],
@@ -70,10 +84,6 @@ export default defineComponent({
       this.entrySelected(this.$el, type);
     },
     doubleClick(e: MouseEvent) {
-      console.log();
-
-      //shell.showItemInFolder('filepath') // Show the given file in a file manager. If possible, select the file.
-
       shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.
     },
     clickStart(e: MouseEvent) {},
@@ -89,11 +99,19 @@ export default defineComponent({
   width: 100%;
   height: 100%;
 }
+.image-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  box-sizing: border-box;
+}
 
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
   z-index: 50;
-  // border: 1px solid #aaa;
   background: rgb(207, 207, 207);
   position: absolute;
   color: #f1f1f1;
@@ -102,11 +120,5 @@ export default defineComponent({
   height: 180px;
   background-size: cover;
   box-sizing: border-box;
-
-  img {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-  }
 }
 </style>

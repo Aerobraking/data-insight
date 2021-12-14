@@ -4,7 +4,7 @@ export function isImageTypeSupported(path: string): boolean {
 }
 
 export interface ImageListener {
-    callback: (url: string, type: "small" | "medium" | "original") => void;
+    callback: (url: string, type: "preview" | "small" | "medium" | "original") => void;
     callbackSize: (dim: ImageDim) => void
 }
 
@@ -29,7 +29,7 @@ export class Cache {
     private listWorker: Worker[] = [];
 
     private constructor() {
-
+        const _this = this;
         // cpuCount
         for (let index = 0; index < 3; index++) {
             let w = new Worker("@/utils/ImageCacheWorker", {
@@ -49,6 +49,15 @@ export class Cache {
                 }
                 if (e.data.type == "small") {
                     const smallURl = URL.createObjectURL(e.data.blob);
+
+                    var reader = new FileReader();
+                    reader.readAsDataURL(e.data.blob);
+                    reader.onloadend = function () {
+                        var base64data = reader.result; 
+                        _this.doCallback(e.data.path, (l: ImageListener) => {
+                            l.callback(base64data as string, "preview");
+                        });
+                    }
 
                     let imageEntry: Map<String, String> | undefined = this.hash.get(e.data.path);
                     imageEntry?.set(e.data.type, smallURl);
@@ -98,7 +107,7 @@ export class Cache {
             return undefined;
         } else {
             let url: string | undefined = imageEntry.get(type);
-            return path != undefined ?   url   : undefined;
+            return path != undefined ? url : undefined;
         }
     }
 

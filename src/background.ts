@@ -33,7 +33,7 @@ function sendToRender(id: string, ...args: any[]) {
   //     windowWorker.webContents.send("log", id + args.join(" # "));
   //   }
   // }
-  BrowserWindow.getAllWindows().forEach(w=>{
+  BrowserWindow.getAllWindows().forEach(w => {
     w.webContents.send(id, ...args);
     w.webContents.send("log", id + args.join(" # "));
   })
@@ -87,7 +87,7 @@ function detectUSBEvents() {
   });
 
 }
- 
+
 /**
  * Usage of the trash lib: https://github.com/sindresorhus/trash
  */
@@ -205,8 +205,12 @@ ipcMain.on('save-insight-file', (event: any, arg:
 })
 
 ipcMain.on('closed', _ => {
+  usbDetect.stopMonitoring();
   win = null;
+  windowWorker = null;
+
   if (process.platform !== 'darwin') {
+
     app.quit();
   }
 });
@@ -260,7 +264,7 @@ app.on('open-file', (event, path) => {
   openFile(path);
 });
 
-ipcMain.on('get-args', (event: any, arg: any) => { 
+ipcMain.on('get-args', (event: any, arg: any) => {
   sendToRender('send-args', args);
 })
 
@@ -276,9 +280,11 @@ async function createWindow() {
     width: 1400,
     height: 800,
     minWidth: 400,
-    minHeight: 400, 
-    x: 10,
-    y: 10,
+    minHeight: 400,
+    // x: 10,
+    // y: 10,
+    center: true,
+    autoHideMenuBar: false,
     webPreferences: {
       enableRemoteModule: true,
       webSecurity: false,
@@ -363,6 +369,24 @@ async function createWindow() {
           label: 'Fullscreen'
         },
         {
+          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          label: 'Hide Menu',
+          click() {
+            if (win) {
+              win.setMenuBarVisibility(!win.isMenuBarVisible()); 
+            }
+          }
+        },
+        {
+          accelerator: process.platform === 'darwin' ? 'Alt+D' : 'Alt+D',
+          label: 'Distract free mode',
+          click() {
+            if (win) {
+              sendToRender('toggle-distract-mode'); 
+            }
+          }
+        },
+        {
           label: 'Reload Page',
           accelerator: 'Ctrl+R',
           click() {
@@ -382,6 +406,7 @@ async function createWindow() {
         },
         {
           label: 'Exit',
+          accelerator: process.platform === 'darwin' ? 'Ctrl+Q' : 'Ctrl+Q',
           click() {
             app.quit()
           }

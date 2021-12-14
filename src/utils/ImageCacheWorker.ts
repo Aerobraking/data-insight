@@ -3,7 +3,7 @@ var ctxSmall: OffscreenCanvasRenderingContext2D | null = null;
 var canvasMedium: OffscreenCanvas;
 var ctxMedium: OffscreenCanvasRenderingContext2D | null = null;
 
-const small = 128;
+const small = 32;
 const medium = 1024;
 // const medium = 128;
 
