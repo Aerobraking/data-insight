@@ -1,7 +1,7 @@
 {
-  "name": "master-data-insight",
+  "name": "data-insight",
   "homepage": "https://github.com/Aerobraking/ma-data-insight",
-  "description": "A modern File Manager",
+  "description": "A modern File Explorer",
   "bugs": {
     "url": "https://github.com/Aerobraking/ma-data-insight/issues",
     "email": "project@hostname.com"
@@ -11,7 +11,11 @@
     "email": "kwwr@aerobraking.de",
     "url": "http://aerobraking.de/"
   },
-  "version": "0.2.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Aerobraking/ma-data-insight.git"
+  },
+  "version": "0.2.2",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

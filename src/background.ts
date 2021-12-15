@@ -324,7 +324,7 @@ async function createWindow() {
   // win.setMenuBarVisibility(false)
   menu = Menu.buildFromTemplate([
     {
-      label: 'Menu',
+      label: 'File',
       submenu: [
         {
           accelerator: process.platform === 'darwin' ? 'Ctrl+N' : 'Ctrl+N',
@@ -348,7 +348,6 @@ async function createWindow() {
             role: "clearRecentDocuments"
           }]
         },
-
         {
           accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
           label: 'Save',
@@ -364,6 +363,18 @@ async function createWindow() {
           }
         },
         {
+          label: 'Exit',
+          accelerator: process.platform === 'darwin' ? 'Ctrl+Q' : 'Ctrl+Q',
+          click() {
+            app.quit()
+          }
+        }
+      ]
+    },
+    {
+      label: "Window",
+      submenu: [
+        {
           role: "togglefullscreen",
           accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
           label: 'Fullscreen'
@@ -373,7 +384,7 @@ async function createWindow() {
           label: 'Hide Menu',
           click() {
             if (win) {
-              win.setMenuBarVisibility(!win.isMenuBarVisible()); 
+              win.setMenuBarVisibility(!win.isMenuBarVisible());
             }
           }
         },
@@ -382,7 +393,7 @@ async function createWindow() {
           label: 'Distract free mode',
           click() {
             if (win) {
-              sendToRender('toggle-distract-mode'); 
+              sendToRender('toggle-distract-mode');
             }
           }
         },
@@ -404,13 +415,6 @@ async function createWindow() {
             }
           }
         },
-        {
-          label: 'Exit',
-          accelerator: process.platform === 'darwin' ? 'Ctrl+Q' : 'Ctrl+Q',
-          click() {
-            app.quit()
-          }
-        }
       ]
     }
   ])
