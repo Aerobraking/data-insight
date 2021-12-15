@@ -23,13 +23,12 @@ app
         componentSingleton: 'tippy-singleton', // => <tippy-singleton/>,
     
         defaultProps: {
-            placement: 'top', 
-            // arrow: "large",  
-            allowHTML: false,
+            placement: 'top',  
+            allowHTML: true,
             animation: 'fade',
-            delay: 550,
-            interactiveDebounce: 5,
-            interactiveBorder: 30, 
+            delay: [1050,400],
+            interactiveDebounce: 1,
+            interactiveBorder: 10, 
         },  
     })
     .use(store)

@@ -4,10 +4,12 @@ import { defineComponent } from "vue";
 import draggable from "vuedraggable";
 import overviewview from "../overview/OverviewView.vue";
 import { PlaylistStar } from "mdue";
+import { Tippy, TippySingleton } from "vue-tippy";
 export default defineComponent({
   name: "wsentriesbookmarks",
   components: {
     draggable,
+    Tippy,
     overviewview,
     PlaylistStar,
   },
@@ -80,9 +82,12 @@ export default defineComponent({
  -->
 <template>
   <div class="bookmarks" :class="{ 'bookmarks-hide': !model.showBookmarks }">
-    <button>
-      <PlaylistStar @click="model.showBookmarks = !model.showBookmarks" />
-    </button>
+    <tippy :placement="'right'" :offset="[-15,-10]" >
+      <button>
+        <PlaylistStar @click="model.showBookmarks = !model.showBookmarks" />
+      </button>
+      <template #content>Bookmarks <kbd>Shift</kbd>+<kbd>Num</kbd></template>
+    </tippy>
 
     <draggable
       v-model="myList"

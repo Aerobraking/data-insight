@@ -1,7 +1,7 @@
 <template>
   <div @keydown="keydownGlobal" class="wrapper">
     <div class="workspace-search" v-show="getShowUI">
-      <div></div>
+      <div class="prevent-input"></div>
       <input
         class="workspace-search-input"
         type="search"
@@ -14,8 +14,8 @@
         @input="searchUpdate"
         @paste="onPaste"
       />
-      <div></div>
-      <div class="search-results" v-if="searchActive">
+      <div class="prevent-input"></div>
+      <div class="search-results" v-show="searchActive">
         <wssearchlist
           :model="model"
           :searchString="searchString"
@@ -142,48 +142,60 @@
               :moveTransition="'transform 0.2s ease-out'"
               :offset="[0, 40]"
             >
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button><Overscan @click="showAll()" /></button>
-                <template #content>Show All</template>
+                <template #content>Show All <kbd>Space</kbd></template>
               </tippy>
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button><FileOutline @click="createEntry('files')" /></button>
-                <template #content>Add Files</template>
+                <template #content
+                  >Add Files <kbd>Alt</kbd>+<kbd>X</kbd></template
+                >
               </tippy>
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button>
                   <FolderOutline @click="createEntry('folders')" />
                 </button>
-                <template #content>Add Folders</template>
+                <template #content
+                  >Add Folders <kbd>Alt</kbd>+<kbd>C</kbd></template
+                >
               </tippy>
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button><Group @click="createEntry('frame')" /></button>
-                <template #content>Add Frame</template>
+                <template #content
+                  >Add Frame <kbd>Ctrl</kbd>+<kbd>F</kbd></template
+                >
               </tippy>
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button><youtube @click="createEntry('youtube')" /></button>
-                <template #content>Add Youtube Video</template>
+                <template #content
+                  >Add Youtube Video <kbd>Ctrl</kbd>+<kbd>Y</kbd></template
+                >
               </tippy>
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button>
                   <CommentTextOutline @click="createEntry('text')" />
                 </button>
-                <template #content>Create Text-Editor</template>
+                <template #content
+                  >Create Text-Editor <kbd>Ctrl</kbd>+<kbd>T</kbd></template
+                >
               </tippy>
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button
                   @click="setFocusOnNameInput(undefined)"
                   :disabled="selectedEntriesCount != 1"
                 >
                   <FormTextbox />
                 </button>
-                <template #content>Edit Name</template>
+                <template #content
+                  >Edit Name <kbd>Ctrl</kbd>+<kbd>E</kbd></template
+                >
               </tippy>
-              <tippy>
+              <tippy :offset="[0, 40]">
                 <button :disabled="selectedEntriesCount == 0">
                   <DeleteVariant @click="deleteSelection" />
                 </button>
-                <template #content>Delete</template>
+                <template #content>Delete <kbd>Del</kbd></template>
               </tippy>
             </tippy-singleton>
             <!-- <button
@@ -561,6 +573,8 @@ export default defineComponent({
      * When a workspace gets active, the focus is not on its div, which prevents the keylisteners from working. Prevent this by calling this method when the workspace gets active.
      */
     setFocusToWorkspace(): void {
+      console.log("ws view mouse enter");
+
       setTimeout(() => {
         this.$el.getElementsByClassName("vue-pan-zoom-scene")[0].focus();
       }, 2);
@@ -1961,6 +1975,18 @@ var switcher = false;
 <style   lang="scss">
 $color-Selection: rgba(57, 215, 255, 0.3);
 
+kbd {
+  display: inline-block;
+  border: 0.2px solid #ccc;
+  border-radius: 4px;
+  padding: 0.1em 0.5em;
+  margin: 0.4em 0.4em;
+  box-shadow: 0 0.5px 0px rgba(0, 0, 0, 0.2), 0 0 0 1px #fff inset;
+  background-color: #f7f7f700;
+  color: #ccc;
+  font-weight: bold;
+}
+
 .splitpane {
   flex: 1 !important;
   width: 100%;
@@ -2197,11 +2223,6 @@ svg {
   width: 100%;
   z-index: 4000;
   height: 28px;
-
-  pointer-events: none;
-  div {
-    pointer-events: none;
-  }
 
   button {
     border: none;

@@ -101,6 +101,23 @@ export default defineComponent({
           }
         }
 
+        list.sort((a, b) => {
+          const s1 =
+            a instanceof WorkspaceEntry
+              ? a.typename + a.searchResultString()
+              : a instanceof AbstractNode
+              ? "node" + a.getPath(false)
+              : "";
+          const s2 =
+            b instanceof WorkspaceEntry
+              ? b.typename + b.searchResultString()
+              : b instanceof AbstractNode
+              ? "node" + b.getPath(false)
+              : "";
+
+          return s1.localeCompare(s2);
+        });
+
         return list;
       } else {
         return [];
@@ -173,6 +190,7 @@ table {
   overflow: hidden;
   border-spacing: 0;
   border: none;
+  pointer-events: all;
 }
 
 .search-result-row {
@@ -188,6 +206,6 @@ table {
 }
 
 .search-result-row:hover {
-  background: #ccc;
+  background: rgb(94, 94, 94);
 }
 </style>
