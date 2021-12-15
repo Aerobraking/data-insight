@@ -44,7 +44,7 @@ export default defineComponent({
     let path = this.entry?.getURL();
     const div = _this.$el.getElementsByClassName("image-canvas")[0];
 
-    if (this.entry.isClipboard) { 
+    if (this.entry.isClipboard) {
       _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
     } else {
       setTimeout(() => {
@@ -57,11 +57,14 @@ export default defineComponent({
           callback: (
             url: string,
             type: "preview" | "small" | "medium" | "original"
-          ) => {  
+          ) => {
+            if (type == "preview") {
+              _this.entry.previewBase64 = url;
+            }
             if (type == "medium") {
               div.style.backgroundImage = url;
               setTimeout(() => {
-                 _this.$el.style.backgroundImage = "";
+                _this.$el.style.backgroundImage = "";
               }, 500);
             }
           },

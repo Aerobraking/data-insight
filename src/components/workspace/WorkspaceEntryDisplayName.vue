@@ -14,13 +14,17 @@
       placeholder=""
       :class="{ 'hide-name': !entry.showDisplayname }"
     />
-    <button
-      class="wsentry-displayname-pin"
-      @click="entry.displaynameResize = !entry.displaynameResize"
-    >
-      <PinOutline v-if="entry.displaynameResize" />
-      <PinOffOutline v-else />
-    </button>
+    <tippy :sticky="true" :offset="[-100, 40]">
+      <button
+        class="wsentry-displayname-pin"
+        @click="entry.displaynameResize = !entry.displaynameResize"
+      >
+        <PinOutline v-if="entry.displaynameResize" />
+        <PinOffOutline v-else />
+      </button>
+      <template #content>Scale Relative</template>
+    </tippy>
+
     <button
       class="wsentry-displayname-show"
       @click="entry.showDisplayname = !entry.showDisplayname"
@@ -32,6 +36,7 @@
 </template>
 
 <script lang="ts">
+import { Tippy } from "vue-tippy";
 import {
   Resize,
   PinOffOutline,
@@ -45,6 +50,7 @@ import { Events } from "./WorkspaceUtils";
 export default defineComponent({
   el: ".wsentry-displayname",
   components: {
+    Tippy,
     Resize,
     PinOffOutline,
     PinOutline,

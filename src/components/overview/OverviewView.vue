@@ -110,12 +110,35 @@
           @click="overviewEngine.engineActive = !overviewEngine.engineActive"
         />
       </button> -->
-      <button><Overscan @click="showAll()" /></button>
-      <button><FolderOutline @click="selectFolders()" /></button>
-      <button><DeleteEmptyOutline @click="deleteSelection()" /></button>
-      <button><FolderOutline @click="loadCollection()" /></button>
-      <button><FolderOutline @click="createCollection()" /></button>
-      <button><FolderOutline @click="createRootFromNode()" /></button>
+      <tippy-singleton
+        :moveTransition="'transform 0.2s ease-out'"
+        :offset="[0, 40]"
+      >
+        <tippy >
+          <button><Overscan @click="showAll()" /></button>
+          <template #content>Show All</template>
+        </tippy>
+        <tippy  >
+          <button><FolderOutline @click="selectFolders()" /></button>
+          <template #content>Add Folders</template>
+        </tippy>
+        <tippy >
+          <button><DeleteEmptyOutline @click="deleteSelection()" /></button>
+          <template #content>Delete</template>
+        </tippy>
+        <tippy >
+          <button><FolderOutline @click="loadCollection()" /></button>
+          <template #content>Create Collection</template>
+        </tippy>
+        <tippy >
+          <button><FolderOutline @click="createCollection()" /></button>
+          <template #content>Open Collection</template>
+        </tippy>
+        <tippy >
+          <button><FolderOutline @click="createRootFromNode()" /></button>
+          <template #content>Create Entry from Selection</template>
+        </tippy>
+      </tippy-singleton>
     </div>
 
     <button
@@ -136,7 +159,7 @@
 
 <script lang="ts">
 const fs = require("fs");
-const util = require("util");
+import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
 import { Workspace } from "@/store/model/Workspace";
 import {
@@ -176,6 +199,8 @@ import { set3DPosition } from "@/utils/resize";
 export default defineComponent({
   name: "App",
   components: {
+    Tippy,
+    TippySingleton,
     Qrcode,
     TuneVerticalVariant,
     EmoticonHappyOutline,

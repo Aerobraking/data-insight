@@ -138,12 +138,54 @@
             class="workspace-menu-bar"
             :class="{ 'workspace-menu-bar-hide': !getShowUI }"
           >
-            <button><Overscan @click="showAll()" /></button>
-            <button><FileOutline @click="createEntry('files')" /></button>
-            <button><FolderOutline @click="createEntry('folders')" /></button>
-            <button><Group @click="createEntry('frame')" /></button>
-            <button><youtube @click="createEntry('youtube')" /></button>
-            <button><CommentTextOutline @click="createEntry('text')" /></button>
+            <tippy-singleton
+              :moveTransition="'transform 0.2s ease-out'"
+              :offset="[0, 40]"
+            >
+              <tippy>
+                <button><Overscan @click="showAll()" /></button>
+                <template #content>Show All</template>
+              </tippy>
+              <tippy>
+                <button><FileOutline @click="createEntry('files')" /></button>
+                <template #content>Add Files</template>
+              </tippy>
+              <tippy>
+                <button>
+                  <FolderOutline @click="createEntry('folders')" />
+                </button>
+                <template #content>Add Folders</template>
+              </tippy>
+              <tippy>
+                <button><Group @click="createEntry('frame')" /></button>
+                <template #content>Add Frame</template>
+              </tippy>
+              <tippy>
+                <button><youtube @click="createEntry('youtube')" /></button>
+                <template #content>Add Youtube Video</template>
+              </tippy>
+              <tippy>
+                <button>
+                  <CommentTextOutline @click="createEntry('text')" />
+                </button>
+                <template #content>Create Text-Editor</template>
+              </tippy>
+              <tippy>
+                <button
+                  @click="setFocusOnNameInput(undefined)"
+                  :disabled="selectedEntriesCount != 1"
+                >
+                  <FormTextbox />
+                </button>
+                <template #content>Edit Name</template>
+              </tippy>
+              <tippy>
+                <button :disabled="selectedEntriesCount == 0">
+                  <DeleteVariant @click="deleteSelection" />
+                </button>
+                <template #content>Delete</template>
+              </tippy>
+            </tippy-singleton>
             <!-- <button
         style="transform: rotate(90deg)"
         :disabled="selectedEntriesCount == 0"
@@ -152,21 +194,13 @@
       </button> -->
 
             <!-- <button :disabled="selectedEntriesCount < 2"><BorderAll /></button> -->
-            <button
-              @click="setFocusOnNameInput(undefined)"
-              :disabled="selectedEntriesCount != 1"
-            >
-              <FormTextbox />
-            </button>
+
             <!-- <button
               @click="toggleNameResizing()"
               :disabled="selectedEntriesCount != 1"
             >
               <FormatSize />
             </button> -->
-            <button :disabled="selectedEntriesCount == 0">
-              <DeleteVariant @click="deleteSelection" />
-            </button>
           </div>
         </div>
       </pane>
@@ -183,6 +217,7 @@
 </template>
 
 <script lang="ts">
+import { Tippy, TippySingleton } from "vue-tippy";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
 import { ipcRenderer } from "electron";
@@ -253,6 +288,8 @@ export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    Tippy,
+    TippySingleton,
     Pane,
     Splitpanes,
     DeleteVariant,
@@ -392,9 +429,9 @@ export default defineComponent({
 
         for (let i = 0; i < listSvgs.length; i++) {
           const s = listSvgs[i];
-          s.style.fontSize = scale * 34 + "px";
-          s.style.marginLeft = scaleMargin * 15 + "px";
-          s.style.marginRight = scaleMargin * 15 + "px";
+          // s.style.fontSize = scale * 34 + "px";
+          // s.style.marginLeft = scaleMargin * 15 + "px";
+          // s.style.marginRight = scaleMargin * 15 + "px";
         }
       }
     });
