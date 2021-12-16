@@ -416,6 +416,29 @@ async function createWindow() {
           }
         },
       ]
+    },
+    {
+      label: "Help",
+      submenu: [
+        {
+          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          label: 'Keyboard Shortcuts',
+          click() {
+            if (win) {
+          //    win.setMenuBarVisibility(!win.isMenuBarVisible());
+            }
+          }
+        },
+        {
+          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          label: 'About',
+          click() {
+            if (win) {
+         //     win.setMenuBarVisibility(!win.isMenuBarVisible());
+            }
+          }
+        }
+      ]
     }
   ])
 

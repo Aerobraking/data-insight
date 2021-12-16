@@ -1,10 +1,11 @@
+import _ from "underscore";
 
 export function isImageTypeSupported(path: string): boolean {
     return ['.apng', '.png', '.jpg', '.jpeg', '.avif', '.gif', '.svg', '.webp', '.bmp', '.tiff', '.tif'].some(char => path.toLowerCase().endsWith(char));
 }
 
 export interface ImageListener {
-    callback: (url: string, type: "preview" | "small" | "medium" | "original") => void;
+    callback: (url: string, type: "preview" | "tiny" | "small" | "medium" | "original") => void;
     callbackSize: (dim: ImageDim) => void
 }
 
@@ -39,30 +40,37 @@ export class Cache {
                 // Grab the message data from the event
 
                 if (e.data.type == "size") {
-
                     this.hashDim.set(e.data.path, { width: e.data.width, height: e.data.height, ratio: e.data.ratio });
 
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callbackSize({ width: e.data.width, height: e.data.height, ratio: e.data.ratio });
                     });
-
                 }
-                if (e.data.type == "small") {
-                    const smallURl = URL.createObjectURL(e.data.blob);
-
+                
+                if (e.data.type == "preview") {
                     var reader = new FileReader();
                     reader.readAsDataURL(e.data.blob);
                     reader.onloadend = function () {
-                        var base64data = reader.result; 
+                        var base64data = reader.result;
                         _this.doCallback(e.data.path, (l: ImageListener) => {
                             l.callback(base64data as string, "preview");
                         });
                     }
+                }
 
+                if (e.data.type == "preview") {
+                    const smallURl = URL.createObjectURL(e.data.blob);
+                    let imageEntry: Map<String, String> | undefined = this.hash.get(e.data.path);
+                    imageEntry?.set("tiny", smallURl);
+                    this.doCallback(e.data.path, (l: ImageListener) => {
+                        l.callback("url('" + smallURl + "')", "tiny");
+                    });
+                }
+
+                if (e.data.type == "small") {
+                    const smallURl = URL.createObjectURL(e.data.blob);
                     let imageEntry: Map<String, String> | undefined = this.hash.get(e.data.path);
                     imageEntry?.set(e.data.type, smallURl);
-
-
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + smallURl + "')", e.data.type);
                     });
@@ -78,7 +86,6 @@ export class Cache {
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + mediuamURl + "')", e.data.type);
                     });
-
                 }
 
             };
@@ -111,8 +118,6 @@ export class Cache {
         }
     }
 
-
-
     private doCallback(path: string, call:
         (l: ImageListener) => void) {
         let listCallbacks: ImageListener[] | undefined = this.hashCallbacks.get(path);
@@ -125,58 +130,118 @@ export class Cache {
         }
     }
 
+    private timeLast = performance.now();
+    private timeNow = performance.now();
+    private static delay = 33;
+    private timeStack = 0;
+    public registerPath = (path: string, callback: ImageListener) => {
 
+        this.timeNow = performance.now();
+        const diff = this.timeNow - this.timeLast;
+        this.timeStack += Cache.delay;
 
-    registerPath(path: string, callback: ImageListener
-    ): void {
+        setTimeout(() => {
+            let imageEntry: Map<String, String> | undefined = this.hash.get(path);
 
-        let imageEntry: Map<String, String> | undefined = this.hash.get(path);
-
-        if (imageEntry == undefined) {
-            /**
-             * Start webworker
-             */
-            this.hash.set(path, new Map());
-
-
-            this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: path });
-            this.listWorkerTraverser++;
-            this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
-
-            //    this.worker.postMessage({ msg: "create", path: path });
-        } else {
-
-            let dim = this.hashDim.get(path);
-            if (dim) {
-                callback.callbackSize(dim);
-            }
-
-            let imageEntry: Map<string, string> | undefined = this.hash.get(path);
             if (imageEntry == undefined) {
-                return undefined;
+                /**
+                 * Start webworker
+                 */
+                this.hash.set(path, new Map());
+
+
+                this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: path });
+                this.listWorkerTraverser++;
+                this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
+
+                //    this.worker.postMessage({ msg: "create", path: path });
             } else {
-                let url: string | undefined = imageEntry.get("small");
-                if (url) {
-                    callback.callback("url('" + url + "')", "small");
+
+                let dim = this.hashDim.get(path);
+                if (dim) {
+                    callback.callbackSize(dim);
                 }
-                let urlM: string | undefined = imageEntry.get("medium");
-                if (urlM) {
-                    callback.callback("url('" + urlM + "')", "medium");
+
+                let imageEntry: Map<string, string> | undefined = this.hash.get(path);
+                if (imageEntry == undefined) {
+                    return undefined;
+                } else {
+                    let url: string | undefined = imageEntry.get("small");
+                    if (url) {
+                        callback.callback("url('" + url + "')", "small");
+                    }
+                    let urlM: string | undefined = imageEntry.get("medium");
+                    if (urlM) {
+                        callback.callback("url('" + urlM + "')", "medium");
+                    }
+
                 }
 
             }
 
-        }
+            let listCallbacks: ImageListener[] | undefined = this.hashCallbacks.get(path);
 
-        let listCallbacks: ImageListener[] | undefined = this.hashCallbacks.get(path);
+            if (listCallbacks == undefined) {
+                listCallbacks = [];
+                listCallbacks.push(callback);
+                this.hashCallbacks.set(path, listCallbacks);
+            }
+            this.timeStack -= Cache.delay;
 
-        if (listCallbacks == undefined) {
-            listCallbacks = [];
-            listCallbacks.push(callback);
-            this.hashCallbacks.set(path, listCallbacks);
-        }
+        }, Math.max(1, this.timeStack));
+        this.timeLast = performance.now();
+    };
 
-    }
+    // public registerPath(path: string, callback: ImageListener
+    // ): void {
+
+    //     let imageEntry: Map<String, String> | undefined = this.hash.get(path);
+
+    //     if (imageEntry == undefined) {
+    //         /**
+    //          * Start webworker
+    //          */
+    //         this.hash.set(path, new Map());
+
+
+    //         this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: path });
+    //         this.listWorkerTraverser++;
+    //         this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
+
+    //         //    this.worker.postMessage({ msg: "create", path: path });
+    //     } else {
+
+    //         let dim = this.hashDim.get(path);
+    //         if (dim) {
+    //             callback.callbackSize(dim);
+    //         }
+
+    //         let imageEntry: Map<string, string> | undefined = this.hash.get(path);
+    //         if (imageEntry == undefined) {
+    //             return undefined;
+    //         } else {
+    //             let url: string | undefined = imageEntry.get("small");
+    //             if (url) {
+    //                 callback.callback("url('" + url + "')", "small");
+    //             }
+    //             let urlM: string | undefined = imageEntry.get("medium");
+    //             if (urlM) {
+    //                 callback.callback("url('" + urlM + "')", "medium");
+    //             }
+
+    //         }
+
+    //     }
+
+    //     let listCallbacks: ImageListener[] | undefined = this.hashCallbacks.get(path);
+
+    //     if (listCallbacks == undefined) {
+    //         listCallbacks = [];
+    //         listCallbacks.push(callback);
+    //         this.hashCallbacks.set(path, listCallbacks);
+    //     }
+
+    // }
 
 
 }

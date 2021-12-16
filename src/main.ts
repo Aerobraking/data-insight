@@ -11,17 +11,13 @@ import wsentrytextarea from "./components/workspace/WorkspaceEntryTextareaView.v
 import wsentryfolderview from "./components/workspace/WorkspaceEntryFolderView.vue";
 import wsentryimage from "./components/workspace/WorkspaceEntryImageView.vue";
 import wsentryyoutube from "./components/workspace/WorkspaceEntryYoutubeView.vue";
-// import 'tippy.js/dist/tippy.css'
-
-
 
 const app = createApp(App);
 app
     .use(VueTippy, { 
         directive: 'tippy', // => v-tippy
         component: 'tippy', // => <tippy/>
-        componentSingleton: 'tippy-singleton', // => <tippy-singleton/>,
-    
+        componentSingleton: 'tippy-singleton', // => <tippy-singleton/>,    
         defaultProps: {
             placement: 'top',  
             allowHTML: true,

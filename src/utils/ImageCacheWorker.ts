@@ -1,12 +1,15 @@
+import { create } from "underscore";
+
+var canvasPreview: OffscreenCanvas;
+var ctxPreview: OffscreenCanvasRenderingContext2D | null = null;
 var canvasSmall: OffscreenCanvas;
 var ctxSmall: OffscreenCanvasRenderingContext2D | null = null;
 var canvasMedium: OffscreenCanvas;
 var ctxMedium: OffscreenCanvasRenderingContext2D | null = null;
 
-const small = 32;
-const medium = 1024;
-// const medium = 128;
-
+const preview = 64;
+const small = 128;
+const medium = 1024+256;
 /**
  * Conserve aspect ratio of the original region. Useful when shrinking/enlarging
  * images to fit into a certain area.
@@ -31,7 +34,7 @@ function calculateAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: 
 addEventListener('message', async function (e: MessageEvent) {
 
     if (e.data.msg == "create") {
-  
+
         /**
          * Making sure we have a url to a file.
          */
@@ -41,6 +44,7 @@ addEventListener('message', async function (e: MessageEvent) {
 
         await createImageBitmap(blob).then(bitmap => {
 
+            let previewSize = calculateAspectRatioFit(bitmap.width, bitmap.height, preview);
             let smallSize = calculateAspectRatioFit(bitmap.width, bitmap.height, small);
             let mediumSize = calculateAspectRatioFit(bitmap.width, bitmap.height, medium);
 
@@ -53,6 +57,38 @@ addEventListener('message', async function (e: MessageEvent) {
                 ratio: smallSize.ratio
             });
 
+            // const create = (id: string, size: { width: number, height: number, ratio: number }) => {
+            //     const canvas = new OffscreenCanvas(size.width, size.height);
+            //     const ctx = canvas.getContext("2d");
+            //     ctx?.drawImage(bitmap, 0, 0, size.width, size.height);
+            //     // Once the file has been fetched, we'll convert it to a `Blob`
+            //     canvas.convertToBlob().then((blob) => {
+            //         // @ts-ignore: Unreachable code error
+            //         postMessage({
+            //             path: e.data.path,
+            //             type: id,
+            //             blob: blob
+            //         });
+            //     });
+            // };
+
+            // create("preview", previewSize);
+            // create("small", smallSize);
+            // create("medium", mediumSize);
+
+            canvasPreview = new OffscreenCanvas(previewSize.width, previewSize.height);
+            ctxPreview = canvasPreview.getContext("2d");
+            ctxPreview?.drawImage(bitmap, 0, 0, previewSize.width, previewSize.height);
+            // Once the file has been fetched, we'll convert it to a `Blob`
+            canvasPreview.convertToBlob().then((blob) => {
+                // @ts-ignore: Unreachable code error
+                postMessage({
+                    path: e.data.path,
+                    type: "preview",
+                    blob: blob
+                });
+            });
+            
             canvasSmall = new OffscreenCanvas(smallSize.width, smallSize.height);
             ctxSmall = canvasSmall.getContext("2d");
             ctxSmall?.drawImage(bitmap, 0, 0, smallSize.width, smallSize.height);
@@ -77,6 +113,9 @@ addEventListener('message', async function (e: MessageEvent) {
                     blob: blob
                 });
             });
+
+
+
 
 
         });

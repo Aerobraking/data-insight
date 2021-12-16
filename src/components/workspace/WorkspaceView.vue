@@ -981,11 +981,14 @@ export default defineComponent({
        */
       if (e.ctrlKey && !e.repeat) {
         switch (e.key) {
+          case " ":
+            if (e.repeat) {
+              return;
+            }
+            this.showAll();
+            break;
           case "a":
             this.selectAll();
-            break;
-          case "r":
-            this.setFocusOnNameInput();
             break;
           case "c":
             if (this.getSelectedEntries().length > 0) {
@@ -1044,7 +1047,9 @@ export default defineComponent({
        */
       if (e.altKey) {
         switch (e.key) {
-          case "1":
+          case "r":
+            this.setFocusOnNameInput();
+            break;
         }
       }
 
@@ -1102,11 +1107,6 @@ export default defineComponent({
               this.startPlugin(new ReArrange(this));
             }
             break;
-          case "Delete":
-          case "delete":
-            this.deleteSelection();
-            break;
-
           case "t":
             this.createEntry("text", true);
             break;
@@ -1115,6 +1115,10 @@ export default defineComponent({
             break;
           case "y":
             this.createEntry("youtube", true);
+            break;
+          case "Delete":
+          case "delete":
+            this.deleteSelection();
             break;
         }
       }
