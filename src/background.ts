@@ -379,9 +379,11 @@ async function createWindow() {
           accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
           label: 'Fullscreen'
         },
+       
         {
           accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
           label: 'Hide Menu',
+          visible: process.platform != 'darwin' ,
           click() {
             if (win) {
               win.setMenuBarVisibility(!win.isMenuBarVisible());
