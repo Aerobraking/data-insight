@@ -53,7 +53,9 @@
         placeholder="Search ..."
       /> -->
     </div>
-    <div @mousedown.stop @mousemove.stop class="breadcrumbs"></div>
+    <div @mousedown.stop @mousemove.stop class="breadcrumbs-wrapper">
+      <div @mousedown.stop @mousemove.stop class="breadcrumbs"></div>
+    </div>
 
     <div class="viewport" :class="{ opaque: opaque }">
       <div
@@ -274,6 +276,8 @@ export default defineComponent({
       } else {
         this.updateBreadcrumps(this.entry.path);
       }
+      const div: Element = this.$el.getElementsByClassName("breadcrumbs")[0];
+      div.classList.toggle("highlight-path", show);
     },
     updateBreadcrumps(p: string) {
       const _this = this;
@@ -608,19 +612,19 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
+$color-Selection: rgba(57, 215, 255, 0.3);
+$colorBG: rgb(34, 34, 34);
+$colorFG: rgb(234, 234, 234);
+
 .item-selected {
-  background: rgba(46, 115, 252, 0.11);
+  //box-sizing: border-box;
+  //border: 2px solid $color-Selection;
+  background: $color-Selection;
 }
 
 .container {
   user-select: none;
   pointer-events: all;
-}
-
-.selection-area {
-  background: rgba(46, 115, 252, 0.11);
-  border: 2px solid rgba(98, 155, 255, 0.81);
-  border-radius: 0.1em;
 }
 
 .ws-folder-window-wrapper {
@@ -636,8 +640,8 @@ export default defineComponent({
   min-height: 200px;
 
   position: absolute;
-  color: #f1f1f1;
-  background: #ffffff07;
+  color: $colorFG;
+  background: $colorBG;
   border: 0px solid #949494;
   box-sizing: border-box;
   border-radius: 0px;
@@ -673,7 +677,7 @@ export default defineComponent({
         vertical-align: middle;
         font-size: 24px;
         padding: 0 10 0 10;
-        color: #444;
+        color: $colorFG;
         margin: 0;
       }
     }
@@ -685,7 +689,7 @@ export default defineComponent({
       padding-left: 10px;
       height: 100%;
       top: 0;
-      background: white;
+      background: $colorBG;
       border-radius: 0px;
       border: 0px solid #949494;
       border-left: 1px solid #949494;
@@ -693,7 +697,7 @@ export default defineComponent({
   }
 }
 
-.breadcrumbs {
+.breadcrumbs-wrapper {
   height: 20px;
   border: none;
   border-top: 1px solid #949494;
@@ -701,33 +705,41 @@ export default defineComponent({
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.breadcrumbs {
+  padding-top: 2px;
+  position: absolute;
 }
 
 @mixin crumbbase($padding: 8px) {
   height: 100%;
   margin: 0 0px 0 0px;
-  background: #fff;
+  background: $colorBG;
   padding: 0px $padding 0px $padding;
   position: relative;
+  color: $colorFG;
   top: -2px;
   transition: all 0.2s ease-out;
 }
 
 .move-home-button {
   transform: scale(1.5, 1.5) !important;
-  color: rgba(27, 126, 255, 0.418) !important;
+  color: $color-Selection !important;
 }
 
 .crumb {
   @include crumbbase();
   cursor: pointer;
   &:hover {
-    background: #ddd;
+    background: $color-Selection;
   }
 }
 
 .highlight-path .crumb {
-  background: rgba(27, 126, 255, 0.418) !important;
+  background: $color-Selection !important;
 }
 
 .crumb-separator {
@@ -736,12 +748,12 @@ export default defineComponent({
 }
 
 .highlight-path .crumb-separator {
-  background: rgba(27, 126, 255, 0.418) !important;
+  background: $color-Selection !important;
 }
 
 .opaque {
-  color: #252525;
-  background: #ffffff;
+  color: $colorFG;
+  background: $colorBG;
   border: 2px solid #949494;
 }
 
@@ -775,7 +787,7 @@ $tile-size: 150px;
 .ws-folder-window-wrapper .ws-window-bar-top {
   width: 100%;
   height: 25px;
-  background-color: rgb(255, 255, 255);
+  background-color: $colorBG;
 
   .opaque {
     background-color: #5a5a5a00;

@@ -8,10 +8,10 @@ import {
 import * as WSUtils from "./WorkspaceUtils";
 
 export function doChangeFocus(): boolean {
-    return document.activeElement != undefined &&
+    return !(document.activeElement != undefined &&
         (document.activeElement instanceof HTMLInputElement ||
             (document.activeElement instanceof HTMLDivElement &&
-                document.activeElement.contentEditable == "true"));
+                document.activeElement.contentEditable == "true")));
 }
 
 export function setupEntry(props: any, wsListener: Listener | undefined = undefined) {
@@ -75,14 +75,12 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 }
 
 export interface Listener {
-
-
+    searchEvent?: (value: string) => void;
     dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
     prepareFileSaving?: () => void;
     zoom?: (transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc) => void;
     pluginStarted?: (modal: boolean) => void;
     event?: (type: "fixedZoomUpdate") => void;
-
 }
 
 export interface WorkspaceViewIfc {
@@ -156,6 +154,11 @@ export class Dispatcher {
     dragStarting(selection: Element[], workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {
             if (c.dragStarting) c.dragStarting(selection, workspace);
+        });
+    }
+    searchEvent(value: string): void {
+        this.callbacks.forEach((c) => {
+            if (c.searchEvent) c.searchEvent(value);
         });
     }
     zoom(workspace: WorkspaceViewIfc): void {

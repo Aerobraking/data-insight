@@ -85,10 +85,10 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+
 .folder-file {
   z-index: 100;
-  // will-change: transform;
-  color: #f1f1f1;
+  // will-change: transform; 
   padding: 10px;
   height: 180px;
   box-sizing: border-box;
@@ -102,8 +102,7 @@ export default defineComponent({
     text-overflow: ellipsis;
     padding: 0;
     margin: 0 auto;
-    margin-top: 4px;
-    color: #222;
+    margin-top: 4px; 
     text-align: center;
   }
 

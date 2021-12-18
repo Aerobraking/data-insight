@@ -20,6 +20,19 @@ Require stack:
 - /Users/krecker/Documents/code/ma-data-insight/node_modules/electron/dist/Electron.app/Contents/Resources/default_app.asar/main.js
  */
 const isDevelopment = process.env.NODE_ENV !== 'production'
+
+const dragpng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAABgAAAAYADwa0LPAAABEklEQVRo3u2ZsQ6CMBCG/zOsxuiss6O+qPE5NCbODs6uvoOuxlAf4HeQQREM0NKDeN/YpuW+HnBJDzA6CMkZyR1Jx5bxjTUpCh7AGcBE+yCrMCgYW/cleACQ/ABJB2AYLQAR8VpfIPDxXvo+oG0G/luYgAnUJlKdcCT3JOe/Yqn9ESvUiTuAhYhcQmUgdp0YA1iVTTbJQNQ6keFEZBRKIEqdqPqc//wLdQkT0MYEtDEBbUxAGxPQxgS0MQFtTECb3gt8Xa93/S40T+8zYALamIA2JqBN0mDNA2+XuyF6vRVIyyaaZOAYIeA8h7KJ2lU365ic8Lq3j8ENwFJErsF2zFpMW5Jpiy2mlOSG5DTSQRmNeAKIfX8Wvu/xQQAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMS0xMi0xOFQxMzozMTozNiswMDowMEVo2dcAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjEtMTItMThUMTM6MzE6MzYrMDA6MDA0NWFrAAAAAElFTkSuQmCC";
+
+export const DragIconPath = app.getPath('userData') + path.sep + "dragicon.png";
+function createDragImage() {
+  var base64Data: any = dragpng.replace(/^data:image\/png;base64,/, "");
+  fs.writeFile(DragIconPath, base64Data, { encoding: 'base64' }, function (err: any) {
+    console.log(err);
+  });
+}
+
+createDragImage();
+
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
@@ -69,7 +82,7 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
   if (filePaths.length > 0) {
     event.sender.startDrag({
       files: filePaths,
-      icon: "C:/content-copy.png"
+      icon: DragIconPath
     })
   }
 
@@ -379,12 +392,12 @@ async function createWindow() {
           accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
           label: 'Fullscreen'
         },
-       
+
         {
           accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
           label: 'Hide Menu',
           // does not work in osx
-          visible: process.platform != 'darwin' ,
+          visible: process.platform != 'darwin',
           click() {
             if (win) {
               win.setMenuBarVisibility(!win.isMenuBarVisible());
@@ -428,7 +441,7 @@ async function createWindow() {
           label: 'Keyboard Shortcuts',
           click() {
             if (win) {
-          //    win.setMenuBarVisibility(!win.isMenuBarVisible());
+              //    win.setMenuBarVisibility(!win.isMenuBarVisible());
             }
           }
         },
@@ -437,7 +450,7 @@ async function createWindow() {
           label: 'About',
           click() {
             if (win) {
-         //     win.setMenuBarVisibility(!win.isMenuBarVisible());
+              //     win.setMenuBarVisibility(!win.isMenuBarVisible());
             }
           }
         }
