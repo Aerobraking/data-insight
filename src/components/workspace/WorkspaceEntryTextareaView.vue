@@ -77,14 +77,14 @@ export default defineComponent({
         },
         {
           name: "heading1",
-          result: () => exec("fontSize", "6"),
+          result: () => exec("fontSize", "7"),
         },
         {
           name: "heading2",
-          result: () => exec("fontSize", "7"),
+          result: () => exec("fontSize", "6"),
         },
-        "olist",
-        "ulist",
+        // "olist",
+        // "ulist",
       ],
       classes: {
         actionbar: "pell-actionbar",
@@ -127,7 +127,7 @@ export default defineComponent({
   position: absolute;
   top: 65px;
   left: 10px;
-  color: #E8EAED;
+  color: #e8eaed;
   text-align: left;
   opacity: 0.6;
 }
@@ -141,25 +141,8 @@ export default defineComponent({
   overflow-y: hidden;
 }
 .workspace-is-selected .text-editor-div {
-  overflow-y: auto;
-}
-
-.pell-content {
-  height: initial !important;
-  flex: 1 !important;
-  color: #E8EAED;
-  padding: 10px;
-  outline: none;
-  overflow: hidden;
-  white-space: nowrap;
-  background: transparent;
-  transform: scale(3);
-  transform-origin: top left;
-  transition: all 0.4s ease-in-out;
-}
-
-.workspace-is-selected .pell-content {
-  background: rgba(0, 0, 0, 0.1);
+  // overflow-x: auto;
+  // overflow-y: auto;
 }
 
 .pell-actionbar {
@@ -167,8 +150,30 @@ export default defineComponent({
   white-space: nowrap;
   background: transparent;
   height: 30px;
+  position: fixed;
+  width: 100%;
   border-bottom: 2px solid transparent;
   transition: all 0.4s ease-in-out;
+}
+
+.pell-content {
+  margin-top: 30px;
+  height: initial !important;
+  flex: 1 !important;
+  color: #e8eaed;
+  padding: 10px;
+  outline: none;
+  overflow: auto;
+  white-space: nowrap;
+  background: transparent;
+  // transform: scale(3);
+  transform-origin: top left;
+  transition: all 0.4s ease-in-out;
+  // font-size: 100px;
+}
+
+.workspace-is-selected .pell-content {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .workspace-is-selected .pell-actionbar {
@@ -209,7 +214,7 @@ export default defineComponent({
   height: 850px;
   background-size: cover;
   box-sizing: border-box;
-  background-color: #f1f1f100;
+  background-color: rgb(26, 26, 26);
   border-radius: 0;
   padding: 0;
   margin: 0;

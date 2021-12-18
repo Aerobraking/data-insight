@@ -24,7 +24,7 @@ export class WorkspaceEntry {
     typename: string = "";
     componentname: string = "";
     displayname: string = "";
-    displaynameResize: boolean = true;
+    displaynameResize: boolean = false;
     showDisplayname: boolean = true;
     x: number = 0;
     y: number = 0;

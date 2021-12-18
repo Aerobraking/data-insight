@@ -113,6 +113,7 @@
 const path = require("path");
 const { shell } = require("electron");
 
+import * as WSUtils from "./WorkspaceUtils";
 import * as watcher from "./../../utils/WatchSystem";
 import fs from "fs";
 import wsfolderfile from "./FolderFileView.vue";
@@ -386,7 +387,7 @@ export default defineComponent({
               );
             } catch (err) {
               console.log(err);
-              
+
               console.error("no access! " + filePath);
             }
           });
@@ -450,9 +451,11 @@ export default defineComponent({
       }
     },
     setFocusToThis() {
-      setTimeout(() => {
-        this.$el.focus({preventScroll: true});
-      }, 10);
+      if (WSUtils.doChangeFocus()) {
+        setTimeout(() => {
+          this.$el.focus({ preventScroll: true });
+        }, 10);
+      }
     },
     mouseup(e: MouseEvent) {
       this.dragActive = false;

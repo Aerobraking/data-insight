@@ -183,7 +183,6 @@ table {
   }
   margin: 0;
   padding: 0;
-  border-top: 1px solid #444;
   white-space: nowrap;
   min-height: 0;
   width: 100%;

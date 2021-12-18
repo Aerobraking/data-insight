@@ -44,7 +44,7 @@ module.exports = {
           "oneClick": false,
           "allowToChangeInstallationDirectory": true,
           // when true it asks for permissions before installing
-          "perMachine": false,
+          "perMachine": true,
           "installerIcon": "public/icon.ico",
           "uninstallerIcon": "public/icon.ico",
           "uninstallDisplayName": "Data Insights",

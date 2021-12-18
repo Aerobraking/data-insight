@@ -7,6 +7,13 @@ import {
 } from "vue";
 import * as WSUtils from "./WorkspaceUtils";
 
+export function doChangeFocus(): boolean {
+    return document.activeElement != undefined &&
+        (document.activeElement instanceof HTMLInputElement ||
+            (document.activeElement instanceof HTMLDivElement &&
+                document.activeElement.contentEditable == "true"));
+}
+
 export function setupEntry(props: any, wsListener: Listener | undefined = undefined) {
 
     const e: WorkspaceEntry = props.entry as WorkspaceEntry;

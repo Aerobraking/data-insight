@@ -82,13 +82,12 @@ export default defineComponent({
  -->
 <template>
   <div class="bookmarks" :class="{ 'bookmarks-hide': !model.showBookmarks }">
-    <tippy :placement="'right'" :offset="[-15,-10]" >
+    <tippy :placement="'right'" :offset="[-15, -10]">
       <button>
         <PlaylistStar @click="model.showBookmarks = !model.showBookmarks" />
       </button>
       <template #content>Bookmarks <kbd>Shift</kbd>+<kbd>Num</kbd></template>
     </tippy>
-
     <draggable
       v-model="myList"
       @start="drag = true"
@@ -110,7 +109,11 @@ export default defineComponent({
           :viewId="model.id"
           v-show="model.showBookmarks && element.displayname.length > 0"
         >
-          {{ element.displayname }}
+          {{
+            element.displayname.length > 30
+              ? element.displayname.substring(0, 30) + "..."
+              : element.displayname
+          }}
         </a>
       </template>
     </draggable>

@@ -5,12 +5,14 @@
     @mousedown.capture.stop
     @mousemove.capture.stop
   >
-    <input
+    <div
       class="wsentry-displayname-input"
-      @keydown.stop
+      @keydown.stop="keydown"
       @keyup.stop
       type="text"
-      v-model="entry.displayname"
+      spellcheck="false"
+      contenteditable="true"
+      @input="handleInput"
       placeholder=""
       :class="{ 'hide-name': !entry.showDisplayname }"
     />
@@ -73,7 +75,19 @@ export default defineComponent({
       this.updateScaling();
     },
   },
+  mounted() {
+    this.$el.getElementsByClassName("wsentry-displayname-input")[0].innerHTML =
+      this.entry.displayname;
+  },
   methods: {
+    keydown(e: KeyboardEvent) {
+      // Prevent Linebreak in contenteditable, because it would create html tags
+      if (e.key === "Enter") e.preventDefault();
+    },
+    handleInput: function (e: any) {
+      var s: string = e.target.innerHTML;
+      this.entry.displayname = s.replaceAll("&nbsp;", "");
+    },
     updateScaling(): void {
       setTimeout(() => {
         this.$el.classList.add("anim");
@@ -103,7 +117,7 @@ export default defineComponent({
   width: auto;
   z-index: 20;
 
-  input {
+  div {
     background-color: transparent;
     border: none;
     color: rgb(230, 230, 230);
@@ -111,6 +125,10 @@ export default defineComponent({
     overflow: visible;
     outline: none;
     transition: all 350ms linear;
+    min-width: 300px;
+    white-space: nowrap;
+    transform-origin: left bottom;
+    bottom: 0;
 
     &:hover {
       // background-color: rgba(184, 184, 184, 0.119);

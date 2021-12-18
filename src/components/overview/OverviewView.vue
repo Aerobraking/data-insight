@@ -114,27 +114,27 @@
         :moveTransition="'transform 0.2s ease-out'"
         :offset="[0, 40]"
       >
-        <tippy >
+        <tippy>
           <button><Overscan @click="showAll()" /></button>
           <template #content>Show All</template>
         </tippy>
-        <tippy  >
+        <tippy>
           <button><FolderOutline @click="selectFolders()" /></button>
           <template #content>Add Folders</template>
         </tippy>
-        <tippy >
+        <tippy>
           <button><DeleteEmptyOutline @click="deleteSelection()" /></button>
           <template #content>Delete</template>
         </tippy>
-        <tippy >
+        <tippy>
           <button><FolderOutline @click="loadCollection()" /></button>
           <template #content>Create Collection</template>
         </tippy>
-        <tippy >
+        <tippy>
           <button><FolderOutline @click="createCollection()" /></button>
           <template #content>Open Collection</template>
         </tippy>
-        <tippy >
+        <tippy>
           <button><FolderOutline @click="createRootFromNode()" /></button>
           <template #content>Create Entry from Selection</template>
         </tippy>
@@ -472,9 +472,11 @@ export default defineComponent({
       }
     },
     setFocusToOverview(): void {
-      setTimeout(() => {
-        this.$el.focus();
-      }, 2);
+      if (WSUtils.doChangeFocus()) {
+        setTimeout(() => {
+          this.$el.focus();
+        }, 2);
+      }
     },
     paneButtonClicked(e: MouseEvent) {
       this.model.paneSize = this.model.paneSize <= 15 ? 50 : 100;

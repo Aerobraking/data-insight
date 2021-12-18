@@ -193,7 +193,7 @@
               </tippy>
               <tippy :offset="[0, 40]">
                 <button :disabled="selectedEntriesCount == 0">
-                  <DeleteVariant @click="deleteSelection" />
+                  <DeleteEmptyOutline @click="deleteSelection" />
                 </button>
                 <template #content>Delete <kbd>Del</kbd></template>
               </tippy>
@@ -573,11 +573,11 @@ export default defineComponent({
      * When a workspace gets active, the focus is not on its div, which prevents the keylisteners from working. Prevent this by calling this method when the workspace gets active.
      */
     setFocusToWorkspace(): void {
-      console.log("ws view mouse enter");
-
-      setTimeout(() => {
-        this.$el.getElementsByClassName("vue-pan-zoom-scene")[0].focus();
-      }, 2);
+      if (WSUtils.doChangeFocus()) {
+        setTimeout(() => {
+          this.$el.getElementsByClassName("vue-pan-zoom-scene")[0].focus();
+        }, 2);
+      }
     },
     searchfocusSet(f: boolean): void {
       if (f) {
@@ -2253,6 +2253,7 @@ svg {
     border: 1px solid #333;
     border-radius: 4px;
     position: relative;
+    padding: 0;
     opacity: 0.3;
     transition: opacity 0.3s ease-out;
 
@@ -2274,6 +2275,12 @@ svg {
     overflow-x: hidden;
     overflow-y: auto;
     color: #eee;
+    padding: 0;
+    box-sizing: border-box;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border: 1px solid #333;
+    border-top: none;
   }
 }
 

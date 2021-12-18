@@ -383,6 +383,7 @@ async function createWindow() {
         {
           accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
           label: 'Hide Menu',
+          // does not work in osx
           visible: process.platform != 'darwin' ,
           click() {
             if (win) {
