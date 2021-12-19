@@ -7,6 +7,7 @@
         type="search"
         placeholder="Suche..."
         v-model="searchString"
+        @keydown.delete="searchString = ''"
         @keydown.stop
         @keyup.stop
         @focus="searchfocusSet(true)"
@@ -91,6 +92,7 @@
                   :entry="e"
                   :viewId="model.id"
                   :workspace="this"
+                  :searchstring="searchString"
                   v-bind:is="e.componentname"
                   ref="wsentry"
                 >
@@ -144,41 +146,33 @@
             >
               <tippy :offset="[0, 40]">
                 <button><Overscan @click="showAll()" /></button>
-                <template #content>Show All <kbd>Space</kbd></template>
+                <template #content
+                  >Show All <kbd>Ctrl</kbd>|<kbd>Space</kbd></template
+                >
               </tippy>
               <tippy :offset="[0, 40]">
                 <button><FileOutline @click="createEntry('files')" /></button>
-                <template #content
-                  >Add Files <kbd>Alt</kbd>+<kbd>X</kbd></template
-                >
+                <template #content>Add Files <kbd>X</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
                 <button>
                   <FolderOutline @click="createEntry('folders')" />
                 </button>
-                <template #content
-                  >Add Folders <kbd>Alt</kbd>+<kbd>C</kbd></template
-                >
+                <template #content>Add Folders <kbd>C</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
                 <button><Group @click="createEntry('frame')" /></button>
-                <template #content
-                  >Add Frame <kbd>Ctrl</kbd>+<kbd>F</kbd></template
-                >
+                <template #content>Add Frame <kbd>F</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
                 <button><youtube @click="createEntry('youtube')" /></button>
-                <template #content
-                  >Add Youtube Video <kbd>Ctrl</kbd>+<kbd>Y</kbd></template
-                >
+                <template #content>Add Youtube Video <kbd>Y</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
                 <button>
                   <CommentTextOutline @click="createEntry('text')" />
                 </button>
-                <template #content
-                  >Create Text-Editor <kbd>Ctrl</kbd>+<kbd>T</kbd></template
-                >
+                <template #content>Create Text-Editor <kbd>T</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
                 <button
@@ -945,6 +939,8 @@ export default defineComponent({
       return false;
     },
     keydownGlobal(e: KeyboardEvent) {
+      if (this.preventEvent(e)) return;
+
       /**
        * No ... key down
        */
@@ -990,6 +986,9 @@ export default defineComponent({
           case "a":
             this.selectAll();
             break;
+          case "d":
+            this.clearSelection();
+            break;
           case "c":
             if (this.getSelectedEntries().length > 0) {
               WSUtils.Events.prepareFileSaving();
@@ -998,6 +997,14 @@ export default defineComponent({
               clipboard.entries.push(
                 ...this.getModelEntriesFromView(this.getSelectedEntries())
               );
+            }
+            break;
+          case "f":
+            const search = this.$el.getElementsByClassName(
+              "workspace-search-input"
+            )[0];
+            if (search) {
+              search.focus();
             }
             break;
           case "v":
@@ -1053,11 +1060,31 @@ export default defineComponent({
         }
       }
 
+      const number = e.code.replace("Digit", "");
+      const goToBookmark = (number: number, zoom: boolean) => {
+        /**
+         * Shortcut for bookmark selection
+         */
+        var bookmarks: Array<HTMLElement> = Array.from(
+          this.$el.getElementsByClassName("bookmark-entry")
+        );
+        bookmarks = bookmarks.filter((b) => b.style.display != "none");
+
+        let i: number = +number - 1;
+        if (i < bookmarks.length) {
+          this.moveToEntry({
+            id: bookmarks[i].getAttribute("name"),
+            zoom: zoom,
+          });
+        }
+        e.preventDefault();
+        e.stopPropagation();
+      };
+
       /**
        * Shift key down
        */
       if (e.shiftKey) {
-        const number = e.code.replace("Digit", "");
         switch (number) {
           case "1":
           case "2":
@@ -1068,22 +1095,8 @@ export default defineComponent({
           case "7":
           case "8":
           case "9":
-            /**
-             * Shortcut for bookmark selection
-             */
-            const bookmarks: HTMLCollectionOf<Element> =
-              this.$el.getElementsByClassName("bookmark-entry");
-            let i: number = +number - 1;
-            if (i < bookmarks.length) {
-              this.moveToEntry({
-                id: bookmarks[i].getAttribute("name"),
-                zoom: false,
-              });
-            }
-            e.preventDefault();
-            e.stopPropagation();
+            goToBookmark(+number, true);
             return;
-            break;
         }
       }
 
@@ -1092,6 +1105,17 @@ export default defineComponent({
        */
       if (!e.altKey && !e.ctrlKey) {
         switch (e.key) {
+          case "1":
+          case "2":
+          case "3":
+          case "4":
+          case "5":
+          case "6":
+          case "7":
+          case "8":
+          case "9":
+            goToBookmark(+number, false);
+            return;
           case " ":
             if (e.repeat) {
               return;
@@ -1672,9 +1696,9 @@ export default defineComponent({
     setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
 
-      let input: HTMLInputElement = entry.getElementsByClassName(
+      let input: HTMLElement = entry.getElementsByClassName(
         "wsentry-displayname-input"
-      )[0] as HTMLInputElement;
+      )[0] as HTMLElement;
 
       /**
        * Enable input element. Will be disabled again when the entry is deselected.
@@ -1687,7 +1711,7 @@ export default defineComponent({
 
       if (input != undefined) {
         input.focus();
-        input.select();
+        //  input.select();
         this.moveToEntry({ zoom: true, entry: entry });
       }
     },
@@ -2242,6 +2266,7 @@ svg {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr;
+
   input {
     pointer-events: all;
     background: #222;
@@ -2254,6 +2279,7 @@ svg {
     border-radius: 4px;
     position: relative;
     padding: 0;
+    padding-left: 7px;
     opacity: 0.3;
     transition: opacity 0.3s ease-out;
 
@@ -2303,9 +2329,9 @@ div .resizer-top-right {
 }
 div .resizer-bottom-right {
   @include theme;
-  bottom: 0;
-  right: 0;
-  transform-origin: right bottom;
+  bottom: -10px;
+  right: -10px;
+  transform-origin: center;
   cursor: se-resize;
   width: auto;
   height: auto;

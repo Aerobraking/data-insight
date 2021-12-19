@@ -71,6 +71,7 @@
             class="tile selectable"
             @dblclick="folderOpen(file)"
             :key="file.id"
+            :searchstring="searchstring"
             :name="file.id"
             @itemClicked="itemClicked"
           >
@@ -161,7 +162,6 @@ export default defineComponent({
     showTiles: boolean;
     opaque: boolean;
     dragActive: boolean;
-    searchstring: string;
     list: Array<FolderWindowFile>;
     selected: Set<any>;
     lastItemSelected: HTMLElement | undefined;
@@ -171,7 +171,6 @@ export default defineComponent({
       showTiles: true,
       dragActive: false,
       opaque: true,
-      searchstring: "",
       list: [],
       selected: new Set(),
     };
@@ -185,6 +184,7 @@ export default defineComponent({
       required: true,
     },
     viewKey: Number,
+    searchstring: String,
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
@@ -205,6 +205,9 @@ export default defineComponent({
   },
   inject: ["entrySelected", "setFocusToWorkspace"],
   watch: {
+    searchstring: function (newValue: string, oldValue: string) {
+      this.searchUpdate();
+    },
     // whenever the current folder path changes, update the file list
     "entry.path": function (newPath: string, oldPath: string) {
       watcher.FileSystemWatcher.unregisterPath(oldPath, this.watcherEvent);
@@ -213,6 +216,7 @@ export default defineComponent({
     },
   },
   methods: {
+    searchUpdate() {},
     drop(e: DragEvent) {
       if (e.dataTransfer && e.dataTransfer.types.includes("Files")) {
         for (let index = 0; index < e.dataTransfer.files.length; index++) {
@@ -365,7 +369,14 @@ export default defineComponent({
       }
 
       let dir = this.entry.path;
-      dir = dir.endsWith("/") ? dir.slice(0, -1) : dir;
+
+      var count = (dir.match(/is/g) || []).length;
+      dir =
+        count > 1 && dir.endsWith("/")
+          ? dir.slice(0, -1)
+          : dir.endsWith("/")
+          ? dir
+          : dir + "/";
 
       try {
         fs.accessSync(dir, fs.constants.R_OK);
@@ -374,14 +385,9 @@ export default defineComponent({
           fs.readdirSync(dir).forEach((file: string) => {
             let filePath = path.join(dir, file);
             filePath = path.normalize(filePath).replace(/\\/g, "/");
-
             try {
-              console.log("accessSync");
               fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
-
-              console.log("lstatSync");
               const fileStat = fs.lstatSync(filePath);
-
               this.list.push(
                 new FolderWindowFile(
                   filePath,
@@ -598,7 +604,7 @@ export default defineComponent({
           return a.isDirectory ? -1 : 1;
         })
         .filter((f: FolderWindowFile) => {
-          return this.searchstring.length < 1
+          return !this.searchstring || this.searchstring.length < 1
             ? true
             : f.filename
                 .toLowerCase()
@@ -619,7 +625,7 @@ $colorFG: rgb(234, 234, 234);
 .item-selected {
   //box-sizing: border-box;
   //border: 2px solid $color-Selection;
-  background: $color-Selection;
+  background: $color-Selection !important;
 }
 
 .container {

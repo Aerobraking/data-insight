@@ -86,7 +86,7 @@ export default defineComponent({
       <button>
         <PlaylistStar @click="model.showBookmarks = !model.showBookmarks" />
       </button>
-      <template #content>Bookmarks <kbd>Shift</kbd>+<kbd>Num</kbd></template>
+      <template #content>Bookmarks <kbd>Shift</kbd>|<kbd>X Num</kbd></template>
     </tippy>
     <draggable
       v-model="myList"

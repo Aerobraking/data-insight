@@ -118,8 +118,8 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         return this.isClipboard ? this.path : "file://" + this.path;
     }
 
-    previewBase64: string|undefined = undefined;
-    blob: string|undefined = undefined;
+    previewBase64: string | undefined = undefined;
+    blob: string | undefined = undefined;
     isClipboard: boolean;
     name: string;
     path: string;
@@ -226,13 +226,9 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 
     }
 
-
     public searchResultString(): string {
-
-
         return this.foldername;
     }
-
 
     public searchLogic(input: string): boolean {
         let found: boolean = super.searchLogic(input);
@@ -245,7 +241,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         }
 
         found = found || this.foldername.toLocaleLowerCase().includes(input);
-        return found;
+        return true || found;
     }
 
     private updateFileList(): void {
@@ -279,13 +275,9 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
     }
 
     public getFileList(): Array<FolderWindowFile> {
-
         this.updateFileList();
-
         return this.fileList;
-
     }
-
 
     fileList: Array<FolderWindowFile> = [];
     name: string;
@@ -326,7 +318,7 @@ export class Workspace extends View {
     @Type(() => Overview)
     overview: Overview;
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.666 }
-    paneSize: number = 60;
+    paneSize: number = 100;
     showBookmarks: boolean = true;
     showFilterSettings: boolean = true;
     overviewOpen: boolean;

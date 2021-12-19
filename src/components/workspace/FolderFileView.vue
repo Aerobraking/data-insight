@@ -23,6 +23,7 @@ export default defineComponent({
       type: FolderWindowFile,
       required: true,
     },
+    searchstring: String,
     viewKey: Number,
   },
   mounted() {
@@ -59,8 +60,23 @@ export default defineComponent({
       });
     }
   },
-
+  watch: {
+    searchstring: function (newValue: string, oldValue: string) {
+      this.searchUpdate();
+    },
+  },
   methods: {
+    searchUpdate() {
+      const found: boolean =
+        !this.searchstring ||
+        this.entry.filename
+          .toLowerCase()
+          .includes(this.searchstring.toLowerCase());
+      this.$el.classList.toggle("prevent-input", !found);
+      this.$el.classList.toggle("search-not-found", !found);
+      this.$el.classList.toggle("file-not-found", !found);
+      console.log("FolderFile update");
+    },
     dragstart(e: DragEvent) {
       this.$emit("dragstarted", this.entry, this.$el, e);
     },
@@ -85,24 +101,33 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+$color-Selection: rgba(57, 215, 255, 0.1);
+
+.file-not-found {
+  display: none;
+}
 
 .folder-file {
   z-index: 100;
-  // will-change: transform; 
+  // will-change: transform;
   padding: 10px;
   height: 180px;
   box-sizing: border-box;
   margin: 5px;
 
+  &:hover {
+    background: $color-Selection;
+  }
+
   p {
     width: 150px;
-    word-wrap: break-word;
+    // word-wrap: break-word;
     white-space: normal;
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 0;
     margin: 0 auto;
-    margin-top: 4px; 
+    margin-top: 4px;
     text-align: center;
   }
 
