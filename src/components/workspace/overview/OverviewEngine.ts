@@ -248,7 +248,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 }
 
                 _this.fireSelectionUpdate();
-                // listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
+                // _this.setFilterList("hover", [...n.descendants(), ...n.parents()]);
+                listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
 
             }
         });
@@ -382,7 +383,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.zoom.scaleExtent([0.02, 8]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
             let t = d3.zoomTransform(this.canvas);
-            this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k }; 
+            this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
         });
         this.zoom.on("start", (event: any, d: HTMLCanvasElement) => {
             _this.pauseHovering = true;
@@ -392,7 +393,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         });
 
         let t = d3.zoomTransform(this.canvas);
-        this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k }; 
+        this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
     }
 
     public clearSelection() {
@@ -493,12 +494,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         let _this = this;
 
-  
+
 
         // setter
         if (_this.transform !== undefined) {
 
-            scale = scale==undefined? _this.transform.k: scale;
+            scale = scale == undefined ? _this.transform.k : scale;
 
             if (duration == 0) { // no animation
                 setZoom({ k: scale, x: x, y: y });
@@ -708,7 +709,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             if (this.colorTransitionElapsed > this.colorTransitionTarget) {
                 this.colorTransitionElapsed = undefined;
-                this.colorTransitionMap.clear(); 
+                this.colorTransitionMap.clear();
             }
         }
 
@@ -1119,7 +1120,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
      * farbe 
      * 
      */
-    public setColorScale<N extends AbstractNode>(statAttribute: string, min: number, max: number, getColor: (node: N, stat: number, min: number, max: number) => string, duration: number = 400): void {
+    public setColorScale<N extends AbstractNode>(statAttribute: string,
+        min: number, max: number,
+        getColor: (node: N, stat: number, min: number, max: number) => string,
+        duration: number = 40): void {
 
         this.colorSettings = { attr: statAttribute, min: min, max: max, colorFunction: getColor };
 

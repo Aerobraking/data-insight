@@ -47,6 +47,20 @@
           @drop="drop"
           class="workspace-split-wrapper"
         >
+          <div
+            v-if="overviewfolder != undefined"
+            class="workspace-folder-dialog"
+          >
+            <wsentryfolder
+              :name="98345930245"
+              :key="98345930245"
+              :entry="overviewfolder"
+              :viewId="98345930245"
+              :workspace="this"
+              :searchstring="searchString"
+              style="width:100%;height:100%;"
+            ></wsentryfolder>
+          </div>
           <canvas class="workspace-canvas"></canvas>
 
           <panZoom
@@ -213,6 +227,7 @@
 
       <pane :size="100 - model.paneSize">
         <OverviewView
+          @folderSelected="updateOverviewFolderSelection"
           class="overview"
           :model="model"
           :searchstring="searchString"
@@ -245,6 +260,7 @@ import * as WSUtils from "./WorkspaceUtils";
 import OverviewView from "./../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
+import wsentryfolder from "./WorkspaceEntryFolderView.vue";
 import { defineComponent } from "vue";
 import {
   ElementDimension,
@@ -294,6 +310,7 @@ export default defineComponent({
   el: ".wrapper",
   name: "WorkspaceView",
   components: {
+    wsentryfolder,
     Tippy,
     TippySingleton,
     Pane,
@@ -349,11 +366,13 @@ export default defineComponent({
     selectedEntriesCount: number;
     overviewTimeout: any | undefined;
     ignoreFileDrop: boolean;
+    overviewfolder: WorkspaceEntryFolderWindow | undefined;
   } {
     return {
       /**
        * ignores a file drop once when true, then it is set to false.
        */
+      overviewfolder: undefined,
       ignoreFileDrop: false,
       overviewTimeout: undefined,
       highlightSelection: true,
@@ -542,6 +561,15 @@ export default defineComponent({
   },
   inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
   methods: {
+    updateOverviewFolderSelection(path: string | undefined): void {
+      if (path) {
+        const f = new WorkspaceEntryFolderWindow(path);
+        f.isResizable=false;
+        this.overviewfolder = f;
+      } else {
+        this.overviewfolder = undefined;
+      }
+    },
     modifyPanes(e: any): void {
       for (
         let i = 0;
@@ -2020,7 +2048,15 @@ kbd {
   width: 100%;
   height: initial !important;
 }
-
+.workspace-folder-dialog {
+  position: absolute;
+  z-index: 4000;
+  left: 1%;
+  top: 1%;
+  height: 90%;
+  width: 98%;
+  background: rgba(200, 0, 0, 0.2);
+}
 .workspace-menu-bar {
   position: absolute;
   z-index: 800;

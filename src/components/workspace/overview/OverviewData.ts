@@ -424,9 +424,9 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         return a;
     }
 
-    getPath(absolute:boolean=true): string {
+    getPath(absolute: boolean = true): string {
         let p = this.entry && absolute ? this.entry.path : "";
-        const desc = this.parents(true,!absolute);
+        const desc = this.parents(this.parent ? true : false, !absolute);
         desc.reverse();
         for (let i = 0; i < desc.length; i++) {
             let e: this = desc[i];
@@ -695,7 +695,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
     }
 
-     
+
 
     public removeEntryPath(relativePath: string) {
 

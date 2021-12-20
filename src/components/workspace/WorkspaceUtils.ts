@@ -50,18 +50,6 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
                 el.value.style.width = e.width + "px";
                 el.value.style.height = e.height + "px";
             }
-
-            // var text: HTMLInputElement = el.value.getElementsByClassName("wsentry-displayname")[0];
-
-            // if (text != undefined) {
-
-
-            //     const inputId = ref(e.displayname);
-            //     text.value = inputId.value;
-
-
-            //     el.value.appendChild(text);
-            // }
         }
     });
     onBeforeUnmount(() => {

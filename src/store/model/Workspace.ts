@@ -349,10 +349,9 @@ export class Workspace extends View {
         Instance.storeData(this.overview);
     }
 
-
 }
-export class EntryCollection {
 
+export class EntryCollection {
 
     @Type(() => WorkspaceEntry, {
         keepDiscriminatorProperty: true,
@@ -369,6 +368,5 @@ export class EntryCollection {
         },
     })
     entries: Array<WorkspaceEntry> = [];
-
 
 }

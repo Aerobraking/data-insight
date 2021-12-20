@@ -16,21 +16,26 @@
           @click="model.showFilterSettings = !model.showFilterSettings"
         />
       </button>
+      <button>
+        <CogOutline v-show="model.showFilterSettings" />
+      </button>
+      <ColorGradient
+        v-for="e in [
+          'default',
+          'interpolateWarm',
+          'interpolatePuRd',
+          'interpolateMagma',
+          'interpolateCubehelixDefault',
+          'interpolateRainbow',
+        ]"
+        :key="e"
+        @mouseup="updateGradient(e)"
+        :id="e"
+        :gradient="getGradienFunction(e)"
+      ></ColorGradient>
       <div v-show="model.showFilterSettings" class="slider"></div>
       <!-- <div class="options"></div> -->
     </div>
-
-    <!-- <div class="overview-search">
-      <div></div>
-      <input
-        @keydown.stop
-        @keyup.stop
-        type="search"
-        @input="searchUpdate"
-        v-model="searchString"
-        placeholder="Suche..."
-      />
-    </div> -->
 
     <panZoom
       @init="panHappen"
@@ -47,41 +52,12 @@
       selector=".zoomable"
     >
       <div class="zoomable close-file-anim">
-        <!-- <div class="rectangle-selection"></div> -->
-        <!-- <div class="rectangle-selection-wrapper">
-                <button class="ws-zoom-fixed resizer-bottom-right">
-                  <ResizeBottomRight />
-                </button>
-                <button
-                  class="ws-zoom-fixed selection-system-drag"
-                  @mousedown.capture.stop="startFileDrag()"
-                  @click.capture.stop
-                >
-                  <FileOutline />
-                </button>
-              </div> -->
-
-        <!-- <keep-alive>
-                <component
-                  class="ws-entry"
-                  v-for="e in model.entries"
-                  :name="e.id"
-                  :key="e.id"
-                  :entry="e"
-                  :viewId="model.id"
-                  :workspace="this"
-                  v-bind:is="e.componentname"
-                  ref="wsentry"
-                >
-                </component>
-              </keep-alive> -->
-
         <div
           :class="{ 'blend-out': model.entries.length > 0 }"
           class="welcome-message"
         >
           <h2>
-            Let's drop some files to get going!
+            Let's drop some Folders to get going!
             <EmoticonHappyOutline class="svg-smile" />
           </h2>
           <p>
@@ -169,6 +145,7 @@ import {
 import { defineComponent } from "vue";
 import noUiSlider, { API, PipsMode } from "nouislider";
 import * as WSUtils from "./../workspace/WorkspaceUtils";
+import ColorGradient from "./../workspace/ColorGradient.vue";
 import {
   EngineState,
   OverviewEngine,
@@ -186,6 +163,7 @@ import {
   Overscan,
   FolderOutline,
   FormatHorizontalAlignCenter,
+  CogOutline,
   ArrowCollapseRight,
 } from "mdue";
 import {
@@ -196,12 +174,16 @@ import * as d3 from "d3";
 import _ from "underscore";
 import { set3DPosition } from "@/utils/resize";
 
+d3.interpolateRainbow;
+
 export default defineComponent({
   name: "App",
   components: {
     Tippy,
     TippySingleton,
+    CogOutline,
     Qrcode,
+    ColorGradient,
     TuneVerticalVariant,
     EmoticonHappyOutline,
     Overscan,
@@ -235,6 +217,15 @@ export default defineComponent({
     "selection.y": function (newValue: number, oldValue: number) {
       console.log(newValue);
     },
+    selection: function (newValue: AbstractNode, oldValue: AbstractNode) {
+      console.log(newValue);
+      if (newValue instanceof FolderNode) {
+        const fn: FolderNode = newValue;
+        this.$emit("folderSelected", fn.getPath());
+      } else {
+        this.$emit("folderSelected", undefined);
+      }
+    },
     "model.overview.viewportTransform": function (
       newValue: { x: number; y: number; scale: number },
       oldValue: { x: number; y: number; scale: number }
@@ -247,13 +238,21 @@ export default defineComponent({
     },
   },
   data(): {
+    d3: any;
+    d3default: any;
     state: EngineState;
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
     panZoomInstance: any;
     selection: AbstractNode | undefined;
+    gradientFunction: Function;
   } {
     return {
+      d3default: function (n: number) {
+        return "rgb(70,70,70)";
+      },
+      d3: d3,
+      gradientFunction: this.d3default,
       selection: undefined,
       idOverview: 0,
       panZoomInstance: null,
@@ -268,7 +267,6 @@ export default defineComponent({
 
     const format = (value: number) => {
       value = Math.round(value);
-      console.log(value);
       if (value < 1024) {
         return "1 MB";
       } else if (value < 1024 * 1024) {
@@ -310,34 +308,6 @@ export default defineComponent({
       },
     });
 
-    const filterfunc = _.throttle((stats: string, min: number, max: number) => {
-      if (Instance.getEngine(this.idOverview)) {
-        Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
-          "size",
-          Number(min),
-          Number(max),
-          (node: FolderNode, stat: number, min: number, max: number) => {
-            stat = stat < min ? 0 : stat > max ? max : stat;
-            return stat < min || stat > max
-              ? "h"
-              : d3.interpolateWarm(1 - stat / max);
-          },
-          200
-        );
-      }
-    }, 128);
-
-    let values: string[] = [];
-    const steps = 5;
-    for (let i = 0; i <= steps; i++) {
-      const percent = Math.floor(100 * (i / steps));
-      values.push(`${d3.interpolateWarm(i / steps)} ${percent}%`);
-    }
-
-    const style = "linear-gradient( 0deg, " + values.join(", ") + ")";
-
-    let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
-    divs[0].style.backgroundImage = style;
     slider.on(
       "update.one",
       (
@@ -348,7 +318,7 @@ export default defineComponent({
         locations: number[],
         slider: API
       ) => {
-        filterfunc("size", Number(values[0]), Number(values[1]));
+        this.filterfunc(this, "size", Number(values[0]), Number(values[1]));
       }
     );
 
@@ -366,21 +336,6 @@ export default defineComponent({
 
     Instance.getEngine(this.idOverview).rootNodes = Instance.getData(
       this.idOverview
-    );
-    //         kb     mb     gb
-    let maxV = 1024 * 1024 * 1024;
-
-    Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
-      "size",
-      0,
-      maxV,
-      (node: FolderNode, stat: number, min: number, max: number) => {
-        stat = stat < min ? 0 : stat > max ? max : stat;
-        return stat < min || stat > max
-          ? "h"
-          : d3.interpolateWarm(1 - stat / max);
-      },
-      1000
     );
 
     /**
@@ -419,6 +374,8 @@ export default defineComponent({
 
     Instance.getEngine(this.idOverview).setSelectionListener(l);
 
+    this.updateGradient(this.model.overview.gradientId);
+
     WSUtils.Events.registerCallback(this.wsListener);
   },
   unmounted() {
@@ -433,6 +390,50 @@ export default defineComponent({
     },
   },
   methods: {
+    getGradienFunction(name: string): Function {
+      // @ts-ignore: Unreachable code error
+      return d3[name] ? d3[name] : this.d3default;
+    },
+    filterfunc: _.throttle(
+      (_this: any, stats: string, min: number, max: number) => {
+        if (Instance.getEngine(_this.idOverview)) {
+          Instance.getEngine(_this.idOverview).setColorScale<FolderNode>(
+            "size",
+            Number(min),
+            Number(max),
+            (node: FolderNode, stat: number, min: number, max: number) => {
+              stat = stat < min ? 0 : stat > max ? max : stat;
+              return stat < min || stat > max
+                ? "h"
+                : _this.gradientFunction(1 - stat / max);
+            },
+            300
+          );
+        }
+      },
+      128
+    ),
+    updateGradient(name: string) {
+      const func = this.getGradienFunction(name);
+      this.gradientFunction = func;
+
+      let values: string[] = [];
+      const steps = 5;
+      for (let i = 0; i <= steps; i++) {
+        const percent = Math.floor(100 * (i / steps));
+        values.push(`${this.gradientFunction(i / steps)} ${percent}%`);
+      }
+
+      const style = "linear-gradient( 0deg, " + values.join(", ") + ")";
+
+      let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
+      divs[0].style.backgroundImage = style;
+
+      //         kb     mb     gb
+      let maxV = 1024 * 1024 * 1024;
+
+      this.filterfunc(this, "size", 0, maxV);
+    },
     updateDivTransformation(value: { x: number; y: number; scale: number }) {
       this.panZoomInstance.moveTo(value.x, value.y);
       this.panZoomInstance.zoomAbs(value.x, value.y, value.scale);
@@ -529,42 +530,7 @@ export default defineComponent({
 
       console.log(Instance.getEngine(this.idOverview).rootNodes);
     },
-    setMode1() {
-      if (Instance.getEngine(this.idOverview)) {
-        let maxV = 1024 * 1024 * 512;
 
-        Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
-          "size",
-          0,
-          maxV,
-          (node: FolderNode, stat: number, min: number, max: number) => {
-            stat = stat < min ? 0 : stat > max ? max : stat;
-            return stat < min || stat > max
-              ? "h"
-              : d3.interpolateWarm(1 - stat / max);
-          },
-          400
-        );
-      }
-    },
-    setMode2() {
-      if (Instance.getEngine(this.idOverview)) {
-        let maxV = 1024 * 1024 * 50;
-
-        Instance.getEngine(this.idOverview).setColorScale<FolderNode>(
-          "size",
-          0,
-          maxV,
-          (node: FolderNode, stat: number, min: number, max: number) => {
-            stat = stat < min ? 0 : stat > max ? max : stat;
-            return stat < min || stat > max
-              ? "h"
-              : d3.interpolateWarm(1 - stat / max);
-          },
-          400
-        );
-      }
-    },
     loadCollection() {
       if (Instance.getEngine(this.idOverview)) {
         let n: FolderNode = Instance.getEngine(this.idOverview)
@@ -671,15 +637,15 @@ export default defineComponent({
 <style   lang="scss">
 .filter-settings {
   position: absolute;
-  top: -1px;
+  top: 30px;
   right: 24px;
-  width: 32px;
+  width: 320px;
   height: 70%;
   z-index: 9900;
   transition: all 0.2s ease-in-out;
   .slider {
     height: 100%;
-    margin-top: 20px;
+    margin-top: 60px;
     transform-origin: top right;
     transform: scale(0.8);
   }
@@ -693,6 +659,7 @@ export default defineComponent({
   }
 
   button {
+    position: absolute;
     outline: none;
     color: white;
     border: none;
@@ -702,6 +669,14 @@ export default defineComponent({
     svg {
       font-size: 26px;
     }
+  }
+  button:nth-child(2) {
+    right: 20px;
+    top: 0;
+  }
+  button:nth-child(1) {
+    right: -12px;
+    top: 0;
   }
 
   button:disabled,
@@ -743,52 +718,6 @@ export default defineComponent({
     image-rendering: optimize-contrast;
     image-rendering: pixelated;
     -ms-interpolation-mode: nearest-neighbor;
-  }
-}
-.grabbable {
-  // cursor: pointer !important;
-}
-
-.overview-search {
-  position: relative;
-
-  border: none;
-  background: #fff;
-  padding-top: 0px;
-  padding-bottom: 0px;
-  width: 100%;
-
-  button {
-    border: none;
-    height: 100%;
-    outline: none;
-
-    background-color: #fff;
-    &:hover {
-      background-color: #aaa;
-    }
-  }
-
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr;
-  input {
-    background: #eee;
-    height: 28px;
-    border: none;
-    outline: none;
-    border-left: 1px solid #aaa;
-    border-right: 1px solid #aaa;
-    position: relative;
-  }
-  .search-results {
-    background: #fff;
-    position: absolute;
-    top: 100%;
-    left: 33.33%;
-    width: 33.33%;
-    color: #333;
-    overflow: hidden;
   }
 }
 </style>
