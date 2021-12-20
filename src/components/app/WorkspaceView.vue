@@ -525,13 +525,21 @@ export default defineComponent({
 
     WSUtils.Events.registerCallback({
       pluginStarted(modal: boolean): void {
-        const instances = _this.$el.querySelectorAll(
-          ".workspace-menu-bar, .bookmarks"
+        let instances = _this.$el.querySelectorAll(
+          ".workspace-menu-bar, .bookmarks, .overview-viewport"
         );
 
         for (let i = 0; i < instances.length; i++) {
           const element = instances[i];
           element.classList.toggle("prevent-input", modal);
+        }
+
+        instances = _this.$el.querySelectorAll(
+          ".workspace-menu-bar, .bookmarks"
+        );
+
+        for (let i = 0; i < instances.length; i++) {
+          const element = instances[i];
           element.classList.toggle("search-not-found", modal);
         }
       },
@@ -1793,7 +1801,6 @@ export default defineComponent({
       this.clearSelection();
     },
     startPlugin(p: AbstractPlugin): void {
-      console.log("startPlugin");
       this.activePlugin = p;
       WSUtils.Events.pluginStarted(this.activePlugin.isModal());
     },
@@ -1803,7 +1810,6 @@ export default defineComponent({
       this.activePlugin = null;
     },
     finishPlugin(): void {
-      console.log("finishPlugin");
       if (this.activePlugin) {
         this.activePlugin.finish();
         WSUtils.Events.pluginStarted(false);
