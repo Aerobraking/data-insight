@@ -1,4 +1,4 @@
-import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
+import { WorkspaceViewIfc } from "../app/WorkspaceUtils";
 
 export default abstract class AbstractPlugin {
 

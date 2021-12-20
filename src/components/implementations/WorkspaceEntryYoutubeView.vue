@@ -7,8 +7,7 @@
     @click.stop
     class="ws-entry-youtube-wrapper"
   >
-    <wsentrydisplayname :entry="entry" />
-
+     <slot></slot>
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
@@ -59,9 +58,9 @@ function htmlToElement(html: string) {
 }
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryYoutube } from "../../store/model/ModelFileSystem";
-import { setupEntry } from "../workspace/WorkspaceUtils";
-import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryYoutube } from "../../store/model/FileSystem/FileSystemEntries";
+import { setupEntry } from "../app/WorkspaceUtils";
+import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {

@@ -1,5 +1,5 @@
 <template>
-  <div
+  <div 
     class="wsentry-displayname"
     :class="{ 'ws-zoom-fixed': entry.displaynameResize }"
     @mousedown.capture.stop
@@ -35,7 +35,33 @@
       <EyeOffOutline v-else />
     </button>
   </div>
+
 </template>
+
+  <!-- <div
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
+    class="border-selection-top"
+  ></div>
+  <div
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
+    class="border-selection-left"
+  ></div>
+  <div
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
+    class="border-selection-bottom"
+  ></div>
+  <div
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
+    class="border-selection-right"
+  ></div> -->
 
 <script lang="ts">
 import { Tippy } from "vue-tippy";
@@ -79,7 +105,12 @@ export default defineComponent({
     this.$el.getElementsByClassName("wsentry-displayname-input")[0].innerHTML =
       this.entry.displayname;
   },
+  inject: ["entrySelected"],
   methods: {
+    entrySelectedLocal(type: "add" | "single" | "flip") {
+      // @ts-ignore: Unreachable code error
+      this.entrySelected(this.$el, type);
+    },
     keydown(e: KeyboardEvent) {
       // Prevent Linebreak in contenteditable, because it would create html tags
       if (e.key === "Enter") e.preventDefault();
@@ -108,6 +139,51 @@ export default defineComponent({
 </script>
 
 <style   lang="scss">
+$padding: 10px;
+$padding0: $padding/2;
+
+$padding2: $padding * 2;
+
+@mixin border() {
+  background: rgba(255, 0, 0, 0.232);
+  position: absolute;
+  z-index: 1000;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 0, 0, 1);
+  }
+}
+
+.border-selection-top {
+  @include border;
+  width: calc(100% + #{$padding2});
+  height: $padding;
+  left: -$padding;
+  top: -$padding;
+}
+.border-selection-left {
+  @include border;
+  width: $padding;
+  height: 100%;
+  left: -$padding;
+  top: 0;
+}
+.border-selection-bottom {
+  @include border;
+  width: calc(100% + #{$padding2});
+  height: $padding;
+  left: -$padding;
+  bottom: -$padding;
+}
+.border-selection-right {
+  @include border;
+  width: $padding;
+  height: 100%;
+  right: -$padding;
+  top: 0;
+}
+
 .wsentry-displayname {
   transform-origin: left bottom;
   position: absolute;

@@ -12,7 +12,7 @@
     @mouseenter="mouseenter"
     @mouseleave="mouseleave"
   >
-    <wsentrydisplayname :entry="entry" />
+     <slot></slot>
 
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -116,17 +116,17 @@
 const path = require("path");
 const { shell } = require("electron");
 
-import * as WSUtils from "../workspace/WorkspaceUtils";
+import * as WSUtils from "../app/WorkspaceUtils";
 import * as watcher from "../../utils/WatchSystem";
 import fs from "fs";
-import wsfolderfile from "../workspace/FolderFileView.vue";
-import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
+import wsfolderfile from "./FolderFileView.vue";
+import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 import { defineComponent } from "vue";
 import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
-} from "../../store/model/ModelFileSystem";
-import { setupEntry, WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
+} from "../../store/model/FileSystem/FileSystemEntries";
+import { setupEntry, WorkspaceViewIfc } from "../app/WorkspaceUtils";
 import {
   Drive,
   DriveListRoot,

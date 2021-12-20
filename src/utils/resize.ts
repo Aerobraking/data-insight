@@ -75,9 +75,9 @@ export class ElementDimensionInstance implements ElementDimension {
         y: number = 0,
         w: number = 0,
         h: number = 0,
-        x2:number=0,
-        y2:number=0,
-        ) {
+        x2: number = 0,
+        y2: number = 0,
+    ) {
         this.x = x;
         this.y = y;
         this.w = h;
@@ -118,7 +118,7 @@ export function editElementDimension(d: ElementDimension, coord: (n: number) => 
     size(d.h);
 }
 
-export function getCoordinatesFromElement(e: any): ElementDimension {
+export function getCoordinatesFromElement(e: any): ElementDimensionInstance {
     let results: string = e.style.transform;
     results = results
         .replace("translate3d(", "")
@@ -133,14 +133,14 @@ export function getCoordinatesFromElement(e: any): ElementDimension {
     w = w == NaN ? 0 : w;
     h = h == NaN ? 0 : h;
 
-    return {
-        x: Math.round(values[0]),
-        y: Math.round(values[1]),
-        w: Math.round(w),
-        h: Math.round(h),
-        x2: Math.round(values[0] + w),
-        y2: Math.round(values[1] + h),
-    };
+    return new ElementDimensionInstance(
+        Math.round(values[0]),
+        Math.round(values[1]),
+        Math.round(w),
+        Math.round(h),
+        Math.round(values[0] + w),
+        Math.round(values[1] + h),
+    );
 }
 
 
@@ -271,11 +271,11 @@ export class ResizerComplex {
             newHeight = this.startHeight + dist * direction * ratio;
         }
 
-        if (newWidth > 250 && newHeight > 250) {
+        if (newWidth > 250 || newHeight > 250) {
 
 
-            this.element.style.width = newWidth + 'px';
-            this.element.style.height = newHeight + 'px';
+            newWidth > 250 ? this.element.style.width = newWidth + 'px' : undefined;
+            newHeight > 250 ? this.element.style.height = newHeight + 'px' : undefined;
 
 
             /**
@@ -326,8 +326,8 @@ export class ResizerComplex {
                 }
 
                 /**
-              * Based on the distance to the origin of the resize rectangle, we calculate the new position
-              */
+                 * Based on the distance to the origin of the resize rectangle, we calculate the new position
+                 */
                 set3DPosition(element,
                     this.elementSizeStart.x + ((dimE.x - this.elementSizeStart.x) * scaleW),
                     this.elementSizeStart.y + ((dimE.y - this.elementSizeStart.y) * scaleH)

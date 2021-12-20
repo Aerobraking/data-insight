@@ -3,11 +3,11 @@
 </template>
 
 <script lang="ts">
-import * as WSUtils from "./components/workspace/WorkspaceUtils";
+import * as WSUtils from "./components/app/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
 import { ipcRenderer } from "electron";
 import { defineComponent } from "vue";
-import Tabs from "./components/workspace/Tabs.vue";
+import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
 import { View } from "./store/model/ModelAbstractData";

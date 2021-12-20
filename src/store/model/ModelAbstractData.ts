@@ -2,9 +2,10 @@ import * as _ from "underscore";
 import { Type } from "class-transformer";
 import { ElementDimension } from "@/utils/resize";
 import { Instance } from "@/store/model/OverviewTransferHandler";
-import { FolderOverviewEntry } from "@/store/model/FileEngine";
-import { AbstractOverviewEntry } from "@/store/model/OverviewData";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "./ModelFileSystem";
+import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine"; 
+
+import { AbstractOverviewEntry } from "./AbstractOverEntry";
+import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "./FileSystem/FileSystemEntries";
   
 export class WorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {
@@ -113,7 +114,7 @@ export class Workspace extends View {
     overviewOpen: boolean;
     folderSelectionPath: string | undefined = undefined;
 
-    @Type(() => WorkspaceEntry, {
+    @Type(() => Object, {
         keepDiscriminatorProperty: true,
         discriminator: {
             property: 'componentname',
@@ -140,22 +141,3 @@ export class Workspace extends View {
 
 }
 
-export class EntryCollection {
-
-    @Type(() => WorkspaceEntry, {
-        keepDiscriminatorProperty: true,
-        discriminator: {
-            property: 'componentname',
-            subTypes: [
-                { value: WorkspaceEntryFile, name: 'wsentryfile' },
-                { value: WorkspaceEntryImage, name: 'wsentryimage' },
-                { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' },
-                { value: WorkspaceEntryTextArea, name: 'wsentrytextarea' },
-                { value: WorkspaceEntryFolderWindow, name: 'wsentryfolder' },
-                { value: WorkspaceEntryFrame, name: 'wsentryframe' },
-            ],
-        },
-    })
-    entries: Array<WorkspaceEntry> = [];
-
-}

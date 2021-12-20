@@ -1,6 +1,7 @@
 <template>
   <div ref="el" class="ws-entry-frame-wrapper">
-    <wsentrydisplayname :entry="entry" />
+    <!-- <wsentrydisplayname :entry="entry" /> -->
+     <slot></slot>
     <div class="ws-entry-frame-internal-wrapper">
       <div
         @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -21,11 +22,11 @@
 const { shell } = require("electron");
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryFrame } from "../../store/model/ModelFileSystem";
-import * as WSUtils from "../workspace/WorkspaceUtils";
-import { setupEntry, WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
+import { WorkspaceEntryFrame } from "../../store/model/FileSystem/FileSystemEntries";
+import * as WSUtils from "../app/WorkspaceUtils";
+import { setupEntry, WorkspaceViewIfc } from "../app/WorkspaceUtils";
 import * as _ from "underscore";
-import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
+import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 
 _.once(() => {
   WSUtils.Events.registerCallback({

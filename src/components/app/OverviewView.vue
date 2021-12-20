@@ -138,14 +138,12 @@ const fs = require("fs");
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
 import { Workspace } from "@/store/model/ModelAbstractData";
-
 import { defineComponent } from "vue";
 import noUiSlider, { API, PipsMode } from "nouislider";
 import * as WSUtils from "./WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
 import {
-  EngineState,
-  OverviewEngine,
+  EngineState, 
 } from "./OverviewEngine"; 
 
 import path from "path";
@@ -164,14 +162,16 @@ import {
 } from "mdue";
 import {
   AbstractNode,
-  AbstractOverviewEntry,
-  FolderNode,
+  
+  
 } from "../../store/model/OverviewData";
 import * as d3 from "d3";
 import _ from "underscore";
 import { set3DPosition } from "@/utils/resize";
 import { Instance } from "@/store/model/OverviewTransferHandler";
-import {  FolderOverviewEntry } from "@/store/model/FileEngine";
+import {   FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine"; 
+import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";
+import FolderNode from "@/store/model/FileSystem/FolderNode";
 
 d3.interpolateRainbow;
 

@@ -1,6 +1,6 @@
 <template>
   <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-textarea-wrapper">
-    <wsentrydisplayname :entry="entry" />
+     <slot></slot>
 
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -33,9 +33,9 @@
 <script lang="ts">
 import Editor from "@tinymce/tinymce-vue";
 import { defineComponent } from "vue";
-import { WorkspaceEntryTextArea } from "../../store/model/ModelFileSystem";
-import { setupEntry } from "../workspace/WorkspaceUtils";
-import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryTextArea } from "../../store/model/FileSystem/FileSystemEntries";
+import { setupEntry } from "../app/WorkspaceUtils";
+import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 import pell, { exec } from "pell";
 
 export default defineComponent({

@@ -6,11 +6,8 @@
     @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"
     ref="el"
     class="ws-entry-file-wrapper select-element sizefixed"
-    :style="{
-      transform: 'translate3d(0px, 0px' + ', 0)',
-    }"
   >
-    <wsentrydisplayname :entry="entry" />
+     <slot></slot>
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>
   </div>
@@ -20,10 +17,10 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryFile } from "../../store/model/ModelFileSystem";
-import { setupEntry } from "../workspace/WorkspaceUtils";
+import { WorkspaceEntryFile } from "../../store/model/FileSystem/FileSystemEntries";
+import { setupEntry } from "../app/WorkspaceUtils";
 import * as icons from "../../utils/IconHandler";
-import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
+import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 
 export default defineComponent({
   name: "wsentryfile",

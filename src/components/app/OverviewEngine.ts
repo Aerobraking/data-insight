@@ -1,15 +1,17 @@
- 
-import { ElementDimension, ElementDimensionInstance } from "@/utils/resize"; 
+
+import { ElementDimension, ElementDimensionInstance } from "@/utils/resize";
 import * as d3 from "d3";
-import { 
+import {
     ZoomTransform,
-} from "d3"; 
-import { AbstractNode, AbstractOverviewEntry, AbstractLink, EntryListener, ColumnTextWidth } from "../../store/model/OverviewData";
+} from "d3";
+import { AbstractNode, AbstractLink, EntryListener, ColumnTextWidth } from "../../store/model/OverviewData";
 import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
-import { EntryCollection, Overview } from "@/store/model/ModelAbstractData";
+import { Overview } from "@/store/model/ModelAbstractData"; 
 import TWEEN from "@tweenjs/tween.js";
-import { Tween } from "@tweenjs/tween.js"; 
+import { Tween } from "@tweenjs/tween.js";
+import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";
+import AbstractOverviewEntryIfc from "@/store/model/AbstractOverviewEntryIfc";
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -732,7 +734,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
-    public getColumnX(entry: AbstractOverviewEntry, n: AbstractNode) {
+    public getColumnX(entry: AbstractOverviewEntryIfc, n: AbstractNode) {
 
         return n.depth * COLUMNWIDTH;
 

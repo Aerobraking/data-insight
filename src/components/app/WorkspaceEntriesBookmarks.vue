@@ -5,6 +5,45 @@ import draggable from "vuedraggable";
 import overviewview from "./OverviewView.vue";
 import { PlaylistStar } from "mdue";
 import { Tippy, TippySingleton } from "vue-tippy";
+import { WorkspaceViewIfc } from "./WorkspaceUtils";
+import AbstractPlugin from "../Plugins/AbstractPlugin";
+
+class DragPlugin extends AbstractPlugin {
+  public isModal(): boolean {
+    return false;
+  }
+  public cancel(): boolean {
+    return true;
+  }
+  public finish(): boolean {
+    return true;
+  }
+  public keydown(e: KeyboardEvent): boolean {
+    return true;
+  }
+  public keyup(e: KeyboardEvent): boolean {
+    return true;
+  }
+  public mouseup(e: MouseEvent): boolean {
+    return true;
+  }
+  public mousedown(e: MouseEvent): boolean {
+    return true;
+  }
+  public mousedownPan(e: any): boolean {
+    return true;
+  }
+  public mousemove(e: MouseEvent): boolean {
+    return true;
+  }
+  public drop(e: any): boolean {
+    return true;
+  }
+  public wheel(e: any): boolean {
+    return true;
+  }
+}
+
 export default defineComponent({
   name: "wsentriesbookmarks",
   components: {
@@ -19,6 +58,7 @@ export default defineComponent({
       required: true,
     },
     viewId: Number,
+    workspace: { type: Object as () => WorkspaceViewIfc },
   },
   data(): {
     clickTimer: any;
@@ -29,7 +69,25 @@ export default defineComponent({
       drag: false,
     };
   },
+  watch: {
+    drag: function (newValue: boolean, oldValue: boolean) {
+      newValue
+        ? this.workspace?.startPlugin(new DragPlugin(this.workspace))
+        : this.workspace?.finishPlugin();
+    },
+  },
   methods: {
+    mousewheel(e:Event){
+      this.workspace?.dispatchEvent(e);
+    },
+    dragUpdate(isDragging: boolean) { 
+      this.drag = isDragging;
+
+      
+      isDragging
+        ? this.workspace?.startPlugin(new DragPlugin(this.workspace))
+        : this.workspace?.finishPlugin();
+    },
     toggleUI() {},
     goToEntry(zoom: boolean, event: any) {
       if (!this.clickTimer) {
@@ -81,7 +139,7 @@ export default defineComponent({
  
  -->
 <template>
-  <div class="bookmarks" :class="{ 'bookmarks-hide': !model.showBookmarks }">
+  <div @mousewheel="mousewheel" class="bookmarks" :class="{ 'bookmarks-hide': !model.showBookmarks }">
     <tippy :placement="'right'" :offset="[-15, -10]">
       <button>
         <PlaylistStar @click="model.showBookmarks = !model.showBookmarks" />
@@ -90,8 +148,8 @@ export default defineComponent({
     </tippy>
     <draggable
       v-model="myList"
-      @start="drag = true"
-      @end="drag = false"
+      @start="dragUpdate(true)"
+      @end="dragUpdate(false)"
       item-key="order"
       v-bind="dragOptions"
       tag="transition-group"
@@ -171,7 +229,7 @@ export default defineComponent({
 .bookmark-entry {
   color: #fff;
   cursor: pointer;
-  min-width: 250px;
+  min-width: 150px;
   display: table;
   padding-bottom: 10px;
   padding-left: 25px;

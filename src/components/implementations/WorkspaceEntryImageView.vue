@@ -1,6 +1,6 @@
 <template>
   <div ref="el" class="ws-entry-image-wrapper">
-    <wsentrydisplayname :entry="entry" />
+     <slot></slot>
     <div
       @dblclick.capture.stop="doubleClick"
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -18,16 +18,12 @@ const { shell } = require("electron");
 
 import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
-import { WorkspaceEntryImage } from "../../store/model/ModelFileSystem";
-import { setupEntry } from "../workspace/WorkspaceUtils";
-import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryImage } from "../../store/model/FileSystem/FileSystemEntries";
+import { setupEntry } from "../app/WorkspaceUtils";
 export default defineComponent({
   name: "wsentryimage",
   data() {
     return {};
-  },
-  components: {
-    wsentrydisplayname,
   },
   setup(props) {
     return setupEntry(props);

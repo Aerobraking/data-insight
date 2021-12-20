@@ -1,7 +1,7 @@
 import { Overview } from "@/store/model/ModelAbstractData";
-import { FolderOverviewEntry } from "./FileEngine";
-import { OverviewEngine } from "../../components/workspace/OverviewEngine";
-import { AbstractOverviewEntry } from "./OverviewData";
+import { FolderOverviewEntry } from "./FileSystem/FileEngine";
+import { OverviewEngine } from "../../components/app/OverviewEngine";
+import { AbstractOverviewEntry } from "./AbstractOverEntry";
 
 export class OverviewTransferHandler {
 

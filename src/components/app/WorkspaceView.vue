@@ -104,7 +104,7 @@
                   :name="e.id"
                   :key="e.id"
                   :entry="e"
-                  :viewId="model.id"
+                  :viewId="e.id"
                   :workspace="this"
                   :searchstring="searchString"
                   v-bind:is="e.componentname"
@@ -133,6 +133,7 @@
 
           <wsentriesbookmarks
             :model="model"
+            :workspace="getWorkspaceIfc()"
             @bookmarkclicked="moveToEntry"
           ></wsentriesbookmarks>
 
@@ -250,7 +251,7 @@ import {
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
   WorkspaceEntryYoutube,
-} from "@/store/model/ModelFileSystem";
+} from "@/store/model/FileSystem/FileSystemEntries";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
 import OverviewView from "./OverviewView.vue";
@@ -260,6 +261,7 @@ import wsentryfolder from "../implementations/WorkspaceEntryFolderView.vue";
 import { defineComponent } from "vue";
 import {
   ElementDimension,
+  ElementDimensionInstance,
   getCoordinatesFromElement,
   ResizerComplex,
   set3DPosition,
@@ -300,13 +302,11 @@ import {
   ArrowCollapseLeft,
   DeleteVariant,
 } from "mdue";
-import {
-  EntryCollection,
-  Workspace,
-  WorkspaceEntry,
-} from "@/store/model/ModelAbstractData";
+import { Workspace, WorkspaceEntry } from "@/store/model/ModelAbstractData";
 import ReArrange from "./../Plugins/Rearrange";
 import AbstractPlugin from "./../Plugins/AbstractPlugin";
+import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import EntryCollection from "@/store/model/EntryCollection";
 
 export default defineComponent({
   el: ".wrapper",
@@ -336,6 +336,7 @@ export default defineComponent({
     DeleteEmptyOutline,
     Overscan,
     Resize,
+    wsentrydisplayname,
     wsentriesbookmarks,
     wssearchlist,
     OverviewView,
@@ -563,6 +564,12 @@ export default defineComponent({
   },
   inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
   methods: {
+    dispatchEvent(e: Event) {
+      const d: HTMLElement =
+        this.$el.getElementsByClassName("vue-pan-zoom-scene")[0];
+
+      d.dispatchEvent(new WheelEvent(e.type, e));
+    },
     updateOverviewFolderSelection(path: string | undefined): void {
       if (path) {
         const f = new WorkspaceEntryFolderWindow(path);
@@ -1019,6 +1026,17 @@ export default defineComponent({
           case "d":
             this.clearSelection();
             break;
+          case "x":
+            if (this.getSelectedEntries().length > 0) {
+              WSUtils.Events.prepareFileSaving();
+
+              clipboard = new EntryCollection();
+              clipboard.entries.push(
+                ...this.getModelEntriesFromView(this.getSelectedEntries())
+              );
+              this.deleteSelection();
+            }
+            break;
           case "c":
             if (this.getSelectedEntries().length > 0) {
               WSUtils.Events.prepareFileSaving();
@@ -1064,12 +1082,12 @@ export default defineComponent({
                 listFiles: pastedEntries.entries,
               };
               this.$store.commit(MutationTypes.ADD_FILES, payload);
-              // select the pasted entries
-              setTimeout(() => {
-                const views = this.getViewsByModels(pastedEntries.entries);
-                this.clearSelection();
-                this.entriesSelected(views, "add", false);
-              }, 10);
+              // // select the pasted entries
+              // setTimeout(() => {
+              //   const views = this.getViewsByModels(pastedEntries.entries);
+              //   this.clearSelection();
+              //   this.entriesSelected(views, "add", false);
+              // }, 10);
 
               e.preventDefault();
               e.stopPropagation();
@@ -1320,10 +1338,12 @@ export default defineComponent({
 
       this.selectionDragActive = false;
     },
-    wheel: function (e: WheelEvent) {
+    wheel(e: WheelEvent) {
       if (this.preventEvent(e)) return true;
     },
     beforeWheelHandler(e: any) {
+      console.log("beforeWheelHandler");
+
       if (this.model.isActive && this.activePlugin) return true;
 
       this.spacePressed = false;
@@ -1598,7 +1618,11 @@ export default defineComponent({
       if (entry != null) {
         let coordinates = this.getCoordinatesFromElement(entry);
 
-        let scaler = 0.25;
+        coordinates.scaleFromCenter(
+          Math.max(1, 400 / Math.max(coordinates.w, coordinates.h))
+        );
+
+        let scaler = 1;
 
         let rect: {
           bottom: number;
@@ -1623,12 +1647,10 @@ export default defineComponent({
 
         if (zoom) {
           if (smooth) {
-            this.panZoomInstance.setMaxZoom(15);
             this.panZoomInstance
               .smoothShowRectangle(rect)
               .then((f: boolean) => {});
           } else {
-            this.panZoomInstance.setMaxZoom(15);
             this.panZoomInstance.showRectangle(rect).then((f: boolean) => {});
           }
         } else {
@@ -1771,6 +1793,7 @@ export default defineComponent({
       this.clearSelection();
     },
     startPlugin(p: AbstractPlugin): void {
+      console.log("startPlugin");
       this.activePlugin = p;
       WSUtils.Events.pluginStarted(this.activePlugin.isModal());
     },
@@ -1780,6 +1803,7 @@ export default defineComponent({
       this.activePlugin = null;
     },
     finishPlugin(): void {
+      console.log("finishPlugin");
       if (this.activePlugin) {
         this.activePlugin.finish();
         WSUtils.Events.pluginStarted(false);
@@ -1889,7 +1913,7 @@ export default defineComponent({
 
       return list;
     },
-    getCoordinatesFromElement(e: any): ElementDimension {
+    getCoordinatesFromElement(e: any): ElementDimensionInstance {
       return getCoordinatesFromElement(e);
     },
     startFileDrag: function () {

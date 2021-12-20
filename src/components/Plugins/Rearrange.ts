@@ -1,6 +1,6 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
 import { timeHours } from "d3"; 
-import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
+import { WorkspaceViewIfc } from "../app/WorkspaceUtils";
 import Plugin from "./AbstractPlugin"
 
 export default class ReArrange extends Plugin {

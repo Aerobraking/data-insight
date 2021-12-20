@@ -1,9 +1,12 @@
-import { AbstractNode, AbstractLink, AbstractOverviewEntry, FolderNode } from "./OverviewData";
+import { AbstractNode, AbstractLink } from "../OverviewData";
 import { Exclude } from "class-transformer";
 import { FSWatcher } from "chokidar";
 import pathNodejs from "path";
 import { Instance } from "./FileSystemWatcher";
 import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./FileOverviewInterfaces";
+import { AbstractOverviewEntry } from "../AbstractOverEntry";
+import FolderNode from "./FolderNode";
+
 
 
 export class FolderLink extends AbstractLink<FolderNode>{
@@ -62,7 +65,6 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
     eventStack: (FolderSyncResult | FolderStatsResult)[] = [];
 
     handleEvents(): void {
-
         s:
         for (let i = 0; i < 10; i++) {
             let event = this.eventStack.shift();

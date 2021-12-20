@@ -1,6 +1,6 @@
 // import { path } from "d3";
 import _ from "underscore";
-import { WorkspaceEntry } from "./ModelAbstractData";
+import { WorkspaceEntry } from "../ModelAbstractData";
 const fs = require("fs");
 const path = require("path");
 
@@ -144,7 +144,10 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
 }
 
 export class WorkspaceEntryFrame extends WorkspaceEntry {
-    constructor(text: string = "") {
+
+    public static viewid: string = "wsentryframe";
+
+    constructor() {
         super("wsentryframe", true);
         this.width = 1400;
         this.height = 1400;

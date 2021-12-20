@@ -5,6 +5,7 @@ import {
     onMounted,
     ref
 } from "vue";
+import AbstractPlugin from "../Plugins/AbstractPlugin";
 import * as WSUtils from "./WorkspaceUtils";
 
 export function doChangeFocus(): boolean {
@@ -83,6 +84,10 @@ export interface WorkspaceViewIfc {
     preventInput(prevent: boolean): void;
     highlightSelection: boolean;
     updateSelectionWrapper(): void;
+    startPlugin(p: AbstractPlugin): void;
+    finishPlugin(): void;
+    dispatchEvent(e: Event): void;
+    cancelPlugin(): void;
 }
 
 /**

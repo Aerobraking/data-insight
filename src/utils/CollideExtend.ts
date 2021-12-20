@@ -1,5 +1,5 @@
  
-import { OverviewEngine } from "@/components/workspace/OverviewEngine";
+import { OverviewEngine } from "@/components/app/OverviewEngine";
 import { AbstractNode } from "@/store/model/OverviewData";
 import * as d3 from "d3";
 

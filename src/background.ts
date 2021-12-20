@@ -204,7 +204,10 @@ ipcMain.on('save-insight-file', (event: any, arg:
     if (!arg.chooseFile && arg.path && arg.path.length != 0 && (arg.executeSave || fs.existsSync(arg.path))) {
       saveFile(arg.json, arg.path);
     } else {
-      dialog.showSaveDialog({}).then((result) => {
+      dialog.showSaveDialog({
+        title: "Select .ins File",
+        filters: [{ name: "Insight File Type", extensions: ["ins"] }],
+      }).then((result) => {
         if (result.canceled) { return; }
         if (result.filePath) {
           sendToRender('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));

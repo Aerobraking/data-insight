@@ -12,10 +12,10 @@
 </template>
 
 <script lang="ts">
-import * as cache from "./../../utils/ImageCache";
+import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
-import { FolderWindowFile } from "../../store/model/ModelFileSystem";
-import * as icons from "./../../utils/IconHandler";
+import { FolderWindowFile } from "../../store/model/FileSystem/FileSystemEntries";
+import * as icons from "../../utils/IconHandler";
 export default defineComponent({
   name: "wsfolderfile",
   props: {
