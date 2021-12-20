@@ -12,7 +12,7 @@
     @mouseenter="mouseenter"
     @mouseleave="mouseleave"
   >
-     <slot></slot>
+    <slot></slot>
 
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -40,9 +40,21 @@
           @click="setDefault"
         />
       </button>
-      <button><FolderPlusOutline @click="createFolder" /></button>
+      <button style="border-left: 1px solid white">
+        <FolderPlusOutline @click="createFolder" />
+      </button>
       <button><MonitorDashboard @click="openFolderInOS" /></button>
       <button><DeleteVariant @click="deleteSelection" /></button>
+      <button
+        style="border-left: 1px solid white"
+        :class="{ 'hightlight-fg': showTiles }"
+      >
+        <ViewGrid @click="showTiles = true" />
+      </button>
+      <button :class="{ 'hightlight-fg': !showTiles }">
+        <ViewList @click="showTiles = false" />
+      </button>
+
       <!-- <input
         @keydown.capture.stop
         @keyup.capture.stop
@@ -59,24 +71,43 @@
 
     <div class="viewport" :class="{ opaque: opaque }">
       <div
-        v-show="showTiles"
         class="tile-wrapper container green"
         :options="{ selectables: '.selectable' }"
         @mousedown.left.stop="toggleAll(false)"
       >
         <keep-alive>
           <wsfolderfile
+            v-show="showTiles"
             v-for="file in getFileList"
             :entry="file"
             class="tile selectable"
+            :class="{ 'item-selected': isSelected(file.id) }"
             @dblclick="folderOpen(file)"
             :key="file.id"
             :searchstring="searchstring"
             :name="file.id"
-            @itemClicked="itemClicked"
+            @itemClicked2="itemClicked2"
           >
           </wsfolderfile>
         </keep-alive>
+
+        <table v-show="!showTiles">
+          <tbody>
+            <keep-alive>
+              <wsfolderfilelist
+                v-for="file in getFileList"
+                :entry="file"
+                :class="{ 'item-selected': isSelected(file.id) }"
+                @dblclick="folderOpen(file)"
+                :key="file.id"
+                :searchstring="searchstring"
+                :name="file.id"
+                @itemClicked2="itemClicked2"
+              >
+              </wsfolderfilelist>
+            </keep-alive>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -85,28 +116,7 @@
 <script lang="ts">
 /*
 
-
-   <table v-show="!showTiles">
-        <tbody>
-          <tr class="clickable" v-on:dblclick.stop.prevent="folderBack()">
-            <td class="icon-row"></td>
-            <td>... {{ parentDir }}</td>
-            <td></td>
-          </tr>
-          <keep-alive>
-            <tr
-              v-for="file in getFileList"
-              :key="file.filename"
-              v-on:dblclick.stop.prevent="folderOpen(file)"
-            >
-              <td></td>
-              <td>{{ file.filename }}</td>
-              <td>{{ file.isDirectory }}</td>
-            </tr>
-          </keep-alive>
-        </tbody>
-      </table>
-
+ 
  @click.stop
     @mousedown.stop
     @mouseup.stop
@@ -118,8 +128,10 @@ const { shell } = require("electron");
 
 import * as WSUtils from "../app/WorkspaceUtils";
 import * as watcher from "../../utils/WatchSystem";
+import { add, remove, toggle } from "../../utils/ListUtils";
 import fs from "fs";
 import wsfolderfile from "./FolderFileView.vue";
+import wsfolderfilelist from "./FolderFileViewList.vue";
 import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 import { defineComponent } from "vue";
 import {
@@ -141,17 +153,22 @@ import {
   ArrowUp,
   MonitorDashboard,
   DeleteVariant,
+  ViewList,
+  ViewGrid,
   FolderPlusOutline,
 } from "mdue";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
+    wsfolderfilelist,
     MonitorDashboard,
     DeleteVariant,
     FolderPlusOutline,
     ArrowUp,
     ArrowLeft,
+    ViewList,
+    ViewGrid,
     HomeOutline,
     HomeImportOutline,
     wsfolderfile,
@@ -159,14 +176,16 @@ export default defineComponent({
     DeleteEmptyOutline,
   },
   data(): {
+    listSelectionIds: number[];
     showTiles: boolean;
     opaque: boolean;
     dragActive: boolean;
     list: Array<FolderWindowFile>;
     selected: Set<any>;
-    lastItemSelected: HTMLElement | undefined;
+    lastItemSelected: number | undefined;
   } {
     return {
+      listSelectionIds: [],
       lastItemSelected: undefined,
       showTiles: true,
       dragActive: false,
@@ -530,12 +549,34 @@ export default defineComponent({
     },
     toggleAll(select: boolean | undefined = undefined) {
       if (select != undefined) {
-        this.getEntries().forEach((e) =>
-          e.classList.toggle("item-selected", select)
-        );
+        this.listSelectionIds = [];
+        select ? this.listSelectionIds.push(...this.list.map((e) => e.id)) : 0;
       } else {
-        this.getEntries().forEach((e) => e.classList.toggle("item-selected"));
+        this.list.forEach((e) => toggle(this.listSelectionIds, e.id));
       }
+    },
+    itemClicked2(id: number, type: "control" | "shift" | "single") {
+      switch (type) {
+        case "single":
+          this.listSelectionIds = [];
+          add(this.listSelectionIds, id);
+          break;
+        case "control":
+          toggle(this.listSelectionIds, id);
+          break;
+        case "shift":
+          const entries = this.list;
+          if (this.lastItemSelected != undefined) {
+            const i1 = entries.findIndex((e) => e.id == this.lastItemSelected),
+              i2 = entries.findIndex((e) => e.id == id);
+            var sliced = entries.slice(Math.min(i1, i2), Math.max(i1, i2) + 1);
+
+            sliced.forEach((e) => add(this.listSelectionIds, e.id));
+          }
+          break;
+      }
+      this.lastItemSelected = id;
+      this.dragActive = true;
     },
     itemClicked(
       item: FolderWindowFile,
@@ -552,17 +593,17 @@ export default defineComponent({
           break;
         case "shift":
           const entries = this.getEntries();
-          if (this.lastItemSelected) {
-            const i1 = entries.indexOf(this.lastItemSelected),
-              i2 = entries.indexOf(el);
-            var sliced = entries.slice(Math.min(i1, i2), Math.max(i1, i2));
+          // if (this.lastItemSelected) {
+          //   const i1 = entries.indexOf(this.lastItemSelected),
+          //     i2 = entries.indexOf(el);
+          //   var sliced = entries.slice(Math.min(i1, i2), Math.max(i1, i2));
 
-            sliced.forEach((e) => e.classList.add("item-selected"));
-          }
-          el.classList.add("item-selected");
+          //   sliced.forEach((e) => e.classList.add("item-selected"));
+          // }
+          // el.classList.add("item-selected");
           break;
       }
-      this.lastItemSelected = el;
+      // this.lastItemSelected = el;
       this.dragActive = true;
     },
     setPath(path: string) {
@@ -593,6 +634,9 @@ export default defineComponent({
         let l = this.entry.path.split("/");
       }
     },
+    isSelected(id: number): boolean {
+      return this.listSelectionIds.includes(id);
+    },
   },
   computed: {
     getFileList(): Array<FolderWindowFile> {
@@ -618,7 +662,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
-$color-Selection: rgba(57, 215, 255, 0.3);
+$color-Selection: rgba(57, 215, 255, 1);
 $colorBG: rgb(34, 34, 34);
 $colorFG: rgb(234, 234, 234);
 
@@ -656,6 +700,7 @@ $colorFG: rgb(234, 234, 234);
 
   table {
     width: 100%;
+    border-spacing: 0;
   }
 
   .viewport {
@@ -676,8 +721,8 @@ $colorFG: rgb(234, 234, 234);
     button {
       cursor: pointer;
       background: transparent;
-      padding: 0;
-      margin: 0px 7px 0px 7px;
+      margin: 0;
+      padding: 0px 7px 0px 7px;
       height: 100%;
       svg {
         vertical-align: middle;
@@ -731,6 +776,13 @@ $colorFG: rgb(234, 234, 234);
   transition: all 0.2s ease-out;
 }
 
+.hightlight-fg {
+  color: $color-Selection !important;
+  svg {
+    color: $color-Selection !important;
+  }
+}
+
 .move-home-button {
   transform: scale(1.5, 1.5) !important;
   color: $color-Selection !important;
@@ -740,12 +792,12 @@ $colorFG: rgb(234, 234, 234);
   @include crumbbase();
   cursor: pointer;
   &:hover {
-    background: $color-Selection;
+    color: $color-Selection !important;
   }
 }
 
 .highlight-path .crumb {
-  background: $color-Selection !important;
+  color: $color-Selection !important;
 }
 
 .crumb-separator {
@@ -754,7 +806,7 @@ $colorFG: rgb(234, 234, 234);
 }
 
 .highlight-path .crumb-separator {
-  background: $color-Selection !important;
+  color: $color-Selection !important;
 }
 
 .opaque {
@@ -800,3 +852,7 @@ $tile-size: 150px;
   }
 }
 </style>
+
+function remove(listSelectionIds: number[], id: any) {
+  throw new Error("Function not implemented.");
+}

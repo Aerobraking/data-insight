@@ -4,7 +4,7 @@
   "description": "A modern File Explorer",
   "bugs": {
     "url": "https://github.com/Aerobraking/ma-data-insight/issues",
-    "email": "project@hostname.com"
+    "email": "issues@aerobraking.de"
   },
   "author": {
     "name": "Konnie Recker",
@@ -15,7 +15,7 @@
     "type": "git",
     "url": "https://github.com/Aerobraking/ma-data-insight.git"
   },
-  "version": "0.2.2",
+  "version": "0.2.4",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

@@ -1,12 +1,8 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
-import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3"; 
-import path from "path";
+import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";  
 import { COLUMNWIDTH, OverviewEngine } from "../../components/app/OverviewEngine";
-import { Stats, StatsType } from "./FileSystem/FileOverviewInterfaces";
-import CollideExtend from "@/utils/CollideExtend";
-import AbstractOverviewEntryIfc from "./AbstractOverviewEntryIfc";
-import FolderNode from "./FileSystem/FolderNode";
+import { Stats, StatsType } from "./FileSystem/FileOverviewInterfaces"; 
 
 /**
  * collision nur pro spalte

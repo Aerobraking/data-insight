@@ -1,3 +1,5 @@
+import _ from "underscore";
+
 export let resizeClasseName = "resizable";
 export const classPreventInput = "prevent-input";
 
@@ -80,7 +82,7 @@ export class ElementDimensionInstance implements ElementDimension {
     ) {
         this.x = x;
         this.y = y;
-        this.w = h;
+        this.w = w;
         this.h = h;
         this.x2 = x2;
         this.y2 = y2;
@@ -254,7 +256,7 @@ export class ResizerComplex {
         e.stopPropagation();
     }
 
-    doDrag(e: MouseEvent) {
+    doDrag: Function = _.throttle((e: MouseEvent) => {
 
         /**
          * set the new dimensions for the resize element according to the mouse position
@@ -263,16 +265,56 @@ export class ResizerComplex {
         let newWidth = (this.startWidth + (e.clientX - this.startX) / scale),
             newHeight = (this.startHeight + (e.clientY - this.startY) / scale);
 
+        function toDegrees(radians: number) {
+            return radians * (180 / Math.PI);
+        }
+
+        function calculateAngle(
+            oneX: number,
+            oneY: number,
+            twoX: number,
+            twoY: number
+        ): number {
+            var deltaX = twoX - oneX
+            var deltaY = twoY - oneY
+            return toDegrees(Math.atan2(deltaY, deltaX));
+        }
+
         if (e.shiftKey) {
+
+            function rotatePoint(cx: number, cy: number, angle: number, p: { x: number, y: number }) {
+                let s = Math.sin(angle);
+                let c = Math.cos(angle);
+
+                // translate point back to origin:
+                p.x -= cx;
+                p.y -= cy;
+
+                // rotate point
+                let xnew = p.x * c - p.y * s;
+                let ynew = p.x * s + p.y * c;
+
+                // translate point back:
+                p.x = xnew + cx;
+                p.y = ynew + cy;
+                return p;
+            }
+
             let dist = Math.sqrt(Math.pow((e.clientX - this.startX) / scale, 2) + Math.pow((e.clientY - this.startY) / scale, 2));
-            let direction = this.startX < e.clientX && this.startY < e.clientY ? 1 : -1;
+
+            let rotatedPoint = rotatePoint(this.startX, this.startY, 45, { x: e.clientX, y: e.clientY })
+
+            const angle = calculateAngle((rotatedPoint.x), (rotatedPoint.y), this.startX, this.startY);
+            const angleNorm = angle + 180;
+            const direction = (angleNorm <= 180 ? Math.abs((90 - Math.abs(angleNorm - 90)) / 90) : -Math.abs((90 - Math.abs(angleNorm - 180 - 90)) / 90));
+
+            // let direction = this.startX < e.clientX && this.startY < e.clientY ? 1 : -1;
             let ratio = this.startHeight / this.startWidth;
             newWidth = this.startWidth + dist * direction;
             newHeight = this.startHeight + dist * direction * ratio;
         }
 
         if (newWidth > 250 || newHeight > 250) {
-
 
             newWidth > 250 ? this.element.style.width = newWidth + 'px' : undefined;
             newHeight > 250 ? this.element.style.height = newHeight + 'px' : undefined;
@@ -284,6 +326,7 @@ export class ResizerComplex {
             let elementSizeCurrent = getCoordinatesFromElement(this.element);
             let scaleW = elementSizeCurrent.w / this.elementSizeStart.w;
             let scaleH = elementSizeCurrent.h / this.elementSizeStart.h;
+
 
             let maxSizeReached = false;
             for (let i = 0; i < this.listChildren.length && !maxSizeReached; i++) {
@@ -316,8 +359,6 @@ export class ResizerComplex {
                     continue;
                 }
 
-
-
                 const eW = dimE.w * scaleW;
                 const eH = dimE.h * scaleH;
 
@@ -348,7 +389,7 @@ export class ResizerComplex {
         e.preventDefault();
         e.stopPropagation();
 
-    }
+    }, 16);
 
     stopDrag(e: MouseEvent) {
         document.documentElement.removeEventListener('mousemove', this.mousemoveFunc, false);

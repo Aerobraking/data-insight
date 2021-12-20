@@ -1,4 +1,4 @@
-import { WorkspaceEntry } from "@/store/model/ModelAbstractData";
+import WorkspaceEntry from "@/store/model/WorkspaceEntry";
 import { ElementDimension, getCoordinatesFromElement } from "@/utils/resize";
 import {
     onBeforeUnmount,

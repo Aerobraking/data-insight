@@ -39,13 +39,17 @@ $color-Selection: rgba(57, 215, 255, 1);
 .color-gradient-div {
   box-sizing: border-box;
   width: 100%;
-  height: 20px;
-  margin: 4px;
+  height: 40px;
+  margin: 0;
+  margin-top: 5px;
 
   &:hover {
     cursor: pointer;
-    border: 2px solid $color-Selection;
+    border: 3px solid $color-Selection;
   }
+}
+.gradient-selected {
+  border: 2px solid $color-Selection;
 }
 </style>
 

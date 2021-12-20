@@ -302,11 +302,12 @@ import {
   ArrowCollapseLeft,
   DeleteVariant,
 } from "mdue";
-import { Workspace, WorkspaceEntry } from "@/store/model/ModelAbstractData";
+import { Workspace } from "@/store/model/ModelAbstractData";
 import ReArrange from "./../Plugins/Rearrange";
 import AbstractPlugin from "./../Plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import EntryCollection from "@/store/model/EntryCollection";
+import WorkspaceEntry from "@/store/model/WorkspaceEntry";
 
 export default defineComponent({
   el: ".wrapper",

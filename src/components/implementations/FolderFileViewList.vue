@@ -1,14 +1,15 @@
 <template>
-  <div
+  <tr
+    ref="el"
     @mousedown.left.shift.stop.exact="itemClicked('shift')"
     @mousedown.left.ctrl.stop.exact="itemClicked('control')"
     @mousedown.left.stop.exact="itemClicked('single')"
     @dragstart="dragstart"
-    class="folder-file"
   >
-    <div class="folder-file-image"></div>
-    <p>{{ entry.filename }}</p>
-  </div>
+    <td class="folder-file-image"></td>
+    <td>{{ entry.filename }}</td>
+    <td>{{ entry.isDirectory }}</td>
+  </tr>
 </template>
 
 <script lang="ts">

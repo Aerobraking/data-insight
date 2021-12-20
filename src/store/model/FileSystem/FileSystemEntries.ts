@@ -1,6 +1,6 @@
 // import { path } from "d3";
 import _ from "underscore";
-import { WorkspaceEntry } from "../ModelAbstractData";
+import WorkspaceEntry from "../WorkspaceEntry";
 const fs = require("fs");
 const path = require("path");
 

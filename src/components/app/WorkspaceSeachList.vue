@@ -1,7 +1,8 @@
 <script lang="ts">
 import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
 import { Instance } from "@/store/model/OverviewTransferHandler";
-import { Workspace, WorkspaceEntry } from "@/store/model/ModelAbstractData";
+import WorkspaceEntry from "@/store/model/WorkspaceEntry";
+import { Workspace } from "@/store/model/ModelAbstractData";
 import { AbstractNode,  } from "@/store/model/OverviewData";
 import { defineComponent } from "vue";
 import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";

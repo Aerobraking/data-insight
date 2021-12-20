@@ -19,22 +19,36 @@
       <button>
         <CogOutline v-show="model.showFilterSettings" />
       </button>
-      <ColorGradient
-        v-for="e in [
-          'default',
-          'interpolateWarm',
-          'interpolatePuRd',
-          'interpolateMagma',
-          'interpolateCubehelixDefault',
-          'interpolateRainbow',
-        ]"
-        :key="e"
-        @mouseup="updateGradient(e)"
-        :id="e"
-        :gradient="getGradienFunction(e)"
-      ></ColorGradient>
+
       <div v-show="model.showFilterSettings" class="slider"></div>
-      <!-- <div class="options"></div> -->
+      <div class="options">
+        <h3>Stats</h3>
+        <div
+          v-for="e in ['Size', 'Date', 'Amount', 'File Types']"
+          :key="e"
+          @mouseup="updateGradient(e)"
+          :id="e"
+          :gradient="getGradienFunction(e)"
+        >
+          {{ e }}
+        </div>
+        <h3>Gradient Style</h3>
+        <ColorGradient
+          v-for="e in [
+            'default',
+            'interpolateWarm',
+            'interpolatePuRd',
+            'interpolateMagma',
+            'interpolateCubehelixDefault',
+            'interpolateRainbow',
+          ]"
+          :class="{ 'gradient-selected': e === model.overview.gradientId }"
+          :key="e"
+          @mouseup="updateGradient(e)"
+          :id="e"
+          :gradient="getGradienFunction(e)"
+        />
+      </div>
     </div>
 
     <panZoom
@@ -142,9 +156,7 @@ import { defineComponent } from "vue";
 import noUiSlider, { API, PipsMode } from "nouislider";
 import * as WSUtils from "./WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
-import {
-  EngineState, 
-} from "./OverviewEngine"; 
+import { EngineState } from "./OverviewEngine";
 
 import path from "path";
 import {
@@ -160,20 +172,14 @@ import {
   CogOutline,
   ArrowCollapseRight,
 } from "mdue";
-import {
-  AbstractNode,
-  
-  
-} from "../../store/model/OverviewData";
+import { AbstractNode } from "../../store/model/OverviewData";
 import * as d3 from "d3";
 import _ from "underscore";
 import { set3DPosition } from "@/utils/resize";
 import { Instance } from "@/store/model/OverviewTransferHandler";
-import {   FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine"; 
+import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
 import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";
 import FolderNode from "@/store/model/FileSystem/FolderNode";
-
-d3.interpolateRainbow;
 
 export default defineComponent({
   name: "App",
@@ -248,7 +254,9 @@ export default defineComponent({
   } {
     return {
       d3default: function (n: number) {
-        return "rgb(70,70,70)";
+        let value = n * 255 * 0.3;
+        value = 20;
+        return `rgb(${value},${value},${value})`;
       },
       d3: d3,
       gradientFunction: this.d3default,
@@ -413,6 +421,8 @@ export default defineComponent({
       128
     ),
     updateGradient(name: string) {
+      this.model.overview.gradientId = name;
+
       const func = this.getGradienFunction(name);
       this.gradientFunction = func;
 
@@ -638,7 +648,7 @@ export default defineComponent({
   position: absolute;
   top: 30px;
   right: 24px;
-  width: 320px;
+  width: 20px;
   height: 70%;
   z-index: 9900;
   transition: all 0.2s ease-in-out;
@@ -649,12 +659,17 @@ export default defineComponent({
     transform: scale(0.8);
   }
   .options {
+    h3 {
+      margin: 15px 0 5px 0;
+    }
     position: absolute;
-    //  background: #fff;
-    left: 100%;
-    top: 0;
-    height: 250px;
-    width: 150px;
+    right: calc(100% + 90px);
+    top: 15px;
+    min-height: 250px;
+    min-width: 200px;
+    background: gray;
+    padding: 10px;
+    border-radius: 2px;
   }
 
   button {
@@ -665,17 +680,16 @@ export default defineComponent({
     padding: 0;
     margin: 0;
     background-color: transparent;
+    top: 5px;
     svg {
       font-size: 26px;
     }
   }
   button:nth-child(2) {
-    right: 20px;
-    top: 0;
+    right: 10px;
   }
   button:nth-child(1) {
-    right: -12px;
-    top: 0;
+    right: -20px;
   }
 
   button:disabled,
