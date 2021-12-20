@@ -4,7 +4,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { WorkspaceEntryFrame } from "../../store/model/Workspace";
+import { WorkspaceEntryFrame } from "../../store/model/ModelFileSystem";
 import * as WSUtils from "./WorkspaceUtils";
 import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 import * as _ from "underscore";

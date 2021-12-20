@@ -1,18 +1,16 @@
-import { WorkspaceViewIfc } from "../WorkspaceUtils";
+import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 
-export default abstract class {
+export default abstract class AbstractPlugin {
 
     constructor(workspace: WorkspaceViewIfc) {
         this.workspace = workspace;
     }
 
-
-
     workspace: WorkspaceViewIfc;
 
-    public abstract isModal():boolean;
-    public abstract cancel():boolean;
-    public abstract finish():boolean;
+    public abstract isModal(): boolean;
+    public abstract cancel(): boolean;
+    public abstract finish(): boolean;
     public abstract keydown(e: KeyboardEvent): boolean;
     public abstract keyup(e: KeyboardEvent): boolean;
     public abstract mouseup(e: MouseEvent): boolean;

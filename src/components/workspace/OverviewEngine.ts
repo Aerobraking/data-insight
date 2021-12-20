@@ -1,25 +1,15 @@
-
-import { Overview } from "@/store/model/OverviewDataModel";
-import { ElementDimension, ElementDimensionInstance } from "@/utils/resize";
-import { Exclude, Type } from "class-transformer";
+ 
+import { ElementDimension, ElementDimensionInstance } from "@/utils/resize"; 
 import * as d3 from "d3";
-import {
-    ForceCenter,
-    ForceLink,
-    Simulation,
-    SimulationLinkDatum,
-    SimulationNodeDatum,
-    ZoomScale,
+import { 
     ZoomTransform,
-} from "d3";
-import { FolderNode } from "./FileEngine";
-import { AbstractNode, AbstractOverviewEntry, AbstractLink, EntryListener, ColumnTextWidth } from "./OverviewData";
+} from "d3"; 
+import { AbstractNode, AbstractOverviewEntry, AbstractLink, EntryListener, ColumnTextWidth } from "../../store/model/OverviewData";
 import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
-import { EntryCollection } from "@/store/model/Workspace";
+import { EntryCollection, Overview } from "@/store/model/ModelAbstractData";
 import TWEEN from "@tweenjs/tween.js";
-import { Tween } from "@tweenjs/tween.js";
-import { Ufo } from "mdue";
+import { Tween } from "@tweenjs/tween.js"; 
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.

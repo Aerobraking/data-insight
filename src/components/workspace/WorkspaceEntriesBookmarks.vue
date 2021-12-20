@@ -1,8 +1,8 @@
 <script lang="ts">
-import { Workspace } from "../../store/model/Workspace";
+import { Workspace } from "../../store/model/ModelAbstractData";
 import { defineComponent } from "vue";
 import draggable from "vuedraggable";
-import overviewview from "../overview/OverviewView.vue";
+import overviewview from "./OverviewView.vue";
 import { PlaylistStar } from "mdue";
 import { Tippy, TippySingleton } from "vue-tippy";
 export default defineComponent({

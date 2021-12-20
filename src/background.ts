@@ -387,14 +387,20 @@ async function createWindow() {
     {
       label: "Window",
       submenu: [
-        {
-          role: "togglefullscreen",
-          accelerator: process.platform === 'darwin' ? 'Alt+F' : 'Alt+F',
-          label: 'Fullscreen'
-        },
+
+
 
         {
-          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          accelerator: process.platform === 'darwin' ? 'F1' : 'F1',
+          label: 'Distract free mode',
+          click() {
+            if (win) {
+              sendToRender('toggle-distract-mode');
+            }
+          }
+        },
+        {
+          accelerator: process.platform === 'darwin' ? 'F2' : 'F2',
           label: 'Hide Menu',
           // does not work in osx
           visible: process.platform != 'darwin',
@@ -405,13 +411,9 @@ async function createWindow() {
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Alt+D' : 'Alt+D',
-          label: 'Distract free mode',
-          click() {
-            if (win) {
-              sendToRender('toggle-distract-mode');
-            }
-          }
+          role: "togglefullscreen",
+          accelerator: process.platform === 'darwin' ? 'F3' : 'F3',
+          label: 'Fullscreen'
         },
         {
           label: 'Reload Page',

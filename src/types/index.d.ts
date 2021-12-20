@@ -9,3 +9,4 @@ declare module "d3-force-reuse"
 declare module "pell"
 declare module "splitpanes"
 declare module "vue-tippy"
+declare module "vue-panzoom"; 

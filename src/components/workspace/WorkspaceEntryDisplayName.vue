@@ -47,7 +47,7 @@ import {
   EyeOffOutline,
 } from "mdue";
 import { defineComponent } from "vue";
-import { WorkspaceEntry } from "../../store/model/Workspace";
+import { WorkspaceEntry } from "../../store/model/ModelAbstractData";
 import { Events } from "./WorkspaceUtils";
 export default defineComponent({
   el: ".wsentry-displayname",

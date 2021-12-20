@@ -1,9 +1,9 @@
 <script lang="ts">
-import { Workspace, WorkspaceEntry } from "../../store/model/Workspace";
+import { FolderOverviewEntry } from "@/store/model/FileEngine";
+import { Instance } from "@/store/model/OverviewTransferHandler";
+import { Workspace, WorkspaceEntry } from "@/store/model/ModelAbstractData";
+import { AbstractNode, AbstractOverviewEntry } from "@/store/model/OverviewData";
 import { defineComponent } from "vue";
-import { FolderOverviewEntry } from "./overview/FileEngine";
-import { Instance } from "./overview/OverviewTransferHandler";
-import { AbstractNode } from "./overview/OverviewData";
 
 export default defineComponent({
   name: "wssearchlist",
@@ -86,7 +86,7 @@ export default defineComponent({
           })
         );
 
-        let listEntries: FolderOverviewEntry[] = Instance.getData(
+        let listEntries: AbstractOverviewEntry[] = Instance.getData(
           this.model.overview.id
         );
 

@@ -1,5 +1,3 @@
-
-
 export interface FileSystemListener {
     event(e: FolderStatsResult | FolderSyncResult): void;
     getPath(): string;

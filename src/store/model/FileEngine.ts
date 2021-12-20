@@ -1,15 +1,10 @@
-import { AbstractNode, AbstractLink, AbstractOverviewEntry } from "./OverviewData";
-import { Exclude, Type } from "class-transformer";
-import chokidar, { FSWatcher, WatchOptions } from "chokidar";
+import { AbstractNode, AbstractLink, AbstractOverviewEntry, FolderNode } from "./OverviewData";
+import { Exclude } from "class-transformer";
+import { FSWatcher } from "chokidar";
 import pathNodejs from "path";
 import { Instance } from "./FileSystemWatcher";
-import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./OverviewInterfaces";
+import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./FileOverviewInterfaces";
 
-export class FolderNode extends AbstractNode {
-    constructor(name: string) {
-        super("folder", name);
-    }
-}
 
 export class FolderLink extends AbstractLink<FolderNode>{
 }
@@ -114,7 +109,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
 
     loadCollection(node: FolderNode) {
         console.log(node);
-        
+
         Instance.syncFolderMan(this, node.getPath(), 1);
         node.parent?.removeChild(node);
     }

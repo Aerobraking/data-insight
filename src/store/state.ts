@@ -1,7 +1,5 @@
-import { Overview } from "./model/OverviewDataModel"
-import { Workspace } from "./model/Workspace"
-import { Type, plainToClass } from 'class-transformer';
-import { View } from "./model/DataModel";
+ import { View, Workspace } from "./model/ModelAbstractData"
+import { Type } from 'class-transformer'; 
 
 export class InsightFile {
     @Type(() => View, {

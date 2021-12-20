@@ -58,7 +58,7 @@
               :viewId="98345930245"
               :workspace="this"
               :searchstring="searchString"
-              style="width:100%;height:100%;"
+              style="width: 100%; height: 100%"
             ></wsentryfolder>
           </div>
           <canvas class="workspace-canvas"></canvas>
@@ -110,6 +110,7 @@
                   v-bind:is="e.componentname"
                   ref="wsentry"
                 >
+                  <wsentrydisplayname :entry="e" />
                 </component>
               </keep-alive>
 
@@ -243,24 +244,19 @@ import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
 import { ipcRenderer } from "electron";
 import {
-  EntryCollection,
-  Workspace,
-  WorkspaceEntry,
   WorkspaceEntryFile,
   WorkspaceEntryFolderWindow,
   WorkspaceEntryFrame,
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
   WorkspaceEntryYoutube,
-} from "@/store/model/Workspace";
+} from "@/store/model/ModelFileSystem";
 import { MutationTypes } from "@/store/mutations/mutation-types";
-import WorkspacePlugin from "./Plugins/AbstractPlugin";
-import ReArrange from "./Plugins/Rearrange";
 import * as WSUtils from "./WorkspaceUtils";
-import OverviewView from "./../overview/OverviewView.vue";
+import OverviewView from "./OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
-import wsentryfolder from "./WorkspaceEntryFolderView.vue";
+import wsentryfolder from "../implementations/WorkspaceEntryFolderView.vue";
 import { defineComponent } from "vue";
 import {
   ElementDimension,
@@ -271,7 +267,6 @@ import {
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
 import { WorkspaceViewIfc } from "./WorkspaceUtils";
-import AbstractPlugin from "./Plugins/AbstractPlugin";
 const fs = require("fs");
 let clipboard: EntryCollection;
 let points: { x: number; y: number; z: number }[] = [];
@@ -305,6 +300,13 @@ import {
   ArrowCollapseLeft,
   DeleteVariant,
 } from "mdue";
+import {
+  EntryCollection,
+  Workspace,
+  WorkspaceEntry,
+} from "@/store/model/ModelAbstractData";
+import ReArrange from "./../Plugins/Rearrange";
+import AbstractPlugin from "./../Plugins/AbstractPlugin";
 
 export default defineComponent({
   el: ".wrapper",
@@ -345,7 +347,7 @@ export default defineComponent({
     },
   },
   data(): {
-    activePlugin: WorkspacePlugin | null;
+    activePlugin: AbstractPlugin | null;
     searchString: string;
     dragStart: { x: number; y: number };
     dragMoveRel: { x: number; y: number };
@@ -564,7 +566,7 @@ export default defineComponent({
     updateOverviewFolderSelection(path: string | undefined): void {
       if (path) {
         const f = new WorkspaceEntryFolderWindow(path);
-        f.isResizable=false;
+        f.isResizable = false;
         this.overviewfolder = f;
       } else {
         this.overviewfolder = undefined;

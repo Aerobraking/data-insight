@@ -1,54 +1,15 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
-import { timeHours } from "d3";
-import { WorkspaceViewIfc } from "../WorkspaceUtils";
+import { timeHours } from "d3"; 
+import { WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 import Plugin from "./AbstractPlugin"
 
-export default class ReArrange extends Plugin {
-
-    getClassName(a: HTMLElement): string {
-        let classNameA = "";
-        search:
-        for (let index = 0; index < a.classList.length; index++) {
-            const c = a.classList[index];
-            if (c.startsWith("ws-entry-")) {
-                classNameA = c.replaceAll("ws-entry-", "").replaceAll("-wrapper", "");
-                break search;
-            }
-        }
-        return classNameA;
-    }
-
+export default class Resize extends Plugin {
+    
     constructor(workspace: WorkspaceViewIfc) {
         super(workspace);
 
         this.mouseStart = undefined;
         this.selection = workspace.getSelectedEntries();
- 
-        this.selection = this.selection.sort(function (a: HTMLElement, b: HTMLElement) {
-            let classNameA = "", classNameB = "";
-
-            search:
-            for (let index = 0; index < a.classList.length; index++) {
-                const c = a.classList[index];
-                if (c.startsWith("ws-entry-")) {
-                    classNameA = c.replaceAll("ws-entry-", "").replaceAll("-wrapper", "");
-                    break search;
-                }
-            }
-            search:
-            for (let index = 0; index < b.classList.length; index++) {
-                const c = b.classList[index];
-                if (c.startsWith("ws-entry-")) {
-                    classNameB = c.replaceAll("ws-entry-", "").replaceAll("-wrapper", "");
-                    break search;
-                }
-            }
-
-            if (classNameA < classNameB) { return -1; }
-            if (classNameA > classNameB) { return 1; }
-            return 0;
-
-        });
 
         for (let index = 0; index < this.selection.length; index++) {
             const e = this.selection[index];
@@ -69,9 +30,12 @@ export default class ReArrange extends Plugin {
         });
 
         this.workspace.preventInput(true);
-        //  this.workspace.highlightSelection = false;
-
+        
     }
+
+    public wheel(e: any): boolean {
+        return true;
+       }
 
     private hash: Map<String, ElementDimension> = new Map();
     width: number = 10;
@@ -84,7 +48,6 @@ export default class ReArrange extends Plugin {
     averageWidth: number = 0;
 
     public isModal(): boolean { return true; }
-
     public cancel(): boolean {
 
         for (let index = 0; index < this.selection.length; index++) {
@@ -102,9 +65,7 @@ export default class ReArrange extends Plugin {
 
         this.finish();
         return true;
-
     }
-
     public finish(): boolean {
         this.workspace.preventInput(false);
         this.workspace.highlightSelection = true;
@@ -132,8 +93,9 @@ export default class ReArrange extends Plugin {
 
         return true;
     }
-
     private fitElementSize(): void {
+
+
 
         if (this.fitSize) {
             /**
@@ -232,11 +194,11 @@ export default class ReArrange extends Plugin {
 
 
                 let heightCurrent = columnHeight[columnCurrent];
+ 
 
+                set3DPosition(e, xCurrent + columnCurrent * this.averageWidth + (padding*columnCurrent), yCurrent + heightCurrent);
 
-                set3DPosition(e, xCurrent + columnCurrent * this.averageWidth + (padding * columnCurrent), yCurrent + heightCurrent);
-
-                columnHeight[columnCurrent] += d.h + padding;
+                columnHeight[columnCurrent] += d.h+padding;
 
                 columnCurrent++
                 if (columnCurrent > columnCount - 1) {
@@ -250,14 +212,13 @@ export default class ReArrange extends Plugin {
                 const e = this.selection[index];
                 let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
 
-                let nextRow = index < this.selection.length - 2 && this.getClassName(e) != this.getClassName(this.selection[index + 1]);
 
                 set3DPosition(e, xCurrent + widthCurrent, yCurrent + heightCurrent);
 
                 widthCurrent += d.w + padding;
                 heightRow = Math.max(d.h + padding, heightRow);
 
-                if (widthCurrent > this.width || nextRow) {
+                if (widthCurrent > this.width) {
                     widthCurrent = 0;
                     heightCurrent += heightRow;
                     heightRow = 0;
@@ -271,12 +232,12 @@ export default class ReArrange extends Plugin {
     public drop(e: any): boolean {
         return true;
     }
-
-    public wheel(e: any): boolean {
+    public mouseWheel(e: any): boolean {
         this.padding += e.deltaY / 10;
         this.padding = this.padding < 0 ? 0 : this.padding;
         this.updateview();
         return true;
     }
+
 
 }

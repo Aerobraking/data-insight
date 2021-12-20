@@ -116,22 +116,22 @@
 const path = require("path");
 const { shell } = require("electron");
 
-import * as WSUtils from "./WorkspaceUtils";
-import * as watcher from "./../../utils/WatchSystem";
+import * as WSUtils from "../workspace/WorkspaceUtils";
+import * as watcher from "../../utils/WatchSystem";
 import fs from "fs";
-import wsfolderfile from "./FolderFileView.vue";
-import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import wsfolderfile from "../workspace/FolderFileView.vue";
+import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
 import { defineComponent } from "vue";
 import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
-} from "../../store/model/Workspace";
-import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
+} from "../../store/model/ModelFileSystem";
+import { setupEntry, WorkspaceViewIfc } from "../workspace/WorkspaceUtils";
 import {
   Drive,
   DriveListRoot,
   DriveListSystemInstance,
-} from "./../../utils/DriveListSystem";
+} from "../../utils/DriveListSystem";
 import { ipcRenderer } from "electron";
 import {
   DeleteEmptyOutline,

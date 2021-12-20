@@ -4,7 +4,7 @@ console.log("Init second window code 1");
 import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
-import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult } from './components/workspace/overview/OverviewInterfaces';
+import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult } from './store/model/FileOverviewInterfaces';
 
 
 console.log("Init second window code 2");

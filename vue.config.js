@@ -11,6 +11,9 @@ module.exports = {
     plugins: [
       new WorkerPlugin()
     ],
+    /*
+    OSX needs this for chokidar
+    */
     externals: {
       fsevents: "require('fseventselectron')"
     }
@@ -32,7 +35,7 @@ module.exports = {
           icon: 'public/icon.png',
           /**
            * Important so the app does not run as admin in windows.
-           * Because with admin rights, file drop is disabled
+           * With admin rights, file drop is disabled
            * for the window of the app.
            * It also asks for permission each time the app will be
            * started, which is quite annoying.

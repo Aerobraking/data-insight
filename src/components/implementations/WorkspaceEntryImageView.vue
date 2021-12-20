@@ -16,11 +16,11 @@
 <script lang="ts">
 const { shell } = require("electron");
 
-import * as cache from "./../../utils/ImageCache";
+import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
-import { WorkspaceEntryImage } from "../../store/model/Workspace";
-import { setupEntry } from "./WorkspaceUtils";
-import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryImage } from "../../store/model/ModelFileSystem";
+import { setupEntry } from "../workspace/WorkspaceUtils";
+import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
 export default defineComponent({
   name: "wsentryimage",
   data() {

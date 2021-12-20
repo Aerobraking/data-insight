@@ -59,9 +59,9 @@ function htmlToElement(html: string) {
 }
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryYoutube } from "../../store/model/Workspace";
-import { setupEntry } from "./WorkspaceUtils";
-import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryYoutube } from "../../store/model/ModelFileSystem";
+import { setupEntry } from "../workspace/WorkspaceUtils";
+import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {

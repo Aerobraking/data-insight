@@ -1,7 +1,6 @@
 import { ActionTree, ActionContext } from 'vuex'
 import { State } from './../state'
-import { Mutations } from './../mutations/mutations'
-import { ActionTypes } from './action-types'
+import { Mutations } from './../mutations/mutations' 
 import { MutationTypes } from './../mutations/mutation-types'
 
 type AugmentedActionContext = {

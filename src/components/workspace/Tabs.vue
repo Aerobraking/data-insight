@@ -1,14 +1,5 @@
 
-<template>
-  <!-- <button
-    class="tab-collapse"
-    @click="isCollapsed = toggleShowUI()"
-    :class="{ 'tab-collapse-hide': !getShowUI }"
-  >
-    <EyeOutline v-if="getShowUI" />
-    <EyeOffOutline v-else />
-  </button> -->
-
+<template> 
   <div
     id="tabs"
     class="tabs-header"
@@ -99,19 +90,14 @@
 </template>
 
 
-<script lang="ts">
-/*
-   <overviewview :model="view" v-else-if="view.type === 'overview'">
-      </overviewview>
-*/
-import { defineComponent } from "vue";
-import Startscreen from "./StartScreen.vue";
-import workspaceview from "../workspace/WorkspaceView.vue";
-import overviewview from "../overview/OverviewView.vue";
+<script lang="ts"> 
+import { defineComponent } from "vue"; 
+import workspaceview from "./WorkspaceView.vue";
+import overviewview from "./OverviewView.vue";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import draggable from "vuedraggable";
 import _ from "underscore";
-import * as WSUtils from "./../workspace/WorkspaceUtils";
+import * as WSUtils from "./WorkspaceUtils";
 import { ArrowCollapseUp, EyeOutline, EyeOffOutline } from "mdue";
 import { ipcRenderer } from "electron";
 _.once(() => {
@@ -131,8 +117,7 @@ export default defineComponent({
     workspaceview,
     EyeOffOutline,
     EyeOutline,
-    overviewview,
-    Startscreen,
+    overviewview, 
   },
   data(): {} {
     return {

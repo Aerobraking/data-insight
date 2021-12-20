@@ -5,12 +5,12 @@ import { store } from './store/store'
 import panZoom from 'vue-panzoom';
 import  VueTippy from 'vue-tippy';
 
-import wsentryfile from "./components/workspace/WorkspaceEntryFileView.vue";
-import wsentryframe from "./components/workspace/WorkspaceEntryFrame.vue";
-import wsentrytextarea from "./components/workspace/WorkspaceEntryTextareaView.vue";
-import wsentryfolderview from "./components/workspace/WorkspaceEntryFolderView.vue";
-import wsentryimage from "./components/workspace/WorkspaceEntryImageView.vue";
-import wsentryyoutube from "./components/workspace/WorkspaceEntryYoutubeView.vue";
+import wsentryfile from "./components/implementations/WorkspaceEntryFileView.vue";
+import wsentryframe from "./components/implementations/WorkspaceEntryFrame.vue";
+import wsentrytextarea from "./components/implementations/WorkspaceEntryTextareaView.vue";
+import wsentryfolderview from "./components/implementations/WorkspaceEntryFolderView.vue";
+import wsentryimage from "./components/implementations/WorkspaceEntryImageView.vue";
+import wsentryyoutube from "./components/implementations/WorkspaceEntryYoutubeView.vue";
 
 const app = createApp(App);
 app

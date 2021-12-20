@@ -20,10 +20,10 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryFile } from "../../store/model/Workspace";
-import { setupEntry } from "./WorkspaceUtils";
-import * as icons from "./../../utils/IconHandler";
-import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryFile } from "../../store/model/ModelFileSystem";
+import { setupEntry } from "../workspace/WorkspaceUtils";
+import * as icons from "../../utils/IconHandler";
+import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
 
 export default defineComponent({
   name: "wsentryfile",

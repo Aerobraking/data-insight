@@ -1,6 +1,5 @@
 import { ipcRenderer } from "electron";
-import { FileSystemListener, FolderStatsResult, FolderSync, FolderSyncResult } from "./OverviewInterfaces";
-const pathSys = require("path");
+import { FileSystemListener, FolderStatsResult, FolderSync, FolderSyncResult } from "./FileOverviewInterfaces";
 
 export class FileSystemWatcher {
 

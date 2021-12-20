@@ -14,7 +14,7 @@
 <script lang="ts">
 import * as cache from "./../../utils/ImageCache";
 import { defineComponent } from "vue";
-import { FolderWindowFile } from "../../store/model/Workspace";
+import { FolderWindowFile } from "../../store/model/ModelFileSystem";
 import * as icons from "./../../utils/IconHandler";
 export default defineComponent({
   name: "wsfolderfile",

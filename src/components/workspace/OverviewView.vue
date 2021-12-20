@@ -137,20 +137,16 @@
 const fs = require("fs");
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
-import { Workspace } from "@/store/model/Workspace";
-import {
-  FolderNode,
-  FolderOverviewEntry,
-} from "@/components/workspace/overview/FileEngine";
+import { Workspace } from "@/store/model/ModelAbstractData";
+
 import { defineComponent } from "vue";
 import noUiSlider, { API, PipsMode } from "nouislider";
-import * as WSUtils from "./../workspace/WorkspaceUtils";
-import ColorGradient from "./../workspace/ColorGradient.vue";
+import * as WSUtils from "./WorkspaceUtils";
+import ColorGradient from "./ColorGradient.vue";
 import {
   EngineState,
   OverviewEngine,
-} from "../workspace/overview/OverviewEngine";
-import { Instance } from "../workspace/overview/OverviewTransferHandler";
+} from "./OverviewEngine"; 
 
 import path from "path";
 import {
@@ -169,10 +165,13 @@ import {
 import {
   AbstractNode,
   AbstractOverviewEntry,
-} from "../workspace/overview/OverviewData";
+  FolderNode,
+} from "../../store/model/OverviewData";
 import * as d3 from "d3";
 import _ from "underscore";
 import { set3DPosition } from "@/utils/resize";
+import { Instance } from "@/store/model/OverviewTransferHandler";
+import {  FolderOverviewEntry } from "@/store/model/FileEngine";
 
 d3.interpolateRainbow;
 
@@ -451,7 +450,7 @@ export default defineComponent({
       Instance.getEngine(this.idOverview).zoomToFit();
     },
     deleteSelection(): void {
-      let l: FolderOverviewEntry[] = Instance.getData(this.idOverview);
+      let l: AbstractOverviewEntry[] = Instance.getData(this.idOverview);
 
       if (Instance.getEngine(this.idOverview)) {
         const o = Instance.getEngine(this.idOverview);
@@ -556,7 +555,7 @@ export default defineComponent({
       }
     },
     addEntries(entries: FolderOverviewEntry[], pos: { x: number; y: number }) {
-      let listEntries: FolderOverviewEntry[] = Instance.getData(
+      let listEntries: AbstractOverviewEntry[] = Instance.getData(
         this.idOverview
       );
 
@@ -578,8 +577,8 @@ export default defineComponent({
       /**
        * start syncing the folders in the entry.
        */
-      for (let i = 0; i < listEntries.length; i++) {
-        const e = listEntries[i];
+      for (let i = 0; i < entries.length; i++) {
+        const e = entries[i];
         e.startWatcher();
       }
     },

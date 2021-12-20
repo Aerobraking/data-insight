@@ -1,9 +1,7 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
-import { InsightFile, State } from '../state'
-import { View } from '../model/DataModel'
-import { Overview } from '../model/OverviewDataModel'
-import { Workspace, WorkspaceEntry } from '../model/Workspace'
+import { InsightFile, State } from '../state' 
+import { View, Workspace, WorkspaceEntry } from '../model/ModelAbstractData'
 
 var entrycounter = 0;
 

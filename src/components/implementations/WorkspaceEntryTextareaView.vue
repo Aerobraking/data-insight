@@ -33,9 +33,9 @@
 <script lang="ts">
 import Editor from "@tinymce/tinymce-vue";
 import { defineComponent } from "vue";
-import { WorkspaceEntryTextArea } from "../../store/model/Workspace";
-import { setupEntry } from "./WorkspaceUtils";
-import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryTextArea } from "../../store/model/ModelFileSystem";
+import { setupEntry } from "../workspace/WorkspaceUtils";
+import wsentrydisplayname from "../workspace/WorkspaceEntryDisplayName.vue";
 import pell, { exec } from "pell";
 
 export default defineComponent({

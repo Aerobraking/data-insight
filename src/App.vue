@@ -7,10 +7,10 @@ import * as WSUtils from "./components/workspace/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
 import { ipcRenderer } from "electron";
 import { defineComponent } from "vue";
-import Tabs from "./components/app/Tabs.vue";
+import Tabs from "./components/workspace/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
-import { View } from "./store/model/DataModel";
+import { View } from "./store/model/ModelAbstractData";
 
 var fs = require("fs");
 
