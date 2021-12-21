@@ -685,11 +685,11 @@ export default defineComponent({
       font-size: 26px;
     }
   }
-  button:nth-child(2) {
-    right: 10px;
-  }
   button:nth-child(1) {
     right: -20px;
+  }
+  button:nth-child(2) {
+    right: 10px;
   }
 
   button:disabled,

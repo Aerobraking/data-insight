@@ -75,13 +75,12 @@ export default defineComponent({
       this.$el.classList.toggle("prevent-input", !found);
       this.$el.classList.toggle("search-not-found", !found);
       this.$el.classList.toggle("file-not-found", !found);
-      console.log("FolderFile update");
     },
     dragstart(e: DragEvent) {
-      this.$emit("dragstarted", this.entry, this.$el, e);
+    //  this.$emit("dragstarted", this.entry, this.$el, e);
     },
     itemClicked(type: "control" | "shift" | "single") {
-      this.$emit("itemClicked", this.entry, this.$el, type);
+      // this.$emit("itemClicked", this.entry, this.$el, type);
       this.$emit("itemClicked2", this.entry.id, type);
     },
   },

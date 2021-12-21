@@ -237,7 +237,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
     foldername: string;
     sort: "manual" | "asc" | "desc";
 }
-
+import * as f from "@/utils/format";
 export class FolderWindowFile {
 
     constructor(path: string, isDirectory: boolean, size: number) {
@@ -247,6 +247,10 @@ export class FolderWindowFile {
         this.isDirectory = isDirectory;
         this.size = size;
         this.id = Math.floor(Math.random() * 1000000000000);
+    }
+
+    getSizeFormatted() {
+        return f.filesizeFormat(this.size);
     }
 
     id: number;

@@ -526,6 +526,8 @@ export default defineComponent({
         }
 
         if (listFilesToDrag.length > 0) {
+          
+      console.log("starte drag oper");
           ipcRenderer.send("ondragstart", listFilesToDrag);
           this.dragActive = false;
         }

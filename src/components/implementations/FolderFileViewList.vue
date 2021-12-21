@@ -6,9 +6,9 @@
     @mousedown.left.stop.exact="itemClicked('single')"
     @dragstart="dragstart"
   >
-    <td class="folder-file-image"></td>
+    <td><div class="folder-file-image"></div></td>
     <td>{{ entry.filename }}</td>
-    <td>{{ entry.isDirectory }}</td>
+    <td>{{ entry.isDirectory ? "" : entry.getSizeFormatted() }}</td>
   </tr>
 </template>
 
@@ -17,6 +17,7 @@ import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
 import { FolderWindowFile } from "../../store/model/FileSystem/FileSystemEntries";
 import * as icons from "../../utils/IconHandler";
+
 export default defineComponent({
   name: "wsfolderfile",
   props: {
@@ -76,13 +77,12 @@ export default defineComponent({
       this.$el.classList.toggle("prevent-input", !found);
       this.$el.classList.toggle("search-not-found", !found);
       this.$el.classList.toggle("file-not-found", !found);
-      console.log("FolderFile update");
     },
     dragstart(e: DragEvent) {
-      this.$emit("dragstarted", this.entry, this.$el, e);
+      // this.$emit("dragstarted", this.entry, this.$el, e);
     },
     itemClicked(type: "control" | "shift" | "single") {
-      this.$emit("itemClicked", this.entry, this.$el, type);
+      //   this.$emit("itemClicked", this.entry, this.$el, type);
       this.$emit("itemClicked2", this.entry.id, type);
     },
   },
@@ -92,6 +92,30 @@ export default defineComponent({
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 $color-Selection: rgba(57, 215, 255, 0.1);
+
+tr {
+  height: 25px;
+}
+td {
+}
+
+td:nth-child(1) {
+  width: 30px;
+  height: 30px;
+  padding: 5px;
+
+  div {
+    background-size: cover;
+    background-position: center left;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+td:nth-child(3) {
+  text-align: right;
+  min-width: 150px;
+}
 
 .file-not-found {
   display: none;

@@ -2247,8 +2247,9 @@ svg {
     background: white !important;
   }
   transition: width 0.2s ease-in-out;
+  opacity: 1;
   &.splitpanes__splitter-hide {
-    width: 0px !important;
+    opacity: 0 !important;
   }
 }
 
