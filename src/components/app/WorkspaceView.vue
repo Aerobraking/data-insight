@@ -512,12 +512,17 @@ export default defineComponent({
       -500
     );
 
+    this.paneButtonClicked(this.model.paneSize, false);
+
     if (this.model.entries.length == 0) {
-      this.moveToHTMLElement(
-        this.$el.getElementsByClassName("welcome-message")[0],
-        false,
-        false
-      );
+      setTimeout(() => {
+        this.moveToHTMLElement(
+          this.$el.getElementsByClassName("welcome-message")[0],
+          true,
+          false,
+          0.9
+        );
+      }, 10);
     }
 
     this.updateFixedZoomElements();
@@ -628,9 +633,21 @@ export default defineComponent({
         }, 400);
       }
     },
-    paneButtonClicked(size: number | undefined = undefined) {
+    paneButtonClicked(
+      size: number | undefined = undefined,
+      transition: boolean = true
+    ) {
+      var list = document.querySelectorAll(".splitpanes, .splitpanes__pane");
+      !transition
+        ? list.forEach((e) => e.classList.toggle("transition-none"), true)
+        : "";
       this.model.paneSize =
         size != undefined ? size : this.model.paneSize >= 85 ? 50 : 0;
+      if (!transition) {
+        setTimeout(() => {
+          list.forEach((e) => e.classList.toggle("transition-none"), false);
+        }, 5);
+      }
     },
     searchUpdate(): void {
       let models = this.model.entries;
@@ -971,21 +988,22 @@ export default defineComponent({
 
       this.updateFixedZoomElements();
     },
-    preventEvent(e: any, forward:boolean=true): boolean {
+    preventEvent(e: any, forward: boolean = true): boolean {
       var functionName: string = e.type as string;
 
       if (this.model.isActive && this.activePlugin) {
-        return  (!forward||(
+        return (
+          !forward ||
           // @ts-ignore: Unreachable code error
-          this.activePlugin[functionName] &&
-          // @ts-ignore: Unreachable code error
-          (this.activePlugin[functionName](e) as boolean))
+          (this.activePlugin[functionName] &&
+            // @ts-ignore: Unreachable code error
+            (this.activePlugin[functionName](e) as boolean))
         );
       }
       return false;
     },
     keydownGlobal(e: KeyboardEvent) {
-      if (this.preventEvent(e,false)) return;
+      if (this.preventEvent(e, false)) return;
 
       /**
        * No ... key down
@@ -1622,13 +1640,16 @@ export default defineComponent({
     moveToHTMLElement(
       entry: HTMLElement,
       zoom: boolean,
-      smooth: boolean = true
+      smooth: boolean = true,
+      padding: number | undefined = undefined
     ) {
       if (entry != null) {
         let coordinates = this.getCoordinatesFromElement(entry);
 
         coordinates.scaleFromCenter(
-          Math.max(1, 400 / Math.max(coordinates.w, coordinates.h))
+          padding
+            ? padding
+            : Math.max(1, 400 / Math.max(coordinates.w, coordinates.h))
         );
 
         let scaler = 1;
@@ -1656,11 +1677,9 @@ export default defineComponent({
 
         if (zoom) {
           if (smooth) {
-            this.panZoomInstance
-              .smoothShowRectangle(rect)
-              .then((f: boolean) => {});
+            this.panZoomInstance.smoothShowRectangle(rect);
           } else {
-            this.panZoomInstance.showRectangle(rect).then((f: boolean) => {});
+            this.panZoomInstance.showRectangle(rect);
           }
         } else {
           if (smooth) {
@@ -2234,6 +2253,10 @@ svg {
   }
 }
 
+.transition-none {
+  transition: none !important;
+}
+
 .splitpanes__pane {
   background-color: #1d1d1d !important;
 }
@@ -2242,11 +2265,10 @@ svg {
   background: #646464 !important;
   min-width: 0px !important;
   border: none !important;
-  transition: all 0.4s ease-out !important;
+  transition: opacity 0.4s ease-out !important;
   &:hover {
     background: white !important;
   }
-  transition: width 0.2s ease-in-out;
   opacity: 1;
   &.splitpanes__splitter-hide {
     opacity: 0 !important;

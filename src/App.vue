@@ -54,6 +54,8 @@ export default defineComponent({
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
+        console.log("insight-file-selected",file);
+        
         _this.loadInsightFileFromPath(file);
       }
     );

@@ -155,6 +155,8 @@ function openFile(filePath: string | undefined = undefined) {
     filePath = files[0];
   }
 
+  console.log("openfile");
+
   sendToRender('insight-file-selected', filePath);
 }
 
@@ -465,6 +467,9 @@ async function createWindow() {
 
   Menu.setApplicationMenu(menu);
 
+  // load the last session
+  win.webContents.once('dom-ready', () => { openFile(getTempFilePath()); });
+
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage')
     // Load the url of the dev server if in development mode
@@ -477,7 +482,6 @@ async function createWindow() {
     win.loadURL('app://./index.html')
   }
 
-  openFile(getTempFilePath());
 }
 
 // Quit when all windows are closed.

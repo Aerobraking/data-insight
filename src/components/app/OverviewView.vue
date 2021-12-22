@@ -226,9 +226,9 @@ export default defineComponent({
       console.log(newValue);
       if (newValue instanceof FolderNode) {
         const fn: FolderNode = newValue;
-        this.$emit("folderSelected", fn.getPath());
+      //  this.$emit("folderSelected", fn.getPath());
       } else {
-        this.$emit("folderSelected", undefined);
+      //  this.$emit("folderSelected", undefined);
       }
     },
     "model.overview.viewportTransform": function (
