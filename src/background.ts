@@ -392,10 +392,7 @@ async function createWindow() {
     {
       label: "Window",
       submenu: [
-
-
-
-        {
+         {
           accelerator: process.platform === 'darwin' ? 'F1' : 'F1',
           label: 'Distract free mode',
           click() {
@@ -444,20 +441,20 @@ async function createWindow() {
       label: "Help",
       submenu: [
         {
-          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          accelerator: "F5",
           label: 'Keyboard Shortcuts',
           click() {
             if (win) {
-              //    win.setMenuBarVisibility(!win.isMenuBarVisible());
+              sendToRender('show-help');
             }
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          accelerator:   "F6",
           label: 'About',
           click() {
             if (win) {
-              //     win.setMenuBarVisibility(!win.isMenuBarVisible());
+              sendToRender('show-about');
             }
           }
         }

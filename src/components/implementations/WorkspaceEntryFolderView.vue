@@ -157,8 +157,13 @@ import {
   ViewGrid,
   FolderPlusOutline,
 } from "mdue";
+export function FeatureDecorator() {
+    return function  (target:any) { 
+    };
+}
 
-export default defineComponent({
+export default 
+defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
     wsfolderfilelist,

@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
-import { InsightFile, State } from '../state' 
+import { InsightFile, State } from '../state'
 import { View, Workspace } from '../model/ModelAbstractData'
 import WorkspaceEntry from '../model/WorkspaceEntry';
 
@@ -10,6 +10,42 @@ export type Mutations<S = State> = {
   // als key für die methode nehmen wir die einzelnen enum types. und da wir die method eh nicht direkt aurufen ala setCounter() sondern per commit("setCounter", parameter ...)
   // haben wir dann einfach das enum anstelle des strings commit(MutationTypes.SET_COUNTER,parameter ...) 
 
+  [MutationTypes.CREATE_WORKSPACE](state: S): void
+  [MutationTypes.CREATE_OVERVIEW](state: S): void
+  [MutationTypes.ADD_FILES](state: S, payload: {
+    model: Workspace,
+    listFiles: Array<WorkspaceEntry>,
+  }): void
+  [MutationTypes.SORT_WORKSPACES](state: S, payload: {
+    listWorkspaces: Array<Workspace>,
+  }): void
+  [MutationTypes.REMOVE_ENTRIES](state: S, payload: {
+    model: Workspace,
+    listIndices: Array<Number>,
+  }): void
+  [MutationTypes.DELETE_WORKSPACE](state: S, payload: {
+    index: number,
+  }): void
+  [MutationTypes.COPY_WORKSPACE](state: S, payload: {
+    index: number,
+  }): void
+  [MutationTypes.SELECT_WORKSPACE](state: S, payload: {
+    index: number,
+  }): void
+  [MutationTypes.LOAD_INSIGHT_FILE](state: S, payload: {
+    insightFile: InsightFile
+  }): void
+  [MutationTypes.SHOW_UI](state: S, payload: {
+    showUI: boolean
+  }): void
+}
+
+
+
+
+export interface Mutations2<S = State> {
+  // als key für die methode nehmen wir die einzelnen enum types. und da wir die method eh nicht direkt aurufen ala setCounter() sondern per commit("setCounter", parameter ...)
+  // haben wir dann einfach das enum anstelle des strings commit(MutationTypes.SET_COUNTER,parameter ...)  
   [MutationTypes.CREATE_WORKSPACE](state: S): void
   [MutationTypes.CREATE_OVERVIEW](state: S): void
   [MutationTypes.ADD_FILES](state: S, payload: {
@@ -98,13 +134,13 @@ export const mutations: MutationTree<State> & Mutations = {
     index: number,
   }) {
 
-    let activeindex = state.loadedFile.views.findIndex(x => x.isActive); 
+    let activeindex = state.loadedFile.views.findIndex(x => x.isActive);
 
     let w = state.loadedFile.views[activeindex];
 
     let wCopy = new Workspace();
     Object.assign(wCopy, w);
-    wCopy.id= Math.random()*10000000; 
+    wCopy.id = Math.random() * 10000000;
 
     state.loadedFile.views.push(wCopy);
     let lastIndex = state.loadedFile.views.length - 1;

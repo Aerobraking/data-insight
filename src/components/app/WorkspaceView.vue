@@ -2083,17 +2083,7 @@ var switcher = false;
 <style   lang="scss">
 $color-Selection: rgba(57, 215, 255, 0.3);
 
-kbd {
-  display: inline-block;
-  border: 0.2px solid #ccc;
-  border-radius: 4px;
-  padding: 0.1em 0.5em;
-  margin: 0.4em 0.4em;
-  box-shadow: 0 0.5px 0px rgba(0, 0, 0, 0.2), 0 0 0 1px #fff inset;
-  background-color: #f7f7f700;
-  color: #ccc;
-  font-weight: bold;
-}
+
 
 .splitpane {
   flex: 1 !important;

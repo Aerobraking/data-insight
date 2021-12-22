@@ -1,29 +1,21 @@
 <template>
-  <div ref="el" class="color-gradient-div"></div>
+  <div ref="el" class="color-gradient-div">
+    <h1>Hello world Size</h1>
+  </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
 import * as _ from "underscore";
-import Gradient from "./Gradient";
+import { NodeFeatureSize } from "@/store/model/AbstractNodeFeature";
 
 export default defineComponent({
-  name: "ColorGradient",
+  name: "size",
   props: {
     id: String,
-    gradient: { type: Gradient, required: true },
+    gradient: { type: NodeFeatureSize, required: true },
   },
-  mounted() {
-    let values: string[] = [];
-    const steps = 5;
-    for (let i = 0; i <= steps; i++) {
-      const percent = Math.floor(100 * (i / steps));
-      values.push(`${this.gradient.getColor(i / steps)} ${percent}%`);
-    }
-
-    const style = "linear-gradient( 270deg, " + values.join(", ") + ")";
-    this.$el.style.backgroundImage = style;
-  },
+  mounted() {},
   methods: {},
 });
 </script>

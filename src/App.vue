@@ -1,17 +1,97 @@
 <template>
   <Tabs />
+  <ModalDialog v-show="showAbout" @close="showAbout = false">
+    <template v-slot:header> Data Insight </template>
+
+    <template v-slot:body>
+      Version: {{ version }} <br />
+      <br />
+      Thank you for using my program. <br />
+      <br />
+      When you find a bug or have an idea for any improvements or features, you
+      can create in issue on github: <br />
+      <a   @click.capture.stop="openURL('https://github.com/Aerobraking/ma-data-insight')"  href="https://github.com/Aerobraking/ma-data-insight"
+        >https://github.com/Aerobraking/ma-data-insight</a
+      >
+      <br />
+      or contacting me directly <br />
+      <a    @click.capture.stop  href="mailto:issues@aerobraking.de"> issues@aerobraking.de</a>
+
+      <br />
+      <br />
+
+      Konnie Recker<br />
+      {{ new Date().getFullYear() }}
+    </template>
+  </ModalDialog>
+
+  <ModalDialog v-show="showHelp" @close="showHelp = false">
+    <template v-slot:header>Keyboard Layout</template>
+    <template v-slot:body> 
+    Add Youtube Video <kbd>Y</kbd> 
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+        Add Youtube Video <kbd>Y</kbd> 
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+        Add Youtube Video <kbd>Y</kbd> 
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+        Add Youtube Video <kbd>Y</kbd> 
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+        Add Youtube Video <kbd>Y</kbd> 
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+
+    </template>
+
+    
+  </ModalDialog>
 </template>
 
 <script lang="ts">
 import * as WSUtils from "./components/app/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
-import { ipcRenderer } from "electron";
+import { ipcRenderer, remote ,shell} from "electron";
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
-import { View } from "./store/model/ModelAbstractData";
-
+import ModalDialog from "./components/app/ModalDialog.vue";
+import { View } from "./store/model/ModelAbstractData"; 
+   
+const v = remote.app.getVersion();
 var fs = require("fs");
 
 ipcRenderer.on("log", (event, log) => {
@@ -22,6 +102,10 @@ export default defineComponent({
   name: "App",
   components: {
     Tabs,
+    ModalDialog,
+  },
+  data() {
+    return { showAbout: false, showHelp: false, version: v };
   },
   computed: {},
   mounted() {
@@ -37,6 +121,14 @@ export default defineComponent({
 
     ipcRenderer.on("fire-new-file", function (event: any, file: string) {
       _this.loadInsightFile(new InsightFile());
+    });
+    ipcRenderer.on("show-about", function (event: any, file: string) {
+      _this.showHelp = false;
+      _this.showAbout = !_this.showAbout;
+    });
+    ipcRenderer.on("show-help", function (event: any, file: string) {
+      _this.showAbout = false;
+      _this.showHelp = !_this.showHelp;
     });
 
     ipcRenderer.on("fire-file-saved", function (event: any, filepath: string) {
@@ -54,8 +146,8 @@ export default defineComponent({
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
-        console.log("insight-file-selected",file);
-        
+        console.log("insight-file-selected", file);
+
         _this.loadInsightFileFromPath(file);
       }
     );
@@ -89,6 +181,9 @@ export default defineComponent({
     };
   },
   methods: {
+    openURL(url:string){
+        shell.openExternal(url);
+    },
     loadInsightFileFromPath(path: string) {
       let jsonString = fs.readFileSync(path, "utf8");
       let file: InsightFile = deserialize(InsightFile, jsonString);
@@ -220,6 +315,8 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
+$color-Selection: rgba(57, 215, 255, 1);
+
 * {
   user-select: none;
 }
@@ -239,6 +336,27 @@ body {
   width: 100%;
   position: absolute;
   overflow: hidden;
+}
+
+kbd {
+  display: inline-block;
+  border: 0.2px solid #ccc;
+  border-radius: 4px;
+  padding: 0.1em 0.5em;
+  margin: 0.4em 0.4em;
+  box-shadow: 0 0.5px 0px rgba(0, 0, 0, 0.2), 0 0 0 1px #fff inset;
+  background-color: #f7f7f700;
+  color: #ccc;
+  font-weight: bold;
+}
+
+a {
+  color: white;
+  font-weight: bold;
+
+  &:hover {
+    color: $color-Selection;
+  }
 }
 
 div .prevent-input {
@@ -407,6 +525,7 @@ Scrollbar
 }
 .noUi-connects {
   border-radius: 3px;
+  background: #222;
 }
 .noUi-connect {
   background: #3fb8af;
