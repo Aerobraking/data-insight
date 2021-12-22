@@ -338,21 +338,20 @@ async function createWindow() {
       win.webContents.send('app-close');
     }
   });
-
-  // win.setMenuBarVisibility(false)
+  // process.platform === 'darwin' 
   menu = Menu.buildFromTemplate([
     {
       label: 'File',
       submenu: [
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+N' : 'Ctrl+N',
+          accelerator: 'CmdOrCtrl+N',
           label: 'New',
           click() {
             fireNewFileEvent();
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+O' : 'Ctrl+O',
+          accelerator: 'CmdOrCtrl+O',
           label: 'Open',
           click() {
             openFile();
@@ -367,14 +366,14 @@ async function createWindow() {
           }]
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
+          accelerator: 'CmdOrCtrl+S',
           label: 'Save',
           click() {
             fireFileSaveEvent(false);
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+Shift+S' : 'Ctrl+Shift+S',
+          accelerator: 'CmdOrCtrl+Shift+S',
           label: 'Save as',
           click() {
             fireFileSaveEvent(true);
@@ -382,7 +381,7 @@ async function createWindow() {
         },
         {
           label: 'Exit',
-          accelerator: process.platform === 'darwin' ? 'Ctrl+Q' : 'Ctrl+Q',
+          accelerator: 'CmdOrCtrl+Q',
           click() {
             app.quit()
           }
@@ -392,8 +391,8 @@ async function createWindow() {
     {
       label: "Window",
       submenu: [
-         {
-          accelerator: process.platform === 'darwin' ? 'F1' : 'F1',
+        {
+          accelerator: 'F1',
           label: 'Distract free mode',
           click() {
             if (win) {
@@ -402,7 +401,7 @@ async function createWindow() {
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'F2' : 'F2',
+          accelerator: 'F2',
           label: 'Hide Menu',
           // does not work in osx
           visible: process.platform != 'darwin',
@@ -414,7 +413,7 @@ async function createWindow() {
         },
         {
           role: "togglefullscreen",
-          accelerator: process.platform === 'darwin' ? 'F3' : 'F3',
+          accelerator: 'F3',
           label: 'Fullscreen'
         },
         {
@@ -450,7 +449,7 @@ async function createWindow() {
           }
         },
         {
-          accelerator:   "F6",
+          accelerator: "F6",
           label: 'About',
           click() {
             if (win) {

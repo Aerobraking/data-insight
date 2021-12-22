@@ -12,8 +12,7 @@ import { NodeFeatureSize } from "@/store/model/AbstractNodeFeature";
 export default defineComponent({
   name: "size",
   props: {
-    id: String,
-    gradient: { type: NodeFeatureSize, required: true },
+   
   },
   mounted() {},
   methods: {},

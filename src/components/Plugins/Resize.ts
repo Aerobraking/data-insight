@@ -1,19 +1,35 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
-import { timeHours } from "d3"; 
+import { timeHours } from "d3";
 import { WorkspaceViewIfc } from "../app/WorkspaceUtils";
-import Plugin from "./AbstractPlugin"
+import Plugin, { PluginDecorator } from "./AbstractPlugin"
 
+@PluginDecorator()
 export default class Resize extends Plugin {
-    
-    constructor(workspace: WorkspaceViewIfc) {
-        super(workspace);
+
+    shortcut: string = "cmdorctrl+s";
+
+    constructor() {
+        super();
+    }
+
+
+    private hash: Map<String, ElementDimension> = new Map();
+    width: number = 10;
+    height: number = 10;
+    padding: number = 10;
+    selection: HTMLElement[] = [];
+    mouseStart: { x: number, y: number } | undefined;
+    fitSize: boolean = false;
+    onlyResizable: boolean = true;
+    averageWidth: number = 0;
+    public init(): void {
 
         this.mouseStart = undefined;
-        this.selection = workspace.getSelectedEntries();
+        this.selection = this.workspace.getSelectedEntries();
 
         for (let index = 0; index < this.selection.length; index++) {
             const e = this.selection[index];
-            let d: ElementDimension = workspace.getCoordinatesFromElement(e);
+            let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
             let id = e.getAttribute("name");
             if (id) {
                 this.hash.set(id, d);
@@ -30,23 +46,8 @@ export default class Resize extends Plugin {
         });
 
         this.workspace.preventInput(true);
-        
+
     }
-
-    public wheel(e: any): boolean {
-        return true;
-       }
-
-    private hash: Map<String, ElementDimension> = new Map();
-    width: number = 10;
-    height: number = 10;
-    padding: number = 10;
-    selection: HTMLElement[] = [];
-    mouseStart: { x: number, y: number } | undefined;
-    fitSize: boolean = false;
-    onlyResizable: boolean = true;
-    averageWidth: number = 0;
-
     public isModal(): boolean { return true; }
     public cancel(): boolean {
 
@@ -194,11 +195,11 @@ export default class Resize extends Plugin {
 
 
                 let heightCurrent = columnHeight[columnCurrent];
- 
 
-                set3DPosition(e, xCurrent + columnCurrent * this.averageWidth + (padding*columnCurrent), yCurrent + heightCurrent);
 
-                columnHeight[columnCurrent] += d.h+padding;
+                set3DPosition(e, xCurrent + columnCurrent * this.averageWidth + (padding * columnCurrent), yCurrent + heightCurrent);
+
+                columnHeight[columnCurrent] += d.h + padding;
 
                 columnCurrent++
                 if (columnCurrent > columnCount - 1) {
@@ -232,7 +233,7 @@ export default class Resize extends Plugin {
     public drop(e: any): boolean {
         return true;
     }
-    public mouseWheel(e: any): boolean {
+    public wheel(e: any): boolean {
         this.padding += e.deltaY / 10;
         this.padding = this.padding < 0 ? 0 : this.padding;
         this.updateview();

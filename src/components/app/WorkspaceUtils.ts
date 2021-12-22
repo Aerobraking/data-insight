@@ -78,6 +78,7 @@ export interface WorkspaceViewIfc {
     getCurrentTransform(): { scale: number; x: number; y: number };
     getSelectionRectangle(): Element;
     getSelectedEntries(): HTMLElement[];
+    getModelEntries(): WorkspaceEntry[];
     getUnselectedEntries(): HTMLElement[];
     getEntries(): HTMLElement[];
     finishPlugin(): void;

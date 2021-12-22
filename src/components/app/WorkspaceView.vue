@@ -104,8 +104,9 @@
                   :name="e.id"
                   :key="e.id"
                   :entry="e"
-                  :viewId="e.id"
-                  :workspace="this"
+                  :viewKey="e.id"
+                  :workspace="getWorkspaceIfc()"
+                  @zoomed="moveToEntry({ id: e.id, zoom: true })"
                   :searchstring="searchString"
                   v-bind:is="e.componentname"
                   ref="wsentry"
@@ -308,6 +309,9 @@ import AbstractPlugin from "./../Plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import EntryCollection from "@/store/model/EntryCollection";
 import WorkspaceEntry from "@/store/model/WorkspaceEntry";
+import { getPlugins } from "@/components/Plugins/PluginList";
+
+getPlugins();
 
 export default defineComponent({
   el: ".wrapper",
@@ -1203,7 +1207,7 @@ export default defineComponent({
             break;
           case "r":
             if (this.getSelectedEntries().length > 1) {
-              this.startPlugin(new ReArrange(this));
+              this.startPlugin(new ReArrange().setWorkspace(this));
             }
             break;
           case "t":
@@ -1893,6 +1897,9 @@ export default defineComponent({
         this.$el.querySelectorAll(".ws-entry")
       ) as HTMLElement[];
     },
+    getModelEntries(): WorkspaceEntry[] {
+      return this.model.entries;
+    },
     getUnselectedEntries(): HTMLElement[] {
       return Array.from(
         this.$el.querySelectorAll(".ws-entry:not(.workspace-is-selected)")
@@ -2083,8 +2090,6 @@ var switcher = false;
 <style   lang="scss">
 $color-Selection: rgba(57, 215, 255, 0.3);
 
-
-
 .splitpane {
   flex: 1 !important;
   width: 100%;
@@ -2148,8 +2153,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   }
 
   &:hover {
-    transition: background-color 0.4s ease-in-out !important;
-    background-color: $color-Selection !important;
+    animation: circle 0.5s linear forwards;
   }
 }
 

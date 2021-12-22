@@ -12,8 +12,7 @@ import { NodeFeatureQuantity } from "@/store/model/AbstractNodeFeature";
 export default defineComponent({
   name: "quantity",
   props: {
-    id: String,
-    gradient: { type: NodeFeatureQuantity, required: true },
+   
   },
   mounted() {},
   methods: {},

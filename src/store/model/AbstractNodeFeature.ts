@@ -1,4 +1,4 @@
-
+import { Constructor } from "@/components/Plugins/AbstractPlugin";
 
 export abstract class AbstractNodeFeature {
     readonly abstract isGradient: boolean;
@@ -13,17 +13,12 @@ export abstract class AbstractNodeFeatureGradient extends AbstractNodeFeature {
     readonly abstract max: number;
 }
 
-type Constructor<T> = {
-    new(...args: any[]): T;
-    readonly prototype: T;
-}
-
 export const registeredClasses: Constructor<AbstractNodeFeature>[] = [];
 export function FeatureDecorator() {
     return function <T extends Constructor<AbstractNodeFeature>>(target: T) {
         registeredClasses.push(target);
     };
-}  
+}
 
 @FeatureDecorator()
 export class NodeFeatureSize extends AbstractNodeFeatureGradient {

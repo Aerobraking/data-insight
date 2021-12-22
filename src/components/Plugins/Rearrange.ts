@@ -1,9 +1,12 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
 import { timeHours } from "d3";
 import { WorkspaceViewIfc } from "../app/WorkspaceUtils";
-import Plugin from "./AbstractPlugin"
+import Plugin, { PluginDecorator } from "./AbstractPlugin"
 
+@PluginDecorator()
 export default class ReArrange extends Plugin {
+
+    shortcut: string = "cmdorctrl+r";
 
     getClassName(a: HTMLElement): string {
         let classNameA = "";
@@ -18,11 +21,13 @@ export default class ReArrange extends Plugin {
         return classNameA;
     }
 
-    constructor(workspace: WorkspaceViewIfc) {
-        super(workspace);
+    constructor() {
+        super();
+    }
 
+    public init(): void {
         this.mouseStart = undefined;
-        this.selection = workspace.getSelectedEntries();
+        this.selection = this.workspace.getSelectedEntries();
 
         this.selection = this.selection.sort(function (a: HTMLElement, b: HTMLElement) {
             let classNameA = "", classNameB = "";
@@ -52,7 +57,7 @@ export default class ReArrange extends Plugin {
 
         for (let index = 0; index < this.selection.length; index++) {
             const e = this.selection[index];
-            let d: ElementDimension = workspace.getCoordinatesFromElement(e);
+            let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
             let id = e.getAttribute("name");
             if (id) {
                 this.hash.set(id, d);
@@ -70,7 +75,6 @@ export default class ReArrange extends Plugin {
 
         this.workspace.preventInput(true);
         //  this.workspace.highlightSelection = false;
-
     }
 
     private hash: Map<String, ElementDimension> = new Map();

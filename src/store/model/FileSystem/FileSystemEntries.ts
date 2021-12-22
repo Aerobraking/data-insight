@@ -230,6 +230,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         return this.fileList;
     }
 
+    mode: "tile" | "list" = "tile";
     fileList: Array<FolderWindowFile> = [];
     name: string;
     path: string;

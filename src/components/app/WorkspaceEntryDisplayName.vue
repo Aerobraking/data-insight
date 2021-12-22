@@ -1,5 +1,5 @@
 <template>
-  <div 
+  <div
     class="wsentry-displayname"
     :class="{ 'ws-zoom-fixed': entry.displaynameResize }"
     @mousedown.capture.stop
@@ -13,8 +13,9 @@
       spellcheck="false"
       contenteditable="true"
       @input="handleInput"
-      placeholder=""
       :class="{ 'hide-name': !entry.showDisplayname }"
+      placeholder="Title..."
+      oninput="if(this.innerHTML.trim()==='<br>')this.innerHTML=''"
     />
     <tippy :sticky="true" :offset="[-100, 40]">
       <button
@@ -35,7 +36,6 @@
       <EyeOffOutline v-else />
     </button>
   </div>
-
 </template>
 
   <!-- <div
@@ -189,7 +189,7 @@ $padding2: $padding * 2;
   position: absolute;
   left: 0px;
   margin-left: 1px;
-  top: -40px;
+  top: -44px;
   width: auto;
   z-index: 20;
 
@@ -204,13 +204,20 @@ $padding2: $padding * 2;
     min-width: 300px;
     white-space: nowrap;
     transform-origin: left bottom;
-    bottom: 0;
-
-    &:hover {
-      // background-color: rgba(184, 184, 184, 0.119);
-    }
+    bottom: 0; 
   }
 }
+
+div.workspace-is-selected-single .wsentry-displayname {
+  [contenteditable][placeholder]:empty:before {
+    content: attr(placeholder);
+    position: absolute;
+    color: gray;
+    background-color: transparent;
+    cursor: text;
+  }
+}
+
 .anim {
   transition: all 0.3s ease-out;
 }

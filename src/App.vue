@@ -10,12 +10,18 @@
       <br />
       When you find a bug or have an idea for any improvements or features, you
       can create in issue on github: <br />
-      <a   @click.capture.stop="openURL('https://github.com/Aerobraking/ma-data-insight')"  href="https://github.com/Aerobraking/ma-data-insight"
+      <a
+        @click.capture.stop="
+          openURL('https://github.com/Aerobraking/ma-data-insight')
+        "
+        href="https://github.com/Aerobraking/ma-data-insight"
         >https://github.com/Aerobraking/ma-data-insight</a
       >
       <br />
       or contacting me directly <br />
-      <a    @click.capture.stop  href="mailto:issues@aerobraking.de"> issues@aerobraking.de</a>
+      <a @click.capture.stop href="mailto:issues@aerobraking.de">
+        issues@aerobraking.de</a
+      >
 
       <br />
       <br />
@@ -27,70 +33,76 @@
 
   <ModalDialog v-show="showHelp" @close="showHelp = false">
     <template v-slot:header>Keyboard Layout</template>
-    <template v-slot:body> 
-    Add Youtube Video <kbd>Y</kbd> 
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-        Add Youtube Video <kbd>Y</kbd> 
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-        Add Youtube Video <kbd>Y</kbd> 
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-        Add Youtube Video <kbd>Y</kbd> 
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-        Add Youtube Video <kbd>Y</kbd> 
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-    <br />
-
+    <template v-slot:body>
+      <table>
+        <tr>
+          <td><h4>General</h4></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Select All</td>
+          <td><kbd>Ctrl</kbd> + <kbd>A</kbd></td>
+        </tr>
+        <tr>
+          <td>Clear Selection</td>
+          <td><kbd>Ctrl</kbd> + <kbd>D</kbd></td>
+        </tr>
+        <tr>
+          <td>Delete Selection</td>
+          <td><kbd>Del</kbd></td>
+        </tr>
+        <tr>
+          <td>Rearrange Selection</td>
+          <td><kbd>R</kbd></td>
+        </tr>
+        <tr>
+          <td>Add Youtube Video</td>
+          <td><kbd>Y</kbd></td>
+        </tr>
+        <tr>
+          <td>Add Text Editor</td>
+          <td><kbd>T</kbd></td>
+        </tr>
+        <tr>
+          <td>Add Frame</td>
+          <td><kbd>F</kbd></td>
+        </tr>
+        <tr>
+          <td><h4>Folder Window</h4></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Switch View Mode for all Windows</td>
+          <td><kbd>Shift</kbd> + <kbd>Click</kbd></td>
+        </tr>
+        <tr>
+          <td>Select all</td>
+          <td><kbd>Ctrl</kbd> + <kbd>A</kbd></td>
+        </tr>
+        <tr>
+          <td>Clear Selection</td>
+          <td><kbd>Ctrl</kbd> + <kbd>D</kbd></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+      </table>
     </template>
-
-    
   </ModalDialog>
 </template>
 
 <script lang="ts">
 import * as WSUtils from "./components/app/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
-import { ipcRenderer, remote ,shell} from "electron";
+import { ipcRenderer, remote, shell } from "electron";
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
 import ModalDialog from "./components/app/ModalDialog.vue";
-import { View } from "./store/model/ModelAbstractData"; 
-   
+import { View } from "./store/model/ModelAbstractData";
+
 const v = remote.app.getVersion();
 var fs = require("fs");
 
@@ -181,8 +193,8 @@ export default defineComponent({
     };
   },
   methods: {
-    openURL(url:string){
-        shell.openExternal(url);
+    openURL(url: string) {
+      shell.openExternal(url);
     },
     loadInsightFileFromPath(path: string) {
       let jsonString = fs.readFileSync(path, "utf8");
@@ -348,6 +360,8 @@ kbd {
   background-color: #f7f7f700;
   color: #ccc;
   font-weight: bold;
+  transform: translateY(-1px);
+  font-size: 14px;
 }
 
 a {

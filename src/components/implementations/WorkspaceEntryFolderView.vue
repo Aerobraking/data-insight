@@ -47,12 +47,12 @@
       <button><DeleteVariant @click="deleteSelection" /></button>
       <button
         style="border-left: 1px solid white"
-        :class="{ 'hightlight-fg': showTiles }"
+        :class="{ 'hightlight-fg': entry.mode == 'tile' }"
       >
-        <ViewGrid @click="showTiles = true" />
+        <ViewGrid @click="setMode($event, 'tile')" />
       </button>
-      <button :class="{ 'hightlight-fg': !showTiles }">
-        <ViewList @click="showTiles = false" />
+      <button :class="{ 'hightlight-fg': entry.mode == 'list' }">
+        <ViewList @click="setMode($event, 'list')" />
       </button>
 
       <!-- <input
@@ -77,7 +77,7 @@
       >
         <keep-alive>
           <wsfolderfile
-            v-show="showTiles"
+            v-show="entry.mode == 'tile'"
             v-for="file in getFileList"
             :entry="file"
             class="tile selectable"
@@ -91,7 +91,7 @@
           </wsfolderfile>
         </keep-alive>
 
-        <table v-show="!showTiles">
+        <table v-show="entry.mode == 'list'">
           <tbody>
             <keep-alive>
               <wsfolderfilelist
@@ -158,12 +158,10 @@ import {
   FolderPlusOutline,
 } from "mdue";
 export function FeatureDecorator() {
-    return function  (target:any) { 
-    };
+  return function (target: any) {};
 }
 
-export default 
-defineComponent({
+export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
     wsfolderfilelist,
@@ -209,7 +207,7 @@ defineComponent({
     },
     viewKey: Number,
     searchstring: String,
-    workspace: { type: Object as () => WorkspaceViewIfc },
+    workspace: { type: Object as () => WorkspaceViewIfc, required: true },
   },
   mounted() {
     const _this = this;
@@ -240,6 +238,17 @@ defineComponent({
     },
   },
   methods: {
+    setMode(e: MouseEvent, mode: "list" | "tile", all: boolean = false) {
+      if (e.shiftKey) {       
+        this.workspace
+          ?.getModelEntries()
+          .forEach((e) =>
+            e instanceof WorkspaceEntryFolderWindow ? (e.mode = mode) : 0
+          );
+      } else {
+        this.entry.mode = mode;
+      }
+    },
     searchUpdate() {},
     drop(e: DragEvent) {
       if (e.dataTransfer && e.dataTransfer.types.includes("Files")) {
@@ -531,8 +540,7 @@ defineComponent({
         }
 
         if (listFilesToDrag.length > 0) {
-          
-      console.log("starte drag oper");
+          console.log("starte drag oper");
           ipcRenderer.send("ondragstart", listFilesToDrag);
           this.dragActive = false;
         }
