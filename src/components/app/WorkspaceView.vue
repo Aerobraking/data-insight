@@ -971,21 +971,21 @@ export default defineComponent({
 
       this.updateFixedZoomElements();
     },
-    preventEvent(e: any): boolean {
+    preventEvent(e: any, forward:boolean=true): boolean {
       var functionName: string = e.type as string;
 
       if (this.model.isActive && this.activePlugin) {
-        return (
+        return  (!forward||(
           // @ts-ignore: Unreachable code error
           this.activePlugin[functionName] &&
           // @ts-ignore: Unreachable code error
-          (this.activePlugin[functionName](e) as boolean)
+          (this.activePlugin[functionName](e) as boolean))
         );
       }
       return false;
     },
     keydownGlobal(e: KeyboardEvent) {
-      if (this.preventEvent(e)) return;
+      if (this.preventEvent(e,false)) return;
 
       /**
        * No ... key down

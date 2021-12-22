@@ -1,5 +1,5 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
-import { timeHours } from "d3"; 
+import { timeHours } from "d3";
 import { WorkspaceViewIfc } from "../app/WorkspaceUtils";
 import Plugin from "./AbstractPlugin"
 
@@ -23,7 +23,7 @@ export default class ReArrange extends Plugin {
 
         this.mouseStart = undefined;
         this.selection = workspace.getSelectedEntries();
- 
+
         this.selection = this.selection.sort(function (a: HTMLElement, b: HTMLElement) {
             let classNameA = "", classNameB = "";
 
@@ -125,8 +125,11 @@ export default class ReArrange extends Plugin {
     }
 
     public keydown(e: KeyboardEvent): boolean {
+
+
         if (this.onlyResizable && e.key == "f") {
             this.fitSize = !this.fitSize;
+            console.log(this.onlyResizable, this.fitSize);
             this.fitElementSize();
         }
 
