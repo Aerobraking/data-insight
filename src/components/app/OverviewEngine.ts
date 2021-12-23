@@ -1123,10 +1123,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             const entry: AbstractOverviewEntry = this.rootNodes[index];
             let nodes: AbstractNode[] = entry.nodes;
             for (let j = 0; j < nodes.length; j++) {
+
                 const n = nodes[j];
                 const nodeValue = n.getStatsValue(this.colorSettings.attr);
-
-
                 const colorOld = this.getColorForNode(n, false, false);
                 if (colorOld && nodeValue != undefined) {
                     let colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);

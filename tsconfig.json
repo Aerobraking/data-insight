@@ -9,6 +9,7 @@
     "moduleResolution": "node",
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "importsNotUsedAsValues":"preserve",
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "baseUrl": ".",

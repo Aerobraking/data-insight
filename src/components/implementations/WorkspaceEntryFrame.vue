@@ -24,7 +24,8 @@ const { shell } = require("electron");
 import { defineComponent } from "vue";
 import { WorkspaceEntryFrame } from "../../store/model/FileSystem/FileSystemEntries";
 import * as WSUtils from "../app/WorkspaceUtils";
-import { setupEntry, WorkspaceViewIfc } from "../app/WorkspaceUtils";
+import { setupEntry } from "../app/WorkspaceUtils";
+import  WorkspaceViewIfc from "../app/WorkspaceViewIfc";
 import * as _ from "underscore";
 import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 
@@ -87,8 +88,7 @@ export default defineComponent({
   },
   props: {
     entry: WorkspaceEntryFrame,
-    viewKey: Number,
-    workspace: { type: Object as () => WorkspaceViewIfc },
+    viewKey: Number, 
   },
   mounted() {},
   inject: ["entrySelected", "entrySelected"],

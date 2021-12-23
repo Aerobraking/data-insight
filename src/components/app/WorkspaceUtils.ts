@@ -5,8 +5,8 @@ import {
     onMounted,
     ref
 } from "vue";
-import AbstractPlugin from "../Plugins/AbstractPlugin";
-import * as WSUtils from "./WorkspaceUtils";
+import AbstractPlugin from "../Plugins/AbstractPlugin"; 
+import WorkspaceViewIfc from "./WorkspaceViewIfc";
 
 export function doChangeFocus(): boolean {
     return !(document.activeElement != undefined &&
@@ -34,9 +34,9 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
     onMounted(() => {
         if (wsListener != undefined) {
-            WSUtils.Events.registerCallback(wsListener);
+            Events.registerCallback(wsListener);
         }
-        WSUtils.Events.registerCallback(listener);
+        Events.registerCallback(listener);
 
         if (true && el != null && el.value != null) {
 
@@ -55,9 +55,9 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
     });
     onBeforeUnmount(() => {
         if (wsListener != undefined) {
-            WSUtils.Events.unregisterCallback(wsListener);
+            Events.unregisterCallback(wsListener);
         }
-        WSUtils.Events.unregisterCallback(listener);
+        Events.unregisterCallback(listener);
     });
 
     return { el };
@@ -72,23 +72,7 @@ export interface Listener {
     event?: (type: "fixedZoomUpdate") => void;
 }
 
-export interface WorkspaceViewIfc {
-    getCoordinatesFromElement(e: any): ElementDimension;
-    getPositionInWorkspace(e: { clientX: number; clientY: number }): { x: number, y: number };
-    getCurrentTransform(): { scale: number; x: number; y: number };
-    getSelectionRectangle(): Element;
-    getSelectedEntries(): HTMLElement[];
-    getUnselectedEntries(): HTMLElement[];
-    getEntries(): HTMLElement[];
-    finishPlugin(): void;
-    preventInput(prevent: boolean): void;
-    highlightSelection: boolean;
-    updateSelectionWrapper(): void;
-    startPlugin(p: AbstractPlugin): void;
-    finishPlugin(): void;
-    dispatchEvent(e: Event): void;
-    cancelPlugin(): void;
-}
+
 
 /**
  * 

@@ -22,31 +22,25 @@
 
       <div v-show="model.showFilterSettings" class="slider"></div>
       <div class="options">
-        <h3>Stats</h3>
-        <div
-          v-for="e in ['Size', 'Date', 'Amount', 'File Types']"
-          :key="e"
-          @mouseup="updateGradient(e)"
-          :id="e"
-          :gradient="getGradienFunction(e)"
+        <h3>Features</h3>
+        <component
+          v-for="e in model.overview.features"
+          :is="e.id"
+          :name="e.id"
+          :key="e.id"
+          :entry="e"
+          :workspace="this"
         >
-          {{ e }}
-        </div>
+        </component>
+
         <h3>Gradient Style</h3>
         <ColorGradient
-          v-for="e in [
-            'default',
-            'interpolateWarm',
-            'interpolatePuRd',
-            'interpolateMagma',
-            'interpolateCubehelixDefault',
-            'interpolateRainbow',
-          ]"
+          v-for="e in gradients"
           :class="{ 'gradient-selected': e === model.overview.gradientId }"
-          :key="e"
-          @mouseup="updateGradient(e)"
-          :id="e"
-          :gradient="getGradienFunction(e)"
+          :key="e.id"
+          @mouseup="updateGradient(e.id)"
+          :id="e.id"
+          :gradient="e"
         />
       </div>
     </div>
@@ -66,7 +60,7 @@
       selector=".zoomable"
     >
       <div class="zoomable close-file-anim">
-        <div
+        <!-- <div
           :class="{ 'blend-out': model.entries.length > 0 }"
           class="welcome-message"
         >
@@ -78,7 +72,7 @@
             <FolderOutline class="svg-folder" />
           </p>
           <p><Download class="svg-download" /></p>
-        </div>
+        </div> -->
       </div>
     </panZoom>
 
@@ -136,13 +130,10 @@
       :class="{ 'workspace-menu-bar-hide': !getShowUI }"
     >
       <FormatHorizontalAlignCenter
-        v-show="model.paneSize <= 15"
+        v-if="model.paneSize <= 15"
         @click="paneButtonClicked()"
       />
-      <ArrowCollapseRight
-        v-show="model.paneSize > 15"
-        @click="paneButtonClicked()"
-      />
+      <ArrowCollapseRight v-else @click="paneButtonClicked()" />
     </button>
   </div>
 </template>
@@ -180,6 +171,24 @@ import { Instance } from "@/store/model/OverviewTransferHandler";
 import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
 import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";
 import FolderNode from "@/store/model/FileSystem/FolderNode";
+import Gradient from "./Gradient";
+import { filesizeFormat } from "@/utils/format"; 
+
+const gradients: Gradient[] = [];
+gradients.push(
+  new Gradient((n: number) => {
+    let value = n * 255 * 0.3;
+    value = 180;
+    return `rgb(${value},${value},${value})`;
+  }, "default")
+);
+gradients.push(new Gradient(d3.interpolateWarm, "interpolateWarm"));
+gradients.push(new Gradient(d3.interpolatePuRd, "interpolatePuRd", !true));
+gradients.push(new Gradient(d3.interpolateMagma, "interpolateMagma", !true));
+// gradients.push(
+//   new Gradient(d3.interpolateCubehelixDefault, "interpolateCubehelixDefault")
+// );
+// gradients.push(new Gradient(d3.interpolateRainbow, "interpolateRainbow"));
 
 export default defineComponent({
   name: "App",
@@ -226,9 +235,9 @@ export default defineComponent({
       console.log(newValue);
       if (newValue instanceof FolderNode) {
         const fn: FolderNode = newValue;
-        this.$emit("folderSelected", fn.getPath());
+        //  this.$emit("folderSelected", fn.getPath());
       } else {
-        this.$emit("folderSelected", undefined);
+        //  this.$emit("folderSelected", undefined);
       }
     },
     "model.overview.viewportTransform": function (
@@ -242,24 +251,22 @@ export default defineComponent({
       this.searchUpdate();
     },
   },
-  data(): {
+  data(): { 
+    sliderRange: (number | string)[];
     d3: any;
-    d3default: any;
+    gradients: Gradient[];
     state: EngineState;
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
     panZoomInstance: any;
     selection: AbstractNode | undefined;
-    gradientFunction: Function;
+    gradientFunction: Gradient;
   } {
     return {
-      d3default: function (n: number) {
-        let value = n * 255 * 0.3;
-        value = 20;
-        return `rgb(${value},${value},${value})`;
-      },
+      sliderRange: [0, 100],
+      gradients: gradients,
       d3: d3,
-      gradientFunction: this.d3default,
+      gradientFunction: gradients[0],
       selection: undefined,
       idOverview: 0,
       panZoomInstance: null,
@@ -269,65 +276,6 @@ export default defineComponent({
   },
   mounted() {
     const _this = this;
-
-    const sliderDiv = this.$el.getElementsByClassName("slider")[0];
-
-    const format = (value: number) => {
-      value = Math.round(value);
-      if (value < 1024) {
-        return "1 MB";
-      } else if (value < 1024 * 1024) {
-        return Math.round(value / Math.pow(1024, 1)) + " KB";
-      } else if (value < 1024 * 1024 * 1024) {
-        return Math.round(value / Math.pow(1024, 2)) + " MB";
-      } else if (value < 1024 * 1024 * 1024 * 1024) {
-        return Math.round(value / Math.pow(1024, 3)) + " GB";
-      } else if (value < 1024 * 1024 * 1024 * 1024 * 1024) {
-        return Math.round(value / Math.pow(1024, 4)) + " TB";
-      }
-
-      return value + " Bytes";
-    };
-
-    var slider = noUiSlider.create(sliderDiv, {
-      start: [0, 1024 * 1024 * 1024 * 512],
-      connect: true,
-      behaviour: "drag",
-      orientation: "vertical",
-      tooltips: {
-        to: format,
-      },
-      margin: 1024 * 1024 * 8,
-      range: {
-        min: 0, // kb
-        "20%": [1024 * 1024 * 32], // mb
-        "40%": [1024 * 1024 * 256], // mb
-        "60%": [1024 * 1024 * 1024], // gb
-        "80%": [1024 * 1024 * 1024 * 16], // gb
-        max: [1024 * 1024 * 1024 * 512], // tb
-      },
-      pips: {
-        mode: PipsMode.Range,
-        density: 2,
-        format: {
-          to: format,
-        },
-      },
-    });
-
-    slider.on(
-      "update.one",
-      (
-        values: (number | string)[],
-        handleNumber: number,
-        unencoded: number[],
-        tap: boolean,
-        locations: number[],
-        slider: API
-      ) => {
-        this.filterfunc(this, "size", Number(values[0]), Number(values[1]));
-      }
-    );
 
     /**
      * remove the node data from the vuex store
@@ -369,17 +317,60 @@ export default defineComponent({
     // init view for div
     this.updateDivTransformation(this.model.overview.viewportTransform);
 
-    set3DPosition(
-      this.$el.getElementsByClassName("welcome-message")[0],
-      -750,
-      -500
-    );
+    // set3DPosition(
+    //   this.$el.getElementsByClassName("welcome-message")[0],
+    //   -750,
+    //   -500
+    // );
 
     const l = (n: AbstractNode | undefined) => {
       this.selection = n;
     };
 
     Instance.getEngine(this.idOverview).setSelectionListener(l);
+
+    const sliderDiv = this.$el.getElementsByClassName("slider")[0];
+
+    var slider = noUiSlider.create(sliderDiv, {
+      start: [0, 1024 * 1024 * 1024 * 512],
+      connect: true,
+      behaviour: "drag",
+      orientation: "vertical",
+      tooltips: {
+        to: filesizeFormat,
+      },
+      margin: 1024 * 1024 * 8,
+      range: {
+        min: 0, // kb
+        "20%": [1024 * 1024 * 32], // mb
+        "40%": [1024 * 1024 * 256], // mb
+        "60%": [1024 * 1024 * 1024], // gb
+        "80%": [1024 * 1024 * 1024 * 16], // gb
+        max: [1024 * 1024 * 1024 * 512], // tb
+      },
+      pips: {
+        mode: PipsMode.Range,
+        density: 2,
+        format: {
+          to: filesizeFormat,
+        },
+      },
+    });
+
+    slider.on(
+      "update.one",
+      (
+        values: (number | string)[],
+        handleNumber: number,
+        unencoded: number[],
+        tap: boolean,
+        locations: number[],
+        slider: API
+      ) => {
+        this.sliderRange = values;
+        this.filterfunc(this, "size", Number(values[0]), Number(values[1]));
+      }
+    );
 
     this.updateGradient(this.model.overview.gradientId);
 
@@ -397,22 +388,32 @@ export default defineComponent({
     },
   },
   methods: {
-    getGradienFunction(name: string): Function {
-      // @ts-ignore: Unreachable code error
-      return d3[name] ? d3[name] : this.d3default;
+    getGradienFunction(name: string): Gradient {
+      let gradient: Gradient | undefined = gradients.find((g) => g.id == name);
+      gradient = gradient ? gradient : gradients[0];
+      console.log("get gradient by id", name);
+
+      return gradient;
     },
     filterfunc: _.throttle(
       (_this: any, stats: string, min: number, max: number) => {
         if (Instance.getEngine(_this.idOverview)) {
           Instance.getEngine(_this.idOverview).setColorScale<FolderNode>(
-            "size",
+            stats,
             Number(min),
             Number(max),
             (node: FolderNode, stat: number, min: number, max: number) => {
               stat = stat < min ? 0 : stat > max ? max : stat;
+              console.log(
+                stat,
+                min,
+                max,
+                _this.gradientFunction.getColor(1 - stat / max)
+              );
+
               return stat < min || stat > max
                 ? "h"
-                : _this.gradientFunction(1 - stat / max);
+                : _this.gradientFunction.getColor(1 - stat / max);
             },
             300
           );
@@ -420,17 +421,31 @@ export default defineComponent({
       },
       128
     ),
+    /**
+     * Für jede stats erstellen wir eine objekt instanz in der overview, die die einstellungen hat (min, max) und eine eindeutige id
+     * Für jede stats brauchen wir eine componente die durch diese id geladen wird, wie bei den workspace entries
+     * 
+     * 
+     * 
+     * beim ändern des sliders ein emit machen mit den min/max
+     *
+     
+
+
+
+
+     */
     updateGradient(name: string) {
       this.model.overview.gradientId = name;
 
-      const func = this.getGradienFunction(name);
-      this.gradientFunction = func;
+      const gradient = this.getGradienFunction(name);
+      this.gradientFunction = gradient;
 
       let values: string[] = [];
       const steps = 5;
       for (let i = 0; i <= steps; i++) {
         const percent = Math.floor(100 * (i / steps));
-        values.push(`${this.gradientFunction(i / steps)} ${percent}%`);
+        values.push(`${gradient.getColor(i / steps)} ${percent}%`);
       }
 
       const style = "linear-gradient( 0deg, " + values.join(", ") + ")";
@@ -438,10 +453,12 @@ export default defineComponent({
       let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
       divs[0].style.backgroundImage = style;
 
-      //         kb     mb     gb
-      let maxV = 1024 * 1024 * 1024;
-
-      this.filterfunc(this, "size", 0, maxV);
+      this.filterfunc(
+        this,
+        "size",
+        Number(this.sliderRange[0]),
+        Number(this.sliderRange[1])
+      );
     },
     updateDivTransformation(value: { x: number; y: number; scale: number }) {
       this.panZoomInstance.moveTo(value.x, value.y);
@@ -683,13 +700,14 @@ export default defineComponent({
     top: 5px;
     svg {
       font-size: 26px;
+      margin: 0;
     }
   }
   button:nth-child(1) {
-    right: -20px;
+    right: -10px;
   }
   button:nth-child(2) {
-    right: 10px;
+    right: 20px;
   }
 
   button:disabled,

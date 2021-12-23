@@ -27,7 +27,6 @@ export function useStore() {
  */
 export type Store = Omit<VuexStore<State>, 'getters' | 'commit' | 'dispatch'>
   & {
-
     getters: {
       [K in keyof Getters]: ReturnType<Getters[K]>
     }

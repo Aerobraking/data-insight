@@ -4,25 +4,21 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import { WorkspaceEntryFrame } from "../../store/model/FileSystem/FileSystemEntries";
-import * as WSUtils from "./WorkspaceUtils";
-import { setupEntry, WorkspaceViewIfc } from "./WorkspaceUtils";
 import * as _ from "underscore";
-
-interface gradientFunction {}
+import Gradient from "./Gradient";
 
 export default defineComponent({
   name: "ColorGradient",
   props: {
     id: String,
-    gradient: { type: Function, required: true },
+    gradient: { type: Gradient, required: true },
   },
   mounted() {
     let values: string[] = [];
     const steps = 5;
     for (let i = 0; i <= steps; i++) {
       const percent = Math.floor(100 * (i / steps));
-      values.push(`${this.gradient(i / steps)} ${percent}%`);
+      values.push(`${this.gradient.getColor(i / steps)} ${percent}%`);
     }
 
     const style = "linear-gradient( 270deg, " + values.join(", ") + ")";

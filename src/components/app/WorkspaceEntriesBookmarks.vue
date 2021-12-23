@@ -5,10 +5,15 @@ import draggable from "vuedraggable";
 import overviewview from "./OverviewView.vue";
 import { PlaylistStar } from "mdue";
 import { Tippy, TippySingleton } from "vue-tippy";
-import { WorkspaceViewIfc } from "./WorkspaceUtils";
+import   WorkspaceViewIfc   from "./WorkspaceViewIfc";
 import AbstractPlugin from "../Plugins/AbstractPlugin";
 
 class DragPlugin extends AbstractPlugin {
+  constructor(){
+    super();
+  }
+  shortcut: string = "";
+  public init() {}
   public isModal(): boolean {
     return false;
   }
@@ -72,20 +77,19 @@ export default defineComponent({
   watch: {
     drag: function (newValue: boolean, oldValue: boolean) {
       newValue
-        ? this.workspace?.startPlugin(new DragPlugin(this.workspace))
+        ? this.workspace?.startPlugin(new DragPlugin())
         : this.workspace?.finishPlugin();
     },
   },
   methods: {
-    mousewheel(e:Event){
+    mousewheel(e: Event) {
       this.workspace?.dispatchEvent(e);
     },
-    dragUpdate(isDragging: boolean) { 
+    dragUpdate(isDragging: boolean) {
       this.drag = isDragging;
 
-      
       isDragging
-        ? this.workspace?.startPlugin(new DragPlugin(this.workspace))
+        ? this.workspace?.startPlugin(new DragPlugin())
         : this.workspace?.finishPlugin();
     },
     toggleUI() {},
@@ -139,7 +143,11 @@ export default defineComponent({
  
  -->
 <template>
-  <div @mousewheel="mousewheel" class="bookmarks" :class="{ 'bookmarks-hide': !model.showBookmarks }">
+  <div
+    @mousewheel="mousewheel"
+    class="bookmarks"
+    :class="{ 'bookmarks-hide': !model.showBookmarks }"
+  >
     <tippy :placement="'right'" :offset="[-15, -10]">
       <button>
         <PlaylistStar @click="model.showBookmarks = !model.showBookmarks" />

@@ -1,8 +1,8 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
 import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";  
-import { COLUMNWIDTH, OverviewEngine } from "../../components/app/OverviewEngine";
-import { Stats, StatsType } from "./FileSystem/FileOverviewInterfaces"; 
+// import { COLUMNWIDTH } from "../../components/app/OverviewEngine";
+import { Stats } from "./FileSystem/FileOverviewInterfaces"; 
 
 /**
  * collision nur pro spalte
@@ -82,9 +82,7 @@ export class RectangleCollide<D extends AbstractNode> implements SimulationNodeD
     public set vy(value: number | undefined) {
         this._vy = value;
         const diff = this._vy && this._vyOld ? this._vy - this._vyOld : 0;
-        if (OverviewEngine.framecounter % 400 == 0) {
-            // console.log("diff: " + diff);
-        }
+       
         /**
          * Add velocity to nodes
          */
@@ -349,7 +347,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     public get x(): number | undefined {
         // let x = this.parent ? this.entry ? this.entry?.getColumnX(this) : 200 * this.depth : this._x;
-        let x = this.parent ? COLUMNWIDTH * this.depth : this._x;
+        let x = this.parent ? 700 * this.depth : this._x;
         x = this._x ? this._x : x;
         return x;
     }
@@ -380,7 +378,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     fy?: number | null | undefined;
 
     public getX() {
-        return COLUMNWIDTH * this.depth;
+        return 700 * this.depth;
         // return this._x ? this._x : 0;
     }
 

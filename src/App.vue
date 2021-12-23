@@ -96,14 +96,15 @@
 <script lang="ts">
 import * as WSUtils from "./components/app/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
-import { ipcRenderer,shell } from "electron";
+import { ipcRenderer,shell ,remote} from "electron";
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
-import { View } from "./store/model/ModelAbstractData";
 import ModalDialog from "./components/app/ModalDialog.vue";
+import { View } from "./store/model/ModelAbstractData";
 
+const v = remote.app.getVersion();
 var fs = require("fs");
 
 ipcRenderer.on("log", (event, log) => {
@@ -131,6 +132,14 @@ export default defineComponent({
     ipcRenderer.on("fire-new-file", function (event: any, file: string) {
       _this.loadInsightFile(new InsightFile());
     });
+    ipcRenderer.on("show-about", function (event: any, file: string) {
+      _this.showHelp = false;
+      _this.showAbout = !_this.showAbout;
+    });
+    ipcRenderer.on("show-help", function (event: any, file: string) {
+      _this.showAbout = false;
+      _this.showHelp = !_this.showHelp;
+    });
 
     ipcRenderer.on("fire-file-saved", function (event: any, filepath: string) {
       _this.$store.state.loadedFile.settings.filePath = filepath;
@@ -147,6 +156,8 @@ export default defineComponent({
     ipcRenderer.on(
       "insight-file-selected",
       function (event: any, file: string) {
+        console.log("insight-file-selected", file);
+
         _this.loadInsightFileFromPath(file);
       }
     );
@@ -328,6 +339,8 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
+$color-Selection: rgba(57, 215, 255, 1);
+
 * {
   user-select: none;
 }
@@ -348,6 +361,29 @@ body {
   width: 100%;
   position: absolute;
   overflow: hidden;
+}
+
+kbd {
+  display: inline-block;
+  border: 0.2px solid #ccc;
+  border-radius: 4px;
+  padding: 0.1em 0.5em;
+  margin: 0.4em 0.4em;
+  box-shadow: 0 0.5px 0px rgba(0, 0, 0, 0.2), 0 0 0 1px #fff inset;
+  background-color: #f7f7f700;
+  color: #ccc;
+  font-weight: bold;
+  transform: translateY(-1px);
+  font-size: 14px;
+}
+
+a {
+  color: white;
+  font-weight: bold;
+
+  &:hover {
+    color: $color-Selection;
+  }
 }
 
 div .prevent-input {
@@ -537,6 +573,7 @@ Scrollbar
 }
 .noUi-connects {
   border-radius: 3px;
+  background: #222;
 }
 .noUi-connect {
   background: #3fb8af;

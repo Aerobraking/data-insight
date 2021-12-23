@@ -1,6 +1,3 @@
-ModalDialog.vue
-
-
 <template>
   <transition name="modal-fade">
     <div

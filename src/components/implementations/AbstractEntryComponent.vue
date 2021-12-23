@@ -9,9 +9,10 @@
 <script lang="ts"> 
 
 import { defineComponent } from "vue";
-import { setupEntry, WorkspaceViewIfc } from "../app/WorkspaceUtils";
-import * as _ from "underscore";
-import { WorkspaceEntry } from "@/store/model/ModelAbstractData";
+import { setupEntry} from "../app/WorkspaceUtils";
+import  WorkspaceViewIfc  from "../app/WorkspaceViewIfc";
+import * as _ from "underscore"; 
+import WorkspaceEntry from "@/store/model/WorkspaceEntry";
 
 export default defineComponent({
   name: "wsentryX",

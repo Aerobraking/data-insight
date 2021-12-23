@@ -1,5 +1,6 @@
 {
   "name": "data-insight",
+  "version": "0.2.4",
   "homepage": "https://github.com/Aerobraking/ma-data-insight",
   "description": "A modern File Explorer",
   "bugs": {
@@ -15,7 +16,6 @@
     "type": "git",
     "url": "https://github.com/Aerobraking/ma-data-insight.git"
   },
-  "version": "0.2.4",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",

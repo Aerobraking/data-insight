@@ -104,11 +104,11 @@
                   :name="e.id"
                   :key="e.id"
                   :entry="e"
-                  :viewId="e.id"
-                  :workspace="this"
-                  :searchstring="searchString"
-                  v-bind:is="e.componentname"
+                  :viewKey="e.id"
+                  :workspace="workspaceInterface"
                   @zoomed="moveToEntry({ id: e.id, zoom: true })"
+                  :searchstring="searchString"
+                  :is="e.componentname"
                   ref="wsentry"
                 >
                   <wsentrydisplayname :entry="e" />
@@ -269,7 +269,8 @@ import {
 } from "@/utils/resize";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
-import { WorkspaceViewIfc } from "./WorkspaceUtils";
+import WorkspaceViewIfc from "./WorkspaceViewIfc";
+import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
 const fs = require("fs");
 let clipboard: EntryCollection;
 let points: { x: number; y: number; z: number }[] = [];
@@ -309,6 +310,9 @@ import AbstractPlugin from "./../Plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import EntryCollection from "@/store/model/EntryCollection";
 import WorkspaceEntry from "@/store/model/WorkspaceEntry";
+import { getPlugins } from "@/components/Plugins/PluginList";
+
+getPlugins();
 
 export default defineComponent({
   el: ".wrapper",
@@ -372,11 +376,13 @@ export default defineComponent({
     overviewTimeout: any | undefined;
     ignoreFileDrop: boolean;
     overviewfolder: WorkspaceEntryFolderWindow | undefined;
+    workspaceInterface: WorkspaceViewIfcWrapper;
   } {
     return {
       /**
        * ignores a file drop once when true, then it is set to false.
        */
+      workspaceInterface: new WorkspaceViewIfcWrapper(),
       overviewfolder: undefined,
       ignoreFileDrop: false,
       overviewTimeout: undefined,
@@ -433,6 +439,8 @@ export default defineComponent({
   },
   mounted() {
     let _this = this;
+
+    _this.workspaceInterface.ws=_this.getWorkspaceIfc();
 
     /**
      * Listen for resizing of the canvas parent element
@@ -1205,7 +1213,7 @@ export default defineComponent({
             break;
           case "r":
             if (this.getSelectedEntries().length > 1) {
-              this.startPlugin(new ReArrange(this));
+              this.startPlugin(new ReArrange().setWorkspace(this));
             }
             break;
           case "t":
@@ -1625,7 +1633,7 @@ export default defineComponent({
         | { entry: HTMLElement; zoom: boolean }
     ) {
       console.log(payload);
-      
+
       let p: any = payload;
 
       let entry: HTMLElement | null = null;
@@ -1897,6 +1905,9 @@ export default defineComponent({
         this.$el.querySelectorAll(".ws-entry")
       ) as HTMLElement[];
     },
+    getModelEntries(): WorkspaceEntry[] {
+      return this.model.entries;
+    },
     getUnselectedEntries(): HTMLElement[] {
       return Array.from(
         this.$el.querySelectorAll(".ws-entry:not(.workspace-is-selected)")
@@ -2154,8 +2165,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   }
 
   &:hover {
-    transition: background-color 0.4s ease-in-out !important;
-    background-color: $color-Selection !important;
+    animation: circle 0.5s linear forwards;
   }
 }
 
@@ -2249,6 +2259,10 @@ svg {
   }
 }
 
+.transition-none {
+  transition: none !important;
+}
+
 .splitpanes__pane {
   background-color: #1d1d1d !important;
 }
@@ -2257,11 +2271,10 @@ svg {
   background: #646464 !important;
   min-width: 0px !important;
   border: none !important;
-  transition: all 0.4s ease-out !important;
+  transition: opacity 0.4s ease-out !important;
   &:hover {
     background: white !important;
   }
-  transition: width 0.2s ease-in-out;
   opacity: 1;
   &.splitpanes__splitter-hide {
     opacity: 0 !important;

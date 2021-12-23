@@ -43,7 +43,7 @@ export default defineComponent({
     if (this.entry.isClipboard) {
       _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
     } else {
-      setTimeout(() => {
+      // setTimeout(() => {
         if (this.entry.previewBase64) {
           var img = new Image();
           img.src = this.entry.previewBase64;
@@ -82,7 +82,7 @@ export default defineComponent({
             }
           },
         });
-      }, 33);
+      // }, 33);
     }
   },
   inject: ["entrySelected", "entrySelected"],
