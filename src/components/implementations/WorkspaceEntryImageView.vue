@@ -1,6 +1,6 @@
 <template>
   <div ref="el" class="ws-entry-image-wrapper">
-     <slot></slot>
+    <slot></slot>
     <div
       @dblclick.capture.stop="doubleClick"
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -92,7 +92,9 @@ export default defineComponent({
       this.entrySelected(this.$el, type);
     },
     doubleClick(e: MouseEvent) {
-      shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.
+      console.log("emit!");
+      
+      this.$emit("zoomed");
     },
     clickStart(e: MouseEvent) {},
   },
@@ -140,7 +142,6 @@ export default defineComponent({
 }
 $color-Selection: rgba(57, 215, 255, 0.3);
 
-
 .gradient-border {
   border-radius: 2px;
   overflow: hidden;
@@ -162,7 +163,7 @@ $color-Selection: rgba(57, 215, 255, 0.3);
       //
       linear-gradient($color-Selection, $color-Selection),
       //
-        linear-gradient(#377af5, #377af5),
+      linear-gradient(#377af5, #377af5),
       //
       linear-gradient(#377af5, #377af5);
     animation: rotate 4s linear infinite;
@@ -180,5 +181,4 @@ $color-Selection: rgba(57, 215, 255, 0.3);
     border-radius: 2px;
   }
 }
- 
 </style>

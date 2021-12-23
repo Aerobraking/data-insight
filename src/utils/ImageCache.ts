@@ -46,7 +46,7 @@ export class Cache {
                         l.callbackSize({ width: e.data.width, height: e.data.height, ratio: e.data.ratio });
                     });
                 }
-                
+
                 if (e.data.type == "preview") {
                     var reader = new FileReader();
                     reader.readAsDataURL(e.data.blob);
@@ -99,7 +99,7 @@ export class Cache {
         return this._instance;
     }
 
-    getUrl(path: string, type: "small" | "medium" | "original"): string | undefined {
+    getUrl(path: string, type: "tiny" | "small" | "medium" | "original"): string | undefined {
         let imageEntry: Map<string, string> | undefined = this.hash.get(path);
         if (imageEntry == undefined) {
             return undefined;
@@ -108,7 +108,7 @@ export class Cache {
             return path != undefined ? "url('" + url + "')" : undefined;
         }
     }
-    getUrlRaw(path: string, type: "small" | "medium" | "original"): string | undefined {
+    getUrlRaw(path: string, type: "tiny" | "small" | "medium" | "original"): string | undefined {
         let imageEntry: Map<string, string> | undefined = this.hash.get(path);
         if (imageEntry == undefined) {
             return undefined;
@@ -136,113 +136,62 @@ export class Cache {
     private timeStack = 0;
     public registerPath = (path: string, callback: ImageListener) => {
 
-        this.timeNow = performance.now();
-        const diff = this.timeNow - this.timeLast;
-        this.timeStack += Cache.delay;
+        let imageEntry: Map<String, String> | undefined = this.hash.get(path);
 
-        setTimeout(() => {
-            let imageEntry: Map<String, String> | undefined = this.hash.get(path);
+        if (imageEntry == undefined) {
+            /**
+             * Start webworker
+             */
+            this.hash.set(path, new Map());
 
-            if (imageEntry == undefined) {
-                /**
-                 * Start webworker
-                 */
-                this.hash.set(path, new Map());
-
-
+            this.timeNow = performance.now();
+            const diff = this.timeNow - this.timeLast;
+            this.timeStack += Cache.delay;
+           // setTimeout(() => {
                 this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: path });
                 this.listWorkerTraverser++;
                 this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
+            //}, Math.max(1, this.timeStack));
 
-                //    this.worker.postMessage({ msg: "create", path: path });
+        } else {
+
+            let dim = this.hashDim.get(path);
+            if (dim) {
+                callback.callbackSize(dim);
+            }
+
+            let imageEntry: Map<string, string> | undefined = this.hash.get(path);
+            if (imageEntry == undefined) {
+                return undefined;
             } else {
-
-                let dim = this.hashDim.get(path);
-                if (dim) {
-                    callback.callbackSize(dim);
+                let url: string | undefined = imageEntry.get("tiny");
+                if (url) {
+                    callback.callback("url('" + url + "')", "tiny");
                 }
-
-                let imageEntry: Map<string, string> | undefined = this.hash.get(path);
-                if (imageEntry == undefined) {
-                    return undefined;
-                } else {
-                    let url: string | undefined = imageEntry.get("small");
-                    if (url) {
-                        callback.callback("url('" + url + "')", "small");
-                    }
-                    let urlM: string | undefined = imageEntry.get("medium");
-                    if (urlM) {
-                        callback.callback("url('" + urlM + "')", "medium");
-                    }
-
+                url = imageEntry.get("small");
+                if (url) {
+                    callback.callback("url('" + url + "')", "small");
+                }
+                let urlM: string | undefined = imageEntry.get("medium");
+                if (urlM) {
+                    callback.callback("url('" + urlM + "')", "medium");
                 }
 
             }
 
-            let listCallbacks: ImageListener[] | undefined = this.hashCallbacks.get(path);
+        }
 
-            if (listCallbacks == undefined) {
-                listCallbacks = [];
-                listCallbacks.push(callback);
-                this.hashCallbacks.set(path, listCallbacks);
-            }
-            this.timeStack -= Cache.delay;
+        let listCallbacks: ImageListener[] | undefined = this.hashCallbacks.get(path);
 
-        }, Math.max(1, this.timeStack));
+        if (listCallbacks == undefined) {
+            listCallbacks = [];
+            this.hashCallbacks.set(path, listCallbacks);
+        }
+        listCallbacks.push(callback);
+
+        this.timeStack -= Cache.delay;
         this.timeLast = performance.now();
     };
-
-    // public registerPath(path: string, callback: ImageListener
-    // ): void {
-
-    //     let imageEntry: Map<String, String> | undefined = this.hash.get(path);
-
-    //     if (imageEntry == undefined) {
-    //         /**
-    //          * Start webworker
-    //          */
-    //         this.hash.set(path, new Map());
-
-
-    //         this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: path });
-    //         this.listWorkerTraverser++;
-    //         this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
-
-    //         //    this.worker.postMessage({ msg: "create", path: path });
-    //     } else {
-
-    //         let dim = this.hashDim.get(path);
-    //         if (dim) {
-    //             callback.callbackSize(dim);
-    //         }
-
-    //         let imageEntry: Map<string, string> | undefined = this.hash.get(path);
-    //         if (imageEntry == undefined) {
-    //             return undefined;
-    //         } else {
-    //             let url: string | undefined = imageEntry.get("small");
-    //             if (url) {
-    //                 callback.callback("url('" + url + "')", "small");
-    //             }
-    //             let urlM: string | undefined = imageEntry.get("medium");
-    //             if (urlM) {
-    //                 callback.callback("url('" + urlM + "')", "medium");
-    //             }
-
-    //         }
-
-    //     }
-
-    //     let listCallbacks: ImageListener[] | undefined = this.hashCallbacks.get(path);
-
-    //     if (listCallbacks == undefined) {
-    //         listCallbacks = [];
-    //         listCallbacks.push(callback);
-    //         this.hashCallbacks.set(path, listCallbacks);
-    //     }
-
-    // }
-
 
 }
 

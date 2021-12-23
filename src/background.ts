@@ -281,7 +281,19 @@ app.on('open-file', (event, path) => {
 });
 
 ipcMain.on('get-args', (event: any, arg: any) => {
-  sendToRender('send-args', args);
+  let sendTemp = true;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+
+    try {
+      if (fs.existsSync(a) && a.endsWith(".ins")) {
+        sendTemp = false; break;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  sendToRender('send-args', sendTemp ? [getTempFilePath()] : args);
 })
 
 var menu: Menu;
@@ -337,20 +349,20 @@ async function createWindow() {
     }
   });
 
-  // win.setMenuBarVisibility(false)
+  // process.platform === 'darwin' 
   menu = Menu.buildFromTemplate([
     {
       label: 'File',
       submenu: [
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+N' : 'Ctrl+N',
+          accelerator: 'CmdOrCtrl+N',
           label: 'New',
           click() {
             fireNewFileEvent();
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+O' : 'Ctrl+O',
+          accelerator: 'CmdOrCtrl+O',
           label: 'Open',
           click() {
             openFile();
@@ -365,14 +377,14 @@ async function createWindow() {
           }]
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+S' : 'Ctrl+S',
+          accelerator: 'CmdOrCtrl+S',
           label: 'Save',
           click() {
             fireFileSaveEvent(false);
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Ctrl+Shift+S' : 'Ctrl+Shift+S',
+          accelerator: 'CmdOrCtrl+Shift+S',
           label: 'Save as',
           click() {
             fireFileSaveEvent(true);
@@ -380,7 +392,7 @@ async function createWindow() {
         },
         {
           label: 'Exit',
-          accelerator: process.platform === 'darwin' ? 'Ctrl+Q' : 'Ctrl+Q',
+          accelerator: 'CmdOrCtrl+Q',
           click() {
             app.quit()
           }
@@ -390,11 +402,8 @@ async function createWindow() {
     {
       label: "Window",
       submenu: [
-
-
-
         {
-          accelerator: process.platform === 'darwin' ? 'F1' : 'F1',
+          accelerator: 'F1',
           label: 'Distract free mode',
           click() {
             if (win) {
@@ -403,7 +412,7 @@ async function createWindow() {
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'F2' : 'F2',
+          accelerator: 'F2',
           label: 'Hide Menu',
           // does not work in osx
           visible: process.platform != 'darwin',
@@ -415,7 +424,7 @@ async function createWindow() {
         },
         {
           role: "togglefullscreen",
-          accelerator: process.platform === 'darwin' ? 'F3' : 'F3',
+          accelerator: 'F3',
           label: 'Fullscreen'
         },
         {
@@ -442,20 +451,20 @@ async function createWindow() {
       label: "Help",
       submenu: [
         {
-          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          accelerator: "F5",
           label: 'Keyboard Shortcuts',
           click() {
             if (win) {
-              //    win.setMenuBarVisibility(!win.isMenuBarVisible());
+              sendToRender('show-help');
             }
           }
         },
         {
-          accelerator: process.platform === 'darwin' ? 'Alt+H' : 'Alt+H',
+          accelerator: "F6",
           label: 'About',
           click() {
             if (win) {
-              //     win.setMenuBarVisibility(!win.isMenuBarVisible());
+              sendToRender('show-about');
             }
           }
         }

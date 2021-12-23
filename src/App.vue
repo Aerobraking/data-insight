@@ -1,16 +1,108 @@
+ 
 <template>
   <Tabs />
+  <ModalDialog v-show="showAbout" @close="showAbout = false">
+    <template v-slot:header> Data Insight </template>
+
+    <template v-slot:body>
+      Version: {{ version }} <br />
+      <br />
+      Thank you for using my program. <br />
+      <br />
+      When you find a bug or have an idea for any improvements or features, you
+      can create in issue on github: <br />
+      <a
+        @click.capture.stop="
+          openURL('https://github.com/Aerobraking/ma-data-insight')
+        "
+        href="https://github.com/Aerobraking/ma-data-insight"
+        >https://github.com/Aerobraking/ma-data-insight</a
+      >
+      <br />
+      or contacting me directly <br />
+      <a @click.capture.stop href="mailto:issues@aerobraking.de">
+        issues@aerobraking.de</a
+      >
+
+      <br />
+      <br />
+
+      Konnie Recker<br />
+      {{ new Date().getFullYear() }}
+    </template>
+  </ModalDialog>
+
+  <ModalDialog v-show="showHelp" @close="showHelp = false">
+    <template v-slot:header>Keyboard Layout</template>
+    <template v-slot:body>
+      <table>
+        <tr>
+          <td><h4>General</h4></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Select All</td>
+          <td><kbd>Ctrl</kbd> + <kbd>A</kbd></td>
+        </tr>
+        <tr>
+          <td>Clear Selection</td>
+          <td><kbd>Ctrl</kbd> + <kbd>D</kbd></td>
+        </tr>
+        <tr>
+          <td>Delete Selection</td>
+          <td><kbd>Del</kbd></td>
+        </tr>
+        <tr>
+          <td>Rearrange Selection</td>
+          <td><kbd>R</kbd></td>
+        </tr>
+        <tr>
+          <td>Add Youtube Video</td>
+          <td><kbd>Y</kbd></td>
+        </tr>
+        <tr>
+          <td>Add Text Editor</td>
+          <td><kbd>T</kbd></td>
+        </tr>
+        <tr>
+          <td>Add Frame</td>
+          <td><kbd>F</kbd></td>
+        </tr>
+        <tr>
+          <td><h4>Folder Window</h4></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Switch View Mode for all Windows</td>
+          <td><kbd>Shift</kbd> + <kbd>Click</kbd></td>
+        </tr>
+        <tr>
+          <td>Select all</td>
+          <td><kbd>Ctrl</kbd> + <kbd>A</kbd></td>
+        </tr>
+        <tr>
+          <td>Clear Selection</td>
+          <td><kbd>Ctrl</kbd> + <kbd>D</kbd></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+      </table>
+    </template>
+  </ModalDialog>
 </template>
 
 <script lang="ts">
 import * as WSUtils from "./components/app/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
-import { ipcRenderer } from "electron";
+import { ipcRenderer,shell } from "electron";
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/state";
 import { View } from "./store/model/ModelAbstractData";
+import ModalDialog from "./components/app/ModalDialog.vue";
 
 var fs = require("fs");
 
@@ -22,6 +114,7 @@ export default defineComponent({
   name: "App",
   components: {
     Tabs,
+    ModalDialog
   },
   computed: {},
   mounted() {
@@ -63,6 +156,15 @@ export default defineComponent({
       ipcRenderer.send("closed");
     });
 
+     ipcRenderer.on("show-about", function (event: any, file: string) {
+      _this.showHelp = false;
+      _this.showAbout = !_this.showAbout;
+    });
+    ipcRenderer.on("show-help", function (event: any, file: string) {
+      _this.showAbout = false;
+      _this.showHelp = !_this.showHelp;
+    });
+
     ipcRenderer.on("send-args", (event: any, args: string[]) => {
       for (let i = 0; i < args.length; i++) {
         const a = args[i];
@@ -80,6 +182,11 @@ export default defineComponent({
 
     ipcRenderer.send("get-args", {});
   },
+    data() {
+    return { showAbout: false, showHelp: false, version: "2.4" };
+  },
+
+   
   provide() {
     return {
       loadInsightFileFromPath: this.loadInsightFileFromPath,
@@ -87,6 +194,9 @@ export default defineComponent({
     };
   },
   methods: {
+    openURL(url:string){
+      shell.openExternal(url);
+    },
     loadInsightFileFromPath(path: string) {
       let jsonString = fs.readFileSync(path, "utf8");
       let file: InsightFile = deserialize(InsightFile, jsonString);
@@ -221,6 +331,7 @@ export default defineComponent({
 * {
   user-select: none;
 }
+$color-Selection: rgba(57, 215, 255, 0.95);
 
 body {
   margin: 0;
@@ -255,6 +366,27 @@ input[type="search"]::-webkit-search-cancel-button {
     color: white;
   }
 }
+
+kbd {
+  display: inline-block;
+  border: 0.2px solid #ccc;
+  border-radius: 4px;
+  padding: 0.1em 0.5em;
+  margin: 0.4em 0.4em;
+  box-shadow: 0 0.5px 0px rgba(0, 0, 0, 0.2), 0 0 0 1px #fff inset;
+  background-color: #f7f7f700;
+  color: #ccc;
+  font-weight: bold;
+}
+
+a{
+  color:white;
+  &:hover{
+color: $color-Selection;
+  }
+}
+
+
 /*
 #
 #

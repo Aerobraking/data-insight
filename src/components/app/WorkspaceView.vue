@@ -108,6 +108,7 @@
                   :workspace="this"
                   :searchstring="searchString"
                   v-bind:is="e.componentname"
+                  @zoomed="moveToEntry({ id: e.id, zoom: true })"
                   ref="wsentry"
                 >
                   <wsentrydisplayname :entry="e" />
@@ -512,17 +513,22 @@ export default defineComponent({
       -500
     );
 
-    if (this.model.entries.length == 0) {
-      this.moveToHTMLElement(
-        this.$el.getElementsByClassName("welcome-message")[0],
-        false,
-        false
-      );
-    }
-
     this.updateFixedZoomElements();
 
     this.setFocusToWorkspace();
+
+    this.paneButtonClicked(this.model.paneSize, false);
+
+    if (this.model.entries.length == 0) {
+      setTimeout(() => {
+        this.moveToHTMLElement(
+          this.$el.getElementsByClassName("welcome-message")[0],
+          true,
+          false,
+          0.9
+        );
+      }, 10);
+    }
 
     WSUtils.Events.registerCallback({
       pluginStarted(modal: boolean): void {
@@ -628,9 +634,21 @@ export default defineComponent({
         }, 400);
       }
     },
-    paneButtonClicked(size: number | undefined = undefined) {
+    paneButtonClicked(
+      size: number | undefined = undefined,
+      transition: boolean = true
+    ) {
+      var list = document.querySelectorAll(".splitpanes, .splitpanes__pane");
+      !transition
+        ? list.forEach((e) => e.classList.toggle("transition-none"), true)
+        : "";
       this.model.paneSize =
         size != undefined ? size : this.model.paneSize >= 85 ? 50 : 0;
+      if (!transition) {
+        setTimeout(() => {
+          list.forEach((e) => e.classList.toggle("transition-none"), false);
+        }, 5);
+      }
     },
     searchUpdate(): void {
       let models = this.model.entries;
@@ -971,21 +989,23 @@ export default defineComponent({
 
       this.updateFixedZoomElements();
     },
-    preventEvent(e: any): boolean {
+    preventEvent(e: any, forward: boolean = true): boolean {
       var functionName: string = e.type as string;
 
       if (this.model.isActive && this.activePlugin) {
         return (
+          !forward ||
           // @ts-ignore: Unreachable code error
-          this.activePlugin[functionName] &&
-          // @ts-ignore: Unreachable code error
-          (this.activePlugin[functionName](e) as boolean)
+          (this.activePlugin[functionName] &&
+            // @ts-ignore: Unreachable code error
+            (this.activePlugin[functionName](e) as boolean))
         );
       }
       return false;
     },
+
     keydownGlobal(e: KeyboardEvent) {
-      if (this.preventEvent(e)) return;
+      if (this.preventEvent(e, false)) return;
 
       /**
        * No ... key down
@@ -1604,6 +1624,8 @@ export default defineComponent({
         | { id: any; zoom: boolean }
         | { entry: HTMLElement; zoom: boolean }
     ) {
+      console.log(payload);
+      
       let p: any = payload;
 
       let entry: HTMLElement | null = null;
@@ -1622,13 +1644,16 @@ export default defineComponent({
     moveToHTMLElement(
       entry: HTMLElement,
       zoom: boolean,
-      smooth: boolean = true
+      smooth: boolean = true,
+      padding: number | undefined = undefined
     ) {
       if (entry != null) {
         let coordinates = this.getCoordinatesFromElement(entry);
 
         coordinates.scaleFromCenter(
-          Math.max(1, 400 / Math.max(coordinates.w, coordinates.h))
+          padding
+            ? padding
+            : Math.max(1, 400 / Math.max(coordinates.w, coordinates.h))
         );
 
         let scaler = 1;
@@ -1656,11 +1681,9 @@ export default defineComponent({
 
         if (zoom) {
           if (smooth) {
-            this.panZoomInstance
-              .smoothShowRectangle(rect)
-              .then((f: boolean) => {});
+            this.panZoomInstance.smoothShowRectangle(rect);
           } else {
-            this.panZoomInstance.showRectangle(rect).then((f: boolean) => {});
+            this.panZoomInstance.showRectangle(rect);
           }
         } else {
           if (smooth) {
@@ -2064,16 +2087,8 @@ var switcher = false;
 <style   lang="scss">
 $color-Selection: rgba(57, 215, 255, 0.3);
 
-kbd {
-  display: inline-block;
-  border: 0.2px solid #ccc;
-  border-radius: 4px;
-  padding: 0.1em 0.5em;
-  margin: 0.4em 0.4em;
-  box-shadow: 0 0.5px 0px rgba(0, 0, 0, 0.2), 0 0 0 1px #fff inset;
-  background-color: #f7f7f700;
-  color: #ccc;
-  font-weight: bold;
+.transition-none {
+  transition: none !important;
 }
 
 .splitpane {
