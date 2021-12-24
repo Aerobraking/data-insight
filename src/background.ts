@@ -464,7 +464,7 @@ async function createWindow() {
           accelerator: "F6",
           label: 'About',
           click() {
-            if (win) {
+            if (win) { 
               sendToRender('show-about');
             }
           }

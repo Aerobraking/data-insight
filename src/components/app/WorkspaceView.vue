@@ -12,7 +12,6 @@
         @keyup.stop
         @focus="searchfocusSet(true)"
         @blur="searchfocusSet(false)"
-        @input="searchUpdate"
         @paste="onPaste"
       />
       <div class="prevent-input"></div>
@@ -413,6 +412,9 @@ export default defineComponent({
         this.setFocusToWorkspace();
       }
     },
+    searchString: function (newValue: string, oldValue: string) {
+      this.searchUpdate();
+    },
     highlightSelection(newValue: boolean, oldValue: boolean) {
       this.updateSelectionWrapper();
     },
@@ -440,7 +442,7 @@ export default defineComponent({
   mounted() {
     let _this = this;
 
-    _this.workspaceInterface.ws=_this.getWorkspaceIfc();
+    _this.workspaceInterface.ws = _this.getWorkspaceIfc();
 
     /**
      * Listen for resizing of the canvas parent element
@@ -575,6 +577,8 @@ export default defineComponent({
       return this.$store.getters.getShowUI;
     },
     searchActive(): boolean {
+      console.log(this.searchString.trim().length);
+
       return this.searchString.trim().length > 0 && this.searchfocus;
     },
   },

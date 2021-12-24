@@ -40,6 +40,19 @@
           <td><h4>General</h4></td>
           <td></td>
         </tr>
+        
+        <tr>
+          <td>Pan View</td>
+          <td><kbd>MMB</kbd> </td>
+        </tr>
+        <tr>
+          <td>Zoom View</td>
+          <td><kbd>Scroll Wheel</kbd> </td>
+        </tr>
+           <tr>
+          <td>Select Element</td>
+          <td>(<kbd>Shift</kbd> | <kbd>Ctrl</kbd>) | <kbd>LMB</kbd> </td>
+        </tr>
         <tr>
           <td>Select All</td>
           <td><kbd>Ctrl</kbd> + <kbd>A</kbd></td>
@@ -132,15 +145,7 @@ export default defineComponent({
     ipcRenderer.on("fire-new-file", function (event: any, file: string) {
       _this.loadInsightFile(new InsightFile());
     });
-    ipcRenderer.on("show-about", function (event: any, file: string) {
-      _this.showHelp = false;
-      _this.showAbout = !_this.showAbout;
-    });
-    ipcRenderer.on("show-help", function (event: any, file: string) {
-      _this.showAbout = false;
-      _this.showHelp = !_this.showHelp;
-    });
-
+ 
     ipcRenderer.on("fire-file-saved", function (event: any, filepath: string) {
       _this.$store.state.loadedFile.settings.filePath = filepath;
     });
@@ -384,6 +389,12 @@ a {
   &:hover {
     color: $color-Selection;
   }
+}
+
+h4{
+  padding-bottom: 5px;
+  margin-bottom:5px;
+  border-bottom: 1px solid white;
 }
 
 div .prevent-input {
