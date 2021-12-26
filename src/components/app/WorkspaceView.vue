@@ -708,7 +708,7 @@ export default defineComponent({
       context.fillStyle = "rgb(" + b + "," + b + "," + b + ")";
 
       context.clearRect(0, 0, canvas.width, canvas.height);
-      context.fillRect(0, 0, canvas.width, canvas.height);
+      //  context.fillRect(0, 0, canvas.width, canvas.height);
 
       b = 200;
       let currentC = this.getCurrentTransform();
@@ -2123,11 +2123,17 @@ $color-Selection: rgba(57, 215, 255, 0.3);
 .workspace-menu-bar {
   position: absolute;
   z-index: 800;
-  bottom: 10px;
+  bottom: 0;
   left: 0;
   text-align: center;
   width: 100%;
   white-space: nowrap;
+  transition: all 0.3s ease-out;
+  background: transparent;
+  &:hover {
+    backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.4);
+  }
 
   button {
     outline: none;
@@ -2576,10 +2582,11 @@ visually highlights elements for selection with a hover effect
   }
 
   canvas {
-    // pointer-events: none;
+    pointer-events: none;
     position: absolute;
     left: 0;
     top: 0;
+    z-index: 780; // behind menu bar
   }
 }
 
