@@ -376,11 +376,15 @@ export default defineComponent({
     ignoreFileDrop: boolean;
     overviewfolder: WorkspaceEntryFolderWindow | undefined;
     workspaceInterface: WorkspaceViewIfcWrapper;
+    eventOnMouseup:
+      | { entries: HTMLElement[]; type: "add" | "single" | "flip" }
+      | undefined;
   } {
     return {
       /**
        * ignores a file drop once when true, then it is set to false.
        */
+      eventOnMouseup: undefined,
       workspaceInterface: new WorkspaceViewIfcWrapper(),
       overviewfolder: undefined,
       ignoreFileDrop: false,
@@ -1345,6 +1349,15 @@ export default defineComponent({
     mouseup: function (e: MouseEvent) {
       if (this.preventEvent(e)) return;
 
+      if (this.eventOnMouseup) {
+        this.handleSelectionEvent(
+          this.eventOnMouseup.entries,
+          this.eventOnMouseup.type,
+          false // do not start drag in this case
+        );
+        this.eventOnMouseup = undefined;
+      }
+
       let selectionRectangle: any = this.getSelectionRectangle();
 
       if (this.selectionDragActive) {
@@ -1720,75 +1733,96 @@ export default defineComponent({
       entries = entries.filter(
         (e) => !e.classList.contains("search-not-found")
       );
+      console.log(this.getSelectedEntries().map((e) => e.getAttribute("name")));
+      console.log(entries[0].getAttribute("name"));
 
-      switch (type) {
-        case "single":
-          this.getEntries().forEach((e) =>
-            e.classList.remove("workspace-is-selected")
-          );
-        case "add":
-          entries.forEach((e) => e.classList.add("workspace-is-selected"));
-          break;
-        case "flip":
-          // ctrl click on an entry
-          entries.forEach((e) => e.classList.toggle("workspace-is-selected"));
-          break;
+      if (
+        (type == "flip" || type == "single") &&
+        entries.length > 0 &&
+        this.getSelectedEntries()
+          .map((e) => e.getAttribute("name"))
+          .includes(entries[0].getAttribute("name"))
+      ) {
+        this.eventOnMouseup = { entries: entries, type: type };
       }
 
-      /**
-       * Mark a single selection with a css class
-       */
-      Array.from(document.getElementsByClassName("ws-entry")).forEach(
-        (e: any) => {
-          e.classList.remove("workspace-is-selected-single");
+      this.handleSelectionEvent(entries, type, activateDrag);
+    },
+    handleSelectionEvent(
+      entries: HTMLElement[],
+      type: "add" | "single" | "flip",
+      activateDrag: boolean = true
+    ) {
+      if (!this.eventOnMouseup) {
+        switch (type) {
+          case "single":
+            this.getEntries().forEach((e) =>
+              e.classList.remove("workspace-is-selected")
+            );
+          case "add":
+            entries.forEach((e) => e.classList.add("workspace-is-selected"));
+            break;
+          case "flip":
+            // ctrl click on an entry
+            entries.forEach((e) => e.classList.toggle("workspace-is-selected"));
+            break;
         }
-      );
-      Array.from(
-        document.getElementsByClassName("ws-entry workspace-is-selected")
-      ).forEach((e: any) => {
-        e.classList.toggle(
-          "workspace-is-selected-single",
-          this.getSelectedEntries().length == 1
-        );
-      });
 
-      /**
-       *
-       */
-      if (this.getSelectedEntries().length > 1) {
         /**
-         * when more then one entry is selected,
+         * Mark a single selection with a css class
          */
-        document
-          .querySelectorAll("div.ws-entry .wsentry-displayname")
-          .forEach((e) => {
-            e.classList.toggle("prevent-input", true);
-          });
-      } else {
-        document
-          .querySelectorAll("div.ws-entry .wsentry-displayname")
-          .forEach((e) => {
-            e.classList.toggle("prevent-input", false);
-          });
-        document
-          .querySelectorAll(
-            "div.ws-entry:not(.workspace-is-selected) .wsentry-displayname"
-          )
-          .forEach((e) => {
-            e.classList.toggle("prevent-input", true);
-          });
+        Array.from(document.getElementsByClassName("ws-entry")).forEach(
+          (e: any) => {
+            e.classList.remove("workspace-is-selected-single");
+          }
+        );
+        Array.from(
+          document.getElementsByClassName("ws-entry workspace-is-selected")
+        ).forEach((e: any) => {
+          e.classList.toggle(
+            "workspace-is-selected-single",
+            this.getSelectedEntries().length == 1
+          );
+        });
+
+        /**
+         *
+         */
+        if (this.getSelectedEntries().length > 1) {
+          /**
+           * when more then one entry is selected,
+           */
+          document
+            .querySelectorAll("div.ws-entry .wsentry-displayname")
+            .forEach((e) => {
+              e.classList.toggle("prevent-input", true);
+            });
+        } else {
+          document
+            .querySelectorAll("div.ws-entry .wsentry-displayname")
+            .forEach((e) => {
+              e.classList.toggle("prevent-input", false);
+            });
+          document
+            .querySelectorAll(
+              "div.ws-entry:not(.workspace-is-selected) .wsentry-displayname"
+            )
+            .forEach((e) => {
+              e.classList.toggle("prevent-input", true);
+            });
+        }
+
+        this.selectedEntriesCount = this.getSelectedEntries().length;
+
+        this.updateSelectionWrapper();
+
+        this.selectionWrapperResizer?.setChildren(this.getSelectedEntries());
       }
-
-      this.selectedEntriesCount = this.getSelectedEntries().length;
-
-      this.updateSelectionWrapper();
-
-      this.selectionWrapperResizer?.setChildren(this.getSelectedEntries());
-
       if (this.selectedEntriesCount > 0 && activateDrag) {
         this.startSelectionDrag(this.mousePositionLastRaw);
       }
     },
+
     setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
 
@@ -2274,7 +2308,7 @@ svg {
 }
 
 .splitpanes__pane {
-  background-color: #1d1d1d !important;
+  background-color: hsl(0, 0%, 8%) !important;
 }
 
 .splitpanes__splitter {
@@ -2287,7 +2321,7 @@ svg {
   }
   opacity: 1;
   &.splitpanes__splitter-hide {
-    opacity: 0 !important;
+    opacity: 0.1 !important;
   }
 }
 
