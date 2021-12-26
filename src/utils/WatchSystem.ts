@@ -28,19 +28,24 @@ export class Watcher {
 
         this.watcher
             .on("ready", (path: any) => {
-            }).on("add", (path: any) => {
+            }).on("add", (path: any) => { 
+                path = path.replace(/\\/g, "/");
                 this.callUpdate(path.substring(0, path.lastIndexOf("/")));
             })
             .on("change", (path: any) => {
+                path = path.replace(/\\/g, "/");
                 this.callUpdate(path);
             })
             .on("unlink", (path: any) => {
+                path = path.replace(/\\/g, "/");
                 this.callUpdate(path.substring(0, path.lastIndexOf("/")));
             })
-            .on("addDir", (path: any) => {
+            .on("addDir", (path: any) => { 
+                path = path.replace(/\\/g, "/");
                 this.callUpdate(path.substring(0, path.lastIndexOf("/")));
             })
             .on("unlinkDir", (path: any) => {
+                path = path.replace(/\\/g, "/");
                 this.callUpdate(path.substring(0, path.lastIndexOf("/")));
             });
 
@@ -101,6 +106,7 @@ export class Watcher {
     unregisterPath(path: string, callback: () => void) {
 
         path = path.replace(/\\/g, "/");
+        path = path.endsWith("/") ? path.slice(0, -1) : path;
 
         let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
   

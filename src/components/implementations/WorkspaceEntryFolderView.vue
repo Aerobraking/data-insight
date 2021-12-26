@@ -11,6 +11,7 @@
     @mousemove="mousemove"
     @mouseenter="mouseenter"
     @mouseleave="mouseleave"
+    @mousedown.capture="mousedown"
   >
     <slot></slot>
 
@@ -18,6 +19,7 @@
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
+      @mouseup="mouseup"
       class="ws-window-bar-top select-element selectable-highlight"
     ></div>
 
@@ -86,7 +88,7 @@
             :key="file.id"
             :searchstring="searchstring"
             :name="file.id"
-            @itemClicked2="itemClicked2"
+            @itemClicked="itemClicked"
           >
           </wsfolderfile>
         </keep-alive>
@@ -102,7 +104,7 @@
                 :key="file.id"
                 :searchstring="searchstring"
                 :name="file.id"
-                @itemClicked2="itemClicked2"
+                @itemClicked="itemClicked"
               >
               </wsfolderfilelist>
             </keep-alive>
@@ -139,7 +141,8 @@ import {
   WorkspaceEntryFolderWindow,
 } from "../../store/model/FileSystem/FileSystemEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
-import  WorkspaceViewIfc from "../app/WorkspaceViewIfc";
+import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
+import fse from "fs-extra";
 import {
   Drive,
   DriveListRoot,
@@ -187,9 +190,13 @@ export default defineComponent({
     list: Array<FolderWindowFile>;
     selected: Set<any>;
     lastItemSelected: number | undefined;
+    eventOnMouseup:
+      | { id: number; type: "control" | "shift" | "single" }
+      | undefined;
   } {
     return {
       listSelectionIds: [],
+      eventOnMouseup: undefined,
       lastItemSelected: undefined,
       showTiles: true,
       dragActive: false,
@@ -208,7 +215,7 @@ export default defineComponent({
     },
     viewKey: Number,
     searchstring: String,
-    workspace: { type: Object as () => WorkspaceViewIfc},
+    workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {
     const _this = this;
@@ -240,7 +247,7 @@ export default defineComponent({
   },
   methods: {
     setMode(e: MouseEvent, mode: "list" | "tile", all: boolean = false) {
-      if (e.shiftKey) {       
+      if (e.shiftKey) {
         this.workspace
           ?.getModelEntries()
           .forEach((e) =>
@@ -253,22 +260,43 @@ export default defineComponent({
     searchUpdate() {},
     drop(e: DragEvent) {
       if (e.dataTransfer && e.dataTransfer.types.includes("Files")) {
+        let listFiles = [];
         for (let index = 0; index < e.dataTransfer.files.length; index++) {
           const f = e.dataTransfer.files[index];
+          listFiles.push(f.path);
+        }
 
-          const fileStat = fs.lstatSync(f.path);
-          const p = path.normalize(f.path).replace(/\\/g, "/");
+        this.handleFileDrop(listFiles);
+      }
+    },
+    handleFileDrop(listFiles: string[]) {
+      for (let index = 0; index < listFiles.length; index++) {
+        const f = path.normalize(listFiles[index]).replace(/\\/g, "/");
+        const fileStat = fs.lstatSync(f);
+        if (fileStat.isDirectory()) {
+          // To copy a folder or file
 
-          if (fileStat.isDirectory()) {
-          } else {
-            const filename = path.basename(p);
-            fs.copyFile(
-              p,
+          const srcDir = f;
+          const destDir = path.join(this.entry.path, path.basename(f));
+
+          fse
+            .copy(srcDir, destDir, {
+              overwrite: false,
+              preserveTimestamps: true,
+              recursive: true,
+            })
+            .then(() => {
+              this.updateUI();
+            });
+        } else {
+          const filename = path.basename(f);
+          fse
+            .copyFile(
+              f,
               path.join(this.entry.path, filename),
-              fs.constants.COPYFILE_EXCL,
-              (err: NodeJS.ErrnoException | null) => {}
-            );
-          }
+              fs.constants.COPYFILE_EXCL
+            )
+            .then(() => this.updateUI());
         }
       }
     },
@@ -501,9 +529,7 @@ export default defineComponent({
         }, 10);
       }
     },
-    mouseup(e: MouseEvent) {
-      this.dragActive = false;
-    },
+
     /**
      * When the bookmark name is edited, we don't alter the focused object
      * because the user may enter/leave the folder div with the mouse while editing
@@ -516,6 +542,7 @@ export default defineComponent({
         x.classList.contains("wsentry-displayname")
       );
     },
+    mousedown(e: MouseEvent) {},
     mouseenter(e: MouseEvent) {
       if (this.cancelFocusEvent()) return;
       this.setFocusToThis();
@@ -547,16 +574,49 @@ export default defineComponent({
         }
       }
     },
+    mouseup(e: MouseEvent) {
+      if (this.eventOnMouseup) {
+        this.handleMouseEvent(
+          this.eventOnMouseup.id,
+          this.eventOnMouseup.type,
+          true
+        );
+        this.eventOnMouseup = undefined;
+      }
+      this.dragActive = false;
+    },
     keydown(e: KeyboardEvent) {
+      switch (e.key) {
+        case "Delete":
+          this.deleteSelection();
+          break;
+        case "Backspace":
+          this.folderBack();
+          break;
+        default:
+          break;
+      }
+
       if (e.ctrlKey) {
-        switch (e.key.toUpperCase()) {
-          case "A":
+        switch (e.key) {
+          case "a":
             this.toggleAll(true);
             e.stopPropagation();
             break;
-          case "D":
+          case "d":
             this.toggleAll(false);
             e.stopPropagation();
+            break;
+          case "c":
+            WSUtils.clipboard.listFilesClipboard = this.list
+              .filter((f) => this.listSelectionIds.includes(f.id))
+              .map((f) => f.path);
+            break;
+          case "v":
+            console.log(WSUtils.clipboard.listFilesClipboard);
+
+            this.handleFileDrop(WSUtils.clipboard.listFilesClipboard);
+            WSUtils.clipboard.listFilesClipboard = [];
             break;
           default:
             break;
@@ -571,14 +631,32 @@ export default defineComponent({
         this.list.forEach((e) => toggle(this.listSelectionIds, e.id));
       }
     },
-    itemClicked2(id: number, type: "control" | "shift" | "single") {
+    itemClicked(id: number, type: "control" | "shift" | "single") {
+      if (
+        this.listSelectionIds.includes(id) &&
+        (type == "control" || type == "single")
+      ) {
+        this.eventOnMouseup = { id: id, type: type };
+      }
+
+      this.handleMouseEvent(id, type);
+    },
+    handleMouseEvent(
+      id: number,
+      type: "control" | "shift" | "single",
+      skip: boolean = false
+    ) {
       switch (type) {
         case "single":
-          this.listSelectionIds = [];
-          add(this.listSelectionIds, id);
+          if (!this.eventOnMouseup || skip) {
+            this.listSelectionIds = [];
+            add(this.listSelectionIds, id);
+          }
           break;
         case "control":
-          toggle(this.listSelectionIds, id);
+          if (!this.eventOnMouseup || skip) {
+            toggle(this.listSelectionIds, id);
+          }
           break;
         case "shift":
           const entries = this.list;
@@ -592,34 +670,6 @@ export default defineComponent({
           break;
       }
       this.lastItemSelected = id;
-      this.dragActive = true;
-    },
-    itemClicked(
-      item: FolderWindowFile,
-      el: HTMLElement,
-      type: "control" | "shift" | "single"
-    ) {
-      switch (type) {
-        case "single":
-          this.toggleAll(false);
-          el.classList.add("item-selected");
-          break;
-        case "control":
-          el.classList.toggle("item-selected");
-          break;
-        case "shift":
-          const entries = this.getEntries();
-          // if (this.lastItemSelected) {
-          //   const i1 = entries.indexOf(this.lastItemSelected),
-          //     i2 = entries.indexOf(el);
-          //   var sliced = entries.slice(Math.min(i1, i2), Math.max(i1, i2));
-
-          //   sliced.forEach((e) => e.classList.add("item-selected"));
-          // }
-          // el.classList.add("item-selected");
-          break;
-      }
-      // this.lastItemSelected = el;
       this.dragActive = true;
     },
     setPath(path: string) {

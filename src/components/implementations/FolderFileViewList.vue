@@ -83,7 +83,7 @@ export default defineComponent({
     },
     itemClicked(type: "control" | "shift" | "single") {
       //   this.$emit("itemClicked", this.entry, this.$el, type);
-      this.$emit("itemClicked2", this.entry.id, type);
+      this.$emit("itemClicked", this.entry.id, type);
     },
   },
 });

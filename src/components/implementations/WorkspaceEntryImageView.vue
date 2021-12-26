@@ -123,7 +123,7 @@ export default defineComponent({
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
   z-index: 50;
-  background: rgb(207, 207, 207);
+  background: transparent;
   position: absolute;
   color: #f1f1f1;
   padding: 0px;

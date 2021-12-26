@@ -8,6 +8,8 @@ import {
 import AbstractPlugin from "../Plugins/AbstractPlugin"; 
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 
+
+
 export function doChangeFocus(): boolean {
     return !(document.activeElement != undefined &&
         (document.activeElement instanceof HTMLInputElement ||
@@ -169,4 +171,21 @@ export class Dispatcher {
 
 
 export const Events = Dispatcher.instance;
+
+export class DIClipboard {
+
+    private static _instance = new DIClipboard();
+    private constructor() { }
+    
+
+    static get instance() {
+        return this._instance;
+    }
+
+    public listFilesClipboard:string[]=[]; 
+
+}
+
+
+export const clipboard = DIClipboard.instance;
 

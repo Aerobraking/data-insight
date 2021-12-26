@@ -29,7 +29,7 @@ export default defineComponent({
   mounted() {
     let el: any = this.$el;
 
-    const div: Element =
+    const div: HTMLElement =
       this.$el.getElementsByClassName("folder-file-image")[0];
 
     const isImage: boolean = cache.isImageTypeSupported(this.entry.path);
@@ -43,9 +43,7 @@ export default defineComponent({
           type: "preview" | "tiny" | "small" | "medium" | "original"
         ) => {
           if (type == "small") {
-            el.getElementsByClassName(
-              "folder-file-image"
-            )[0].style.backgroundImage = url;
+          div.style.backgroundImage = url;
           }
         },
         callbackSize: (dim: cache.ImageDim) => {},
@@ -54,9 +52,7 @@ export default defineComponent({
       icons.IconHandler.registerPath(this.entry.path, (url: string) => {
         var img = new Image();
         img.src = url;
-        el.getElementsByClassName(
-          "folder-file-image"
-        )[0].style.backgroundImage = "url('" + img.src + "')";
+       div.style.backgroundImage = "url('" + img.src + "')";
       });
     }
   },
@@ -76,12 +72,10 @@ export default defineComponent({
       this.$el.classList.toggle("search-not-found", !found);
       this.$el.classList.toggle("file-not-found", !found);
     },
-    dragstart(e: DragEvent) {
-    //  this.$emit("dragstarted", this.entry, this.$el, e);
+    dragstart(e: DragEvent) { 
     },
-    itemClicked(type: "control" | "shift" | "single") {
-      // this.$emit("itemClicked", this.entry, this.$el, type);
-      this.$emit("itemClicked2", this.entry.id, type);
+    itemClicked(type: "control" | "shift" | "single") { 
+      this.$emit("itemClicked", this.entry.id, type);
     },
   },
 });

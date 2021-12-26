@@ -27,7 +27,7 @@ export class Handler {
             return;
         }
 
-        let filetype = path.split('.').pop();
+        const filetype = path.split('.').pop();
         if (filetype) {
             if (this.hash.has(filetype)) {
                 let e = this.hash.get(filetype);
@@ -45,11 +45,6 @@ export class Handler {
                         this.hash.set(filetype, res.toDataURL());
                         callback(res.toDataURL());
                     }
-                });
-
-            return this.app
-                .getFileIcon(path, {
-                    size: "large",
                 });
 
         }
