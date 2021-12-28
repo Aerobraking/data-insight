@@ -35,20 +35,26 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     finishPlugin(): void {
         this.ws ? this.ws.finishPlugin() : [];
     }
-    preventInput(prevent: boolean): void { 
+    preventInput(prevent: boolean): void {
         this.ws ? this.ws.preventInput(prevent) : [];
     }
-    highlightSelection: boolean = true;
     updateSelectionWrapper(): void {
         this.ws ? this.ws.updateSelectionWrapper() : [];
-     }
-    startPlugin(p: any): void { 
+    }
+    startPlugin(p: any): void {
         this.ws ? this.ws.startPlugin(p) : [];
     }
     dispatchEvent(e: Event): void {
         this.ws ? this.ws.dispatchEvent(e) : [];
-     }
-    cancelPlugin(): void { 
+    }
+    cancelPlugin(): void {
         this.ws ? this.ws.cancelPlugin() : [];
+    }
+    public set highlightSelection(val: boolean) {
+        this.ws ? this.ws.highlightSelection = val : [];
+    }
+
+    public get highlightSelection(): boolean {
+        return this.ws ? this.ws.highlightSelection : true;
     }
 }

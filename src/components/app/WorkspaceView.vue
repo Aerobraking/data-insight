@@ -309,7 +309,7 @@ import AbstractPlugin from "./../Plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import EntryCollection from "@/store/model/EntryCollection";
 import WorkspaceEntry from "@/store/model/WorkspaceEntry";
-import { getPlugins } from "@/components/Plugins/PluginList";
+import { createContext, getPlugins } from "@/components/Plugins/PluginList";
 
 getPlugins();
 
@@ -379,11 +379,13 @@ export default defineComponent({
     eventOnMouseup:
       | { entries: HTMLElement[]; type: "add" | "single" | "flip" }
       | undefined;
+    c: any;
   } {
     return {
       /**
        * ignores a file drop once when true, then it is set to false.
        */
+      c: undefined,
       eventOnMouseup: undefined,
       workspaceInterface: new WorkspaceViewIfcWrapper(),
       overviewfolder: undefined,
@@ -423,8 +425,6 @@ export default defineComponent({
       this.updateSelectionWrapper();
     },
     getShowUI(newValue: boolean, oldValue: boolean) {
-      console.log("getShowUI", newValue);
-
       const bar: HTMLElement = this.$el.getElementsByClassName(
         "splitpanes__splitter"
       )[0];
@@ -446,7 +446,14 @@ export default defineComponent({
   mounted() {
     let _this = this;
 
-    this.paneButtonClicked(this.model.paneSize, false);
+    this.c = createContext({ debounceTime: 100, autoEnable: true });
+
+    getPlugins().forEach((p) => {
+      const panel = new p();
+      this.c.register(panel.shortcut, () => {
+        alert(panel.shortcut);
+      });
+    });
 
     _this.workspaceInterface.ws = _this.getWorkspaceIfc();
 
@@ -532,7 +539,7 @@ export default defineComponent({
     this.updateFixedZoomElements();
 
     this.setFocusToWorkspace();
-
+  this.paneButtonClicked(this.model.paneSize, false);
     if (this.model.entries.length == 0) {
       setTimeout(() => {
         this.moveToHTMLElement(
@@ -581,8 +588,6 @@ export default defineComponent({
       return this.$store.getters.getShowUI;
     },
     searchActive(): boolean {
-      console.log(this.searchString.trim().length);
-
       return this.searchString.trim().length > 0 && this.searchfocus;
     },
   },
@@ -1052,6 +1057,7 @@ export default defineComponent({
       }
     },
     keydown(e: KeyboardEvent) {
+      this.c.keydown("ws", e);
       if (
         e.key == "Escape" &&
         this.activePlugin &&
@@ -1153,7 +1159,7 @@ export default defineComponent({
       /**
        * Alt key down
        */
-      if (e.altKey) {
+      if (e.altKey && !e.ctrlKey && e.shiftKey) {
         switch (e.key) {
           case "r":
             this.setFocusOnNameInput();
@@ -1185,7 +1191,12 @@ export default defineComponent({
       /**
        * Shift key down
        */
-      if (e.shiftKey) {
+      if (e.shiftKey && !e.ctrlKey && !e.altKey) {
+        switch (e.key) {
+          case " ":
+            this.showSelection();
+            break;
+        }
         switch (number) {
           case "1":
           case "2":
@@ -1202,9 +1213,9 @@ export default defineComponent({
       }
 
       /**
-       * No ... key down
+       * No modifier key down
        */
-      if (!e.altKey && !e.ctrlKey) {
+      if (!e.altKey && !e.shiftKey && !e.ctrlKey) {
         switch (e.key) {
           case "1":
           case "2":
@@ -1404,8 +1415,6 @@ export default defineComponent({
       if (this.preventEvent(e)) return true;
     },
     beforeWheelHandler(e: any) {
-      console.log("beforeWheelHandler");
-
       if (this.model.isActive && this.activePlugin) return true;
 
       this.spacePressed = false;
@@ -1615,9 +1624,21 @@ export default defineComponent({
       oldView.y2 = oldView.y + oldView.h;
       return oldView;
     },
-    showAll() {
-      this.oldViewRect = this.getViewport();
+    showSelection() {
+      let bound = this.getPanzoomRect(
+        this.getBounds(
+          this.getSelectedEntries().length > 0
+            ? this.getSelectedEntries()
+            : this.getEntries().length > 0
+            ? this.getEntries()
+            : this.$el.getElementsByClassName("welcome-message")[0]
+        ),
+        0.2
+      );
+      this.panZoomInstance.smoothShowRectangle(bound);
+    },
 
+    showAll() {
       let bound = this.getPanzoomRect(
         this.getBounds(
           this.getEntries().length > 0
@@ -1657,8 +1678,6 @@ export default defineComponent({
         | { id: any; zoom: boolean }
         | { entry: HTMLElement; zoom: boolean }
     ) {
-      console.log(payload);
-
       let p: any = payload;
 
       let entry: HTMLElement | null = null;
@@ -1831,7 +1850,7 @@ export default defineComponent({
 
     setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
-
+      if (!entry) return;
       let input: HTMLElement = entry.getElementsByClassName(
         "wsentry-displayname-input"
       )[0] as HTMLElement;
@@ -1878,7 +1897,7 @@ export default defineComponent({
     },
     startPlugin(p: AbstractPlugin): void {
       this.activePlugin = p;
-      p.setWorkspace(this.workspaceInterface);
+      p.setWorkspace(this.getWorkspaceIfc());
       p.init();
       WSUtils.Events.pluginStarted(this.activePlugin.isModal());
     },
@@ -2130,6 +2149,9 @@ export default defineComponent({
         element.style.transform = "scale(" + s + "," + s + ")";
       }
     },
+    /**
+     * Disables all inputs on the entries in the workspace view.
+     */
     preventInput(prevent: boolean): void {
       this.getEntries().forEach((e) => {
         e.classList.toggle("prevent-input", prevent);
