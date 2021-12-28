@@ -1,11 +1,10 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
-import { timeHours } from "d3"; 
 import Plugin, { PluginDecorator } from "./AbstractPlugin"
 
 @PluginDecorator()
 export default class ReArrange extends Plugin {
 
-    shortcut: string = "cmdorctrl+r";
+    shortcut: string = "alt+r";
 
     getClassName(a: HTMLElement): string {
         let classNameA = "";
@@ -73,7 +72,7 @@ export default class ReArrange extends Plugin {
         });
 
         this.workspace.preventInput(true);
-        //  this.workspace.highlightSelection = false;
+        this.workspace.highlightSelection = false;
     }
 
     private hash: Map<String, ElementDimension> = new Map();

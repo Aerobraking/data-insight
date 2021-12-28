@@ -1,6 +1,6 @@
 import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
 
- 
+
 export type Constructor<T> = {
     new(...args: any[]): T;
     readonly prototype: T;
@@ -19,16 +19,17 @@ export default abstract class AbstractPlugin {
     constructor() {
     }
 
-    public setWorkspace(workspace: WorkspaceViewIfc):this {
+    // @ts-ignore: Unreachable code error
+    workspace: WorkspaceViewIfc;
+
+    public setWorkspace(workspace: WorkspaceViewIfc): this {
         this.workspace = workspace;
         return this;
     }
 
     abstract shortcut: string;
-
-    // @ts-ignore: Unreachable code error
-    workspace: WorkspaceViewIfc;
-
+    
+    // 
     public abstract isModal(): boolean;
     public abstract init(): void;
     public abstract cancel(): boolean;

@@ -5,12 +5,11 @@ import Plugin, { PluginDecorator } from "./AbstractPlugin"
 @PluginDecorator()
 export default class Resize extends Plugin {
 
-    shortcut: string = "cmdorctrl+s";
+    shortcut: string = "ws ctrl+shift+e";
 
     constructor() {
         super();
     }
-
 
     private hash: Map<String, ElementDimension> = new Map();
     width: number = 10;

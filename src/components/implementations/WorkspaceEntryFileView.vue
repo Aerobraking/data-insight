@@ -45,9 +45,7 @@ export default defineComponent({
 
     icons.IconHandler.registerPath(this.entry.path, (url: string) => {
       var img = new Image();
-
       img.src = url;
-
       _this.$el.getElementsByClassName("file-symbol")[0].style.backgroundImage =
         "url('" + img.src + "')";
     });
