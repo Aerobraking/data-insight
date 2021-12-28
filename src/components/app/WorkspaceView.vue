@@ -372,7 +372,7 @@ export default defineComponent({
     highlightSelection: boolean;
     divObserver: any;
     selectedEntriesCount: number;
-    overviewTimeout: any | undefined;
+    splitpaneTimeout: any | undefined;
     ignoreFileDrop: boolean;
     overviewfolder: WorkspaceEntryFolderWindow | undefined;
     workspaceInterface: WorkspaceViewIfcWrapper;
@@ -388,7 +388,7 @@ export default defineComponent({
       workspaceInterface: new WorkspaceViewIfcWrapper(),
       overviewfolder: undefined,
       ignoreFileDrop: false,
-      overviewTimeout: undefined,
+      splitpaneTimeout: undefined,
       highlightSelection: true,
       activePlugin: null,
       searchString: "",
@@ -445,6 +445,8 @@ export default defineComponent({
   },
   mounted() {
     let _this = this;
+
+    this.paneButtonClicked(this.model.paneSize, false);
 
     _this.workspaceInterface.ws = _this.getWorkspaceIfc();
 
@@ -530,8 +532,6 @@ export default defineComponent({
     this.updateFixedZoomElements();
 
     this.setFocusToWorkspace();
-
-    this.paneButtonClicked(this.model.paneSize, false);
 
     if (this.model.entries.length == 0) {
       setTimeout(() => {
@@ -655,15 +655,23 @@ export default defineComponent({
       transition: boolean = true
     ) {
       var list = document.querySelectorAll(".splitpanes, .splitpanes__pane");
-      !transition
-        ? list.forEach((e) => e.classList.toggle("transition-none"), true)
-        : "";
-      this.model.paneSize =
-        size != undefined ? size : this.model.paneSize >= 85 ? 50 : 0;
-      if (!transition) {
-        setTimeout(() => {
-          list.forEach((e) => e.classList.toggle("transition-none"), false);
+      transition
+        ? list.forEach((e) => e.classList.add("splitpanes__pane_transition"))
+        : list.forEach((e) => e.classList.remove("splitpanes__pane_transition"));
+
+    setTimeout(() => {
+          this.model.paneSize =
+            size != undefined ? size : this.model.paneSize >= 85 ? 50 : 0;
         }, 5);
+
+      if (transition) {
+        clearTimeout(this.splitpaneTimeout);
+        this.splitpaneTimeout = setTimeout(() => {
+          list.forEach((e) =>
+            e.classList.remove("splitpanes__pane_transition")
+          );
+          console.log("disable class");
+        }, 620);
       }
     },
     searchUpdate(): void {
@@ -1221,7 +1229,7 @@ export default defineComponent({
             break;
           case "r":
             if (this.getSelectedEntries().length > 1) {
-              this.startPlugin(new ReArrange().setWorkspace(this));
+              this.startPlugin(new ReArrange());
             }
             break;
           case "t":
@@ -1733,8 +1741,6 @@ export default defineComponent({
       entries = entries.filter(
         (e) => !e.classList.contains("search-not-found")
       );
-      console.log(this.getSelectedEntries().map((e) => e.getAttribute("name")));
-      console.log(entries[0].getAttribute("name"));
 
       if (
         (type == "flip" || type == "single") &&
@@ -1872,6 +1878,8 @@ export default defineComponent({
     },
     startPlugin(p: AbstractPlugin): void {
       this.activePlugin = p;
+      p.setWorkspace(this.workspaceInterface);
+      p.init();
       WSUtils.Events.pluginStarted(this.activePlugin.isModal());
     },
     cancelPlugin(): void {
@@ -2309,6 +2317,11 @@ svg {
 
 .splitpanes__pane {
   background-color: hsl(0, 0%, 8%) !important;
+  transition: none !important;
+}
+
+.splitpanes__pane_transition {
+  transition: width 0.2s ease-out !important;
 }
 
 .splitpanes__splitter {

@@ -4,22 +4,22 @@ import {
   CommitOptions,
   DispatchOptions,
 } from 'vuex'
-import { State, state } from './state'
+import { InsightFile, State, UserSettings } from './state'
 import { Getters, getters } from './getters'
 import { Mutations, mutations } from './mutations/mutations'
 import { Actions, actions } from './actions/actions'
 
-export const store = createStore({
-  state,
-  getters,
-  mutations,
-  actions,
-})
-
-export function useStore() {
-  return store as Store
-}
-
+export function initStore(file: InsightFile) {
+  return createStore({
+    state: {
+      userSettings: new UserSettings(),
+      loadedFile: file
+    },
+    getters,
+    mutations,
+    actions,
+  })
+} 
 
 /**
  * hier legen wir fest, das unsere erstellten getters, commit (mutations) und dispatch (actions)

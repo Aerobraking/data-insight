@@ -202,6 +202,7 @@ export default class ReArrange extends Plugin {
 
     public mousemove(e: MouseEvent): boolean {
 
+
         if (!this.mouseStart) {
             this.mouseStart = this.workspace.getPositionInWorkspace(e);
         }

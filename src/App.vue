@@ -40,18 +40,18 @@
           <td><h4>General</h4></td>
           <td></td>
         </tr>
-        
+
         <tr>
           <td>Pan View</td>
-          <td><kbd>MMB</kbd> </td>
+          <td><kbd>MMB</kbd></td>
         </tr>
         <tr>
           <td>Zoom View</td>
-          <td><kbd>Scroll Wheel</kbd> </td>
+          <td><kbd>Scroll Wheel</kbd></td>
         </tr>
-           <tr>
+        <tr>
           <td>Select Element</td>
-          <td>(<kbd>Shift</kbd> | <kbd>Ctrl</kbd>) | <kbd>LMB</kbd> </td>
+          <td>(<kbd>Shift</kbd> | <kbd>Ctrl</kbd>) | <kbd>LMB</kbd></td>
         </tr>
         <tr>
           <td>Select All</td>
@@ -109,7 +109,7 @@
 <script lang="ts">
 import * as WSUtils from "./components/app/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
-import { ipcRenderer,shell ,remote} from "electron";
+import { ipcRenderer, shell, remote } from "electron";
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
@@ -128,7 +128,7 @@ export default defineComponent({
   name: "App",
   components: {
     Tabs,
-    ModalDialog
+    ModalDialog,
   },
   computed: {},
   mounted() {
@@ -145,7 +145,7 @@ export default defineComponent({
     ipcRenderer.on("fire-new-file", function (event: any, file: string) {
       _this.loadInsightFile(new InsightFile());
     });
- 
+
     ipcRenderer.on("fire-file-saved", function (event: any, filepath: string) {
       _this.$store.state.loadedFile.settings.filePath = filepath;
     });
@@ -172,7 +172,7 @@ export default defineComponent({
       ipcRenderer.send("closed");
     });
 
-     ipcRenderer.on("show-about", function (event: any, file: string) {
+    ipcRenderer.on("show-about", function (event: any, file: string) {
       _this.showHelp = false;
       _this.showAbout = !_this.showAbout;
     });
@@ -181,28 +181,21 @@ export default defineComponent({
       _this.showHelp = !_this.showHelp;
     });
 
-    ipcRenderer.on("send-args", (event: any, args: string[]) => {
-      for (let i = 0; i < args.length; i++) {
-        const a = args[i];
-
-        try {
-          if (fs.existsSync(a) && a.endsWith(".ins")) {
-            _this.loadInsightFileFromPath(a);
-            return;
-          }
-        } catch (err) {
-          console.error(err);
-        }
+    // remove splash screen
+    const splash = document.getElementById("splash");
+    if (splash) {
+      splash.style.pointerEvents = "none";
+      splash.style.opacity = "0";
+    }
+    setTimeout(() => {
+      if (splash) {
+        splash.remove();
       }
-    });
-
-    ipcRenderer.send("get-args", {});
+    }, 200);
   },
-    data() {
+  data() {
     return { showAbout: false, showHelp: false, version: "2.4" };
   },
-
-   
   provide() {
     return {
       loadInsightFileFromPath: this.loadInsightFileFromPath,
@@ -210,7 +203,7 @@ export default defineComponent({
     };
   },
   methods: {
-    openURL(url:string){
+    openURL(url: string) {
       shell.openExternal(url);
     },
     loadInsightFileFromPath(path: string) {
@@ -355,6 +348,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: #1d1d1d;
+  overflow: hidden;
 }
 
 #app {
@@ -391,9 +385,9 @@ a {
   }
 }
 
-h4{
+h4 {
   padding-bottom: 5px;
-  margin-bottom:5px;
+  margin-bottom: 5px;
   border-bottom: 1px solid white;
 }
 
@@ -426,13 +420,12 @@ kbd {
   font-weight: bold;
 }
 
-a{
-  color:white;
-  &:hover{
-color: $color-Selection;
+a {
+  color: white;
+  &:hover {
+    color: $color-Selection;
   }
 }
-
 
 /*
 #

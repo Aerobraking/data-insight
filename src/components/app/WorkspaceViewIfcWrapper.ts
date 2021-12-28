@@ -23,7 +23,7 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     getSelectedEntries(): HTMLElement[] {
         return this.ws ? this.ws.getSelectedEntries() : [];
     }
-    getModelEntries(): WorkspaceEntry[] { 
+    getModelEntries(): WorkspaceEntry[] {
         return this.ws ? this.ws.getModelEntries() : [];
     }
     getUnselectedEntries(): HTMLElement[] {
@@ -32,11 +32,23 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     getEntries(): HTMLElement[] {
         return this.ws ? this.ws.getEntries() : [];
     }
-    finishPlugin(): void { }
-    preventInput(prevent: boolean): void { }
+    finishPlugin(): void {
+        this.ws ? this.ws.finishPlugin() : [];
+    }
+    preventInput(prevent: boolean): void { 
+        this.ws ? this.ws.preventInput(prevent) : [];
+    }
     highlightSelection: boolean = true;
-    updateSelectionWrapper(): void { }
-    startPlugin(p: any): void { }
-    dispatchEvent(e: Event): void { }
-    cancelPlugin(): void { }
+    updateSelectionWrapper(): void {
+        this.ws ? this.ws.updateSelectionWrapper() : [];
+     }
+    startPlugin(p: any): void { 
+        this.ws ? this.ws.startPlugin(p) : [];
+    }
+    dispatchEvent(e: Event): void {
+        this.ws ? this.ws.dispatchEvent(e) : [];
+     }
+    cancelPlugin(): void { 
+        this.ws ? this.ws.cancelPlugin() : [];
+    }
 }

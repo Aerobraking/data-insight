@@ -1,17 +1,63 @@
 <!DOCTYPE html>
 <html lang="">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title><%= htmlWebpackPlugin.options.title %></title>
-  </head>
-  <body>
-    <noscript>
-      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
-    </noscript>
-    <div id="app"></div>
-    <!-- built files will be auto injected -->
-  </body>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <title>
+    <%= htmlWebpackPlugin.options.title %>
+  </title>
+  <style>
+    body {
+      overflow: hidden;
+      background: #1d1d1d;
+    }
+
+    #splash {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 50000;
+      background: transparent;
+      overflow: hidden;
+      pointer-events: none;
+      transition: all 0.2s ease-out;
+    }
+
+    .loader {
+      border: 12px solid #f3f3f329;
+      border-radius: 50%;
+      border-top: 12px solid #3498db;
+      width: 80px;
+      height: 80px;
+      /* Safari */
+      animation: spin 1.5s linear infinite;
+
+      position: absolute;
+      left: calc(50% - 40px);
+      top: calc(50% - 80px);
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body> 
+  <div id="app"></div>
+  <div id="splash">
+    <div class="loader"></div>
+  </div>
+  <!-- built files will be auto injected -->
+</body>
+
 </html>

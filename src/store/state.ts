@@ -1,5 +1,5 @@
- import { View, Workspace } from "./model/ModelAbstractData"
-import { Type } from 'class-transformer'; 
+import { View, Workspace } from "./model/ModelAbstractData"
+import { Type } from 'class-transformer';
 
 export class InsightFile {
     @Type(() => View, {
@@ -14,7 +14,7 @@ export class InsightFile {
     views: Array<Workspace> = [new Workspace("Default").setActive(true)];
     settings: InsightFileSettings = new InsightFileSettings();
 
-    public initAfterLoading(){
+    public initAfterLoading() {
         for (let i = 0; i < this.views.length; i++) {
             const v = this.views[i];
             v.initAfterLoading();
@@ -24,7 +24,7 @@ export class InsightFile {
 
 export class InsightFileSettings {
     showUI: boolean = true;
-    filePath:string="";
+    filePath: string = "";
 }
 
 export class UserSettings {
@@ -33,11 +33,8 @@ export class UserSettings {
     loadedFilePath: string = "";
 }
 
-export const state: {
+export type State = {
     userSettings: UserSettings,
     loadedFile: InsightFile
-} = {
-    userSettings: new UserSettings(),
-    loadedFile: new InsightFile(),
 }
-export type State = typeof state
+
