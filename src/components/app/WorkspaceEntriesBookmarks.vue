@@ -5,11 +5,11 @@ import draggable from "vuedraggable";
 import overviewview from "./OverviewView.vue";
 import { PlaylistStar } from "mdue";
 import { Tippy, TippySingleton } from "vue-tippy";
-import   WorkspaceViewIfc   from "./WorkspaceViewIfc";
+import WorkspaceViewIfc from "./WorkspaceViewIfc";
 import AbstractPlugin from "../Plugins/AbstractPlugin";
 
 class DragPlugin extends AbstractPlugin {
-  constructor(){
+  constructor() {
     super();
   }
   shortcut: string = "";
@@ -242,7 +242,7 @@ export default defineComponent({
   padding-bottom: 10px;
   padding-left: 25px;
   user-select: none;
-  text-shadow: rgb(0, 0, 0) 0px 0 15px, rgb(0, 0, 0) 0px 0 4px;
+  filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.7));
   transform-origin: left center;
   &:hover {
     transform: scale(1.03);

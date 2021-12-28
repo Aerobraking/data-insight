@@ -50,10 +50,10 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     cancelPlugin(): void {
         this.ws ? this.ws.cancelPlugin() : [];
     }
+    
     public set highlightSelection(val: boolean) {
         this.ws ? this.ws.highlightSelection = val : [];
     }
-
     public get highlightSelection(): boolean {
         return this.ws ? this.ws.highlightSelection : true;
     }

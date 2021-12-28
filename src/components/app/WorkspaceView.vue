@@ -539,7 +539,7 @@ export default defineComponent({
     this.updateFixedZoomElements();
 
     this.setFocusToWorkspace();
-  this.paneButtonClicked(this.model.paneSize, false);
+    this.paneButtonClicked(this.model.paneSize, false);
     if (this.model.entries.length == 0) {
       setTimeout(() => {
         this.moveToHTMLElement(
@@ -662,12 +662,14 @@ export default defineComponent({
       var list = document.querySelectorAll(".splitpanes, .splitpanes__pane");
       transition
         ? list.forEach((e) => e.classList.add("splitpanes__pane_transition"))
-        : list.forEach((e) => e.classList.remove("splitpanes__pane_transition"));
+        : list.forEach((e) =>
+            e.classList.remove("splitpanes__pane_transition")
+          );
 
-    setTimeout(() => {
-          this.model.paneSize =
-            size != undefined ? size : this.model.paneSize >= 85 ? 50 : 0;
-        }, 5);
+      setTimeout(() => {
+        this.model.paneSize =
+          size != undefined ? size : this.model.paneSize >= 85 ? 50 : 0;
+      }, 5);
 
       if (transition) {
         clearTimeout(this.splitpaneTimeout);
@@ -1639,6 +1641,8 @@ export default defineComponent({
     },
 
     showAll() {
+      this.oldViewRect = this.getViewport();
+
       let bound = this.getPanzoomRect(
         this.getBounds(
           this.getEntries().length > 0
@@ -2194,18 +2198,17 @@ $color-Selection: rgba(57, 215, 255, 0.3);
   white-space: nowrap;
   transition: all 0.3s ease-out;
   background: transparent;
-  &:hover {
-    backdrop-filter: blur(5px);
-    background: rgba(0, 0, 0, 0.4);
-  }
 
   button {
     outline: none;
-    color: white;
+    color: #eee;
     border: none;
     padding: 0;
     margin: 0;
     background-color: transparent;
+  }
+  svg {
+    filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.7));
   }
 
   button:disabled,
@@ -2328,8 +2331,8 @@ svg {
   transition: all 0.2s ease-in-out;
   transition-property: opacity, transform;
   &:hover {
-    color: #ccc;
-    transform: scale(1.25);
+    color: #fff;
+    transform: scale(1.2);
   }
 }
 
