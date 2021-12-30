@@ -1,0 +1,210 @@
+<template>
+  <div ref="el" class="ws-entry-video-wrapper">
+    <slot></slot>
+    <wsentryalert :entry="entry" />
+    <div
+      @dblclick.capture.stop="doubleClick"
+      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.stop.exact="entrySelectedLocal('single')"
+      class="image-selector select-element"
+    >
+      <div class="video-canvas"></div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts">
+import * as cache from "../../utils/ImageCache";
+import * as watcher from "../../utils/WatchSystem";
+import { defineComponent } from "vue";
+import { WorkspaceEntryImage } from "../../store/model/FileSystem/FileSystemEntries";
+import { setupEntry } from "../app/WorkspaceUtils";
+import wsentryalert from "../app/WorkspaceEntryAlert.vue";
+export default defineComponent({
+  name: "wsentryvideo",
+  components: {
+    wsentryalert,
+  },
+  data(): {
+    cacheListener: any;
+  } {
+    return {
+      cacheListener: undefined,
+    };
+  },
+  setup(props) {
+    return setupEntry(props);
+  },
+  props: {
+    entry: {
+      type: WorkspaceEntryImage,
+      required: true,
+    },
+    viewKey: Number,
+  },
+  mounted() {
+    let _this = this;
+    let path = this.entry.path;
+    const div: HTMLDivElement =
+      _this.$el.getElementsByClassName("video-canvas")[0];
+
+    var v: HTMLVideoElement = document.createElement(
+      "video"
+    ) as HTMLVideoElement;
+
+    v.src = path;
+
+    div.appendChild(v);
+  },
+  unmounted() {},
+  inject: ["entrySelected", "entrySelected"],
+  methods: {
+    cacheSizeEvent(dim: cache.ImageDim): void {
+      if (!this.entry.imageCreated) {
+        let w: number = Number(this.$el.offsetWidth);
+        this.$el.style.width = w + "px";
+        this.$el.style.height = w * dim.ratio + "px";
+        this.entry.imageCreated = true;
+      }
+    },
+    cacheImageEvent(
+      url: string,
+      type:
+        | "finish"
+        | "error"
+        | "preview"
+        | "tiny"
+        | "small"
+        | "medium"
+        | "original"
+    ): void {
+      switch (type) {
+        case "error":
+          this.entry.alert = "Image could not be loaded";
+          return;
+        case "finish":
+          return;
+        default:
+          this.entry.alert = undefined;
+      }
+
+      const div = this.$el.getElementsByClassName("image-canvas")[0];
+      if (type == "preview") {
+        this.entry.previewBase64 = url;
+      }
+      if (
+        type == "tiny" &&
+        (!this.$el.style.backgroundImage ||
+          this.$el.style.backgroundImage == "")
+      ) {
+        this.$el.style.backgroundImage = url;
+      }
+      if (type == "medium") {
+        div.style.backgroundImage = url;
+        setTimeout(() => {
+          this.$el.style.backgroundImage = "";
+        }, 500);
+        this.$el.classList.toggle("gradient-border", false);
+      }
+    },
+    watcherEvent(type: string) {
+      cache.ImageCache.registerPath(
+        this.entry.getURL(),
+        this.cacheListener,
+        true
+      );
+    },
+    entrySelectedLocal(type: "add" | "single" | "flip") {
+      // @ts-ignore: Unreachable code error
+      this.entrySelected(this.$el, type);
+    },
+    doubleClick(e: MouseEvent) {
+      this.$emit("zoomed");
+    },
+    clickStart(e: MouseEvent) {},
+  },
+  computed: {},
+  created() {},
+});
+</script>
+
+<!-- Add "scoped" attribute to limit CSS to this component only -->
+<style scoped lang="scss">
+.image-selector {
+  width: 100%;
+  height: 100%;
+}
+.image-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  background-size: cover;
+  box-sizing: border-box;
+}
+
+.ws-entry-image-wrapper {
+  // images are behind the normal stuff to use them as a background
+  z-index: 50;
+  background: transparent;
+  position: absolute;
+  color: #f1f1f1;
+  padding: 0px;
+  width: 220px;
+  height: 180px;
+  background-size: cover;
+  box-sizing: border-box;
+}
+.loading-border {
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(1turn);
+  }
+}
+$color-Selection: rgba(57, 215, 255, 0.3);
+
+.gradient-border {
+  border-radius: 2px;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    left: -50%;
+    top: -50%;
+    width: 200%;
+    height: 200%;
+    background-color: $color-Selection;
+    background-repeat: no-repeat;
+    background-size: 50% 50%, 50% 50%;
+    background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+    background-image: //
+      linear-gradient($color-Selection, $color-Selection),
+      //
+      linear-gradient($color-Selection, $color-Selection),
+      //
+      linear-gradient(#377af5, #377af5),
+      //
+      linear-gradient(#377af5, #377af5);
+    animation: rotate 4s linear infinite;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 12px;
+    top: 12px;
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
+    background: white;
+    border-radius: 2px;
+  }
+}
+</style>

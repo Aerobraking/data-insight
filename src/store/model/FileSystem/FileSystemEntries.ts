@@ -75,6 +75,34 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
     imageCreated: boolean;
 }
 
+export class WorkspaceEntryVideo extends WorkspaceEntry {
+    constructor(path: string | undefined, clipboard: boolean = false) {
+        super("wsentryvideo", true);
+
+        this.path = path != undefined ? path : "";
+        this.filename = path != undefined ? _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found" : ""; 
+        this.width = 600;
+        this.height = 600; 
+    }
+
+    public searchResultString(): string {
+        return this.filename;
+    }
+
+    public getFilesForDragging(): string[] {
+        return [this.path];
+    }
+
+    public searchLogic(input: string): boolean {
+        let found: boolean = super.searchLogic(input);
+        found = found || this.filename.toLocaleLowerCase().includes(input);
+        return found;
+    }
+  
+    path: string;
+    filename: string; 
+}
+
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
     constructor(url: string = "") {
         super("wsentryyoutube", true);

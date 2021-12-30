@@ -13,6 +13,7 @@ import wsentryframe from "./components/implementations/WorkspaceEntryFrame.vue";
 import wsentrytextarea from "./components/implementations/WorkspaceEntryTextareaView.vue";
 import wsentryfolderview from "./components/implementations/WorkspaceEntryFolderView.vue";
 import wsentryimage from "./components/implementations/WorkspaceEntryImageView.vue";
+import wsentryvideo from "./components/implementations/WorkspaceEntryVideoView.vue";
 import wsentryyoutube from "./components/implementations/WorkspaceEntryYoutubeView.vue";
 
 /**
@@ -79,6 +80,7 @@ function startApp(store: Store) {
     app.component('wsentryframe', wsentryframe);
     app.component('wsentryfolder', wsentryfolderview);
     app.component('wsentryimage', wsentryimage);
+    app.component('wsentryvideo', wsentryvideo);
     app.component('wsentryyoutube', wsentryyoutube);
 
     // features

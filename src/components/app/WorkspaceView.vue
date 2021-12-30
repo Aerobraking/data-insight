@@ -250,6 +250,7 @@ import {
   WorkspaceEntryFrame,
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
+  WorkspaceEntryVideo,
   WorkspaceEntryYoutube,
 } from "@/store/model/FileSystem/FileSystemEntries";
 import { MutationTypes } from "@/store/mutations/mutation-types";
@@ -1496,17 +1497,25 @@ export default defineComponent({
 
         const fileStat = fs.lstatSync(f);
         const p = f.normalize().replace(/\\/g, "/");
+        const lc = p.toLowerCase();
 
         if (fileStat.isDirectory()) {
           listFiles.push(new WorkspaceEntryFolderWindow(p));
         } else {
           if (
-            p.endsWith("jpg") ||
-            p.endsWith("jpeg") ||
-            p.endsWith("gif") ||
-            p.endsWith("png")
+            lc.endsWith("jpg") ||
+            lc.endsWith("jpeg") ||
+            lc.endsWith("gif") ||
+            lc.endsWith("png")
           ) {
             listFiles.push(new WorkspaceEntryImage(p));
+          } else if (
+            lc.endsWith("mp4") ||
+            lc.endsWith("ogg") ||
+            lc.endsWith("webm") ||
+            lc.endsWith("wav")
+          ) {
+            listFiles.push(new WorkspaceEntryVideo(p));
           } else if (p.endsWith("ins")) {
             // @ts-ignore: Unreachable code error
             this.loadInsightFileFromPath(p);
@@ -2149,7 +2158,8 @@ export default defineComponent({
       for (let index = 0; index < zoomFixed.length; index++) {
         const element: HTMLElement = zoomFixed[index];
         let s = 1 / t.scale;
-        const min = 1,max=50;
+        const min = 1,
+          max = 50;
         s = s < min ? min : s > max ? max : s;
         element.style.transform = "scale(" + s + "," + s + ")";
       }
