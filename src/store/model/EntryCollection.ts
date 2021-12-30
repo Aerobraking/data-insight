@@ -1,6 +1,6 @@
 import * as _ from "underscore";
 import { Type } from "class-transformer";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "./FileSystem/FileSystemEntries";
+import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "./FileSystem/FileSystemEntries";
 import WorkspaceEntry from "./WorkspaceEntry";
 
 
@@ -14,6 +14,7 @@ export default class EntryCollection {
                 { value: WorkspaceEntryFile, name: 'wsentryfile' },
                 { value: WorkspaceEntryImage, name: 'wsentryimage' },
                 { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' },
+                { value: WorkspaceEntryVideo, name: 'wsentryvideo' },
                 { value: WorkspaceEntryTextArea, name: 'wsentrytextarea' },
                 { value: WorkspaceEntryFolderWindow, name: 'wsentryfolder' },
                 { value: WorkspaceEntryFrame, name: 'wsentryframe' },

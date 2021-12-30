@@ -341,8 +341,6 @@ $color-Selection: rgba(57, 215, 255, 1);
 
 * {
   user-select: none;
-  image-rendering: pixelated;
-  transform-style: flat;
 }
 $color-Selection: rgba(57, 215, 255, 0.95);
 

@@ -1511,6 +1511,8 @@ export default defineComponent({
             listFiles.push(new WorkspaceEntryImage(p));
           } else if (
             lc.endsWith("mp4") ||
+            lc.endsWith("m4v") ||
+            lc.endsWith("mkv") ||
             lc.endsWith("ogg") ||
             lc.endsWith("webm") ||
             lc.endsWith("wav")
@@ -2684,6 +2686,7 @@ visually highlights elements for selection with a hover effect
 
 .ws-entry {
   transition: opacity 0.3s ease-in-out;
+  position: absolute;
   // filter: drop-shadow(5px 5px 2px  #000000);
 }
 

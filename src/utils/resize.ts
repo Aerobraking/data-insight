@@ -214,25 +214,21 @@ export class ResizerComplex {
             element.appendChild(resizer);
             resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
         }
+    }
 
-
-
-
-        // resizer = document.createElement('div');
-        // resizer.className = 'resizer-bottom-left';
-        // resizer.classList.add('ws-zoom-fixed');
-        // element.appendChild(resizer);
-        // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
-
-        // resizer = document.createElement('div');
-        // resizer.className = 'resizer-top-left';
-        // resizer.classList.add('ws-zoom-fixed');
-        // element.appendChild(resizer);
-        // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
+    shiftDown(e: KeyboardEvent): void {
+        if (["Shift", "Alt"].includes(e.key) && this.lastMouseEvent != undefined)
+            this.doDrag({
+                clientX: this.lastMouseEvent.clientX, clientY: this.lastMouseEvent.clientY,
+                shiftKey: e.shiftKey, altKey: e.altKey, preventDefault: () => { }, stopPropagation: () => { }
+            });
     }
 
     mousemoveFunc: any;
     mouseupFunc: any;
+    keydownFunc: any;
+    keyupFunc: any;
+    lastMouseEvent: any;
 
     initDrag(e: MouseEvent) {
         this.startX = e.clientX;
@@ -247,6 +243,8 @@ export class ResizerComplex {
         this.startWidth = parseInt(this.element.style.width.replace("px", ""));
         this.startHeight = parseInt(this.element.style.height.replace("px", ""));
         document.documentElement.addEventListener('mousemove', this.mousemoveFunc = this.doDrag.bind(this), false);
+        document.documentElement.addEventListener('keydown', this.keydownFunc = this.shiftDown.bind(this), false);
+        document.documentElement.addEventListener('keyup', this.keyupFunc = this.shiftDown.bind(this), false);
         document.documentElement.addEventListener('mouseup', this.mouseupFunc = this.stopDrag.bind(this), false);
 
         this.element.classList.add(classPreventInput);
@@ -256,8 +254,9 @@ export class ResizerComplex {
         e.stopPropagation();
     }
 
-    doDrag: Function = _.throttle((e: MouseEvent) => {
+    doDrag: Function = _.throttle((e: { clientX: number, clientY: number, shiftKey: boolean, altKey: boolean, preventDefault: Function, stopPropagation: Function }) => {
 
+        this.lastMouseEvent = e;
         /**
          * set the new dimensions for the resize element according to the mouse position
          */
@@ -394,6 +393,8 @@ export class ResizerComplex {
     stopDrag(e: MouseEvent) {
         document.documentElement.removeEventListener('mousemove', this.mousemoveFunc, false);
         document.documentElement.removeEventListener('mouseup', this.mouseupFunc, false);
+        document.documentElement.removeEventListener('keydown', this.keydownFunc, false);
+        document.documentElement.removeEventListener('keyup', this.keyupFunc, false);
         this.resizeEnd();
 
         /**

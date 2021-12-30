@@ -4,7 +4,7 @@ import { ElementDimension } from "@/utils/resize";
 import { Instance } from "@/store/model/OverviewTransferHandler";
 import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
 import { AbstractOverviewEntry } from "./AbstractOverEntry";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "./FileSystem/FileSystemEntries";
+import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "./FileSystem/FileSystemEntries";
 import WorkspaceEntry from "./WorkspaceEntry";
 // import * as NodeFeatures from "./AbstractNodeFeature";
 
@@ -16,14 +16,14 @@ export class Overview {
     constructor() {
         this.id = Math.floor(Math.random() * 1000000000000);
         // NodeFeatures.getFeatures();
-      //  this.features = NodeFeatures.getFeatures();
+        //  this.features = NodeFeatures.getFeatures();
     }
 
     id: number;
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.25 }
     gradientId: string = "";
-   // features: NodeFeatures.AbstractNodeFeature[];
-   // activeFeatureId: string|undefined;
+    // features: NodeFeatures.AbstractNodeFeature[];
+    // activeFeatureId: string|undefined;
 
     @Type(() => AbstractOverviewEntry, {
         keepDiscriminatorProperty: true,
@@ -84,7 +84,8 @@ export class Workspace extends View {
             subTypes: [
                 { value: WorkspaceEntryFile, name: 'wsentryfile' },
                 { value: WorkspaceEntryImage, name: 'wsentryimage' },
-                { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' },
+                { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' }, 
+                { value: WorkspaceEntryVideo, name: 'wsentryvideo' },
                 { value: WorkspaceEntryTextArea, name: 'wsentrytextarea' },
                 { value: WorkspaceEntryFolderWindow, name: 'wsentryfolder' },
                 { value: WorkspaceEntryFrame, name: 'wsentryframe' },

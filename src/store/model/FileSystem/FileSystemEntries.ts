@@ -80,9 +80,10 @@ export class WorkspaceEntryVideo extends WorkspaceEntry {
         super("wsentryvideo", true);
 
         this.path = path != undefined ? path : "";
-        this.filename = path != undefined ? _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found" : ""; 
+        this.filename = path != undefined ? _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found" : "";
         this.width = 600;
-        this.height = 600; 
+        this.height = 600;
+        this.created = false;
     }
 
     public searchResultString(): string {
@@ -98,9 +99,10 @@ export class WorkspaceEntryVideo extends WorkspaceEntry {
         found = found || this.filename.toLocaleLowerCase().includes(input);
         return found;
     }
-  
+
     path: string;
-    filename: string; 
+    filename: string;
+    created: boolean;
 }
 
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
