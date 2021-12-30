@@ -7,7 +7,9 @@
     ref="el"
     class="ws-entry-file-wrapper select-element sizefixed"
   >
-     <slot></slot>
+    <slot></slot>
+    <wsentryalert :entry="entry" />
+
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>
   </div>
@@ -17,10 +19,11 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
+import * as watcher from "../../utils/WatchSystem";
 import { WorkspaceEntryFile } from "../../store/model/FileSystem/FileSystemEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import * as icons from "../../utils/IconHandler";
-import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
+import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 
 export default defineComponent({
   name: "wsentryfile",
@@ -28,7 +31,7 @@ export default defineComponent({
     return {};
   },
   components: {
-    wsentrydisplayname,
+    wsentryalert,
   },
   setup(props) {
     return setupEntry(props);
@@ -49,18 +52,23 @@ export default defineComponent({
       _this.$el.getElementsByClassName("file-symbol")[0].style.backgroundImage =
         "url('" + img.src + "')";
     });
+    watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
   inject: ["entrySelected", "entrySelected"],
   methods: {
+    watcherEvent(type: string) {  
+      switch (type) {
+        case "unlink":
+          this.entry.alert = `Folder ${this.entry.path} does not exist`; 
+          break;
+        default:
+          this.entry.alert = undefined;
+      }
+    },
     entrySelectedLocal(type: "add" | "single" | "flip", event: MouseEvent) {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
-      if (type == "single") {
-        // @ts-ignore: Unreachable code error
-        //   this.startDrag(event);
-      }
     },
-
     doubleClick(e: MouseEvent) {
       e.preventDefault();
       shell.openPath(this.$props.entry.path); // Open the given file in the desktop's default manner.

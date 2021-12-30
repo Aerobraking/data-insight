@@ -43,7 +43,7 @@ export default defineComponent({
           type: "preview" | "tiny" | "small" | "medium" | "original"
         ) => {
           if (type == "small") {
-          div.style.backgroundImage = url;
+            div.style.backgroundImage = url;
           }
         },
         callbackSize: (dim: cache.ImageDim) => {},
@@ -52,7 +52,7 @@ export default defineComponent({
       icons.IconHandler.registerPath(this.entry.path, (url: string) => {
         var img = new Image();
         img.src = url;
-       div.style.backgroundImage = "url('" + img.src + "')";
+        div.style.backgroundImage = "url('" + img.src + "')";
       });
     }
   },
@@ -72,9 +72,8 @@ export default defineComponent({
       this.$el.classList.toggle("search-not-found", !found);
       this.$el.classList.toggle("file-not-found", !found);
     },
-    dragstart(e: DragEvent) { 
-    },
-    itemClicked(type: "control" | "shift" | "single") { 
+    dragstart(e: DragEvent) {},
+    itemClicked(type: "control" | "shift" | "single") {
       this.$emit("itemClicked", this.entry.id, type);
     },
   },
@@ -103,14 +102,17 @@ $color-Selection: rgba(57, 215, 255, 0.1);
 
   p {
     width: 150px;
-    // word-wrap: break-word;
-    white-space: normal;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-all;  
     padding: 0;
     margin: 0 auto;
     margin-top: 4px;
     text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* number of lines to show */
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 
   @mixin preview() {

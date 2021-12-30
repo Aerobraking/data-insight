@@ -1,6 +1,7 @@
 <template>
   <div ref="el" class="ws-entry-image-wrapper">
     <slot></slot>
+    <wsentryalert :entry="entry" />
     <div
       @dblclick.capture.stop="doubleClick"
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -14,16 +15,23 @@
 </template>
 
 <script lang="ts">
-const { shell } = require("electron");
-
 import * as cache from "../../utils/ImageCache";
+import * as watcher from "../../utils/WatchSystem";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../../store/model/FileSystem/FileSystemEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
+import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 export default defineComponent({
   name: "wsentryimage",
-  data() {
-    return {};
+  components: {
+    wsentryalert,
+  },
+  data(): {
+    cacheListener: any;
+  } {
+    return {
+      cacheListener: undefined,
+    };
   },
   setup(props) {
     return setupEntry(props);
@@ -37,63 +45,99 @@ export default defineComponent({
   },
   mounted() {
     let _this = this;
-    let path = this.entry?.getURL();
+    let path = this.entry.getURL();
     const div = _this.$el.getElementsByClassName("image-canvas")[0];
 
     if (this.entry.isClipboard) {
       _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
     } else {
       // setTimeout(() => {
-        if (this.entry.previewBase64) {
-          var img = new Image();
-          img.src = this.entry.previewBase64;
-          _this.$el.style.backgroundImage = "url('" + img.src + "')";
-        }
-        // _this.$el.classList.toggle("gradient-border", true);
-        cache.ImageCache.registerPath(path, {
-          callback: (
-            url: string,
-            type: "preview" | "tiny" | "small" | "medium" | "original"
-          ) => {
-            if (type == "preview") {
-              _this.entry.previewBase64 = url;
-            }
-            if (
-              type == "tiny" &&
-              (!_this.$el.style.backgroundImage ||
-                _this.$el.style.backgroundImage == "")
-            ) {
-              _this.$el.style.backgroundImage = url;
-            }
-            if (type == "medium") {
-              div.style.backgroundImage = url;
-              setTimeout(() => {
-                _this.$el.style.backgroundImage = "";
-              }, 500);
-              _this.$el.classList.toggle("gradient-border", false);
-            }
-          },
-          callbackSize: (dim: cache.ImageDim) => {
-            if (!_this.entry.imageCreated) {
-              let w: number = Number(_this.$el.offsetWidth);
-              _this.$el.style.width = w + "px";
-              _this.$el.style.height = w * dim.ratio + "px";
-              _this.entry.imageCreated = true;
-            }
-          },
-        });
+      if (this.entry.previewBase64) {
+        var img = new Image();
+        img.src = this.entry.previewBase64;
+        _this.$el.style.backgroundImage = "url('" + img.src + "')";
+      }
+
+      this.cacheListener = {
+        callback: this.cacheImageEvent,
+        callbackSize: this.cacheSizeEvent,
+      };
+
+      watcher.FileSystemWatcher.registerPath(
+        this.entry.path,
+        this.watcherEvent
+      );
+      // _this.$el.classList.toggle("gradient-border", true);
+      cache.ImageCache.registerPath(path, this.cacheListener);
       // }, 33);
     }
   },
+  unmounted() {
+    //  cache.ImageCache.unregisterPath(path) ;
+  },
   inject: ["entrySelected", "entrySelected"],
   methods: {
+    cacheSizeEvent(dim: cache.ImageDim): void {
+      if (!this.entry.imageCreated) {
+        let w: number = Number(this.$el.offsetWidth);
+        this.$el.style.width = w + "px";
+        this.$el.style.height = w * dim.ratio + "px";
+        this.entry.imageCreated = true;
+      }
+    },
+    cacheImageEvent(
+      url: string,
+      type:
+        | "finish"
+        | "error"
+        | "preview"
+        | "tiny"
+        | "small"
+        | "medium"
+        | "original"
+    ): void { 
+
+      switch (type) {
+        case "error": 
+          this.entry.alert = "Image could not be loaded";
+          return;
+        case "finish":
+          return;
+        default:
+          this.entry.alert = undefined;
+      }
+
+      const div = this.$el.getElementsByClassName("image-canvas")[0];
+      if (type == "preview") {
+        this.entry.previewBase64 = url;
+      }
+      if (
+        type == "tiny" &&
+        (!this.$el.style.backgroundImage ||
+          this.$el.style.backgroundImage == "")
+      ) {
+        this.$el.style.backgroundImage = url;
+      }
+      if (type == "medium") {
+        div.style.backgroundImage = url;
+        setTimeout(() => {
+          this.$el.style.backgroundImage = "";
+        }, 500);
+        this.$el.classList.toggle("gradient-border", false);
+      }
+    },
+    watcherEvent(type:string) {
+      cache.ImageCache.registerPath(
+        this.entry.getURL(),
+        this.cacheListener,
+        true
+      );
+    },
     entrySelectedLocal(type: "add" | "single" | "flip") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },
-    doubleClick(e: MouseEvent) {
-      console.log("emit!");
-      
+    doubleClick(e: MouseEvent) { 
       this.$emit("zoomed");
     },
     clickStart(e: MouseEvent) {},

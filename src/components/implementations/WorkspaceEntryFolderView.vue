@@ -14,6 +14,7 @@
     @mousedown.capture="mousedown"
   >
     <slot></slot>
+    <wsentryalert :entry="entry" />
 
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -144,7 +145,6 @@ import { setupEntry } from "../app/WorkspaceUtils";
 import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
 import fse from "fs-extra";
 import {
-  Drive,
   DriveListRoot,
   DriveListSystemInstance,
 } from "../../utils/DriveListSystem";
@@ -161,13 +161,12 @@ import {
   ViewGrid,
   FolderPlusOutline,
 } from "mdue";
-export function FeatureDecorator() {
-  return function (target: any) {};
-}
+import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
   components: {
+    wsentryalert,
     wsfolderfilelist,
     MonitorDashboard,
     DeleteVariant,
@@ -227,7 +226,7 @@ export default defineComponent({
       }
     );
 
-    DriveListSystemInstance.register(this.entry.id + "", this.watcherEvent);
+    DriveListSystemInstance.register(this.entry.id + "", this.driveListEvent);
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
   unmounted() {
@@ -300,7 +299,10 @@ export default defineComponent({
         }
       }
     },
-    watcherEvent() {
+    driveListEvent() {
+      this.updateUI();
+    },
+    watcherEvent(type: string) {
       this.updateUI();
     },
     scrolling(e: WheelEvent) {
@@ -444,6 +446,7 @@ export default defineComponent({
         fs.accessSync(dir, fs.constants.R_OK);
 
         if (fs.existsSync(dir)) {
+          this.entry.alert = undefined;
           fs.readdirSync(dir).forEach((file: string) => {
             let filePath = path.join(dir, file);
             filePath = path.normalize(filePath).replace(/\\/g, "/");
@@ -458,13 +461,12 @@ export default defineComponent({
                 )
               );
             } catch (err) {
-              console.log(err);
-
               console.error("no access! " + filePath);
             }
           });
         }
       } catch (err) {
+        this.entry.alert = `Folder ${this.entry.path} does not exist`;
         console.error("no access! " + this.entry.path);
       }
     },
@@ -622,6 +624,8 @@ export default defineComponent({
             break;
         }
       }
+      e.stopPropagation();
+      e.preventDefault();
     },
     toggleAll(select: boolean | undefined = undefined) {
       if (select != undefined) {

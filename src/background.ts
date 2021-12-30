@@ -295,7 +295,14 @@ ipcMain.on('get-args', (event: any, arg: any) => {
       console.error(err);
     }
   }
+
   sendToRender('send-args', sendTemp ? [getTempFilePath()] : args);
+})
+
+ipcMain.on('show-window', (event: any, arg: any) => {
+  if (win) {
+    win.show();
+  }
 })
 
 var menu: Menu;
@@ -310,6 +317,7 @@ async function createWindow() {
     width: 1400,
     height: 800,
     minWidth: 400,
+    show: false,
     minHeight: 400,
     // x: 10,
     // y: 10,
@@ -464,7 +472,7 @@ async function createWindow() {
           accelerator: "F6",
           label: 'About',
           click() {
-            if (win) { 
+            if (win) {
               sendToRender('show-about');
             }
           }

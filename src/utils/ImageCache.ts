@@ -1,4 +1,5 @@
 import _ from "underscore";
+import * as watcher from "./WatchSystem";
 
 export function isImageTypeSupported(path: string): boolean {
     return ['.apng', '.png', '.jpg', '.jpeg', '.avif', '.gif', '.svg', '.webp', '.bmp', '.tiff', '.tif'].some(char => path.toLowerCase().endsWith(char));
@@ -15,9 +16,10 @@ export interface ImageDim {
     ratio: number;
 }
 
-const os = require('os')
-const cpuCount = os.cpus().length
-
+// import os from "os";
+// const cpuCount = os.cpus().length
+import fs from "fs";
+import { remove } from "./ListUtils";
 export class Cache {
 
     private hashDim: Map<string, ImageDim> = new Map();
@@ -39,9 +41,17 @@ export class Cache {
             w.onmessage = (e: any) => {
                 // Grab the message data from the event
 
+                if (e.data.type == "finish" || e.data.type == "error") {
+                    console.log(e.data);
+                    remove(this.listQueue, e.data.path);
+                    this.doCallback(e.data.path, (l: ImageListener) => {
+                        l.callback("", e.data.type); 
+                    });
+                    return;
+                }
+
                 if (e.data.type == "size") {
                     this.hashDim.set(e.data.path, { width: e.data.width, height: e.data.height, ratio: e.data.ratio });
-
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callbackSize({ width: e.data.width, height: e.data.height, ratio: e.data.ratio });
                     });
@@ -91,8 +101,7 @@ export class Cache {
             };
             this.listWorker.push(w);
         }
-
-
+ 
     }
 
     static get instance() {
@@ -132,26 +141,41 @@ export class Cache {
 
     private timeLast = performance.now();
     private timeNow = performance.now();
+    private listQueue: string[] = [];
     private static delay = 33;
     private timeStack = 0;
-    public registerPath = (path: string, callback: ImageListener) => {
+    public registerPath = (path: string, callback: ImageListener, recreate: boolean = false) => {
 
         let imageEntry: Map<String, String> | undefined = this.hash.get(path);
 
-        if (imageEntry == undefined) {
-            /**
-             * Start webworker
-             */
-            this.hash.set(path, new Map());
-
+        const createPreview = (p: string) => {
+            this.hash.set(p, new Map());
+            this.listQueue.push(path);
             this.timeNow = performance.now();
             const diff = this.timeNow - this.timeLast;
             this.timeStack += Cache.delay;
-           // setTimeout(() => {
-                this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: path });
-                this.listWorkerTraverser++;
-                this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
+            // setTimeout(() => {
+            this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: p });
+            this.listWorkerTraverser++;
+            this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
             //}, Math.max(1, this.timeStack));
+        };
+
+        if (imageEntry == undefined || recreate) {
+            /**
+             * Start webworker
+             */
+            createPreview(path);
+            // try {
+            //     fs.accessSync(path, fs.constants.R_OK);
+            //     createPreview(path);
+            // } catch (error) {
+
+            //     watcher.FileSystemWatcher.registerPath(path, () => {
+            //         createPreview(path);
+            //     })
+
+            // }
 
         } else {
 
@@ -187,7 +211,8 @@ export class Cache {
             listCallbacks = [];
             this.hashCallbacks.set(path, listCallbacks);
         }
-        listCallbacks.push(callback);
+
+        if (!listCallbacks.includes(callback)) listCallbacks.push(callback);
 
         this.timeStack -= Cache.delay;
         this.timeLast = performance.now();

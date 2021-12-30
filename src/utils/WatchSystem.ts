@@ -2,13 +2,9 @@ import { FSWatcher } from "chokidar";
 
 import chokidar from "chokidar";
 import fs from "fs";
-interface Hash {
-    [details: string]: { (): void; }[];
-}
-
 export class Watcher {
 
-    private hash: Map<String, { (): void; }[]> = new Map();
+    private hash: Map<String, { (type: string): void; }[]> = new Map();
     private static _instance = new Watcher();
     private watcher: FSWatcher;
     private constructor() {
@@ -26,45 +22,42 @@ export class Watcher {
             depth: 0
         });
 
+
         this.watcher
             .on("ready", (path: any) => {
-            }).on("add", (path: any) => { 
-                path = path.replace(/\\/g, "/");
-                this.callUpdate(path.substring(0, path.lastIndexOf("/")));
+            }).on("add", (path: any) => {
+                // also call an update for the directory of the file, in case a folder view has this directory open.
+                this.callUpdatePrep(path, "add", true, true);
             })
             .on("change", (path: any) => {
-                path = path.replace(/\\/g, "/");
-                this.callUpdate(path);
+                this.callUpdatePrep(path, "change", true, true);
             })
             .on("unlink", (path: any) => {
-                path = path.replace(/\\/g, "/");
-                this.callUpdate(path.substring(0, path.lastIndexOf("/")));
+                this.callUpdatePrep(path, "unlink", true, true);
             })
-            .on("addDir", (path: any) => { 
-                path = path.replace(/\\/g, "/");
-                this.callUpdate(path.substring(0, path.lastIndexOf("/")));
+            .on("addDir", (path: any) => {
+                this.callUpdatePrep(path, "adddir", true, true);
             })
             .on("unlinkDir", (path: any) => {
-                path = path.replace(/\\/g, "/");
-                this.callUpdate(path.substring(0, path.lastIndexOf("/")));
+                this.callUpdatePrep(path, "unlinkdir", true, true);
             });
-
     }
 
-    private callUpdate(path: string): void {
+    private callUpdatePrep(path: string, type: string, dir: boolean = true, file: boolean = false) {
+        path = path.replace(/\\/g, "/");
+        path = path.endsWith("/") ? path.slice(0, -1) : path;
+        file ? this.callUpdate(path, type) : 0;
+        dir ? this.callUpdate(path.substring(0, path.lastIndexOf("/")), type) : 0;
+    }
+
+    private callUpdate(path: string, type: string): void {
 
         try {
-            path = path.replace(/\\/g, "/");
-
-            path = path.endsWith("/") ? path.slice(0, -1) : path;
-
-            console.log(path);
-
-            let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
+            let listCallbacks: { (type: string): void; }[] | undefined = this.hash.get(path); //get
             if (listCallbacks != undefined) {
                 for (let index = 0; index < listCallbacks.length; index++) {
                     const c = listCallbacks[index];
-                    c();
+                    c(type);
                 }
             }
         } catch (err) {
@@ -76,40 +69,35 @@ export class Watcher {
         return this._instance;
     }
 
-    registerPath(path: string, callback: () => void) {
-
-        path = path.replace(/\\/g, "/");
-
-        try {
-
-            let listCallbacks: { (): void; }[] | undefined = this.hash.get(path);
-
-            if (listCallbacks == undefined) {
-                listCallbacks = [];
-
-                path = path.endsWith("/") ? path.slice(0, -1) : path;
-
-                fs.accessSync(path, fs.constants.R_OK);
-                this.watcher.add(path);
-
-                this.hash.set(path, listCallbacks);
-
-            }
- 
-            listCallbacks.push(callback);
-        } catch (err) {
-            console.error("no access!");
-        }
-
-    }
-
-    unregisterPath(path: string, callback: () => void) {
+    registerPath(path: string, callback: (type: string) => void) {
 
         path = path.replace(/\\/g, "/");
         path = path.endsWith("/") ? path.slice(0, -1) : path;
 
-        let listCallbacks: { (): void; }[] | undefined = this.hash.get(path); //get
-  
+        let listCallbacks: { (type: string): void; }[] | undefined = this.hash.get(path);
+
+        if (listCallbacks == undefined) {
+            listCallbacks = [];
+            this.watcher.add(path);
+            this.hash.set(path, listCallbacks);
+        }
+        listCallbacks.push(callback);
+        try {
+            fs.accessSync(path, fs.constants.R_OK);
+        } catch (err) {
+            // inform about non existing file
+            this.callUpdatePrep(path, "unlink", true, true);
+        }
+
+    }
+
+    unregisterPath(path: string, callback: (type: string) => void) {
+
+        path = path.replace(/\\/g, "/");
+        path = path.endsWith("/") ? path.slice(0, -1) : path;
+
+        let listCallbacks: { (type: string): void; }[] | undefined = this.hash.get(path); //get
+
         if (listCallbacks != undefined) {
             const index = listCallbacks.indexOf(callback);
             if (index > -1) {

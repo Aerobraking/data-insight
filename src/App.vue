@@ -233,7 +233,7 @@ export default defineComponent({
         ipcRenderer.send("insight-file-loaded", {
           filePath: file.settings.filePath,
         });
-      }, 500);
+      }, 10);
     },
     saveFile(
       temp: boolean = false,
@@ -341,6 +341,8 @@ $color-Selection: rgba(57, 215, 255, 1);
 
 * {
   user-select: none;
+  image-rendering: pixelated;
+  transform-style: flat;
 }
 $color-Selection: rgba(57, 215, 255, 0.95);
 
@@ -349,6 +351,7 @@ body {
   padding: 0;
   background-color: #1d1d1d;
   overflow: hidden;
+  image-rendering: pixelated;
 }
 
 #app {

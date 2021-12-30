@@ -70,8 +70,8 @@
             tabIndex="0"
             :options="{
               zoomDoubleClickSpeed: 1,
-              minZoom: 0.03,
-              maxZoom: 15,
+              minZoom: 0.01,
+              maxZoom: 20,
               bounds: false,
               initialX: model.viewportTransform.x,
               initialY: model.viewportTransform.y,
@@ -2149,7 +2149,8 @@ export default defineComponent({
       for (let index = 0; index < zoomFixed.length; index++) {
         const element: HTMLElement = zoomFixed[index];
         let s = 1 / t.scale;
-        s = s < 1 ? 1 : s > 16 ? 16 : s;
+        const min = 1,max=50;
+        s = s < min ? min : s > max ? max : s;
         element.style.transform = "scale(" + s + "," + s + ")";
       }
     },
@@ -2673,6 +2674,7 @@ visually highlights elements for selection with a hover effect
 
 .ws-entry {
   transition: opacity 0.3s ease-in-out;
+  // filter: drop-shadow(5px 5px 2px  #000000);
 }
 
 .vue-pan-zoom-scene {

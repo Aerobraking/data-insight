@@ -89,16 +89,22 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
         return this.name;
     }
 
-    getId(): string | null {
-        var regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    getId(): string | undefined {
+
+        var regExp = "(?:http|https|)(?::\\/\\/|)(?:www.|)(?:youtu\\.be\\/|youtube\\.com(?:\\/embed\\/|\\/v\\/|\\/watch\\?v=|\\/ytscreeningroom\\?v=|\\/feeds\\/api\\/videos\\/|\\/user\\\\S*[^\\w\\-\\s]|\\S*[^\\w\\-\\s]))([\\w\\-\\_]{11})[a-z0-9;:@#?&%=+\\/\\$_.-]*";
         var match = this.url.match(regExp);
 
-        if (match && match[2].length == 11) {
-            this.videoId = match[2];
-            return match[2];
+        if (match) {
+            ;
+            this.videoId = match[1];
+            this.alert = undefined;
+            return this.videoId;
         } else {
-            return this.url;
+            // 
+            this.alert = this.url.length > 0 ? "Youtube ID could not be parsed" : undefined;
+            return undefined;
         }
+
     }
 
     getURL(): string {
@@ -112,9 +118,20 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
         /**
          * sandbox tags prevent opening any links to other websites.
          */
-        return '<iframe  sandbox="allow-presentation allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" '
-            + 'src="https://www.youtube-nocookie.com/embed/' + this.getId() + '" title="YouTube video player" frameborder="0" allow="accelerometer; '
-            + 'autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        const id = this.getId();
+        if (id) {
+            var match = this.url?.match("t\\=\\d+");
+            console.log("timestamp", id);
+
+            const stamp = match ? `?start=${match[0].replace("t=", "")}` : "";
+
+            return '<iframe  sandbox="allow-presentation allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" '
+                + 'src="https://www.youtube-nocookie.com/embed/' + id + stamp + '" title="YouTube video player" frameborder="0" allow="accelerometer; '
+                + 'autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
+        } else {
+
+            return "<div></div>";
+        }
     }
 
     private videoId: string | undefined;

@@ -15,7 +15,7 @@ export class Handler {
     }
 
     private app: any = require("electron").remote.app;
-
+  
     registerPath(p: string, callback: (url: string) => void): void {
 
         p = path.normalize(p).replaceAll("\\", "/");
@@ -28,6 +28,7 @@ export class Handler {
                 return;
             }
         } catch (e) {
+
             return;
         }
 

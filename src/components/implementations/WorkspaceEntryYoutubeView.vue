@@ -7,7 +7,8 @@
     @click.stop
     class="ws-entry-youtube-wrapper"
   >
-     <slot></slot>
+    <slot></slot>
+    <wsentryalert :entry="entry" />
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
@@ -60,14 +61,14 @@ function htmlToElement(html: string) {
 import { defineComponent } from "vue";
 import { WorkspaceEntryYoutube } from "../../store/model/FileSystem/FileSystemEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
-import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
+import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {
     return {};
   },
   components: {
-    wsentrydisplayname,
+    wsentryalert,
   },
   setup(props) {
     return setupEntry(props);
@@ -78,40 +79,24 @@ export default defineComponent({
   },
   watch: {
     "entry.url": function (newValue: string, oldValue: string) {
-      if (newValue != oldValue) {
-        this.$el.getElementsByClassName("inner-wrapper")[0].innerHTML = "";
-
-        let iframe: any = htmlToElement(
-          this.entry ? this.entry.getHtmlCode() : "<div>Video not found.</div>"
-        );
-
-        if (iframe.attachEvent) {
-          iframe.attachEvent("onerror ", function () {
-            alert("Local iframe is now loaded.1");
-
-            setTimeout(() => {}, 50);
-          });
-        } else {
-          iframe.onerror = function () {
-            alert("Local iframe is now loaded.2");
-          };
-        }
-
-        this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
-      }
+      if (newValue != oldValue) this.updateIframe();
     },
   },
   mounted() {
-    let iframe: any = htmlToElement(
-      this.entry != undefined
-        ? this.entry?.getHtmlCode()
-        : "<div>Video not found.</div>"
-    );
-
-    this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
+    this.updateIframe();
   },
   inject: ["entrySelected", "entrySelected", "mouseupWorkspace"],
   methods: {
+    updateIframe() {
+      this.$el.getElementsByClassName("inner-wrapper")[0].innerHTML = "";
+
+      let iframe: any = htmlToElement(
+        this.entry ? this.entry.getHtmlCode() : "<div>Video not found.</div>"
+      );
+
+      this.$el.getElementsByClassName("inner-wrapper")[0].appendChild(iframe);
+    },
+
     entrySelectedLocal(
       type: "add" | "single" | "flip",
       e: MouseEvent | undefined

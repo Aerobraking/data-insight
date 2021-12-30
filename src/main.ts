@@ -21,11 +21,12 @@ import wsentryyoutube from "./components/implementations/WorkspaceEntryYoutubeVi
 import featuresize from "./components/implementations/features/FeatureSizeComp.vue";
 import featurequantity from "./components/implementations/features/FeatureQuantityComp.vue";
 
-
 import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
 import { InsightFile } from './store/state';
+
+ipcRenderer.send("show-window");
 
 ipcRenderer.on("send-args", (event: any, args: string[]) => {
     for (let i = 0; i < args.length; i++) {

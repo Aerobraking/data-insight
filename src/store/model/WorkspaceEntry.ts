@@ -1,4 +1,5 @@
 import { ElementDimension } from "@/utils/resize";
+import { Exclude } from "class-transformer";
 
 export default class WorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {
@@ -22,6 +23,8 @@ export default class WorkspaceEntry {
     isResizable: boolean = false;
     width: number = 220;
     height: number = 180;
+    @Exclude()
+    alert: string|undefined;
 
     public setDimensions(d: ElementDimension) {
         this.x = d.x;

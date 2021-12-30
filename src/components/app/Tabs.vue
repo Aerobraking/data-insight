@@ -1,5 +1,5 @@
 
-<template> 
+<template>
   <div
     id="tabs"
     class="tabs-header"
@@ -62,16 +62,19 @@
       class="tab-entry close-file-anim"
       :class="{ 'tab-selected': element.isActive }"
       @click="selectTab(index)"
+      @dblclick.self="edit"
     >
       <input
         @keydown.stop
         @keyup.stop
+        @keyup.enter="$event.target.blur()"
         @dblclick.self="edit"
         v-on:keyup.enter="editFinish"
         @blur="editFinish"
         readonly="true"
         v-model="element.name"
         ondragstart="return false"
+        style="pointer-events: none"
       />
       <a class="delete" v-show="element.isActive" @click.self="deleteTab(index)"
         >X</a
@@ -90,8 +93,8 @@
 </template>
 
 
-<script lang="ts"> 
-import { defineComponent } from "vue"; 
+<script lang="ts">
+import { defineComponent } from "vue";
 import workspaceview from "./WorkspaceView.vue";
 import overviewview from "./OverviewView.vue";
 import { MutationTypes } from "@/store/mutations/mutation-types";
@@ -117,7 +120,7 @@ export default defineComponent({
     workspaceview,
     EyeOffOutline,
     EyeOutline,
-    overviewview, 
+    overviewview,
   },
   data(): {} {
     return {
@@ -158,10 +161,13 @@ export default defineComponent({
   },
   mounted() {
     const _this = this;
-    ipcRenderer.on("toggle-distract-mode", function (event: any, filepath: string) {
-      // @ts-ignore: Unreachable code error
-      _this.toggleShowUI();
-    });
+    ipcRenderer.on(
+      "toggle-distract-mode",
+      function (event: any, filepath: string) {
+        // @ts-ignore: Unreachable code error
+        _this.toggleShowUI();
+      }
+    );
   },
   methods: {
     toggleShowUI() {
@@ -176,13 +182,24 @@ export default defineComponent({
       this.$el.scrollLeft += e.deltaY;
     },
     edit(e: MouseEvent) {
-      let input: HTMLInputElement = e.target as HTMLInputElement;
+      const div = e.target as HTMLElement;
+      let input: HTMLInputElement = div.getElementsByTagName(
+        "input"
+      )[0] as HTMLInputElement;
+      input.style.pointerEvents = "all";
+      input.removeAttribute("disabled");
       input.readOnly = false;
-      input.select();
+      setTimeout(() => {
+        input.select();
+      }, 50);
+
       e.preventDefault();
     },
     editFinish(e: KeyboardEvent) {
-      let input: HTMLInputElement = e.target as HTMLInputElement;
+       let input: HTMLInputElement= (e.target instanceof HTMLInputElement) ?e.target : ( e.target as HTMLElement).getElementsByTagName(
+        "input"
+      )[0] as HTMLInputElement;
+      input.style.pointerEvents = "none";
       input.readOnly = true;
       e.preventDefault();
     },
