@@ -1,11 +1,35 @@
 'use strict'
 
-import { ipcMain, app, protocol, BrowserWindow, dialog, webContents, Menu } from 'electron'
+import { ipcMain, app, protocol, BrowserWindow, dialog, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import fs from "fs";
 import path from "path";
-const trash = require('trash');
-var usbDetect = require('usb-detection');
+import settings from 'electron-settings';
+import trash from "trash";
+import usbDetect from "usb-detection";
+
+// Scheme must be registered before the app is ready
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'app', privileges: { secure: true, standard: true } }
+])
+
+var menu: Menu;
+var switchFrameType = false;
+var s: {
+  wX: number, wY: number, wWidth: number, wHeight: number, frame: number, maximized: number, fullscreen: number
+} = {
+  wWidth: 0,
+  wHeight: 0,
+  wX: 0,
+  wY: 0,
+  frame: -1,
+  maximized: -1,
+  fullscreen: -1,
+};
+const sLoaded: any = settings.getSync('settings_main');
+if (sLoaded) s = sLoaded;
+
+var args = process.argv;
 
 let win: BrowserWindow | null;
 let windowWorker: BrowserWindow | null;
@@ -20,23 +44,15 @@ Require stack:
 - /Users/krecker/Documents/code/ma-data-insight/node_modules/electron/dist/Electron.app/Contents/Resources/default_app.asar/main.js
  */
 const isDevelopment = process.env.NODE_ENV !== 'production'
-
 const dragpng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAABgAAAAYADwa0LPAAABEklEQVRo3u2ZsQ6CMBCG/zOsxuiss6O+qPE5NCbODs6uvoOuxlAf4HeQQREM0NKDeN/YpuW+HnBJDzA6CMkZyR1Jx5bxjTUpCh7AGcBE+yCrMCgYW/cleACQ/ABJB2AYLQAR8VpfIPDxXvo+oG0G/luYgAnUJlKdcCT3JOe/Yqn9ESvUiTuAhYhcQmUgdp0YA1iVTTbJQNQ6keFEZBRKIEqdqPqc//wLdQkT0MYEtDEBbUxAGxPQxgS0MQFtTECb3gt8Xa93/S40T+8zYALamIA2JqBN0mDNA2+XuyF6vRVIyyaaZOAYIeA8h7KJ2lU365ic8Lq3j8ENwFJErsF2zFpMW5Jpiy2mlOSG5DTSQRmNeAKIfX8Wvu/xQQAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMS0xMi0xOFQxMzozMTozNiswMDowMEVo2dcAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjEtMTItMThUMTM6MzE6MzYrMDA6MDA0NWFrAAAAAElFTkSuQmCC";
-
 export const DragIconPath = app.getPath('userData') + path.sep + "dragicon.png";
+
 function createDragImage() {
   var base64Data: any = dragpng.replace(/^data:image\/png;base64,/, "");
   fs.writeFile(DragIconPath, base64Data, { encoding: 'base64' }, function (err: any) {
     console.log(err);
   });
 }
-
-createDragImage();
-
-// Scheme must be registered before the app is ready
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
-])
 
 function sendToRender(id: string, ...args: any[]) {
   // if (win) {
@@ -88,19 +104,6 @@ ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
 
 })
 
-function detectUSBEvents() {
-
-  usbDetect.startMonitoring();
-
-  // Detect add or remove (change)
-  usbDetect.on('change', function (device: any) {
-    setTimeout(() => {
-      sendToRender("usb-update");
-    }, 500);
-  });
-
-}
-
 /**
  * Usage of the trash lib: https://github.com/sindresorhus/trash
  */
@@ -136,9 +139,140 @@ ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
   }
 })
 
+ipcMain.on('frame', (event: any, arg: boolean) => {
+  s.frame = arg ? 1 : 0;
+})
+
 ipcMain.on('open-insight-file', (event: any, arg: any) => {
   openFile();
 })
+
+ipcMain.on('select-files', (event: any, arg: { target: "", type: "folders" | "files", path: string | undefined }) => {
+  selectFiles(arg);
+})
+
+ipcMain.on('get-args', (event: any, arg: any) => {
+  let sendTemp = true;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+
+    try {
+      if (fs.existsSync(a) && a.endsWith(".ins")) {
+        sendTemp = false; break;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  sendToRender('send-args', sendTemp ? [getTempFilePath()] : args);
+})
+
+ipcMain.on('show-window', (event: any, arg: any) => {
+  if (win) {
+    win.show();
+  }
+})
+
+/**
+ * Programm wird beendet
+ * wir speichern die datei automatisch als temp Datei in AppData
+ * Beim starten nach temp datei gucken und diese öffnen
+ */
+ipcMain.on('save-insight-file', (event: any, arg:
+  { json: string, temp: boolean, path: string, chooseFile: boolean, executeSave: boolean }) => {
+
+  if (arg.temp) {
+    saveFile(arg.json, getTempFilePath(), true);
+  } else {
+    if (!arg.chooseFile && arg.path && arg.path.length != 0 && (arg.executeSave || fs.existsSync(arg.path))) {
+      saveFile(arg.json, arg.path);
+    } else {
+      dialog.showSaveDialog({
+        title: "Select .ins File",
+        filters: [{ name: "Insight File Type", extensions: ["ins"] }],
+      }).then((result) => {
+        if (result.canceled) { return; }
+        if (result.filePath) {
+          sendToRender('fire-file-save-path-selected', addFileExtention(result.filePath ? result.filePath : ""));
+        }
+      }).catch((err) => {
+        console.log(err);
+      });
+    }
+
+  }
+})
+
+ipcMain.on('closed', e => {
+  usbDetect.stopMonitoring();
+
+  if (win && windowWorker) {
+    win.close();
+    windowWorker.close();
+  }
+
+  win = null;
+  windowWorker = null;
+
+  if (switchFrameType) {
+    switchFrameType = false;
+    createWindow();
+    return;
+  }
+
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('open-file', (event, path) => {
+  args = [path];
+  openFile(path);
+});
+
+// Quit when all windows are closed.
+app.on('window-all-closed', () => {
+  // On macOS it is common for applications and their menu bar
+  // to stay active until the user quits explicitly with Cmd + Q
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
+})
+
+app.on('activate', () => {
+  // On macOS it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  if (BrowserWindow.getAllWindows().length === 0) createWindow()
+})
+
+// This method will be called when Electron has finished
+// initialization and is ready to create browser windows.
+// Some APIs can only be used after this event occurs.
+app.on('ready', async () => {
+  if (isDevelopment && !process.env.IS_TEST) {
+    // Install Vue Devtools
+    // try {
+    //   await installExtension(VUEJS3_DEVTOOLS)
+    // } catch (e) {
+    //   console.error('Vue Devtools failed to install:', e.toString())
+    // }
+  }
+  createWindow()
+})
+
+function detectUSBEvents() {
+
+  usbDetect.startMonitoring();
+
+  // Detect add or remove (change)
+  usbDetect.on('change', function (device: any) {
+    setTimeout(() => {
+      sendToRender("usb-update");
+    }, 500);
+  });
+
+}
 
 function openFile(filePath: string | undefined = undefined) {
   if (!filePath) {
@@ -159,10 +293,6 @@ function openFile(filePath: string | undefined = undefined) {
 
   sendToRender('insight-file-selected', filePath);
 }
-
-ipcMain.on('select-files', (event: any, arg: { target: "", type: "folders" | "files", path: string | undefined }) => {
-  selectFiles(arg);
-})
 
 function selectFiles(arg: { target: "", type: "folders" | "files", path: string | undefined }) {
 
@@ -187,53 +317,7 @@ function selectFiles(arg: { target: "", type: "folders" | "files", path: string 
   }
 }
 
-/**
- * 
- * Programm wird beendet
- * wir speichern die datei automatisch als temp Datei in AppData
- * 
- * Beim starten nach temp datei gucken und diese öffnen
- * 
- * 
- * 
- */
-ipcMain.on('save-insight-file', (event: any, arg:
-  { json: string, temp: boolean, path: string, chooseFile: boolean, executeSave: boolean }) => {
-
-  if (arg.temp) {
-    saveFile(arg.json, getTempFilePath(), true);
-  } else {
-    if (!arg.chooseFile && arg.path && arg.path.length != 0 && (arg.executeSave || fs.existsSync(arg.path))) {
-      saveFile(arg.json, arg.path);
-    } else {
-      dialog.showSaveDialog({
-        title: "Select .ins File",
-        filters: [{ name: "Insight File Type", extensions: ["ins"] }],
-      }).then((result) => {
-        if (result.canceled) { return; }
-        if (result.filePath) {
-          sendToRender('fire-file-save-path-selected', checkExtention(result.filePath ? result.filePath : ""));
-        }
-      }).catch((err) => {
-        console.log(err);
-      });
-    }
-
-  }
-})
-
-ipcMain.on('closed', _ => {
-  usbDetect.stopMonitoring();
-  win = null;
-  windowWorker = null;
-
-  if (process.platform !== 'darwin') {
-
-    app.quit();
-  }
-});
-
-function checkExtention(filepath: string) {
+function addFileExtention(filepath: string) {
   filepath = path.normalize(filepath).replace(/\\/g, "/");
   let ext = path.extname(filepath);
   if (ext !== ".ins") {
@@ -244,10 +328,10 @@ function checkExtention(filepath: string) {
 
 function saveFile(jsonData: string, filepath: string, isTemp: boolean = false) {
 
-  filepath = checkExtention(filepath);
+  filepath = addFileExtention(filepath);
 
   fs.writeFile(filepath, jsonData, (err: any) => {
-    console.log(err);
+    if (err) console.log(err);
   });
 
   app.addRecentDocument(filepath);
@@ -275,37 +359,19 @@ function fireNewFileEvent() {
   sendToRender('fire-new-file', "");
 }
 
-var args = process.argv;
-
-app.on('open-file', (event, path) => {
-  args = [path];
-  openFile(path);
-});
-
-ipcMain.on('get-args', (event: any, arg: any) => {
-  let sendTemp = true;
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-
-    try {
-      if (fs.existsSync(a) && a.endsWith(".ins")) {
-        sendTemp = false; break;
-      }
-    } catch (err) {
-      console.error(err);
+function updateSettings() {
+  if (win) {
+    s.maximized = win.isMaximized() ? 1 : 0;
+    if (!win.isMaximized() && s.fullscreen != 1) {
+      s.wX = win.getBounds().x;
+      s.wY = win.getBounds().y;
+      s.wWidth = win.getBounds().width;
+      s.wHeight = win.getBounds().height;
     }
   }
+  console.log(s);
 
-  sendToRender('send-args', sendTemp ? [getTempFilePath()] : args);
-})
-
-ipcMain.on('show-window', (event: any, arg: any) => {
-  if (win) {
-    win.show();
-  }
-})
-
-var menu: Menu;
+}
 
 async function createWindow() {
 
@@ -314,14 +380,16 @@ async function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
     title: "Data Insight",
-    width: 1400,
-    height: 800,
+    width: s.wWidth > 0 ? s.wWidth : 1400,
+    height: s.wHeight > 0 ? s.wHeight : 800,
+    x: s.wX >= 0 ? s.wX : 0,
+    y: s.wY >= 0 ? s.wY : 0,
+    center: s.wX >= 0 && s.wY >= 0 ? false : true,
     minWidth: 400,
-    show: false,
     minHeight: 400,
-    // x: 10,
-    // y: 10,
-    center: true,
+    show: false,
+    fullscreen: s.fullscreen == 1,
+    // frame: s.frame != 0 ? true : false,
     autoHideMenuBar: false,
     webPreferences: {
       enableRemoteModule: true,
@@ -334,6 +402,30 @@ async function createWindow() {
       contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
     }
   })
+
+  if (s.maximized == 1) win.maximize();
+
+  win.on('resize', (e: any) => {
+    updateSettings();
+  });
+  win.on('move', (e: any) => {
+    updateSettings();
+  });
+  win.on('minimize', (e: any) => {
+    updateSettings();
+  });
+  win.on('maximize', (e: any) => {
+    s.maximized = 1;
+  });
+  win.on('unmaximize', (e: any) => {
+    s.maximized = 0;
+  });
+  win.on('enter-full-screen', (e: any) => {
+    if (win) s.fullscreen = 1;
+  });
+  win.on('leave-full-screen', (e: any) => {
+    if (win) s.fullscreen = 0;
+  });
 
   // Create the worker window.
   windowWorker = new BrowserWindow({
@@ -352,9 +444,17 @@ async function createWindow() {
   })
 
   win.on('close', (e) => {
+
+    if (win) {
+      updateSettings();
+      console.log("set settings: ", s);
+      settings.setSync('settings_main', s);
+    }
+
     usbDetect.stopMonitoring();
     if (win) {
       e.preventDefault();
+      console.log("send close event");
       win.webContents.send('app-close');
     }
   });
@@ -436,6 +536,30 @@ async function createWindow() {
           accelerator: 'F3',
           label: 'Fullscreen'
         },
+        // {
+        //   accelerator: 'F4',
+        //   label: 'Frameless',
+        //   // does not work in osx
+        //   visible: process.platform != 'darwin',
+        //   click() {
+        //     if (win) {
+        //       s.frame = s.frame == 0 ? 1 : 0;
+        //       switchFrameType = true;
+        //       if (win) {
+        //         updateSettings();
+        //         console.log("set settings: ", s);
+        //         settings.setSync('settings_main', s);
+        //       }
+
+        //       usbDetect.stopMonitoring();
+        //       if (win) {  
+        //         console.log("send close event manually");
+        //         win.webContents.send('app-close');
+        //       }
+
+        //     }
+        //   }
+        // },
         {
           label: 'Reload Page',
           accelerator: 'Ctrl+R',
@@ -500,35 +624,7 @@ async function createWindow() {
 
 }
 
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (BrowserWindow.getAllWindows().length === 0) createWindow()
-})
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    // try {
-    //   await installExtension(VUEJS3_DEVTOOLS)
-    // } catch (e) {
-    //   console.error('Vue Devtools failed to install:', e.toString())
-    // }
-  }
-  createWindow()
-})
+createDragImage();
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {

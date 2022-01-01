@@ -160,14 +160,12 @@ export default defineComponent({
 
     ipcRenderer.on(
       "insight-file-selected",
-      function (event: any, file: string) {
-        console.log("insight-file-selected", file);
-
+      function (event: any, file: string) { 
         _this.loadInsightFileFromPath(file);
       }
     );
 
-    ipcRenderer.on("app-close", (_) => {
+    ipcRenderer.on("app-close", (_) => { 
       _this.saveFile(true);
       ipcRenderer.send("closed");
     });
@@ -191,7 +189,7 @@ export default defineComponent({
       if (splash) {
         splash.remove();
       }
-    }, 200);
+    }, 30);
   },
   data() {
     return { showAbout: false, showHelp: false, version: "2.4" };
@@ -349,7 +347,7 @@ body {
   padding: 0;
   background-color: #1d1d1d;
   overflow: hidden;
-  image-rendering: pixelated;
+  // image-rendering: pixelated;
 }
 
 #app {

@@ -12,7 +12,6 @@
         @keyup.stop
         @focus="searchfocusSet(true)"
         @blur="searchfocusSet(false)"
-        @paste="onPaste"
       />
       <div class="prevent-input"></div>
       <div class="search-results" v-show="searchActive">
@@ -38,7 +37,6 @@
           @mouseenter="setFocusToWorkspace()"
           @keydown="keydown"
           @keyup="keyup"
-          @paste="onPaste"
           @wheel="wheel"
           @click.stop
           @dragover="dragover"
@@ -63,7 +61,6 @@
           <canvas class="workspace-canvas"></canvas>
 
           <panZoom
-            @paste="onPaste"
             @init="panHappen"
             @pan="onPanStart"
             @zoom="onZoom"
@@ -81,7 +78,12 @@
             }"
             selector=".zoomable"
           >
-            <div class="zoomable close-file-anim">
+            <div
+              class="zoomable close-file-anim"
+              @paste="paste"
+              @input.stop.prevent
+              contenteditable="true"
+            >
               <div class="rectangle-selection"></div>
               <div class="rectangle-selection-wrapper">
                 <button class="ws-zoom-fixed resizer-bottom-right">
@@ -458,6 +460,15 @@ export default defineComponent({
 
     _this.workspaceInterface.ws = _this.getWorkspaceIfc();
 
+    // contenteditable on the focused div makes sure we can register a paste event by the user throug ctrl+v
+    setTimeout(() => {
+      this.$el.getElementsByClassName("vue-pan-zoom-scene")[0].style.cursor =
+        "hand";
+      this.$el
+        .getElementsByClassName("vue-pan-zoom-scene")[0]
+        .setAttribute("contenteditable", true);
+    }, 100);
+
     /**
      * Listen for resizing of the canvas parent element
      */
@@ -832,13 +843,16 @@ export default defineComponent({
       useMousePosition: boolean = false,
       path: string = ""
     ): T | undefined {
-      let viewport = this.getViewport();
       let doPositioning = true;
+      let viewport = this.getViewport();
       let listFiles: Array<WorkspaceEntry> = [];
       let payload = {
         model: <Workspace>this.model,
         listFiles,
       };
+      let position: "center" | "mouse" | "none" = useMousePosition
+        ? "mouse"
+        : "center";
       switch (type) {
         case "files":
         case "folders":
@@ -852,7 +866,7 @@ export default defineComponent({
           listFiles.push(new WorkspaceEntryImage(path, true));
           break;
         case "youtube":
-          listFiles.push(new WorkspaceEntryYoutube());
+          listFiles.push(new WorkspaceEntryYoutube(path));
           break;
         case "text":
           listFiles.push(new WorkspaceEntryTextArea());
@@ -866,27 +880,13 @@ export default defineComponent({
               this.getSelectedEntries()
             );
 
-            // let x = Infinity,
-            //   y = Infinity,
-            //   x2 = -Infinity,
-            //   y2 = -Infinity;
-
-            // Array.from(this.getSelectedEntries()).forEach((el) => {
-            //   let coord = this.getCoordinatesFromElement(el);
-
-            //   x = x > coord.x ? coord.x : x;
-            //   y = y > coord.y ? coord.y : y;
-
-            //   x2 = x2 < coord.x2 ? coord.x2 : x2;
-            //   y2 = y2 < coord.y2 ? coord.y2 : y2;
-            // });
-
             let padding = 80;
             frame.x = dimension.x - padding;
             frame.y = dimension.y - padding;
             frame.width = dimension.w + padding * 2;
             frame.height = dimension.h + padding * 2;
             doPositioning = false;
+            position = "none";
           }
           break;
         default:
@@ -907,7 +907,7 @@ export default defineComponent({
         });
       }
 
-      this.$store.commit(MutationTypes.ADD_FILES, payload);
+      this.addEntriesToWorkspace([], listFiles, position);
 
       return listFiles[0] as T;
     },
@@ -957,7 +957,7 @@ export default defineComponent({
       this.dragMoveRel = mousePosition;
       this.selectionDragActive = true;
     },
-    onPaste(e: ClipboardEvent) {
+    paste(e: ClipboardEvent) {
       e.preventDefault();
       let text = e.clipboardData?.getData("text");
 
@@ -987,39 +987,12 @@ export default defineComponent({
         }
       }
 
-      var mousePos = this.mousePositionLast;
-      if (text != undefined) {
-        if (text.includes("youtube.com")) {
-          let listFiles: Array<WorkspaceEntry> = [];
-          let payload = {
-            model: <Workspace>this.model,
-            listFiles,
-          };
-          listFiles.push(new WorkspaceEntryYoutube(text));
-
-          var mousePos = this.mousePositionLast;
-          listFiles[0].x = mousePos.x;
-          listFiles[0].y = mousePos.y;
-
-          this.$store.commit(MutationTypes.ADD_FILES, payload);
-        } else {
-          return;
-          let listFiles: Array<WorkspaceEntry> = [];
-          let payload = {
-            model: <Workspace>this.model,
-            listFiles,
-          };
-          listFiles.push(new WorkspaceEntryTextArea(text));
-
-          var mousePos = this.mousePositionLast;
-          listFiles[0].x = mousePos.x;
-          listFiles[0].y = mousePos.y;
-
-          this.$store.commit(MutationTypes.ADD_FILES, payload);
-        }
+      if (
+        text != undefined &&
+        (text.includes("youtube.com") || text.includes("youtu.be"))
+      ) {
+        this.createEntry<WorkspaceEntryImage>("youtube", true, text);
       }
-
-      this.updateFixedZoomElements();
     },
     preventEvent(e: any, forward: boolean = true): boolean {
       var functionName: string = e.type as string;
@@ -1137,19 +1110,9 @@ export default defineComponent({
               for (let entry of pastedEntries.entries) {
                 entry.x += -xMin + this.mousePositionLast.x;
                 entry.y += -yMin + this.mousePositionLast.y;
-              }
+              } 
 
-              let payload = {
-                model: <Workspace>this.model,
-                listFiles: pastedEntries.entries,
-              };
-              this.$store.commit(MutationTypes.ADD_FILES, payload);
-              // // select the pasted entries
-              // setTimeout(() => {
-              //   const views = this.getViewsByModels(pastedEntries.entries);
-              //   this.clearSelection();
-              //   this.entriesSelected(views, "add", false);
-              // }, 10);
+              this.addEntriesToWorkspace([], pastedEntries.entries, "none"); 
 
               e.preventDefault();
               e.stopPropagation();
@@ -1489,7 +1452,7 @@ export default defineComponent({
     addEntriesToWorkspace(
       listFilePaths: string[],
       listFiles: WorkspaceEntry[] = [],
-      position: "center" | "mouse",
+      position: "center" | "mouse" | "none",
       positionAsCenter: boolean = false
     ): void {
       for (let index = 0; index < listFilePaths.length; index++) {
@@ -1543,45 +1506,47 @@ export default defineComponent({
           break;
       }
 
-      let tileCount = Math.ceil(Math.sqrt(listFiles.length)) - 1;
-      var offsetWMax = 0;
-      var offsetHMax = 0;
-      var offsetH = 0;
-      var offset = 0;
-      let rowHeightMax = 0;
-      for (
-        let indexW = 0, indexH = 0;
-        indexW < listFiles.length;
-        indexW++, indexH++
-      ) {
-        const e = listFiles[indexW];
+      if (position != "none") {
+        let tileCount = Math.ceil(Math.sqrt(listFiles.length)) - 1;
+        var offsetWMax = 0;
+        var offsetHMax = 0;
+        var offsetH = 0;
+        var offset = 0;
+        let rowHeightMax = 0;
+        for (
+          let indexW = 0, indexH = 0;
+          indexW < listFiles.length;
+          indexW++, indexH++
+        ) {
+          const e = listFiles[indexW];
 
-        e.x = x + offset;
-        e.y = y + offsetH;
+          e.x = x + offset;
+          e.y = y + offsetH;
 
-        offsetWMax =
-          offsetWMax < offset + e.width ? offset + e.width : offsetWMax;
-        offsetHMax =
-          offsetHMax < offsetH + e.height ? offsetH + e.height : offsetHMax;
+          offsetWMax =
+            offsetWMax < offset + e.width ? offset + e.width : offsetWMax;
+          offsetHMax =
+            offsetHMax < offsetH + e.height ? offsetH + e.height : offsetHMax;
 
-        offset += e.width + 20;
+          offset += e.width + 20;
 
-        rowHeightMax = rowHeightMax < e.height ? e.height : rowHeightMax;
+          rowHeightMax = rowHeightMax < e.height ? e.height : rowHeightMax;
 
-        if (indexH > tileCount) {
-          offsetH += rowHeightMax;
-          offset = 0;
-          indexH = 0;
+          if (indexH > tileCount) {
+            offsetH += rowHeightMax;
+            offset = 0;
+            indexH = 0;
+          }
         }
-      }
 
-      if (positionAsCenter) {
-        const dimension = this.getBoundsForEntries(listFiles);
+        if (positionAsCenter) {
+          const dimension = this.getBoundsForEntries(listFiles);
 
-        for (let i = 0; i < listFiles.length; i++) {
-          const e = listFiles[i];
-          e.x -= dimension.w / 2;
-          e.y -= dimension.h / 2;
+          for (let i = 0; i < listFiles.length; i++) {
+            const e = listFiles[i];
+            e.x -= dimension.w / 2;
+            e.y -= dimension.h / 2;
+          }
         }
       }
 
@@ -1589,6 +1554,11 @@ export default defineComponent({
         model: <Workspace>this.model,
         listFiles,
       });
+
+      setTimeout(() => {
+        this.clearSelection();
+        this.entriesSelected(this.getViewsByModels(listFiles), "add", false);
+      }, 33);
     },
     getBounds(entries: HTMLElement[] | HTMLElement): ElementDimension {
       let x = Infinity,
@@ -2114,37 +2084,7 @@ export default defineComponent({
       }
 
       WSUtils.Events.zoom(this);
-
-      // let currentC = this.getCurrentTransform();
-      // let rect = this.$el.getBoundingClientRect();
-      // let viewport: ElementDimension = {
-      //   x: rect.x,
-      //   y: rect.y,
-      //   x2:  rect.x+rect.width,
-      //   y2:  rect.y+rect.height,
-      //   w: rect.width,
-      //   h: rect.height,
-      // };
-
-      // for (let e of this.getEntries()) {
-      //   let c = this.getCoordinatesFromElement(e);
-
-      //   c.x = c.x * currentC.scale + currentC.x;
-      //   c.x2 = c.x2 * currentC.scale + currentC.x;
-
-      //   c.y = c.y * currentC.scale + currentC.y;
-      //   c.y2 = c.y2 * currentC.scale + currentC.y;
-
-      //   c.w = c.w * currentC.scale;
-      //   c.h = c.h * currentC.scale;
-
-      //   let padding = 1;
-      //   if (this.highlightSelection) {
-      //     e.style.visibility = WSUtils.intersectRect(viewport, c)|| WSUtils.insideRect(viewport, c)
-      //       ? "visible"
-      //       : "hidden";
-      //   }
-      // }
+ 
     },
     onZoom(e: any) {
       this.updateFixedZoomElements();
@@ -2200,6 +2140,9 @@ $color-Selection: rgba(57, 215, 255, 0.3);
   height: 90%;
   width: 98%;
   background: rgba(200, 0, 0, 0.2);
+}
+.vue-pan-zoom-scene {
+  cursor: default !important;
 }
 .workspace-menu-bar {
   position: absolute;
