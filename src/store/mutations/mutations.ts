@@ -115,20 +115,7 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.DELETE_WORKSPACE](state, payload: {
     index: number,
   }) {
-
-    let activeindex = state.loadedFile.views.findIndex(x => x.isActive);
-    let l = activeindex == payload.index ? state.loadedFile.views.length - 1 : -1;
-
     state.loadedFile.views.splice(payload.index, 1);
-
-    // select next workspace that is open
-    if (l > 0) {
-      let indexToSelect = payload.index > l - 1 ? l - 1 : payload.index;
-
-      state.loadedFile.views.forEach((entry: View, index: Number) => {
-        entry.isActive = index === indexToSelect;
-      });
-    }
   },
   [MutationTypes.COPY_WORKSPACE](state, payload: {
     index: number,
@@ -153,6 +140,7 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.SELECT_WORKSPACE](state, payload: {
     index: number,
   }) {
+    payload.index = payload.index < 0 ? 0 : payload.index > state.loadedFile.views.length - 1 ? state.loadedFile.views.length - 1 : payload.index;
     state.loadedFile.views.forEach((entry: View, index: Number) => {
       entry.isActive = index === payload.index;
     });

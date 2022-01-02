@@ -378,6 +378,7 @@ export default defineComponent({
     ignoreFileDrop: boolean;
     overviewfolder: WorkspaceEntryFolderWindow | undefined;
     workspaceInterface: WorkspaceViewIfcWrapper;
+    skipInitialResize: number;
     eventOnMouseup:
       | { entries: HTMLElement[]; type: "add" | "single" | "flip" }
       | undefined;
@@ -395,6 +396,7 @@ export default defineComponent({
       splitpaneTimeout: undefined,
       highlightSelection: true,
       activePlugin: null,
+      skipInitialResize: 0,
       searchString: "",
       useCanvas: true,
       mousePositionLastRaw: { x: 0, y: 0 },
@@ -479,37 +481,26 @@ export default defineComponent({
      * Listen for resizing of the canvas parent element
      */
     this.divObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
-      for (let index = 0; index < entries.length; index++) {
+      for (let index = 0; index < entries.length && index < 1; index++) {
         const e = entries[index];
         e.target; // div element
         let w = Math.max(10, e.contentRect.width);
         let h = Math.max(10, e.contentRect.height);
+
+        if (this.skipInitialResize++ > 0) {
+          let diffX = _this.getCanvas().width - w,
+            diffY = _this.getCanvas().height - h;
+
+          this.panZoomInstance.moveTo(
+            this.getCurrentTransform().x - diffX / 2,
+            this.getCurrentTransform().y - diffY / 2
+          );
+        }  
         _this.getCanvas().width = w;
         _this.getCanvas().height = h;
         _this.drawCanvas();
       }
-
-      const menu: HTMLElement =
-        this.$el.getElementsByClassName("workspace-menu-bar")[0];
-
-      if (menu) {
-        const listSvgs = menu.getElementsByTagName("svg");
-
-        const scale = Math.max(Math.min(menu.clientWidth / 1000, 1), 0.5);
-        const scaleMargin = Math.max(Math.min(menu.clientWidth / 1500, 1), 0.1);
-
-        for (let i = 0; i < listSvgs.length; i++) {
-          const s = listSvgs[i];
-          // s.style.fontSize = scale * 34 + "px";
-          // s.style.marginLeft = scaleMargin * 15 + "px";
-          // s.style.marginRight = scaleMargin * 15 + "px";
-        }
-      }
-    });
-
-    this.divObserver.observe(
-      this.$el.getElementsByClassName("workspace-split-wrapper")[0]
-    );
+    }).observe(this.$el.getElementsByClassName("workspace-split-wrapper")[0]);
 
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),
@@ -522,7 +513,6 @@ export default defineComponent({
         this.drawCanvas();
       },
       () => {
-        console.log("ENDE");
         this.preventInput(false);
       }
     );
@@ -559,7 +549,7 @@ export default defineComponent({
       this.panZoomInstance.moveTo(
         window.innerWidth / 2,
         window.innerHeight / 2
-      ); 
+      );
     }
 
     WSUtils.Events.registerCallback({
@@ -592,7 +582,9 @@ export default defineComponent({
     });
   },
   unmounted() {
-    this.divObserver.disconnect();
+    if (this.divObserver) {
+      this.divObserver.disconnect();
+    }
   },
   computed: {
     getShowUI(): boolean {
@@ -1725,6 +1717,8 @@ export default defineComponent({
           (-coordinates.y - coordinates.w / 2) *
             this.getCurrentTransform().scale +
           this.getWorkspaceWrapper().clientHeight / 2;
+
+        if (rect.bottom == rect.top || rect.left == rect.right) return;
 
         if (zoom) {
           if (smooth) {

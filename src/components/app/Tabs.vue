@@ -217,6 +217,7 @@ export default defineComponent({
     },
     deleteTab(i: number) {
       this.$store.commit(MutationTypes.DELETE_WORKSPACE, { index: i });
+      this.$store.commit(MutationTypes.SELECT_WORKSPACE, { index: i });
     },
     dragMouseMove: function (e: MouseEvent) {},
 
