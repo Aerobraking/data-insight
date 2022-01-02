@@ -208,7 +208,7 @@ $padding2: $padding * 2;
   }
 }
 
-div.workspace-is-selected-single .wsentry-displayname {
+workspace-is-selected-single .wsentry-displayname {
   [contenteditable][placeholder]:empty:before {
     content: attr(placeholder);
     position: absolute;

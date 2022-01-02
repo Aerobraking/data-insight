@@ -135,15 +135,12 @@ export default defineComponent({
 .inner-wrapper {
   position: relative;
   width: 100%;
-  flex: 1 !important;
-  pointer-events: none;
+  flex: 1 !important; 
   transition: pointer-events 5000ms;
   transition-delay: 5000ms;
 }
 
-.workspace-is-selected .inner-wrapper {
-  pointer-events: all;
-}
+ 
 
 .ws-entry-youtube-wrapper {
   display: flex;
@@ -159,8 +156,7 @@ export default defineComponent({
 
   iframe,
   object,
-  embed {
-    //  pointer-events: none;
+  embed { 
     position: absolute;
     top: 0;
     left: 0;

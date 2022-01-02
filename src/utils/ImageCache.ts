@@ -41,8 +41,7 @@ export class Cache {
             w.onmessage = (e: any) => {
                 // Grab the message data from the event
 
-                if (e.data.type == "finish" || e.data.type == "error") {
-                    console.log(e.data);
+                if (e.data.type == "finish" || e.data.type == "error") { 
                     remove(this.listQueue, e.data.path);
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("", e.data.type); 

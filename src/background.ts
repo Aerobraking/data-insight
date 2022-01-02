@@ -289,7 +289,6 @@ function openFile(filePath: string | undefined = undefined) {
     filePath = files[0];
   }
 
-  console.log("openfile");
 
   sendToRender('insight-file-selected', filePath);
 }
@@ -369,8 +368,6 @@ function updateSettings() {
       s.wHeight = win.getBounds().height;
     }
   }
-  console.log(s);
-
 }
 
 async function createWindow() {
@@ -446,15 +443,13 @@ async function createWindow() {
   win.on('close', (e) => {
 
     if (win) {
-      updateSettings();
-      console.log("set settings: ", s);
+      updateSettings(); 
       settings.setSync('settings_main', s);
     }
 
     usbDetect.stopMonitoring();
     if (win) {
-      e.preventDefault();
-      console.log("send close event");
+      e.preventDefault(); 
       win.webContents.send('app-close');
     }
   });

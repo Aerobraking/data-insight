@@ -82,7 +82,6 @@
               class="zoomable close-file-anim"
               @paste="paste"
               @input.stop.prevent
-              contenteditable="true"
             >
               <div class="rectangle-selection"></div>
               <div class="rectangle-selection-wrapper">
@@ -451,6 +450,22 @@ export default defineComponent({
 
     this.c = createContext({ debounceTime: 100, autoEnable: true });
 
+    /**
+     * Somehow making it contenteditable in the beginning causes the paste litener to
+     * work when we then toggle the contenteditable in the keydown listener at an ctrl+v input
+     */
+    (function () {
+      const panzoomscene =
+        _this.$el.getElementsByClassName("vue-pan-zoom-scene")[0];
+      panzoomscene.addEventListener("paste", (e: ClipboardEvent) =>
+        _this.paste(e)
+      );
+      panzoomscene.setAttribute("contenteditable", true);
+      setTimeout(() => {
+        panzoomscene.setAttribute("contenteditable", false);
+      }, 100);
+    })();
+
     getPlugins().forEach((p) => {
       const panel = new p();
       this.c.register(panel.shortcut, () => {
@@ -459,15 +474,6 @@ export default defineComponent({
     });
 
     _this.workspaceInterface.ws = _this.getWorkspaceIfc();
-
-    // contenteditable on the focused div makes sure we can register a paste event by the user throug ctrl+v
-    setTimeout(() => {
-      this.$el.getElementsByClassName("vue-pan-zoom-scene")[0].style.cursor =
-        "hand";
-      this.$el
-        .getElementsByClassName("vue-pan-zoom-scene")[0]
-        .setAttribute("contenteditable", true);
-    }, 100);
 
     /**
      * Listen for resizing of the canvas parent element
@@ -510,17 +516,14 @@ export default defineComponent({
       this.getSelectionWrapper().firstChild as HTMLElement,
       this,
       () => {
-        this.getEntries().forEach((e) => {
-          e.classList.add("prevent-input");
-        });
+        this.preventInput(true);
       },
       () => {
         this.drawCanvas();
       },
       () => {
-        this.getEntries().forEach((e) => {
-          e.classList.remove("prevent-input");
-        });
+        console.log("ENDE");
+        this.preventInput(false);
       }
     );
 
@@ -1032,8 +1035,7 @@ export default defineComponent({
         }
       }
     },
-    keydown(e: KeyboardEvent) {
-      this.c.keydown("ws", e);
+    keydown(e: KeyboardEvent) { 
       if (
         e.key == "Escape" &&
         this.activePlugin &&
@@ -1091,6 +1093,23 @@ export default defineComponent({
             }
             break;
           case "v":
+            this.$el.getElementsByClassName(
+              "vue-pan-zoom-scene"
+            )[0].style.cursor = "hand";
+            this.$el
+              .getElementsByClassName("vue-pan-zoom-scene")[0]
+              .setAttribute("contenteditable", true);
+
+            // contenteditable on the focused div makes sure we can register a paste event by the user throug ctrl+v
+            setTimeout(() => {
+              this.$el.getElementsByClassName(
+                "vue-pan-zoom-scene"
+              )[0].style.cursor = "hand";
+              this.$el
+                .getElementsByClassName("vue-pan-zoom-scene")[0]
+                .setAttribute("contenteditable", false);
+            }, 250);
+
             if (clipboard && clipboard.entries.length > 0) {
               let jsonString = serialize(clipboard);
 
@@ -1110,9 +1129,9 @@ export default defineComponent({
               for (let entry of pastedEntries.entries) {
                 entry.x += -xMin + this.mousePositionLast.x;
                 entry.y += -yMin + this.mousePositionLast.y;
-              } 
+              }
 
-              this.addEntriesToWorkspace([], pastedEntries.entries, "none"); 
+              this.addEntriesToWorkspace([], pastedEntries.entries, "none");
 
               e.preventDefault();
               e.stopPropagation();
@@ -1198,9 +1217,7 @@ export default defineComponent({
             if (e.repeat) {
               return;
             }
-            this.getEntries().forEach((e) => {
-              e.classList.toggle("prevent-input", true);
-            });
+            this.preventInput(true);
             this.spacePressed = true;
             this.showAll();
             break;
@@ -1237,9 +1254,7 @@ export default defineComponent({
                 this.panZoomInstance.smoothShowRectangle(bound);
                 // this.panZoomInstance.showRectangle(bound);
               }
-              this.getEntries().forEach((e) => {
-                e.classList.toggle("prevent-input", false);
-              });
+              this.preventInput(false);
               this.spacePressed = false;
             }
             break;
@@ -1253,9 +1268,7 @@ export default defineComponent({
 
       if (this.spacePressed) {
         this.spacePressed = false;
-        this.getEntries().forEach((e) => {
-          e.classList.toggle("prevent-input", false);
-        });
+        this.preventInput(false);
         let rect: DOMRect = this.getWorkspaceWrapper().getBoundingClientRect();
         let bound = this.getPanzoomRect({
           x: this.mousePositionLast.x - rect.width / 2,
@@ -1384,9 +1397,9 @@ export default defineComponent({
       if (this.model.isActive && this.activePlugin) return true;
 
       this.spacePressed = false;
-      this.getEntries().forEach((e) => {
-        e.classList.toggle("prevent-input", false);
-      });
+      // this.getEntries().forEach((e) => { WHY is this needed?
+      //   e.classList.toggle("prevent-input", false);
+      // });
       var shouldIgnore: boolean = e.altKey;
       return shouldIgnore;
     },
@@ -1558,6 +1571,7 @@ export default defineComponent({
       setTimeout(() => {
         this.clearSelection();
         this.entriesSelected(this.getViewsByModels(listFiles), "add", false);
+        this.updateFixedZoomElements();
       }, 33);
     },
     getBounds(entries: HTMLElement[] | HTMLElement): ElementDimension {
@@ -2084,7 +2098,6 @@ export default defineComponent({
       }
 
       WSUtils.Events.zoom(this);
- 
     },
     onZoom(e: any) {
       this.updateFixedZoomElements();
@@ -2185,7 +2198,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   width: 100%;
   height: 100%;
   z-index: 500;
-  background: rgba(255, 255, 255, 0);
+  background: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   transition: background-color 0.4s ease-in-out !important;
   p {
@@ -2204,6 +2217,10 @@ Blocks input vor the content of an entry. When selected, this div will be made i
 
 .workspace-is-selected .editor-enabler {
   display: none;
+}
+
+.prevent-input .editor-enabler {
+  display: block !important;
 }
 
 .workspace-menu-bar-hide {

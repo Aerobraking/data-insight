@@ -235,6 +235,7 @@ export default defineComponent({
 }
 
 .bookmark-entry {
+  white-space: nowrap;
   color: #fff;
   cursor: pointer;
   min-width: 150px;
