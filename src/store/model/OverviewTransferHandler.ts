@@ -1,4 +1,4 @@
-import { Overview } from "@/store/model/ModelAbstractData";
+import {  Workspace } from "@/store/model/ModelAbstractData";
 import { FolderOverviewEntry } from "./FileSystem/FileEngine";
 import { OverviewEngine } from "../../components/app/OverviewEngine";
 import { AbstractOverviewEntry } from "./AbstractOverEntry";
@@ -17,10 +17,10 @@ export class OverviewTransferHandler {
         return this._instance;
     }
 
-    transferData(o: Overview) {
-        let newArray: AbstractOverviewEntry[] | undefined = this.hash.get(o.id);
+    transferData(w: Workspace) {
+        let newArray: AbstractOverviewEntry[] | undefined = this.hash.get(w.id);
         if (newArray) {
-            o.rootNodes = newArray;
+            w.overview.rootNodes = newArray;
         }
     }
 
@@ -36,22 +36,22 @@ export class OverviewTransferHandler {
         this.hash.set(id, list);
     }
 
-    storeData(o: Overview) {
-        if (!this.hash.has(o.id)) {
+    storeData(w: Workspace) {
+        if (!this.hash.has(w.id)) {
             let newArray: AbstractOverviewEntry[] = [];
-            newArray.push(...o.rootNodes);
-            o.rootNodes = [];
-            this.hash.set(o.id, newArray);
+            newArray.push(...w.overview.rootNodes);
+            w.overview.rootNodes = [];
+            this.hash.set(w.id, newArray);
         }
     }
 
-    createEngine(id: number, div: HTMLElement, overview: Overview): Overview {
+    createEngine(id: number, div: HTMLElement, ws: Workspace): Workspace {
         let overviewEngine = new OverviewEngine(
             div,
-            overview
+            ws.overview
         );
         this.mapEngines.set(id, overviewEngine);
-        return overview;
+        return ws;
     }
     
     getEngine(id: number): OverviewEngine {

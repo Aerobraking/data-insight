@@ -46,9 +46,10 @@ ipcRenderer.on("send-args", (event: any, args: string[]) => {
         } catch (err) {
             console.error(err);
         }
-
-
     }
+
+    let store = initStore(new InsightFile());
+    startApp(store);
 });
 
 ipcRenderer.send("get-args", {});

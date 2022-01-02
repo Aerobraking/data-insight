@@ -1,6 +1,5 @@
 import * as _ from "underscore";
 import { Type } from "class-transformer";
-import { ElementDimension } from "@/utils/resize";
 import { Instance } from "@/store/model/OverviewTransferHandler";
 import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
 import { AbstractOverviewEntry } from "./AbstractOverEntry";
@@ -13,13 +12,6 @@ import WorkspaceEntry from "./WorkspaceEntry";
 
 export class Overview {
 
-    constructor() {
-        this.id = Math.floor(Math.random() * 1000000000000);
-        // NodeFeatures.getFeatures();
-        //  this.features = NodeFeatures.getFeatures();
-    }
-
-    id: number;
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.25 }
     gradientId: string = "";
     // features: NodeFeatures.AbstractNodeFeature[];
@@ -46,11 +38,16 @@ export class Overview {
 }
 
 export abstract class View {
-    order: number = 0;
+
+    // order: number = 0; used in future for sorting of the Tabs in the View
     id: number = 0;
     isActive: boolean = false;
     name: string = "";
     type: string = "";
+
+    constructor() {
+        this.id = Math.floor(Math.random() * 1000000000000);
+    }
 
     public setActive(a: boolean): this {
         this.isActive = a;
@@ -84,7 +81,7 @@ export class Workspace extends View {
             subTypes: [
                 { value: WorkspaceEntryFile, name: 'wsentryfile' },
                 { value: WorkspaceEntryImage, name: 'wsentryimage' },
-                { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' }, 
+                { value: WorkspaceEntryYoutube, name: 'wsentryyoutube' },
                 { value: WorkspaceEntryVideo, name: 'wsentryvideo' },
                 { value: WorkspaceEntryTextArea, name: 'wsentrytextarea' },
                 { value: WorkspaceEntryFolderWindow, name: 'wsentryfolder' },
@@ -100,7 +97,7 @@ export class Workspace extends View {
         /**
          * remove the node data from the vuex store
          */
-        Instance.storeData(this.overview);
+        Instance.storeData(this);
     }
 
 }

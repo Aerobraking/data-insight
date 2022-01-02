@@ -26,7 +26,7 @@
       <template #item="{ element, index }">
         <div
           class="tab-entry close-file-anim"
-          :key="element.key"
+          :key="element.id"
           :class="{ 'tab-selected': element.isActive }"
           @click="selectTab(index)"
         >
@@ -58,7 +58,7 @@
     <!-- Version without dragging -->
     <div
       v-for="(element, index) in getlist"
-      :key="element.key"
+      :key="element.id"
       class="tab-entry close-file-anim"
       :class="{ 'tab-selected': element.isActive }"
       @click="selectTab(index)"
@@ -85,7 +85,7 @@
   <workspaceview
     v-for="(view, index) in getlist"
     @click="selectTab(index)"
-    :key="view.key"
+    :key="view.id"
     v-show="view.isActive"
     :model="view"
   >

@@ -51,7 +51,7 @@ export default defineComponent({
           this.model.paneSize = 100;
         }
       } else if (e instanceof AbstractNode) {
-        const engine = Instance.getEngine(this.model.overview.id);
+        const engine = Instance.getEngine(this.model.id);
 
         if (!this.clickTimer) {
           this.clickTimer = setTimeout(() => {
@@ -89,7 +89,7 @@ export default defineComponent({
         );
 
         let listEntries: AbstractOverviewEntry[] = Instance.getData(
-          this.model.overview.id
+          this.model.id
         );
 
         for (let i = 0; i < listEntries.length; i++) {

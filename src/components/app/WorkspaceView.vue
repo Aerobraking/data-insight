@@ -556,14 +556,10 @@ export default defineComponent({
     this.setFocusToWorkspace();
     this.paneButtonClicked(this.model.paneSize, false);
     if (this.model.entries.length == 0) {
-      setTimeout(() => {
-        this.moveToHTMLElement(
-          this.$el.getElementsByClassName("welcome-message")[0],
-          true,
-          false,
-          0.9
-        );
-      }, 10);
+      this.panZoomInstance.moveTo(
+        window.innerWidth / 2,
+        window.innerHeight / 2
+      ); 
     }
 
     WSUtils.Events.registerCallback({
@@ -1035,7 +1031,7 @@ export default defineComponent({
         }
       }
     },
-    keydown(e: KeyboardEvent) { 
+    keydown(e: KeyboardEvent) {
       if (
         e.key == "Escape" &&
         this.activePlugin &&

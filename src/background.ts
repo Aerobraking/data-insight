@@ -371,6 +371,7 @@ function updateSettings() {
 }
 
 async function createWindow() {
+console.log("create window");
 
   detectUSBEvents();
 

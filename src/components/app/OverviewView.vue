@@ -280,13 +280,13 @@ export default defineComponent({
     /**
      * remove the node data from the vuex store
      */
-    Instance.storeData(this.model.overview);
-    this.idOverview = this.model.overview.id;
+    Instance.storeData(this.model);
+    this.idOverview = this.model.id;
 
     Instance.createEngine(
       this.idOverview,
       this.$el.getElementsByClassName("overview-wrapper")[0],
-      this.model.overview
+      this.model
     );
 
     Instance.getEngine(this.idOverview).rootNodes = Instance.getData(
@@ -298,7 +298,7 @@ export default defineComponent({
      */
     this.wsListener = {
       prepareFileSaving(): void {
-        Instance.transferData(_this.model.overview);
+        Instance.transferData(_this.model);
       },
     };
 
