@@ -19,16 +19,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         this.root.entry = this;
     }
 
-    public get depth(): number {
-        return this._depth;
-    }
 
-    public set depth(value: number) {
-        this._depth = value;
-        if (this.watcher) {
-            this.watcher.options.depth = 1;
-        }
-    }
 
     public createNode(name: string) {
         return new FolderNode(name);
@@ -55,8 +46,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     }
 
     private ignoredFolders: string[] = [];
-    private _depth: number = 5;
-   
+
     @Exclude()
     renameMap: Map<string, NodeJS.Timeout> = new Map();
 
@@ -73,12 +63,12 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
                 switch (event.type) {
                     case "foldersync":
                         const result: FolderSyncResult = event as unknown as FolderSyncResult;
-                        this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0); 
+                        this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
                         break;
                     case "folderstats":
                         this.addStats(event.stats);
                         break;
-                    case "folderdeepsyncfinished": 
+                    case "folderdeepsyncfinished":
                         this.isSyncing = false;
                         break;
                     default:
@@ -89,7 +79,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     }
 
-    event(e: FolderStatsResult | FolderSyncResult|FolderSyncFinished): void {
+    event(e: FolderStatsResult | FolderSyncResult | FolderSyncFinished): void {
         switch (e.type) {
             case "folderstats":
             case "folderdeepsyncfinished":
@@ -103,21 +93,15 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         return this.path;
     }
 
-    getDepth(): number {
-        return this._depth;
-    }
-
     getID(): number {
         return this.id;
     }
 
-    loadCollection(node: FolderNode) { 
-        Instance.syncFolderMan(this, node.getPath(), 1);
-        console.log("loadCollection",node);
-        
-        node.parent?.removeChild(node);
+    loadCollection(node: FolderNode) {
+        node.isCollection = false;
+        Instance.syncOpenedCollection(this, node.getPath(), 1);
     }
- 
+
     stopWatcher(): void {
 
     }

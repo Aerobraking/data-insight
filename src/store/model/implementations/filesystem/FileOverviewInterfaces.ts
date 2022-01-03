@@ -1,7 +1,6 @@
 export interface FileSystemListener {
     event(e: FolderStatsResult | FolderSyncResult | FolderSyncFinished): void;
-    getPath(): string;
-    getDepth(): number;
+    getPath(): string; 
     getID(): number;
 }
 

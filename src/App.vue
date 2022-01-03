@@ -507,8 +507,7 @@ Scrollbar
 }
 .noUi-connect {
   height: 100%;
-  width: 100%;
-  transition: all 0.5s ease-out;
+  width: 100%; 
 }
 .noUi-origin {
   height: 100%;

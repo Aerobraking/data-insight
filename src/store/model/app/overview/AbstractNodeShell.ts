@@ -63,8 +63,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     x: number = 0;
     y: number = 0;
 
-    // the root node
-    // @Type(() => FolderNode)
+    // the root node 
     @Type(() => AbstractNode, {
         keepDiscriminatorProperty: true,
         discriminator: {

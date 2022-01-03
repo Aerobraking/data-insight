@@ -480,7 +480,7 @@ export default defineComponent({
     /**
      * Listen for resizing of the canvas parent element
      */
-    this.divObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
+    this.divObserver = new ResizeObserver(_.throttle((entries: ResizeObserverEntry[]) => {
       for (let index = 0; index < entries.length && index < 1; index++) {
         const e = entries[index];
         e.target; // div element
@@ -500,7 +500,7 @@ export default defineComponent({
         _this.getCanvas().height = h;
         _this.drawCanvas();
       }
-    }).observe(this.$el.getElementsByClassName("workspace-split-wrapper")[0]);
+    },5)).observe(this.$el.getElementsByClassName("workspace-split-wrapper")[0]);
 
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),

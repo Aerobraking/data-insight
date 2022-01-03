@@ -4,6 +4,7 @@
     @drop.capture="drop"
     @dragenter.stop.prevent
     @dragover.stop.prevent
+    @keydown="keydown"
     tabIndex="1"
     class="overview-viewport"
   >
@@ -232,9 +233,8 @@ export default defineComponent({
     "model.paneSize": function (newValue: number, oldValue: number) {
       this.model.overviewOpen = newValue < 100;
     },
-    "selection.y": function (newValue: number, oldValue: number) { 
+    "selection.y": function (newValue: number, oldValue: number) {
       // funktioniert nicht
-      
     },
     selection: function (
       newValue: AbstractNode | undefined,
@@ -246,7 +246,6 @@ export default defineComponent({
       } else {
         //  this.$emit("folderSelected", undefined);
       }
-      console.log(newValue);
     },
     "model.overview.viewportTransform": function (
       newValue: { x: number; y: number; scale: number },
@@ -527,6 +526,65 @@ export default defineComponent({
       if (node) {
       }
     },
+    keydown(e: KeyboardEvent) {
+      let node: AbstractNode | undefined =
+        Instance.getEngine(this.idOverview).selection.length > 0
+          ? Instance.getEngine(this.idOverview).selection[0]
+          : undefined; 
+
+      switch (e.key) {
+        case "+":
+          this.loadCollection();
+          break;
+        case "-":
+          this.createCollection();
+          break;
+        case "ArrowUp":
+          if (node && node.parent) {
+            const childrenSorted = node.parent
+              .getChildren()
+              .sort((a, b) => a.getY() - b.getY());
+            const i = childrenSorted.indexOf(node);
+            const next = i - 1 < 0 ? childrenSorted.length - 1 : i - 1;
+            Instance.getEngine(this.idOverview).updateSelection(
+              false,
+              childrenSorted[next]
+            );
+          }
+          break;
+        case "ArrowLeft":
+          if (node && node.parent) {
+            Instance.getEngine(this.idOverview).updateSelection(
+              false,
+              node.parent
+            );
+          }
+          break;
+        case "ArrowDown":
+          if (node && node.parent) {
+            const childrenSorted = node.parent
+              .getChildren()
+              .sort((a, b) => a.getY() - b.getY());
+            const i = childrenSorted.indexOf(node);
+            const next = i + 1 > childrenSorted.length - 1 ? 0 : i + 1;
+            Instance.getEngine(this.idOverview).updateSelection(
+              false,
+              childrenSorted[next]
+            );
+          }
+          break;
+        case "ArrowRight":
+          if (node && node.getChildren().length > 0) {
+            Instance.getEngine(this.idOverview).updateSelection(
+              false,
+              node.getChildren()[0]
+            );
+          }
+          break;
+        default:
+          break;
+      }
+    },
     setFocusToOverview(): void {
       if (WSUtils.doChangeFocus()) {
         setTimeout(() => {
@@ -641,7 +699,6 @@ export default defineComponent({
         const fileStat = fs.lstatSync(p);
         if (fileStat.isDirectory()) {
           let root: FolderNodeShell = new FolderNodeShell(p);
-          root.depth = 3;
           listEntries.push(root);
         }
       }
