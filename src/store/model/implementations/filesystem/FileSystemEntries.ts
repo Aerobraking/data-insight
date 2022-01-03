@@ -1,6 +1,5 @@
 // import { path } from "d3";
-import _ from "underscore";
-import WorkspaceEntry from "../WorkspaceEntry";
+import _ from "underscore"; 
 const fs = require("fs");
 const path = require("path");
 
@@ -286,6 +285,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
     sort: "manual" | "asc" | "desc";
 }
 import * as f from "@/utils/format";
+import WorkspaceEntry from "../../app/WorkspaceEntry";
 export class FolderWindowFile {
 
     constructor(path: string, isDirectory: boolean, size: number) {

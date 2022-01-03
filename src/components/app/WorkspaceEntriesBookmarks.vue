@@ -1,5 +1,5 @@
 <script lang="ts">
-import { Workspace } from "../../store/model/ModelAbstractData";
+import { Workspace } from "../../store/model/app/Workspace";
 import { defineComponent } from "vue";
 import draggable from "vuedraggable";
 import overviewview from "./OverviewView.vue";

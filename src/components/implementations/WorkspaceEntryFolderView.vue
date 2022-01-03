@@ -140,7 +140,7 @@ import { defineComponent } from "vue";
 import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
-} from "../../store/model/FileSystem/FileSystemEntries";
+} from "../../store/model/implementations/filesystem/FileSystemEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
 import fse from "fs-extra";
@@ -531,7 +531,6 @@ export default defineComponent({
         }, 10);
       }
     },
-
     /**
      * When the bookmark name is edited, we don't alter the focused object
      * because the user may enter/leave the folder div with the mouse while editing
@@ -615,8 +614,7 @@ export default defineComponent({
               .map((f) => f.path);
             break;
           case "v":
-            console.log(WSUtils.clipboard.listFilesClipboard);
-
+            console.log(WSUtils.clipboard.listFilesClipboard); 
             this.handleFileDrop(WSUtils.clipboard.listFilesClipboard);
             WSUtils.clipboard.listFilesClipboard = [];
             break;

@@ -1,12 +1,13 @@
 export interface FileSystemListener {
-    event(e: FolderStatsResult | FolderSyncResult): void;
+    event(e: FolderStatsResult | FolderSyncResult | FolderSyncFinished): void;
     getPath(): string;
     getDepth(): number;
     getID(): number;
 }
 
 export interface MessageType {
-    type: "folderdeepsync" | "foldersync" | "folderstats",
+    type: "folderdeepsync" | "foldersync" | "folderstats" | "folderdeepsyncfinished",
+    id: number // the id of the abstractnodeshell that listens to this syncing
 }
 
 export interface FolderSync extends MessageType {
@@ -14,7 +15,6 @@ export interface FolderSync extends MessageType {
     depth: number,
     collectionSize: number,
     path: string,
-    id: number
 }
 
 export interface FolderStat extends Stats {
@@ -24,7 +24,6 @@ export interface FolderStat extends Stats {
 export interface FolderSyncResult extends MessageType {
     type: "foldersync",
     path: string,
-    id: number // the id of the overview entry that listens to this syncing
     childCount: number,
     collection: boolean,
 }
@@ -33,7 +32,10 @@ export interface FolderStatsResult extends MessageType {
     type: "folderstats",
     path: string,
     stats: FolderStat,
-    id: number // the id of the overview entry that listens to this syncing
+}
+export interface FolderSyncFinished extends MessageType {
+    type: "folderdeepsyncfinished",
+    path: string,
 }
 
 export enum StatsType {

@@ -26,10 +26,10 @@
 
 <script lang="ts">
 import * as watcher from "../../utils/WatchSystem";
-import { defineComponent } from "vue";
-import { WorkspaceEntryVideo } from "../../store/model/FileSystem/FileSystemEntries";
+import { defineComponent } from "vue"; 
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
+import { WorkspaceEntryVideo } from "@/store/model/implementations/filesystem/FileSystemEntries";
 export default defineComponent({
   name: "wsentryvideo",
   components: {

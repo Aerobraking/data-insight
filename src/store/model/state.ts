@@ -1,5 +1,6 @@
-import { View, Workspace } from "./model/ModelAbstractData"
 import { Type } from 'class-transformer';
+import View from "./app/AbstractView";
+import { Workspace } from './app/Workspace';
 
 export class InsightFile {
     @Type(() => View, {
@@ -27,14 +28,7 @@ export class InsightFileSettings {
     filePath: string = "";
 }
 
-export class UserSettings {
-    recentFiles: string[] = [];
-    loadLastFile: boolean = true;
-    loadedFilePath: string = "";
-}
-
 export type State = {
-    userSettings: UserSettings,
     loadedFile: InsightFile
 }
 

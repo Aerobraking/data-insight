@@ -2,8 +2,8 @@ const WorkerPlugin = require('worker-plugin');
 
 module.exports = {
   pages: {
-    index: 'src/main.ts',
-    subpage: 'src/windowWorker.ts'
+    index: 'src/mainWindow.ts',
+    subpage: 'src/mainWorker.ts'
   },
   // mode: 'production',
   configureWebpack: {

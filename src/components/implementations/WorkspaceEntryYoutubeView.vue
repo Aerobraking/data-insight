@@ -58,10 +58,10 @@ function htmlToElement(html: string) {
   return template.content.firstChild;
 }
 
-import { defineComponent } from "vue";
-import { WorkspaceEntryYoutube } from "../../store/model/FileSystem/FileSystemEntries";
+import { defineComponent } from "vue"; 
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
+import { WorkspaceEntryYoutube } from "@/store/model/implementations/filesystem/FileSystemEntries";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {

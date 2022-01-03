@@ -2,7 +2,7 @@ import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
 import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";  
 // import { COLUMNWIDTH } from "../../components/app/OverviewEngine";
-import { Stats } from "./FileSystem/FileOverviewInterfaces"; 
+import { Stats } from "../../implementations/filesystem/FileOverviewInterfaces"; 
 
 /**
  * collision nur pro spalte
@@ -285,6 +285,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     collectionSize: number = 0;
 
     public createCollection() {
+        console.log("createCollection",this);
+        
         this.collectionSize = this.children.length;
         this.children = [];
         this.isCollection = true;

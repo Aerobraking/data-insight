@@ -1,6 +1,6 @@
  
-import { OverviewEngine } from "@/components/app/OverviewEngine";
-import { AbstractNode } from "@/store/model/OverviewData";
+import { OverviewEngine } from "@/components/app/OverviewEngine"; 
+import { AbstractNode } from "@/store/model/app/overview/AbstractNode";
 import * as d3 from "d3";
 
 function constant(x: any) {

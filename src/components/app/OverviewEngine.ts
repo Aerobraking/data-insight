@@ -4,14 +4,15 @@ import * as d3 from "d3";
 import {
     ZoomTransform,
 } from "d3";
-import { AbstractNode, AbstractLink, EntryListener, ColumnTextWidth } from "../../store/model/OverviewData";
+import { AbstractNode, AbstractLink, EntryListener, ColumnTextWidth } from "../../store/model/app/overview/AbstractNode";
 import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
-import { Overview } from "@/store/model/ModelAbstractData"; 
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
-import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";
-import AbstractOverviewEntryIfc from "@/store/model/AbstractOverviewEntryIfc";
+import { Overview } from "@/store/model/app/Workspace";
+import { AbstractNodeShell } from "@/store/model/app/overview/AbstractNodeShell";
+import AbstractNodeShellIfc from "@/store/model/app/overview/AbstractNodeShellIfc";
+import { ipcRenderer } from "electron";
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -99,6 +100,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     private static now: number = 0;
     private static then: number = 0;
     private static elapsed: number = 0;
+    private static elapsedTotal: number = 0;
+    public static framecounter: number = 0;
     // milliseconds till last frame
     private static delta: number = 0;
 
@@ -125,6 +128,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             }
 
             OverviewEngine.delta = OverviewEngine.elapsed;
+            OverviewEngine.elapsedTotal += OverviewEngine.delta;
 
             // Get ready for next frame by setting then=now, but also adjust for your
             // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
@@ -243,15 +247,21 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 // _this.setFilterList("hover", [...n.descendants(), ...n.parents()]);
                 listSelection.length == 0 ? _this.setFilterList("selection") : _this.setFilterList("selection", listSelection);
 
+                if (e.shiftKey && node) {
+                    ipcRenderer.send("ondragstart", [node.getPath()]);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
             }
         });
 
         // Setup node drag interaction
-        d3.select(this.canvas).on("mousemove", function (e: MouseEvent) {
+        d3.select(this.canvas).on("mousemove", _.throttle(function (e: MouseEvent) {
             var rect = _this.canvas.getBoundingClientRect();
             _this.mousePosition = { x: e.clientX - rect.left, y: e.clientY - rect.top };
             _this.hoverFinder(_this);
-        }).call(
+        }, 16)).call(
             d3.drag<HTMLCanvasElement, unknown>().subject(() => {
                 const obj = this.getNodeAtMousePosition();
                 if (obj && obj.isRoot()) {
@@ -268,11 +278,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     obj.__initialDragPos = {
                         x: obj.x,
                         y: obj.y,
-                        fx: obj instanceof AbstractOverviewEntry ? obj.x : obj.fx,
-                        fy: obj instanceof AbstractOverviewEntry ? obj.y : obj.fy
+                        fx: obj instanceof AbstractNodeShell ? obj.x : obj.fx,
+                        fy: obj instanceof AbstractNodeShell ? obj.y : obj.fy
                     };
 
-                    if (obj instanceof AbstractOverviewEntry) {
+                    if (obj instanceof AbstractNodeShell) {
 
                     } else {
                         const node = ev.subject as AbstractNode;
@@ -305,7 +315,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     let diffX = (dragPos.x - initPos.x) / k;
                     let diffY = (dragPos.y - initPos.y) / k;
 
-                    if (obj instanceof AbstractOverviewEntry) {
+                    if (obj instanceof AbstractNodeShell) {
                         obj.setCoordinates({ x: initPos.x + diffX, y: initPos.y + diffY })
                     } else {
                         const node = ev.subject as AbstractNode;
@@ -337,7 +347,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                     delete (obj.__initialDragPos);
 
-                    if (obj instanceof AbstractOverviewEntry) {
+                    if (obj instanceof AbstractNodeShell) {
                         return;
                     }
 
@@ -474,7 +484,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
     public zoomToFit() {
-        this.setViewBox(this.getNodesBoundingBox(1.6));
+        if (this.rootNodes.length > 0) {
+            this.setViewBox(this.getNodesBoundingBox(1.6));
+        }
     }
 
     public setViewBox(dim: ElementDimension) {
@@ -564,12 +576,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     canvasShadow: HTMLCanvasElement;
     engineActive: boolean = true;
     public showShadow: boolean = false;
-    private _rootNodes: AbstractOverviewEntry[] = [];
+    private _rootNodes: AbstractNodeShell[] = [];
 
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
     private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
-    public static framecounter: number = 0;
+
 
     public setFilterList(key: string, listNodes: AbstractNode[] | undefined = undefined, showImmediately: boolean = false) {
 
@@ -593,7 +605,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         if (this.nodeFiltered.length > 0) {
             // search for new nodes that will be blending out or in
             for (let index = 0; index < this.rootNodes.length; index++) {
-                const entry = this.rootNodes[index] as AbstractOverviewEntry;
+                const entry = this.rootNodes[index] as AbstractNodeShell;
 
                 for (let j = 0; j < entry.nodes.length; j++) {
                     const n = entry.nodes[j];
@@ -672,7 +684,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         // register the root nodes for color ids
         for (let j = 0; j < this.rootNodes.length; j++) {
-            const entry: AbstractOverviewEntry = this.rootNodes[j];
+            const entry: AbstractNodeShell = this.rootNodes[j];
             for (let i = 0; i < entry.nodes.length; i++) {
                 const n = entry.nodes[i];
                 n.colorID = this.autocolor.register(n);
@@ -734,14 +746,16 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
-    public getColumnX(entry: AbstractOverviewEntryIfc, n: AbstractNode) {
+    private opacityMin = 0.04;
+
+    public getColumnX(entry: AbstractNodeShellIfc, n: AbstractNode) {
 
         return n.depth * COLUMNWIDTH;
 
         // let d = this.getColumnData(entry, n.depth);
         // return n.parent && d ? d.x + entry.root.getX() : n.getX();
     }
-    public getColumnXByDepth(entry: AbstractOverviewEntry, depth: number) {
+    public getColumnXByDepth(entry: AbstractNodeShell, depth: number) {
 
         return depth * COLUMNWIDTH;
         // let d = this.getColumnData(entry, depth);
@@ -751,9 +765,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
 
     mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
-    setWidthsTween: Map<AbstractOverviewEntry, Map<number, Tween<any>>> = new Map();
+    setWidthsTween: Map<AbstractNodeShell, Map<number, Tween<any>>> = new Map();
 
-    public getColumnData(entry: AbstractOverviewEntry, depth: number, create: boolean = true) {
+    public getColumnData(entry: AbstractNodeShell, depth: number, create: boolean = true) {
 
         return { x: depth * COLUMNWIDTH, width: COLUMNWIDTH };
 
@@ -776,7 +790,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         // return data;
     }
 
-    public getColumnDataRaw(entry: AbstractOverviewEntry, depth: number) {
+    public getColumnDataRaw(entry: AbstractNodeShell, depth: number) {
         return this.getColumnDataRawByID(entry.id, depth);
     }
 
@@ -791,7 +805,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         return data;
     }
 
-    public setColumnTextWidth(entry: AbstractOverviewEntry, value: ColumnTextWidth) {
+    public setColumnTextWidth(entry: AbstractNodeShell, value: ColumnTextWidth) {
         let _this = this;
         let data = this.getColumnData(entry, value.depth);
         if (data) {
@@ -892,7 +906,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             }
 
             for (let index = 0; index < this.rootNodes.length; index++) {
-                const entry: AbstractOverviewEntry = this.rootNodes[index];
+                const entry: AbstractNodeShell = this.rootNodes[index];
                 ctx.save();
                 ctx.translate(entry.x, entry.y);
                 let nodes: AbstractNode[] = entry.nodes;
@@ -1013,7 +1027,147 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     //         nodeY < y + viewportHeight / 2);
     // }
 
-    drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
+
+    /**
+     * wir speichern die farben für jede node ab und aktualisieren sie bei jedem update von nodes.
+     * 
+     * ändern wir die render eigenschaften, speichern wir die neuen farben in einer 2. map und erstellen
+     * für jede node ein d3.scaleLinear mit den beiden farben.
+     * 
+     * dann starten wir ne duration mit der wir uns dann die aktuelle farbe holen. 
+     * 
+     * werden die render settings wieder geändert, speichern wir die aktuelle farbe bei der duration als neue start
+     * farbe 
+     * 
+     */
+    public setColorScale<N extends AbstractNode>(statAttribute: string,
+        min: number, max: number,
+        getColor: (node: N, stat: number, min: number, max: number) => string,
+        duration: number = 40): void {
+
+        this.colorSettings = { attr: statAttribute, min: min, max: max, colorFunction: getColor };
+
+        for (let index = 0; index < this.rootNodes.length; index++) {
+            const entry: AbstractNodeShell = this.rootNodes[index];
+            let nodes: AbstractNode[] = entry.nodes;
+            for (let j = 0; j < nodes.length; j++) {
+
+                const n = nodes[j];
+                const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                const colorOld = this.getColorForNode(n, false, false);
+                if (colorOld && nodeValue != undefined) {
+                    let colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                    colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
+                    var scale = d3.scaleLinear<string>()
+                        .domain([0, duration])
+                        .range([colorOld, colorNew]);
+                    this.colorTransitionMap.set(n, scale);
+                    this.colorNodeMap.set(n, colorNew);
+                }
+            }
+        }
+
+        this.colorTransitionElapsed = 1;
+        this.colorTransitionTarget = duration;
+    }
+
+    private getFixedSize(value: number, min: number = value, max: number = Infinity) {
+        return Math.max(min, Math.min(value / d3.zoomTransform(this.canvas).k, max));
+    }
+
+    private getRadius(node: AbstractNode, padding: number = 0, weight: number = 0.95): number {
+        let scale = this.transform ? this.transform.k > 1 ? 1 : this.transform.k : 1;
+        var r = node.getRadius() + padding;
+        r = (r * weight) + (r / scale) * (1 - weight);
+        return Math.max(1, r);
+    }
+
+    public updateNodeColorScale(node: AbstractNode | undefined = undefined): void {
+
+        if (node) {
+            const n = node;
+            if (this.colorSettings) {
+                const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                if (nodeValue != undefined) {
+                    const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                    this.colorNodeMap.set(n, colorNew);
+                }
+            }
+        } else {
+
+            for (let index = 0; index < this.rootNodes.length; index++) {
+                const entry: AbstractNodeShell = this.rootNodes[index];
+                let nodes: AbstractNode[] = entry.nodes;
+                for (let j = 0; j < nodes.length; j++) {
+                    const n = nodes[j];
+                    if (this.colorSettings) {
+                        const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                        if (nodeValue != undefined) {
+                            const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                            this.colorNodeMap.set(n, colorNew);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    colorSettings: ColorStatsSettings<any> | undefined;
+    static hiddenColor: string = "rgb(25,25,25)";
+    static colorSelection: string = "rgb(57, 215, 255)";
+    colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
+    colorTransitionElapsed: number | undefined = 0;
+    colorTransitionTarget: number = 150;
+    colorNodeDefault: string = "rgb(200,200,200)";
+    colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
+
+    private isHoveredNode(n: any) {
+        return this.nodeHovered == n;
+    }
+
+    getColorForNode(node: AbstractNode, getHiddenInfo: boolean = false, hoverHighlighting: boolean = true): string {
+
+        if (node.flag == 1) {
+            // return "rgb(0,0,240)";
+        }
+
+        // when the node is faded out completly, return the default color
+        const opacity = this.notFound.get(node);
+        if (opacity && opacity.o == this.opacityMin) {
+            return this.colorNodeDefault;
+        }
+
+        if (this.colorTransitionElapsed != undefined) {
+            let scale = this.colorTransitionMap.get(node);
+            if (scale) {
+                const color = scale(this.colorTransitionElapsed);
+                if (hoverHighlighting && this.listnodesHovered.includes(node)) {
+                    return d3.rgb(color).brighter().formatRgb();
+                }
+                return color;
+            }
+        } else {
+            let c = this.colorNodeMap.get(node);
+            if (c) {
+                if (c == "h") {
+                    return getHiddenInfo ? "h" : OverviewEngine.hiddenColor;
+                }
+                if (hoverHighlighting && this.listnodesHovered.includes(node)) {
+                    c = d3.rgb(c).brighter().formatRgb();
+                }
+                return c;
+            }
+        }
+        // 
+        if (hoverHighlighting && this.listnodesHovered.includes(node)) {
+            return d3.rgb(this.colorNodeDefault).brighter().formatRgb();
+        }
+        return this.colorNodeDefault;
+    }
+
+
+    drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
 
         let scale = this.transform ? this.transform.k : 1;
         let weight = 0.7;
@@ -1034,8 +1188,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             } else {
                 ctx.globalAlpha = 1;
             }
-
-
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(end)) {
 
@@ -1100,192 +1252,61 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         }
     }
 
-    /**
-     * wir speichern die farben für jede node ab und aktualisieren sie bei jedem update von nodes.
-     * 
-     * ändern wir die render eigenschaften, speichern wir die neuen farben in einer 2. map und erstellen
-     * für jede node ein d3.scaleLinear mit den beiden farben.
-     * 
-     * dann starten wir ne duration mit der wir uns dann die aktuelle farbe holen. 
-     * 
-     * werden die render settings wieder geändert, speichern wir die aktuelle farbe bei der duration als neue start
-     * farbe 
-     * 
-     */
-    public setColorScale<N extends AbstractNode>(statAttribute: string,
-        min: number, max: number,
-        getColor: (node: N, stat: number, min: number, max: number) => string,
-        duration: number = 40): void {
-
-        this.colorSettings = { attr: statAttribute, min: min, max: max, colorFunction: getColor };
-
-        for (let index = 0; index < this.rootNodes.length; index++) {
-            const entry: AbstractOverviewEntry = this.rootNodes[index];
-            let nodes: AbstractNode[] = entry.nodes;
-            for (let j = 0; j < nodes.length; j++) {
-
-                const n = nodes[j];
-                const nodeValue = n.getStatsValue(this.colorSettings.attr);
-                const colorOld = this.getColorForNode(n, false, false);
-                if (colorOld && nodeValue != undefined) {
-                    let colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);
-                    colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
-                    var scale = d3.scaleLinear<string>()
-                        .domain([0, duration])
-                        .range([colorOld, colorNew]);
-                    this.colorTransitionMap.set(n, scale);
-                    this.colorNodeMap.set(n, colorNew);
-                }
-            }
-        }
-
-        this.colorTransitionElapsed = 1;
-        this.colorTransitionTarget = duration;
-    }
-
-    private getFixedSize(value: number, min: number = value, max: number = Infinity) {
-
-        return Math.max(min, Math.min(value / d3.zoomTransform(this.canvas).k, max));
-    }
-
-    private getRadius(node: AbstractNode, padding: number = 0, weight: number = 0.95): number {
-        let scale = this.transform ? this.transform.k > 1 ? 1 : this.transform.k : 1;
-        var r = node.getRadius() + padding;
-        r = (r * weight) + (r / scale) * (1 - weight);
-        return Math.max(1, r);
-    }
-
-    public updateNodeColorScale(node: AbstractNode | undefined = undefined): void {
-
-        if (node) {
-            const n = node;
-            if (this.colorSettings) {
-                const nodeValue = n.getStatsValue(this.colorSettings.attr);
-                if (nodeValue != undefined) {
-                    const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
-                    this.colorNodeMap.set(n, colorNew);
-                }
-            }
-        } else {
-
-            for (let index = 0; index < this.rootNodes.length; index++) {
-                const entry: AbstractOverviewEntry = this.rootNodes[index];
-                let nodes: AbstractNode[] = entry.nodes;
-                for (let j = 0; j < nodes.length; j++) {
-                    const n = nodes[j];
-                    if (this.colorSettings) {
-                        const nodeValue = n.getStatsValue(this.colorSettings.attr);
-                        if (nodeValue != undefined) {
-                            const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
-                            this.colorNodeMap.set(n, colorNew);
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
-    colorSettings: ColorStatsSettings<any> | undefined;
-    static hiddenColor: string = "rgb(25,25,25)";
-    static colorSelection: string = "rgb(57, 215, 255)";
-    colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
-    colorTransitionElapsed: number | undefined = 0;
-    colorTransitionTarget: number = 400;
-    colorNodeDefault: string = "rgb(200,200,200)";
-    colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
-
-    private isHoveredNode(n: any) {
-        return this.nodeHovered == n;
-    }
-
-    getColorForNode(n: AbstractNode, getHiddenInfo: boolean = false, hoverHighlighting: boolean = true): string {
-
-        if (n.flag == 1) {
-            // return "rgb(0,0,240)";
-        }
-
-        if (this.colorTransitionElapsed != undefined) {
-            let scale = this.colorTransitionMap.get(n);
-            if (scale) {
-                const color = scale(this.colorTransitionElapsed);
-                if (hoverHighlighting && this.listnodesHovered.includes(n)) {
-                    return d3.rgb(color).brighter().formatRgb();
-                }
-                return color;
-            }
-        } else {
-            let c = this.colorNodeMap.get(n);
-            if (c) {
-                if (c == "h") {
-                    return getHiddenInfo ? "h" : OverviewEngine.hiddenColor;
-                }
-                if (hoverHighlighting && this.listnodesHovered.includes(n)) {
-                    c = d3.rgb(c).brighter().formatRgb();
-                }
-                return c;
-            }
-        }
-        if (hoverHighlighting && this.listnodesHovered.includes(n)) {
-            return d3.rgb(this.colorNodeDefault).brighter().formatRgb();
-        }
-        return this.colorNodeDefault;
-    }
-
-    drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
+    drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
 
         ctx.lineWidth = this.getFixedSize(12, 10, 26);
         const angle = 2 * Math.PI;
         var i = 0, len = nodes.length;
         while (i < len) {
 
-            const n = nodes[i];
+            const node = nodes[i];
 
-            const opacity = this.notFound.get(n);
+            const opacity = this.notFound.get(node);
             if (opacity) {
                 ctx.globalAlpha = opacity.o;
             } else {
                 ctx.globalAlpha = 1;
             }
 
-            if (this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
+            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(node)) {
 
-                var r = this.getRadius(n);
+                var r = this.getRadius(node);
 
-                ctx.fillStyle = this.getColorForNode(n);
-                ctx.strokeStyle = ctx.fillStyle;
-
-                if (isShadow) {
-                    ctx.fillStyle = n.colorID ? n.colorID : "rgb(200,200,200)";
+                if (node.isRoot() && entry.isSyncing) {
+                    r += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
                 }
 
-                let xPos = widths[n.depth] ? widths[n.depth].x : 0;
+                ctx.fillStyle = this.getColorForNode(node);
+                ctx.strokeStyle = ctx.fillStyle;
+
+                let xPos = widths[node.depth] ? widths[node.depth].x : 0;
 
                 ctx.beginPath();
 
-                if (n.isCollection) {
+                if (node.isCollection) {
                     ctx.arc(
-                        xPos, n.getY(),
+                        xPos, node.getY(),
                         Math.max(1, r - ctx.lineWidth / 2),
                         0, angle
                     );
                     ctx.stroke();
                 } else {
                     ctx.arc(
-                        xPos, n.getY(),
+                        xPos, node.getY(),
                         r,
                         0, angle
                     );
                     ctx.fill();
                 }
 
-                if (this.selection.includes(n) || (n.entry && this.selection.includes(n.entry.root))) {
+                // highlight selected or hovered nodes
+                if (this.nodeHovered == node || this.selection.includes(node) || (node.entry && this.selection.includes(entry.root))) {
 
                     ctx.beginPath();
 
                     ctx.arc(
                         xPos,
-                        n.getY(),
+                        node.getY(),
                         Math.max(1, r - ctx.lineWidth / 2),
                         0,
                         angle
@@ -1294,8 +1315,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.stroke();
                 }
 
-                ctx.globalAlpha = 0.05;
-
             }
 
             i++
@@ -1303,7 +1322,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
-    drawText(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractOverviewEntry) {
+    drawText(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
 
         ctx.fillStyle = "#fff";
 
@@ -1316,22 +1335,19 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
          * Draw Folder names
          */
         for (let i = 0; i < nodes.length; i++) {
-            const n = nodes[i];
+            const node = nodes[i];
 
+            let isNodeHovered = this.isHoveredNode(node);
 
+            var r = this.getRadius(node, 5);
 
-            let isNodeHovered = this.isHoveredNode(n);
+            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(node)) {
 
-            var r = this.getRadius(n, 5);
+                let xPos = widths[node.depth] ? widths[node.depth].x : 0;
 
+                if (!node.isRoot()) {
 
-            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(n)) {
-
-                let xPos = widths[n.depth] ? widths[n.depth].x : 0;
-
-                if (!n.isRoot()) {
-
-                    const opacity = this.notFound.get(n);
+                    const opacity = this.notFound.get(node);
                     if (opacity) {
                         ctx.globalAlpha = opacity.o;
                     } else {
@@ -1348,24 +1364,20 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
 
                         xPos += r;
-                        let yName = n.getY() + translate;
+                        let yName = node.getY() + translate;
 
 
                         ctx.fillStyle = "#fff";
-                        if (this.selection.includes(n)) {
+                        if (this.selection.includes(node)) {
                             ctx.fillStyle = OverviewEngine.colorSelection;
                         }
-                        ctx.fillText(`${n.isCollection ? "+" + (n.collectionSize) : n.name}  `, xPos, yName);
+                        ctx.fillText(`${node.isCollection ? "+" + (node.collectionSize) : node.name}  `, xPos, yName);
 
-
-                        // if (this.colorSettings) {
-                        //     let value = n.getStatsValue(this.colorSettings.attr);
-                        //     let s = (value ? formatBytes(value, 2) : " - MB")
-                        //     ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
-                        //     value = n.getStatsValue(this.colorSettings.attr, false);
-                        //     s = (value ? formatBytes(value, 2) : " - MB")
-                        //     ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);
-                        // }
+                        if (this.colorSettings && this.nodeHovered == node) {
+                            let value = node.getStatsValue(this.colorSettings.attr);
+                            let s = (value ? formatBytes(value, 2) : " - MB")
+                            if (value) ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
+                        }
 
                     }
 
@@ -1378,31 +1390,25 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     let translate = (fontSize) / 4;
                     ctx.font = `${fontSize}px Lato`;
 
-                    let name = (isNodeHovered || this.selection.includes(n)) && n.entry ? n.entry.path : n.name;
-                    let yName = n.getY() + translate;
+                    let name = (isNodeHovered || this.selection.includes(node)) && node.entry ? node.entry.path : node.name;
+                    let yName = node.getY() + translate;
 
 
                     xPos -= r;
 
-
                     ctx.fillStyle = "#fff";
-                    if (this.selection.includes(n)) {
+                    if (this.selection.includes(node)) {
                         ctx.fillStyle = OverviewEngine.colorSelection;
                     }
 
+                    // path
                     ctx.fillText(name, xPos, yName);
 
                     if (this.colorSettings) {
-
-                        let value = n.getStatsValue(this.colorSettings.attr);
-                        let s = (value ? formatBytes(value, 2) : " - MB")
+                        let value = node.getStatsValue(this.colorSettings.attr);
+                        // feature
+                        let s = (value ? formatBytes(value, 1) : " - MB")
                         ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
-                        fontSize = this.getFixedSize(10);
-                        translate = (fontSize) / 4;
-                        ctx.font = `${fontSize}px Lato`;
-                        value = n.getStatsValue(this.colorSettings.attr, false);
-                        s = (value ? formatBytes(value, 2) : " - MB")
-                        ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 2);
                     }
 
                 }

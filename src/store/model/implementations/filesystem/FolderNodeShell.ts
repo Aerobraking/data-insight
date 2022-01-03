@@ -1,18 +1,18 @@
-import { AbstractNode, AbstractLink } from "../OverviewData";
+import { AbstractNode, AbstractLink } from "../../app/overview/AbstractNode";
 import { Exclude } from "class-transformer";
 import { FSWatcher } from "chokidar";
 import pathNodejs from "path";
 import { Instance } from "./FileSystemWatcher";
-import { FileSystemListener, FolderStatsResult, FolderSyncResult } from "./FileOverviewInterfaces";
-import { AbstractOverviewEntry } from "../AbstractOverEntry";
+import { FileSystemListener, FolderStatsResult, FolderSyncFinished, FolderSyncResult, Stats } from "./FileOverviewInterfaces";
 import FolderNode from "./FolderNode";
+import { AbstractNodeShell } from "../../app/overview/AbstractNodeShell";
 
 
 
 export class FolderLink extends AbstractLink<FolderNode>{
 }
 
-export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> implements FileSystemListener {
+export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements FileSystemListener {
 
     constructor(path: string | undefined) {
         super("folder", path ? path : "", new FolderNode(path ? pathNodejs.basename(path) : ""));
@@ -56,13 +56,14 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
 
     private ignoredFolders: string[] = [];
     private _depth: number = 5;
+   
     @Exclude()
     renameMap: Map<string, NodeJS.Timeout> = new Map();
 
     @Exclude()
     interval: any = setInterval(this.handleEvents.bind(this), 100);
     @Exclude()
-    eventStack: (FolderSyncResult | FolderStatsResult)[] = [];
+    eventStack: (FolderSyncResult | FolderStatsResult | FolderSyncFinished)[] = [];
 
     handleEvents(): void {
         s:
@@ -72,11 +73,13 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
                 switch (event.type) {
                     case "foldersync":
                         const result: FolderSyncResult = event as unknown as FolderSyncResult;
-                        this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
-                        // break s;
+                        this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0); 
                         break;
                     case "folderstats":
                         this.addStats(event.stats);
+                        break;
+                    case "folderdeepsyncfinished": 
+                        this.isSyncing = false;
                         break;
                     default:
                         break;
@@ -86,11 +89,10 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
 
     }
 
-    event(e: FolderStatsResult | FolderSyncResult): void {
+    event(e: FolderStatsResult | FolderSyncResult|FolderSyncFinished): void {
         switch (e.type) {
             case "folderstats":
-                this.eventStack.push(e);
-                break;
+            case "folderdeepsyncfinished":
             case "foldersync":
                 this.eventStack.push(e);
                 break;
@@ -109,17 +111,13 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
         return this.id;
     }
 
-    loadCollection(node: FolderNode) {
-        console.log(node);
-
+    loadCollection(node: FolderNode) { 
         Instance.syncFolderMan(this, node.getPath(), 1);
+        console.log("loadCollection",node);
+        
         node.parent?.removeChild(node);
     }
-
-    createCollection(node: FolderNode) {
-        node.createCollection();
-    }
-
+ 
     stopWatcher(): void {
 
     }
@@ -129,6 +127,7 @@ export class FolderOverviewEntry extends AbstractOverviewEntry<FolderNode> imple
         /**
          * this starts the syncing of the folder for this entry.
          */
+        this.isSyncing = true;
         Instance.syncFolder(this);
 
         // let _this = this;

@@ -18,7 +18,7 @@
 import * as cache from "../../utils/ImageCache";
 import * as watcher from "../../utils/WatchSystem";
 import { defineComponent } from "vue";
-import { WorkspaceEntryImage } from "../../store/model/FileSystem/FileSystemEntries";
+import { WorkspaceEntryImage } from "../../store/model/implementations/filesystem/FileSystemEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 export default defineComponent({

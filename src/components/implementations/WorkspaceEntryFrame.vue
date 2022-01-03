@@ -22,7 +22,7 @@
 const { shell } = require("electron");
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryFrame } from "../../store/model/FileSystem/FileSystemEntries";
+import { WorkspaceEntryFrame } from "../../store/model/implementations/filesystem/FileSystemEntries";
 import * as WSUtils from "../app/WorkspaceUtils";
 import { setupEntry } from "../app/WorkspaceUtils";
 import  WorkspaceViewIfc from "../app/WorkspaceViewIfc";

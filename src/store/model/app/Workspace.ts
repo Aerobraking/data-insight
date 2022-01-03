@@ -1,32 +1,29 @@
 import * as _ from "underscore";
-import { Type } from "class-transformer";
-import { Instance } from "@/store/model/OverviewTransferHandler";
-import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
-import { AbstractOverviewEntry } from "./AbstractOverEntry";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "./FileSystem/FileSystemEntries";
-import WorkspaceEntry from "./WorkspaceEntry";
-// import * as NodeFeatures from "./AbstractNodeFeature";
-
-
-
-
+import { Type } from "class-transformer"; 
+import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";  
+import WorkspaceEntry from "./WorkspaceEntry";  
+import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "../implementations/filesystem/FileSystemEntries";
+import View from "./AbstractView"; 
+import { AbstractNodeShell } from "./overview/AbstractNodeShell";
+import { Instance } from "./overview/OverviewDataCache";
+ 
 export class Overview {
 
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.25 }
-    gradientId: string = "";
+    gradientId: string = "interpolateMagma";
     // features: NodeFeatures.AbstractNodeFeature[];
     // activeFeatureId: string|undefined;
 
-    @Type(() => AbstractOverviewEntry, {
+    @Type(() => AbstractNodeShell, {
         keepDiscriminatorProperty: true,
         discriminator: {
             property: 'nodetype',
             subTypes: [
-                { value: FolderOverviewEntry, name: 'folder' }
+                { value: FolderNodeShell, name: 'folder' }
             ],
         },
     })
-    rootNodes: AbstractOverviewEntry[] = [];
+    rootNodes: AbstractNodeShell[] = [];
 
     public initAfterLoading() {
         for (let i = 0; i < this.rootNodes.length; i++) {
@@ -35,24 +32,6 @@ export class Overview {
         }
     }
 
-}
-
-export abstract class View {
-
-    // order: number = 0; used in future for sorting of the Tabs in the View
-    id: number = 0;
-    isActive: boolean = false;
-    name: string = "";
-    type: string = "";
-
-    constructor() {
-        this.id = Math.floor(Math.random() * 1000000000000);
-    }
-
-    public setActive(a: boolean): this {
-        this.isActive = a;
-        return this;
-    }
 }
 
 export class Workspace extends View {
@@ -67,8 +46,8 @@ export class Workspace extends View {
 
     @Type(() => Overview)
     overview: Overview;
-    viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.0266 }
-    paneSize: number = 100;
+    viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.266 }
+    paneSize: number = 0;
     showBookmarks: boolean = true;
     showFilterSettings: boolean = true;
     overviewOpen: boolean;

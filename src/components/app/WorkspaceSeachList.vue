@@ -1,11 +1,10 @@
-<script lang="ts">
-import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
-import { Instance } from "@/store/model/OverviewTransferHandler";
-import WorkspaceEntry from "@/store/model/WorkspaceEntry";
-import { Workspace } from "@/store/model/ModelAbstractData";
-import { AbstractNode,  } from "@/store/model/OverviewData";
+<script lang="ts"> 
+import { Instance } from "@/store/model/app/overview/OverviewDataCache";
+import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
+import { Workspace } from "@/store/model/app/Workspace";
+import { AbstractNode,  } from "@/store/model/app/overview/AbstractNode";
 import { defineComponent } from "vue";
-import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";
+import { AbstractNodeShell } from "@/store/model/app/overview/AbstractNodeShell";
 
 export default defineComponent({
   name: "wssearchlist",
@@ -88,7 +87,7 @@ export default defineComponent({
           })
         );
 
-        let listEntries: AbstractOverviewEntry[] = Instance.getData(
+        let listEntries: AbstractNodeShell[] = Instance.getData(
           this.model.id
         );
 

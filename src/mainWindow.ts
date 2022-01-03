@@ -25,7 +25,7 @@ import featurequantity from "./components/implementations/features/FeatureQuanti
 import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
-import { InsightFile } from './store/state';
+import { InsightFile } from './store/model/state';
 
 ipcRenderer.send("show-window");
 

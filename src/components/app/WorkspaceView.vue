@@ -253,7 +253,7 @@ import {
   WorkspaceEntryTextArea,
   WorkspaceEntryVideo,
   WorkspaceEntryYoutube,
-} from "@/store/model/FileSystem/FileSystemEntries";
+} from "@/store/model/implementations/filesystem/FileSystemEntries";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
 import OverviewView from "./OverviewView.vue";
@@ -273,7 +273,7 @@ import _ from "underscore";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
 const fs = require("fs");
-let clipboard: EntryCollection;
+let clipboard: WorkspaceEntryCollection;
 let points: { x: number; y: number; z: number }[] = [];
 
 for (let index = 0; index < 100; index++) {
@@ -305,12 +305,12 @@ import {
   ArrowCollapseLeft,
   DeleteVariant,
 } from "mdue";
-import { Workspace } from "@/store/model/ModelAbstractData";
+import { Workspace } from "@/store/model/app/Workspace";
 import ReArrange from "./../Plugins/Rearrange";
 import AbstractPlugin from "./../Plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
-import EntryCollection from "@/store/model/EntryCollection";
-import WorkspaceEntry from "@/store/model/WorkspaceEntry";
+import WorkspaceEntryCollection from "@/store/model/app/WorkspaceEntryCollection";
+import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { createContext, getPlugins } from "@/components/Plugins/PluginList";
 
 getPlugins();
@@ -679,8 +679,7 @@ export default defineComponent({
         this.splitpaneTimeout = setTimeout(() => {
           list.forEach((e) =>
             e.classList.remove("splitpanes__pane_transition")
-          );
-          console.log("disable class");
+          ); 
         }, 620);
       }
     },
@@ -1055,7 +1054,7 @@ export default defineComponent({
             if (this.getSelectedEntries().length > 0) {
               WSUtils.Events.prepareFileSaving();
 
-              clipboard = new EntryCollection();
+              clipboard = new WorkspaceEntryCollection();
               clipboard.entries.push(
                 ...this.getModelEntriesFromView(this.getSelectedEntries())
               );
@@ -1066,9 +1065,9 @@ export default defineComponent({
             if (this.getSelectedEntries().length > 0) {
               WSUtils.Events.prepareFileSaving();
 
-              clipboard = new EntryCollection();
+              clipboard = new WorkspaceEntryCollection();
               clipboard.entries.push(
-                ...this.getModelEntriesFromView(this.getSelectedEntries())
+                ...this.getModelEntriesFromView(this.getSelectedEntries()) 
               );
             }
             break;
@@ -1101,8 +1100,8 @@ export default defineComponent({
             if (clipboard && clipboard.entries.length > 0) {
               let jsonString = serialize(clipboard);
 
-              let pastedEntries: EntryCollection = deserialize(
-                EntryCollection,
+              let pastedEntries: WorkspaceEntryCollection = deserialize(
+                WorkspaceEntryCollection,
                 jsonString
               );
 
@@ -2306,6 +2305,8 @@ svg {
 .splitpanes__pane {
   background-color: hsl(0, 0%, 8%) !important;
   transition: none !important;
+  outline: none !important;
+  overflow: initial !important;
 }
 
 .splitpanes__pane_transition {

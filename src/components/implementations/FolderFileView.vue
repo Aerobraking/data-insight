@@ -14,8 +14,9 @@
 <script lang="ts">
 import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
-import { FolderWindowFile } from "../../store/model/FileSystem/FileSystemEntries";
+import { FolderWindowFile } from "../../store/model/implementations/filesystem/FileSystemEntries";
 import * as icons from "../../utils/IconHandler";
+import { Dispatcher } from "../app/WorkspaceUtils";
 export default defineComponent({
   name: "wsfolderfile",
   props: {
@@ -26,7 +27,38 @@ export default defineComponent({
     searchstring: String,
     viewKey: Number,
   },
+  data(): {
+    listener: any;
+  } {
+    return {
+      listener: undefined,
+    };
+  },
+  unmounted() {
+    Dispatcher.instance.unregisterCallback(this.listener);
+  },
   mounted() {
+    const _this = this;
+    this.listener = {
+      featureEvent(
+        feature: string | undefined,
+        min: number,
+        max: number,
+        getColor: (node: any, stat: number, min: number, max: number) => string
+      ) {
+        if (!feature) {
+          _this.$el.style.color = "";
+          _this.$el.style.opacity = "";
+          return;
+        }
+        const color = getColor(undefined, _this.entry.size, min, max);
+        console.log(color);
+        _this.$el.style.opacity = color == "h" ? "0.05" : "";
+        _this.$el.style.color = color;
+      },
+    };
+    Dispatcher.instance.registerCallback(this.listener);
+
     let el: any = this.$el;
 
     const div: HTMLElement =
@@ -102,7 +134,7 @@ $color-Selection: rgba(57, 215, 255, 0.1);
 
   p {
     width: 150px;
-    word-break: break-all;  
+    word-break: break-all;
     padding: 0;
     margin: 0 auto;
     margin-top: 4px;

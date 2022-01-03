@@ -1,14 +1,11 @@
-import WorkspaceEntry from "@/store/model/WorkspaceEntry";
+import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { ElementDimension, getCoordinatesFromElement } from "@/utils/resize";
 import {
     onBeforeUnmount,
     onMounted,
     ref
 } from "vue";
-import AbstractPlugin from "../Plugins/AbstractPlugin"; 
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
-
-
 
 export function doChangeFocus(): boolean {
     return !(document.activeElement != undefined &&
@@ -49,7 +46,7 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
             el.value.style.transform = `translate3d(${e.x}px, ${e.y}px,0px)`;
 
-            if (e.isResizable) { 
+            if (e.isResizable) {
                 el.value.style.width = e.width + "px";
                 el.value.style.height = e.height + "px";
             }
@@ -64,18 +61,7 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
     return { el };
 }
-
-export interface Listener {
-    searchEvent?: (value: string) => void;
-    dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
-    prepareFileSaving?: () => void;
-    zoom?: (transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc) => void;
-    pluginStarted?: (modal: boolean) => void;
-    event?: (type: "fixedZoomUpdate") => void;
-}
-
-
-
+ 
 /**
  * 
  * @param r1 rectangle that is tested to be inside r2
@@ -112,6 +98,20 @@ export function insideRect(
     return r2.x2 < r1.x2 && r2.x > r1.x && r2.y > r1.y && r2.y2 < r1.y2;
 }
 
+export interface Listener {
+    searchEvent?: (value: string) => void;
+    dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
+
+    featureEvent?: ( 
+        feature: string|undefined,
+        min: number, max: number,
+        getColor: (node: any, stat: number, min: number, max: number) => string) => void;
+
+    prepareFileSaving?: () => void;
+    zoom?: (transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc) => void;
+    pluginStarted?: (modal: boolean) => void;
+    event?: (type: "fixedZoomUpdate") => void;
+}
 
 export class Dispatcher {
 
@@ -135,21 +135,34 @@ export class Dispatcher {
             if (c.dragStarting) c.dragStarting(selection, workspace);
         });
     }
+    
+    featureEvent( 
+        statAttribute: string,
+        min: number, max: number,
+        getColor: (node: any, stat: number, min: number, max: number) => string): void {
+        this.callbacks.forEach((c) => {
+            if (c.featureEvent) c.featureEvent( statAttribute, min, max, getColor);
+        });
+    }
+
     searchEvent(value: string): void {
         this.callbacks.forEach((c) => {
             if (c.searchEvent) c.searchEvent(value);
         });
     }
+
     zoom(workspace: WorkspaceViewIfc): void {
         this.callbacks.forEach((c) => {
             if (c.zoom) c.zoom(workspace.getCurrentTransform(), workspace);
         });
     }
+
     prepareFileSaving(): void {
         this.callbacks.forEach((c) => {
             if (c.prepareFileSaving) c.prepareFileSaving();
         });
     }
+
     event(type: "fixedZoomUpdate"): void {
         this.callbacks.forEach((c) => {
             if (c.event) c.event(type);
@@ -168,24 +181,19 @@ export class Dispatcher {
     }
 
 }
-
-
 export const Events = Dispatcher.instance;
 
 export class DIClipboard {
 
     private static _instance = new DIClipboard();
     private constructor() { }
-    
 
     static get instance() {
         return this._instance;
     }
 
-    public listFilesClipboard:string[]=[]; 
-
+    public listFilesClipboard: string[] = [];
 }
-
 
 export const clipboard = DIClipboard.instance;
 

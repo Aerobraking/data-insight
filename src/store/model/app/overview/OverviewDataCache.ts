@@ -1,12 +1,13 @@
-import {  Workspace } from "@/store/model/ModelAbstractData";
-import { FolderOverviewEntry } from "./FileSystem/FileEngine";
-import { OverviewEngine } from "../../components/app/OverviewEngine";
-import { AbstractOverviewEntry } from "./AbstractOverEntry";
+import { OverviewEngine } from "@/components/app/OverviewEngine";
+import { Workspace } from "../Workspace";
+import { AbstractNodeShell } from "./AbstractNodeShell";
+
+ 
 
 export class OverviewTransferHandler {
 
     private mapEngines: Map<number, OverviewEngine> = new Map();
-    private hash: Map<number, AbstractOverviewEntry[]> = new Map();
+    private hash: Map<number, AbstractNodeShell[]> = new Map();
     private static _instance = new OverviewTransferHandler();
 
     private constructor() {
@@ -18,13 +19,13 @@ export class OverviewTransferHandler {
     }
 
     transferData(w: Workspace) {
-        let newArray: AbstractOverviewEntry[] | undefined = this.hash.get(w.id);
+        let newArray: AbstractNodeShell[] | undefined = this.hash.get(w.id);
         if (newArray) {
             w.overview.rootNodes = newArray;
         }
     }
 
-    getData(id: number): AbstractOverviewEntry[] {
+    getData(id: number): AbstractNodeShell[] {
         let a = this.hash.get(id);
         if (!a) {
             a = [];
@@ -32,13 +33,13 @@ export class OverviewTransferHandler {
         }
         return a;
     }
-    setData(id: number, list: AbstractOverviewEntry[]): void {
+    setData(id: number, list: AbstractNodeShell[]): void {
         this.hash.set(id, list);
     }
 
     storeData(w: Workspace) {
         if (!this.hash.has(w.id)) {
-            let newArray: AbstractOverviewEntry[] = [];
+            let newArray: AbstractNodeShell[] = [];
             newArray.push(...w.overview.rootNodes);
             w.overview.rootNodes = [];
             this.hash.set(w.id, newArray);

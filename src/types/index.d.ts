@@ -10,3 +10,4 @@ declare module "pell"
 declare module "splitpanes"
 declare module "vue-tippy"
 declare module "vue-panzoom"; 
+

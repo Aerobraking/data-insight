@@ -4,7 +4,7 @@ import {
   CommitOptions,
   DispatchOptions,
 } from 'vuex'
-import { InsightFile, State, UserSettings } from './state'
+import { InsightFile, State } from './model/state'
 import { Getters, getters } from './getters'
 import { Mutations, mutations } from './mutations/mutations'
 import { Actions, actions } from './actions/actions'
@@ -12,7 +12,6 @@ import { Actions, actions } from './actions/actions'
 export function initStore(file: InsightFile) {
   return createStore({
     state: {
-      userSettings: new UserSettings(),
       loadedFile: file
     },
     getters,

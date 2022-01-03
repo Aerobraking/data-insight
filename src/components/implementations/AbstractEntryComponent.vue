@@ -12,7 +12,7 @@ import { defineComponent } from "vue";
 import { setupEntry} from "../app/WorkspaceUtils";
 import  WorkspaceViewIfc  from "../app/WorkspaceViewIfc";
 import * as _ from "underscore"; 
-import WorkspaceEntry from "@/store/model/WorkspaceEntry";
+import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 
 export default defineComponent({
   name: "wsentryX",

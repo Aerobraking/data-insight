@@ -2,10 +2,10 @@
 import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
-import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult } from './store/model/FileSystem/FileOverviewInterfaces';
- 
+import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult, FolderSyncFinished } from './store/model/implementations/filesystem/FileOverviewInterfaces';
+
 ipcRenderer.on("log", (event, log) => {
-    console.log("log", log);
+    // console.log("log", log);
 });
 
 /**
@@ -42,16 +42,14 @@ ipcRenderer.on("msg-main",
                     }
                 }
 
-                console.log(pathCurrent);
-                console.log("Childrencount: ",folders.length);
-                
-
                 count += folders.length;
 
                 const depthChildren = depth + 1;
 
                 const isCollection: boolean = folders.length >= msg.collectionSize || depthChildren > maxDepth || depthChildren > 100;
 
+                console.log("folder: "+pathCurrent);
+                
                 listFoldersToSync.push({ id: msg.id, childCount: folders.length, path: pathCurrent, type: "foldersync", collection: isCollection });
 
 
@@ -76,15 +74,11 @@ ipcRenderer.on("msg-main",
                 ipcRenderer.send('msg-worker', element);
             }
 
-
-
-
             console.log("Scan finished");
-            console.log("Start stats creation");
+            console.log("Start Feature creation");
 
-            let fileCountRec = 0;
-
-            function collectStatsRec(pathF: string, depth: number = 0, fStats: FolderStat): void {
+            let updateSteps = 0;
+            function collectStatsRec(rootPath: string, pathF: string, depth: number = 0, fStats: FolderStat): void {
 
                 let files: string[] = fs.readdirSync(pathF);
 
@@ -95,7 +89,7 @@ ipcRenderer.on("msg-main",
                     const absolutePath = pathF + "/" + fileName;
                     const stats = fs.statSync(absolutePath);
                     if (stats.isDirectory() && msg.depth < 100) {
-                        collectStatsRec(absolutePath, depthChildren, fStats)
+                        collectStatsRec(rootPath, absolutePath, depthChildren, fStats)
                     }
                 }
 
@@ -115,6 +109,18 @@ ipcRenderer.on("msg-main",
                 }
 
                 fStats.stats.amount.value += fileCount;
+
+                if (updateSteps++ % 20 == 0) {
+                    let result: FolderStatsResult = {
+                        type: "folderstats",
+                        id: msg.id,
+                        stats: fStats,
+                        path: rootPath
+                    }
+
+                    ipcRenderer.send('msg-worker', result);
+                }
+
 
             }
 
@@ -142,16 +148,13 @@ ipcRenderer.on("msg-main",
                         },
                     };
 
-                    fileCountRec = 0;
+                    collectStatsRec(pathF, pathF, 0, folderStat);
 
-                    collectStatsRec(pathF, 0, folderStat);
-
-                    if (fileCountRec > 0) {
-                        folderStat.stats.mtime.value /= fileCountRec;
-                        folderStat.stats.atime.value /= fileCountRec;
-                        folderStat.stats.ctime.value /= fileCountRec;
+                    if (folderStat.stats.amount.value > 0) {
+                        folderStat.stats.mtime.value /= folderStat.stats.amount.value;
+                        folderStat.stats.atime.value /= folderStat.stats.amount.value;
+                        folderStat.stats.ctime.value /= folderStat.stats.amount.value;
                     }
-
 
                     let result: FolderStatsResult = {
                         type: "folderstats",
@@ -159,8 +162,6 @@ ipcRenderer.on("msg-main",
                         stats: folderStat,
                         path: pathF
                     }
-
-
 
                     ipcRenderer.send('msg-worker', result);
                 } else {
@@ -181,6 +182,9 @@ ipcRenderer.on("msg-main",
                         },
                     };
 
+                    /**
+                     * Add the stats from all files together
+                     */
                     let fileCount = 0;
                     for (let i = 0; i < files.length; i++) {
                         const fileName = files[i];
@@ -197,19 +201,18 @@ ipcRenderer.on("msg-main",
                     }
                     folderStat.stats.amount.value = fileCount;
 
+                    // create the mean values
                     if (fileCount > 0) {
                         folderStat.stats.mtime.value /= fileCount;
                         folderStat.stats.atime.value /= fileCount;
                         folderStat.stats.ctime.value /= fileCount;
                     }
 
-
                     /**
                      * bei einem leaf ordner keine collection raus machen
                      * 
                      * muss eigl im abstract node passieren und nicht hier :/
                      */
-
                     let result: FolderStatsResult = {
                         type: "folderstats",
                         id: msg.id,
@@ -219,16 +222,17 @@ ipcRenderer.on("msg-main",
 
                     ipcRenderer.send('msg-worker', result);
 
-
                 }
 
             }
+ 
+            ipcRenderer.send('msg-worker', {
+                type: "folderdeepsyncfinished",
+                id: msg.id,
+                path: msg.path
+            });
 
-
-
-            console.log("finished stats creation");
-            console.log(Math.floor(sizeAll / 1024 / 1024));
-
+            console.log("finished Feature Creation");
 
         }
     }

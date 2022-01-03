@@ -1,4 +1,5 @@
-import WorkspaceEntry from "@/store/model/WorkspaceEntry";
+ 
+import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { ElementDimension } from "@/utils/resize";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 

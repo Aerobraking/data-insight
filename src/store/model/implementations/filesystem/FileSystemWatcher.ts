@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron";
-import { FileSystemListener, FolderStatsResult, FolderSync, FolderSyncResult } from "./FileOverviewInterfaces";
+import { FileSystemListener, FolderStatsResult, FolderSync, FolderSyncFinished, FolderSyncResult } from "./FileOverviewInterfaces";
 
 export class FileSystemWatcher {
 
@@ -21,6 +21,7 @@ export class FileSystemWatcher {
                     let msg: FolderSyncResult = payload;
 
                     let listener: FileSystemListener | undefined = _this.hashDeepSync.get(msg.id);
+                    console.log(msg);
 
                     if (listener) {
                         listener.event(msg);
@@ -28,6 +29,15 @@ export class FileSystemWatcher {
                 }
                 if (payload.type == "folderstats") {
                     let msg: FolderStatsResult = payload;
+
+                    let listener: FileSystemListener | undefined = _this.hashDeepSync.get(msg.id);
+
+                    if (listener) {
+                        listener.event(msg);
+                    }
+                }
+                if (payload.type == "folderdeepsyncfinished") {
+                    let msg: FolderSyncFinished = payload;
 
                     let listener: FileSystemListener | undefined = _this.hashDeepSync.get(msg.id);
 
@@ -53,7 +63,13 @@ export class FileSystemWatcher {
         ipcRenderer.send('msg-main', msg);
 
     }
-    
+
+    /**
+     * 
+     * @param listener 
+     * @param path Absolute path to the folder that you want to sync
+     * @param depth 
+     */
     syncFolderMan(listener: FileSystemListener, path: string, depth: number,): void {
 
 

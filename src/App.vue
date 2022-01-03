@@ -113,9 +113,9 @@ import { ipcRenderer, shell, remote } from "electron";
 import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
-import { InsightFile } from "./store/state";
-import ModalDialog from "./components/app/ModalDialog.vue";
-import { View } from "./store/model/ModelAbstractData";
+import { InsightFile } from "./store/model/state";
+import ModalDialog from "./components/app/ModalDialog.vue";  
+import View from "./store/model/app/AbstractView";
 
 const v = remote.app.getVersion();
 var fs = require("fs");
@@ -350,7 +350,6 @@ body {
   // image-rendering: pixelated;
 }
 
-
 #app {
   display: flex;
   flex-flow: column;
@@ -360,6 +359,10 @@ body {
   width: 100%;
   position: absolute;
   overflow: hidden;
+}
+
+div{
+  outline: none !important;
 }
 
 kbd {
@@ -392,7 +395,7 @@ h4 {
 }
 
 .prevent-input {
-  pointer-events: none !important; 
+  pointer-events: none !important;
 }
 
 input[type="search"]::-webkit-search-cancel-button {
@@ -505,6 +508,7 @@ Scrollbar
 .noUi-connect {
   height: 100%;
   width: 100%;
+  transition: all 0.5s ease-out;
 }
 .noUi-origin {
   height: 100%;

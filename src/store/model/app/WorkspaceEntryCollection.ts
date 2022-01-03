@@ -1,10 +1,10 @@
 import * as _ from "underscore";
 import { Type } from "class-transformer";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "./FileSystem/FileSystemEntries";
+import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "../implementations/filesystem/FileSystemEntries";
 import WorkspaceEntry from "./WorkspaceEntry";
 
 
-export default class EntryCollection {
+export default class WorkspaceEntryCollection {
 
     @Type(() => WorkspaceEntry, {
         keepDiscriminatorProperty: true,

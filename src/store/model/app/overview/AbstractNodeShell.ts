@@ -3,16 +3,14 @@ import * as d3 from "d3";
 import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";
 // import { FolderNode, FolderOverviewEntry } from "./FileEngine";
 import path from "path";
-import { COLUMNWIDTH, OverviewEngine } from "../../components/app/OverviewEngine";
-import { Stats, StatsType } from "./FileSystem/FileOverviewInterfaces";
 import CollideExtend from "@/utils/CollideExtend";
-import { AbstractLink, AbstractNode, EntryListener, RectangleCollide } from "./OverviewData";
-import AbstractOverviewEntryIfc from "./AbstractOverviewEntryIfc";
-import FolderNode from "./FileSystem/FolderNode";
+import { AbstractLink, AbstractNode, EntryListener, RectangleCollide } from "./AbstractNode";
+import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
+import { OverviewEngine } from "@/components/app/OverviewEngine";
+import { StatsType, Stats } from "../../implementations/filesystem/FileOverviewInterfaces";
+import FolderNode from "../../implementations/filesystem/FolderNode";
 
-
-
-export abstract class AbstractOverviewEntry<N extends AbstractNode = AbstractNode> implements AbstractOverviewEntryIfc {
+export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> implements AbstractNodeShellIfc {
 
     constructor(nodetype: string, path: string, root: N) {
         this.nodetype = nodetype;
@@ -83,6 +81,10 @@ export abstract class AbstractOverviewEntry<N extends AbstractNode = AbstractNod
 
     // The absolute path to the root folder
     path: string;
+
+    // tells if the data of this shell is synced in the moment
+    @Exclude()
+    public isSyncing = false;
 
     @Exclude()
     engine: EntryListener<AbstractNode> | undefined;
@@ -181,10 +183,15 @@ export abstract class AbstractOverviewEntry<N extends AbstractNode = AbstractNod
         this.nodeUpdate();
     }
 
-    public getNodeByPath(absPath: string): N | undefined {
-        absPath = path.normalize(path.relative(this.path, absPath)).replace(/\\/g, "/");
-
-        let folders: string[] = absPath.split("/");
+    /**
+     * 
+     * @param nodePath  Absolute path 
+     * @returns 
+     */
+    public getNodeByPath(nodePath: string): N | undefined {
+        nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
+        if (nodePath == ".") return this.root;
+        let folders: string[] = nodePath.split("/");
 
         let currentFolder: N | undefined = this.root;
         s:
@@ -203,10 +210,19 @@ export abstract class AbstractOverviewEntry<N extends AbstractNode = AbstractNod
 
     }
 
-    public addEntryPath(relativePath: string, isCollection: boolean = false, collectionSize: number = 0) {
-        relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
+    /**
+     * 
+     * @param nodePath Absolute path 
+     * @param isCollection 
+     * @param collectionSize 
+     * @returns 
+     */
+    public addEntryPath(nodePath: string, isCollection: boolean = false, collectionSize: number = 0) {
+        console.log(nodePath);
 
-        let folders: string[] = relativePath.split("/");
+        nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
+        if (nodePath == ".") return;
+        let folders: string[] = nodePath.split("/");
 
         let foldersCreated = false;
 

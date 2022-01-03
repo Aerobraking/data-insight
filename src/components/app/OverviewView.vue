@@ -106,21 +106,24 @@
           <button><FolderOutline @click="selectFolders()" /></button>
           <template #content>Add Folders</template>
         </tippy>
+
         <tippy>
-          <button><DeleteEmptyOutline @click="deleteSelection()" /></button>
-          <template #content>Delete</template>
-        </tippy>
-        <tippy>
-          <button><FolderOutline @click="loadCollection()" /></button>
+          <button><RecordCircle @click="createCollection()" /></button>
           <template #content>Create Collection</template>
         </tippy>
         <tippy>
-          <button><FolderOutline @click="createCollection()" /></button>
+          <button><FileTree @click="loadCollection()" /></button>
           <template #content>Open Collection</template>
         </tippy>
         <tippy>
-          <button><FolderOutline @click="createRootFromNode()" /></button>
+          <button><ContentCopy @click="createRootFromNode()" /></button>
           <template #content>Create Entry from Selection</template>
+        </tippy>
+        <tippy>
+          <button :disabled="!deleteAllowed">
+            <DeleteEmptyOutline @click="deleteSelection()" />
+          </button>
+          <template #content>Delete</template>
         </tippy>
       </tippy-singleton>
     </div>
@@ -142,7 +145,7 @@
 const fs = require("fs");
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
-import { Workspace } from "@/store/model/ModelAbstractData";
+import { Workspace } from "@/store/model/app/Workspace";
 import { defineComponent } from "vue";
 import noUiSlider, { API, PipsMode } from "nouislider";
 import * as WSUtils from "./WorkspaceUtils";
@@ -155,24 +158,26 @@ import {
   DeleteEmptyOutline,
   Qrcode,
   EmoticonHappyOutline,
+  RecordCircle,
   Download,
   TuneVerticalVariant,
+  ContentCopy,
   Overscan,
   FolderOutline,
   FormatHorizontalAlignCenter,
   CogOutline,
+  FileTree,
   ArrowCollapseRight,
 } from "mdue";
-import { AbstractNode } from "../../store/model/OverviewData";
+import { AbstractNode } from "../../store/model/app/overview/AbstractNode";
 import * as d3 from "d3";
 import _ from "underscore";
-import { set3DPosition } from "@/utils/resize";
-import { Instance } from "@/store/model/OverviewTransferHandler";
-import { FolderOverviewEntry } from "@/store/model/FileSystem/FileEngine";
-import { AbstractOverviewEntry } from "@/store/model/AbstractOverEntry";
-import FolderNode from "@/store/model/FileSystem/FolderNode";
+import { Instance } from "@/store/model/app/overview/OverviewDataCache";
+import { AbstractNodeShell } from "@/store/model/app/overview/AbstractNodeShell";
 import Gradient from "./Gradient";
-import { filesizeFormat } from "@/utils/format"; 
+import { filesizeFormat } from "@/utils/format";
+import FolderNode from "@/store/model/implementations/filesystem/FolderNode";
+import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";
 
 const gradients: Gradient[] = [];
 gradients.push(
@@ -185,19 +190,18 @@ gradients.push(
 gradients.push(new Gradient(d3.interpolateWarm, "interpolateWarm"));
 gradients.push(new Gradient(d3.interpolatePuRd, "interpolatePuRd", !true));
 gradients.push(new Gradient(d3.interpolateMagma, "interpolateMagma", !true));
-// gradients.push(
-//   new Gradient(d3.interpolateCubehelixDefault, "interpolateCubehelixDefault")
-// );
-// gradients.push(new Gradient(d3.interpolateRainbow, "interpolateRainbow"));
 
 export default defineComponent({
   name: "App",
   components: {
     Tippy,
     TippySingleton,
+    RecordCircle,
     CogOutline,
     Qrcode,
+    FileTree,
     ColorGradient,
+    ContentCopy,
     TuneVerticalVariant,
     EmoticonHappyOutline,
     Overscan,
@@ -220,25 +224,29 @@ export default defineComponent({
   },
   watch: {
     // only draw the canvas when the overview is visibile
-    "model.overviewOpen": function (newValue: boolean, oldValue: boolean) {
+    "model.isActive": function (newValue: boolean, oldValue: boolean) {
       if (Instance.getEngine(this.idOverview)) {
-        Instance.getEngine(this.idOverview).enablePainting = true;
+        Instance.getEngine(this.idOverview).enablePainting = newValue;
       }
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
       this.model.overviewOpen = newValue < 100;
     },
-    "selection.y": function (newValue: number, oldValue: number) {
-      console.log(newValue);
+    "selection.y": function (newValue: number, oldValue: number) { 
+      // funktioniert nicht
+      
     },
-    selection: function (newValue: AbstractNode, oldValue: AbstractNode) {
-      console.log(newValue);
+    selection: function (
+      newValue: AbstractNode | undefined,
+      oldValue: AbstractNode | undefined
+    ) {
       if (newValue instanceof FolderNode) {
         const fn: FolderNode = newValue;
         //  this.$emit("folderSelected", fn.getPath());
       } else {
         //  this.$emit("folderSelected", undefined);
       }
+      console.log(newValue);
     },
     "model.overview.viewportTransform": function (
       newValue: { x: number; y: number; scale: number },
@@ -251,7 +259,7 @@ export default defineComponent({
       this.searchUpdate();
     },
   },
-  data(): { 
+  data(): {
     sliderRange: (number | string)[];
     d3: any;
     gradients: Gradient[];
@@ -266,7 +274,7 @@ export default defineComponent({
       sliderRange: [0, 100],
       gradients: gradients,
       d3: d3,
-      gradientFunction: gradients[0],
+      gradientFunction: gradients[2],
       selection: undefined,
       idOverview: 0,
       panZoomInstance: null,
@@ -383,6 +391,9 @@ export default defineComponent({
     }
   },
   computed: {
+    deleteAllowed(): boolean {
+      return this.selection != undefined && this.selection.isRoot();
+    },
     getShowUI(): boolean {
       return this.$store.getters.getShowUI;
     },
@@ -391,31 +402,49 @@ export default defineComponent({
     getGradienFunction(name: string): Gradient {
       let gradient: Gradient | undefined = gradients.find((g) => g.id == name);
       gradient = gradient ? gradient : gradients[0];
-      console.log("get gradient by id", name);
 
       return gradient;
     },
     filterfunc: _.throttle(
       (_this: any, stats: string, min: number, max: number) => {
+        const colorFunction = (
+          node: FolderNode,
+          stat: number,
+          min: number,
+          max: number
+        ) => {
+          stat = stat < min ? 0 : stat > max ? max : stat;
+          // console.log(
+          //   stat,
+          //   min,
+          //   max,
+          //   _this.gradientFunction.getColor(1 - stat / max)
+          // );
+
+          return stat < min || stat > max
+            ? "h"
+            : _this.gradientFunction.getColor(1 - stat / max);
+        };
+
+        /**
+         * Sobald sich die Werte ändern, was eigentlich nur passiert wenn der filter angepasst wird? Dann ein event firen.
+         *
+         * Das muss dann von allen Files aufgegriffen werden um ihre Farbe zu aktualisieren.
+         */
+        WSUtils.Dispatcher.instance.featureEvent(
+          stats,
+          Number(min),
+          Number(max),
+          colorFunction
+        );
+
         if (Instance.getEngine(_this.idOverview)) {
           Instance.getEngine(_this.idOverview).setColorScale<FolderNode>(
             stats,
             Number(min),
             Number(max),
-            (node: FolderNode, stat: number, min: number, max: number) => {
-              stat = stat < min ? 0 : stat > max ? max : stat;
-              console.log(
-                stat,
-                min,
-                max,
-                _this.gradientFunction.getColor(1 - stat / max)
-              );
-
-              return stat < min || stat > max
-                ? "h"
-                : _this.gradientFunction.getColor(1 - stat / max);
-            },
-            300
+            colorFunction,
+            150
           );
         }
       },
@@ -477,7 +506,7 @@ export default defineComponent({
       Instance.getEngine(this.idOverview).zoomToFit();
     },
     deleteSelection(): void {
-      let l: AbstractOverviewEntry[] = Instance.getData(this.idOverview);
+      let l: AbstractNodeShell[] = Instance.getData(this.idOverview);
 
       if (Instance.getEngine(this.idOverview)) {
         const o = Instance.getEngine(this.idOverview);
@@ -526,9 +555,8 @@ export default defineComponent({
             i < Instance.getEngine(this.idOverview).rootNodes.length;
             i++
           ) {
-            const entry: AbstractOverviewEntry = Instance.getEngine(
-              this.idOverview
-            ).rootNodes[i];
+            const entry: AbstractNodeShell = Instance.getEngine(this.idOverview)
+              .rootNodes[i];
 
             for (let j = 0; j < entry.nodes.length; j++) {
               const n = entry.nodes[j];
@@ -539,7 +567,6 @@ export default defineComponent({
             }
           }
         }
-        console.log(nodesMatching);
 
         Instance.getEngine(this.idOverview).setFilterList(
           "search",
@@ -553,10 +580,7 @@ export default defineComponent({
       Instance.getEngine(this.idOverview).showShadowCanvas(
         !Instance.getEngine(this.idOverview).showShadow
       );
-
-      console.log(Instance.getEngine(this.idOverview).rootNodes);
     },
-
     loadCollection() {
       if (Instance.getEngine(this.idOverview)) {
         let n: FolderNode = Instance.getEngine(this.idOverview)
@@ -581,12 +605,8 @@ export default defineComponent({
         this.addFolders([n.getPath()], { x: n.getX(), y: n.getY() });
       }
     },
-    addEntries(entries: FolderOverviewEntry[], pos: { x: number; y: number }) {
-      let listEntries: AbstractOverviewEntry[] = Instance.getData(
-        this.idOverview
-      );
-
-      console.log("add entries");
+    addEntries(entries: FolderNodeShell[], pos: { x: number; y: number }) {
+      let listEntries: AbstractNodeShell[] = Instance.getData(this.idOverview);
 
       entries.forEach((e) => {
         e.setCoordinates(pos);
@@ -610,7 +630,7 @@ export default defineComponent({
       }
     },
     addFolders(listFolders: string[], pos: { x: number; y: number }) {
-      let listEntries: FolderOverviewEntry[] = [];
+      let listEntries: FolderNodeShell[] = [];
 
       /**
        * create the entries based on the dropped files.
@@ -620,7 +640,7 @@ export default defineComponent({
         const p = path.normalize(f).replace(/\\/g, "/");
         const fileStat = fs.lstatSync(p);
         if (fileStat.isDirectory()) {
-          let root: FolderOverviewEntry = new FolderOverviewEntry(p);
+          let root: FolderNodeShell = new FolderNodeShell(p);
           root.depth = 3;
           listEntries.push(root);
         }
@@ -720,6 +740,10 @@ export default defineComponent({
   }
 }
 
+.overview-canvas {
+  pointer-events: all !important;
+}
+
 .filter-settings-hide {
   opacity: 0.2;
 }
@@ -746,7 +770,7 @@ export default defineComponent({
     image-rendering: optimizeSpeed;
     image-rendering: -moz-crisp-edges;
     image-rendering: -webkit-optimize-contrast;
-    image-rendering: optimize-contrast; 
+    image-rendering: optimize-contrast;
     -ms-interpolation-mode: nearest-neighbor;
   }
 }
