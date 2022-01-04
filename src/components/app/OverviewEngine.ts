@@ -261,8 +261,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 if (this.skipInitialResize++ > 0) {
                     let diffX = this.canvas.width - w,
-                        diffY = this.canvas.height - h;
-                    console.log(diffX, diffY);
+                        diffY = this.canvas.height - h; 
 
                     this.zoom.translateBy(d3.select(this.canvas), diffX / 2, diffY / 2);
                 }
@@ -324,14 +323,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 }
                 return obj; // Only drag nodes
             })
-                .on('start', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
-                    console.log("start drag", ev);
+                .on('start', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => { 
                     const obj = ev.subject;
 
                     _this.nodeShift = undefined;
                     if (ev.sourceEvent.altKey) {
-                        _this.nodeShift = obj instanceof AbstractNodeShell ? undefined : obj;
-                        console.log("shift event");
+                        _this.nodeShift = obj instanceof AbstractNodeShell ? undefined : obj; 
 
                         return;
                     } else {
@@ -372,8 +369,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 })
                 .on('drag', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
 
-                    if (_this.nodeShift) {
-                        console.log("drag shift", ev);
+                    if (_this.nodeShift) { 
                         return;
                     }
 
