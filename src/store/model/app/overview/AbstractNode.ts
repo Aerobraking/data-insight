@@ -254,6 +254,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         nodeRemoved(): void;
         path: string;
         root: any;
+        x:number;
+        y:number;
         simulation: any;
         id: number;
         isSimulationActive: boolean;

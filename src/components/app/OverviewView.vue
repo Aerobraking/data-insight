@@ -100,7 +100,9 @@
         :offset="[0, 40]"
       >
         <tippy>
-          <button><Overscan @click="showAll()" /></button>
+          <button :class="{ 'button-active': model.overview.showAll }">
+            <Overscan @click="showAll()" />
+          </button>
           <template #content>Show All</template>
         </tippy>
         <tippy>
@@ -109,15 +111,21 @@
         </tippy>
 
         <tippy>
-          <button><RecordCircle @click="createCollection()" /></button>
+          <button :disabled="!nodeSelected">
+            <RecordCircle @click="createCollection()" />
+          </button>
           <template #content>Create Collection</template>
         </tippy>
         <tippy>
-          <button><FileTree @click="loadCollection()" /></button>
+          <button :disabled="!nodeSelected">
+            <FileTree @click="loadCollection()" />
+          </button>
           <template #content>Open Collection</template>
         </tippy>
         <tippy>
-          <button><ContentCopy @click="createRootFromNode()" /></button>
+          <button :disabled="!nodeSelected">
+            <ContentCopy @click="createRootFromNode()" />
+          </button>
           <template #content>Create Entry from Selection</template>
         </tippy>
         <tippy>
@@ -384,7 +392,7 @@ export default defineComponent({
     WSUtils.Events.registerCallback(this.wsListener);
   },
   unmounted() {
-    Instance.getEngine(this.idOverview).destroy();
+    Instance.getEngine(this.idOverview).dispose();
     if (this.wsListener) {
       WSUtils.Events.unregisterCallback(this.wsListener);
     }
@@ -392,6 +400,9 @@ export default defineComponent({
   computed: {
     deleteAllowed(): boolean {
       return this.selection != undefined && this.selection.isRoot();
+    },
+    nodeSelected(): boolean {
+      return this.selection != undefined && !this.selection.isRoot();
     },
     getShowUI(): boolean {
       return this.$store.getters.getShowUI;
@@ -501,8 +512,20 @@ export default defineComponent({
         return false;
       });
     },
-    showAll(): void {
-      Instance.getEngine(this.idOverview).zoomToFit();
+    showAll(automodeToggle: boolean = true): void {
+      if (!automodeToggle) {
+        this.model.overview.showAll = false;
+        Instance.getEngine(this.idOverview).zoomToFit(400);
+        return;
+      }
+      if (!this.model.overview.showAll) {
+        Instance.getEngine(this.idOverview).zoomToFit();
+        setTimeout(() => {
+          this.model.overview.showAll = true;
+        }, 400);
+      } else {
+        this.model.overview.showAll = false;
+      }
     },
     deleteSelection(): void {
       let l: AbstractNodeShell[] = Instance.getData(this.idOverview);
@@ -530,59 +553,88 @@ export default defineComponent({
       let node: AbstractNode | undefined =
         Instance.getEngine(this.idOverview).selection.length > 0
           ? Instance.getEngine(this.idOverview).selection[0]
-          : undefined; 
+          : undefined;
 
-      switch (e.key) {
-        case "+":
-          this.loadCollection();
-          break;
-        case "-":
-          this.createCollection();
-          break;
-        case "ArrowUp":
-          if (node && node.parent) {
-            const childrenSorted = node.parent
-              .getChildren()
-              .sort((a, b) => a.getY() - b.getY());
-            const i = childrenSorted.indexOf(node);
-            const next = i - 1 < 0 ? childrenSorted.length - 1 : i - 1;
-            Instance.getEngine(this.idOverview).updateSelection(
-              false,
-              childrenSorted[next]
-            );
-          }
-          break;
-        case "ArrowLeft":
-          if (node && node.parent) {
-            Instance.getEngine(this.idOverview).updateSelection(
-              false,
-              node.parent
-            );
-          }
-          break;
-        case "ArrowDown":
-          if (node && node.parent) {
-            const childrenSorted = node.parent
-              .getChildren()
-              .sort((a, b) => a.getY() - b.getY());
-            const i = childrenSorted.indexOf(node);
-            const next = i + 1 > childrenSorted.length - 1 ? 0 : i + 1;
-            Instance.getEngine(this.idOverview).updateSelection(
-              false,
-              childrenSorted[next]
-            );
-          }
-          break;
-        case "ArrowRight":
-          if (node && node.getChildren().length > 0) {
-            Instance.getEngine(this.idOverview).updateSelection(
-              false,
-              node.getChildren()[0]
-            );
-          }
-          break;
-        default:
-          break;
+      // no modifier
+      if (!e.shiftKey && !e.altKey && !e.ctrlKey) {
+        switch (e.key) {
+          case " ":
+            this.showAll(false);
+            break;
+          case "+":
+            this.loadCollection();
+            break;
+          case "-":
+            this.createCollection();
+            break;
+          case "ArrowUp":
+            if (node && node.parent) {
+              const childrenSorted = node.parent
+                .getChildren()
+                .sort((a, b) => a.getY() - b.getY());
+              const i = childrenSorted.indexOf(node);
+              const next = i - 1 < 0 ? childrenSorted.length - 1 : i - 1;
+              Instance.getEngine(this.idOverview).updateSelection(
+                false,
+                childrenSorted[next]
+              );
+            }
+            break;
+          case "ArrowLeft":
+            if (node && node.parent) {
+              Instance.getEngine(this.idOverview).updateSelection(
+                false,
+                node.parent
+              );
+            }
+            break;
+          case "ArrowDown":
+            if (node && node.parent) {
+              const childrenSorted = node.parent
+                .getChildren()
+                .sort((a, b) => a.getY() - b.getY());
+              const i = childrenSorted.indexOf(node);
+              const next = i + 1 > childrenSorted.length - 1 ? 0 : i + 1;
+              Instance.getEngine(this.idOverview).updateSelection(
+                false,
+                childrenSorted[next]
+              );
+            }
+            break;
+          case "ArrowRight":
+            if (node && node.getChildren().length > 0) {
+              Instance.getEngine(this.idOverview).updateSelection(
+                false,
+                node.getChildren()[0]
+              );
+            }
+            break;
+          default:
+            break;
+        }
+      }
+
+      // ctrl modifier
+      if (!e.shiftKey && !e.altKey && e.ctrlKey) {
+        switch (e.key.toLowerCase()) {
+          case " ":
+            this.showAll();
+            break;
+          default:
+            break;
+        }
+      }
+
+      // shift modifier
+      if (e.shiftKey && !e.altKey && !e.ctrlKey) {
+        switch (e.key.toLowerCase()) {
+          case " ":
+            this.model.overview.showAll = false;
+            Instance.getEngine(this.idOverview).zoomToFitSelection(600);
+            break;
+          default:
+            break;
+        }
       }
     },
     setFocusToOverview(): void {
@@ -702,7 +754,14 @@ export default defineComponent({
           listEntries.push(root);
         }
       }
-      this.addEntries(listEntries, pos);
+      if (listEntries.length > 0) {
+        this.addEntries(listEntries, pos);
+        setTimeout(() => {
+          Instance.getEngine(this.idOverview).selection = [
+            listEntries[listEntries.length - 1].root,
+          ];
+        }, 33);
+      }
     },
     drop(e: DragEvent) {
       let listFolders: string[] = [];

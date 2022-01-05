@@ -49,7 +49,7 @@ export class OverviewTransferHandler {
     createEngine(id: number, div: HTMLElement, ws: Workspace): Workspace {
         let overviewEngine = new OverviewEngine(
             div,
-            ws.overview
+            ws
         );
         this.mapEngines.set(id, overviewEngine);
         return ws;

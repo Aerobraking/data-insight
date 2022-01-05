@@ -19,11 +19,12 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      z-index: 50000;
-      background: transparent;
+      z-index: 500000;
+      background: #1d1d1d;
       overflow: hidden;
       pointer-events: none;
-      transition: all 0.2s ease-out;
+      opacity: 1;
+      transition: all .3s ease-out;
     }
 
     .loader {
@@ -52,7 +53,7 @@
   </style>
 </head>
 
-<body> 
+<body>
   <div id="app"></div>
   <div id="splash">
     <div class="loader"></div>

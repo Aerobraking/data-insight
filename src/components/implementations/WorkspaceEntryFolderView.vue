@@ -590,10 +590,19 @@ export default defineComponent({
       switch (e.key) {
         case "Delete":
           this.deleteSelection();
-          break;
+          e.stopImmediatePropagation();
+          return;
         case "Backspace":
           this.folderBack();
-          break;
+          e.stopImmediatePropagation();
+          return;
+        case "f":
+        case "y":
+        case "t":
+          console.log(e.key);
+
+          e.stopImmediatePropagation();
+          return;
         default:
           break;
       }
@@ -602,28 +611,28 @@ export default defineComponent({
         switch (e.key) {
           case "a":
             this.toggleAll(true);
-            e.stopPropagation();
-            break;
+            e.stopImmediatePropagation();
+            return;
           case "d":
             this.toggleAll(false);
-            e.stopPropagation();
-            break;
+            e.stopImmediatePropagation();
+            return;
           case "c":
             WSUtils.clipboard.listFilesClipboard = this.list
               .filter((f) => this.listSelectionIds.includes(f.id))
               .map((f) => f.path);
-            break;
+            e.stopImmediatePropagation();
+            return;
           case "v":
-            console.log(WSUtils.clipboard.listFilesClipboard); 
+            console.log(WSUtils.clipboard.listFilesClipboard);
             this.handleFileDrop(WSUtils.clipboard.listFilesClipboard);
             WSUtils.clipboard.listFilesClipboard = [];
-            break;
+            e.stopImmediatePropagation();
+            return;
           default:
             break;
         }
-      }
-      e.stopPropagation();
-      e.preventDefault();
+      } 
     },
     toggleAll(select: boolean | undefined = undefined) {
       if (select != undefined) {

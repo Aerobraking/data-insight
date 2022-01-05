@@ -1,16 +1,17 @@
 import * as _ from "underscore";
-import { Type } from "class-transformer"; 
-import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";  
-import WorkspaceEntry from "./WorkspaceEntry";  
+import { Type } from "class-transformer";
+import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";
+import WorkspaceEntry from "./WorkspaceEntry";
 import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "../implementations/filesystem/FileSystemEntries";
-import View from "./AbstractView"; 
+import View from "./AbstractView";
 import { AbstractNodeShell } from "./overview/AbstractNodeShell";
 import { Instance } from "./overview/OverviewDataCache";
- 
+
 export class Overview {
 
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.25 }
     gradientId: string = "interpolateMagma";
+    showAll: boolean = false;
     // features: NodeFeatures.AbstractNodeFeature[];
     // activeFeatureId: string|undefined;
 

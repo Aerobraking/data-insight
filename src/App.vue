@@ -114,7 +114,7 @@ import { defineComponent } from "vue";
 import Tabs from "./components/app/Tabs.vue";
 import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/model/state";
-import ModalDialog from "./components/app/ModalDialog.vue";  
+import ModalDialog from "./components/app/ModalDialog.vue";
 import View from "./store/model/app/AbstractView";
 
 const v = remote.app.getVersion();
@@ -181,15 +181,14 @@ export default defineComponent({
 
     // remove splash screen
     const splash = document.getElementById("splash");
-    if (splash) {
-      splash.style.pointerEvents = "none";
+    if (splash) { 
       splash.style.opacity = "0";
+      setTimeout(() => {
+        if (splash) {
+          splash.remove();
+        }
+      }, 300);
     }
-    setTimeout(() => {
-      if (splash) {
-        splash.remove();
-      }
-    }, 30);
   },
   data() {
     return { showAbout: false, showHelp: false, version: "2.4" };
@@ -361,7 +360,7 @@ body {
   overflow: hidden;
 }
 
-div{
+div {
   outline: none !important;
 }
 
@@ -427,6 +426,12 @@ a {
   color: white;
   &:hover {
     color: $color-Selection;
+  }
+}
+
+.button-active {
+  svg {
+    color: $color-Selection !important;
   }
 }
 
@@ -507,7 +512,7 @@ Scrollbar
 }
 .noUi-connect {
   height: 100%;
-  width: 100%; 
+  width: 100%;
 }
 .noUi-origin {
   height: 100%;

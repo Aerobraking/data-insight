@@ -1,8 +1,20 @@
 # master-data-insight
 
-## Project setup
+## Project Development Setup
 ```
 npm install
+```
+
+Then, we have to run once (or whenever you install a new npm package) electron-rebuild:
+
+OSX:
+```
+$(npm bin)/electron-rebuild
+```
+
+Windows:
+```
+.\node_modules\.bin\electron-rebuild.cmd
 ```
 
 ### Compiles and hot-reloads for development
@@ -10,14 +22,14 @@ npm install
 npm run electron:serve
 ```
 
+### Build Installer for current OS
+```
+npm run electron:build
+```
+
 ### Controls:
 
-Overview:
-```
-Key F:  Show/hide Files
-Key I:  Show/hide Images
-Key N:  Show/hide Names
-```
+Press F5 in the App or go to the Menu/Help/Controls
 
 ### Bei Problemen:
 

@@ -106,6 +106,7 @@
                   :entry="e"
                   :viewKey="e.id"
                   :workspace="workspaceInterface"
+                  @keydown="keydown"
                   @zoomed="moveToEntry({ id: e.id, zoom: true })"
                   :searchstring="searchString"
                   :is="e.componentname"
@@ -448,9 +449,6 @@ export default defineComponent({
     },
   },
   mounted() {
-
-
-
     let _this = this;
 
     this.c = createContext({ debounceTime: 100, autoEnable: true });
@@ -483,27 +481,29 @@ export default defineComponent({
     /**
      * Listen for resizing of the canvas parent element
      */
-    this.divObserver = new ResizeObserver(_.throttle((entries: ResizeObserverEntry[]) => {
-      for (let index = 0; index < entries.length && index < 1; index++) {
-        const e = entries[index];
-        e.target; // div element
-        let w = Math.max(10, e.contentRect.width);
-        let h = Math.max(10, e.contentRect.height);
+    this.divObserver = new ResizeObserver(
+      _.throttle((entries: ResizeObserverEntry[]) => {
+        for (let index = 0; index < entries.length && index < 1; index++) {
+          const e = entries[index];
+          e.target; // div element
+          let w = Math.max(10, e.contentRect.width);
+          let h = Math.max(10, e.contentRect.height);
 
-        if (this.skipInitialResize++ > 0) {
-          let diffX = _this.getCanvas().width - w,
-            diffY = _this.getCanvas().height - h;
+          if (this.skipInitialResize++ > 0) {
+            let diffX = _this.getCanvas().width - w,
+              diffY = _this.getCanvas().height - h;
 
-          this.panZoomInstance.moveTo(
-            this.getCurrentTransform().x - diffX / 2,
-            this.getCurrentTransform().y - diffY / 2
-          );
-        }  
-        _this.getCanvas().width = w;
-        _this.getCanvas().height = h;
-        _this.drawCanvas();
-      }
-    },5)).observe(this.$el.getElementsByClassName("workspace-split-wrapper")[0]);
+            this.panZoomInstance.moveTo(
+              this.getCurrentTransform().x - diffX / 2,
+              this.getCurrentTransform().y - diffY / 2
+            );
+          }
+          _this.getCanvas().width = w;
+          _this.getCanvas().height = h;
+          _this.drawCanvas();
+        }
+      }, 5)
+    ).observe(this.$el.getElementsByClassName("workspace-split-wrapper")[0]);
 
     this.selectionWrapperResizer = new ResizerComplex(
       this.getSelectionWrapper(),
@@ -682,7 +682,7 @@ export default defineComponent({
         this.splitpaneTimeout = setTimeout(() => {
           list.forEach((e) =>
             e.classList.remove("splitpanes__pane_transition")
-          ); 
+          );
         }, 620);
       }
     },
@@ -1070,7 +1070,7 @@ export default defineComponent({
 
               clipboard = new WorkspaceEntryCollection();
               clipboard.entries.push(
-                ...this.getModelEntriesFromView(this.getSelectedEntries()) 
+                ...this.getModelEntriesFromView(this.getSelectedEntries())
               );
             }
             break;
@@ -1620,7 +1620,7 @@ export default defineComponent({
             ? this.getEntries()
             : this.$el.getElementsByClassName("welcome-message")[0]
         ),
-        0.2
+        0.6
       );
       this.panZoomInstance.smoothShowRectangle(bound);
     },

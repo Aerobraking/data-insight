@@ -10,7 +10,7 @@ import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
-import { Overview } from "@/store/model/app/Workspace";
+import { Overview, Workspace } from "@/store/model/app/Workspace";
 import { AbstractNodeShell } from "@/store/model/app/overview/AbstractNodeShell";
 import AbstractNodeShellIfc from "@/store/model/app/overview/AbstractNodeShellIfc";
 import { ipcRenderer } from "electron";
@@ -151,6 +151,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     autocolor: ColorTracker = new ColorTracker();
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
     overview: Overview;
+    workspace: Workspace;
     size: ElementDimensionInstance;
     divObserver: ResizeObserver;
     skipInitialResize: number = 0;
@@ -158,6 +159,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     nodeHovered: AbstractNode | undefined;
     listnodesHovered: AbstractNode[] = [];
     nodeShift: AbstractNode | undefined;
+    showAllTimer: NodeJS.Timeout | undefined = setInterval(() => {
+        if (this.overview && this.overview.showAll && this.workspace.isActive) {
+            this.setViewBox(this.getNodesBoundingBox(1.3), 500, TWEEN.Easing.Linear.None);
+        }
+    }, 500);
 
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
@@ -169,6 +175,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
     private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
+
+
 
     public updateSelection(findNode: boolean = true, newSelectedNode: AbstractNode | undefined = undefined): AbstractNode | undefined {
 
@@ -200,7 +208,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         return this.selection.length > 0 ? this.selection[0] : undefined;
     }
 
-    constructor(div: HTMLElement, overview: Overview) {
+    constructor(div: HTMLElement, workspace: Workspace) {
 
         if (!OverviewEngine.started) {
             OverviewEngine.startClock();
@@ -211,7 +219,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         var _this = this;
 
-        this.overview = overview;
+        this.workspace = workspace;
+        this.overview = workspace.overview;
 
         let c = d3
             .select(div)
@@ -261,7 +270,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 if (this.skipInitialResize++ > 0) {
                     let diffX = this.canvas.width - w,
-                        diffY = this.canvas.height - h; 
+                        diffY = this.canvas.height - h;
 
                     this.zoom.translateBy(d3.select(this.canvas), diffX / 2, diffY / 2);
                 }
@@ -323,12 +332,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 }
                 return obj; // Only drag nodes
             })
-                .on('start', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => { 
+                .on('start', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
                     const obj = ev.subject;
 
                     _this.nodeShift = undefined;
                     if (ev.sourceEvent.altKey) {
-                        _this.nodeShift = obj instanceof AbstractNodeShell ? undefined : obj; 
+                        _this.nodeShift = obj instanceof AbstractNodeShell ? undefined : obj;
 
                         return;
                     } else {
@@ -369,7 +378,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 })
                 .on('drag', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
 
-                    if (_this.nodeShift) { 
+                    if (_this.nodeShift) {
                         return;
                     }
 
@@ -524,46 +533,54 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         }
     }
 
-    public destroy() {
+    public dispose() {
         this.divObserver.disconnect();
+        if (this.showAllTimer) clearTimeout(this.showAllTimer);
     }
 
-    public getNodesBoundingBox(padding: number = 1): ElementDimension {
+    public getNodesBoundingBox(padding: number = 1, shells: AbstractNodeShell[] | undefined = this._rootNodes): ElementDimension {
 
         const d: ElementDimensionInstance = new ElementDimensionInstance(-Infinity, -Infinity, 0, 0, Infinity, Infinity);
+        let nodesThere = false;
+        for (let index = 0; index < shells.length; index++) {
 
-        for (let index = 0; index < this._rootNodes.length; index++) {
+            const shell = shells[index];
+            for (let j = 0; j < shell.nodes.length; j++) {
+                const n = shell.nodes[j];
 
-            const e = this._rootNodes[index];
-            for (let j = 0; j < this._rootNodes[index].nodes.length; j++) {
-                const n = this._rootNodes[index].nodes[j];
-
-                const x = n.getX() + e.x;
-                const y = n.getY() + e.y;
+                const x = n.getX() + shell.x;
+                const y = n.getY() + shell.y;
 
                 d.x = d.x < x ? x : d.x;
                 d.x2 = d.x2 > x ? x : d.x2;
                 d.y = d.y < y ? y : d.y;
                 d.y2 = d.y2 > y ? y : d.y2;
+                nodesThere = true;
             }
         }
-        d.calculateSize();
-        d.scaleFromCenter(padding);
+        if (nodesThere) {
+            d.calculateSize();
+            d.scaleFromCenter(padding);
+        }
+
         return d;
     }
 
-    public zoomToFit() {
-        if (this.rootNodes.length > 0) {
-            this.setViewBox(this.getNodesBoundingBox(1.6));
-        }
+    public zoomToFitSelection(duration: number = 400) {
+
+        this.setViewBox(this.getNodesBoundingBox(1.3, this.selection.length > 0 ? [this.selection[0].entry as AbstractNodeShell] : undefined), duration);
+    }
+    public zoomToFit(duration: number = 400) {
+        this.setViewBox(this.getNodesBoundingBox(1.3), duration);
     }
 
-    public setViewBox(dim: ElementDimension) {
+    public setViewBox(dim: ElementDimension, duration: number = 200, easing: (a: number) => number = TWEEN.Easing.Quadratic.InOut) {
         const scale = Math.min(Math.abs(this.canvas.width / dim.w), Math.abs(this.canvas.height / dim.h));
-        this.setView(scale, dim.x + dim.w / 2, +dim.y + dim.h / 2, 400);
+        this.setView(scale, dim.x + dim.w / 2, +dim.y + dim.h / 2, duration, easing);
     }
 
-    public setView(scale: number | undefined = undefined, x: number, y: number, duration: number = 70) {
+    public setView(scale: number | undefined = undefined, x: number, y: number,
+        duration: number = 200, easing: (a: number) => number = TWEEN.Easing.Quadratic.InOut) {
 
         let _this = this;
 
@@ -574,6 +591,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
             if (duration == 0) { // no animation
                 setZoom({ k: scale, x: x, y: y });
+                return;
             } else {
                 new TWEEN.Tween({
                     k: _this.transform.k,
@@ -581,25 +599,16 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     y: (_this.size.h / 2 - _this.transform.y) / _this.transform.k
                 })
                     .to({ k: scale, x: x, y: y }, duration)
-                    .easing(TWEEN.Easing.Quadratic.InOut)
+                    .easing(easing)
                     .onUpdate((data: { k: number, x: number, y: number }) => setZoom(data))
                     .start();
             }
-            return this;
+            return;
         }
 
-        // function getCenter() {
-        //     const t = _this.transform;
-        //     return { x: (state.width / 2 - t.x) / t.k, y: (state.height / 2 - t.y) / t.k };
-        //   }
-
         function setZoom(data: { k: number, x: number, y: number }) {
-
-            // _this.zoom.transform(d3.select(_this.canvas), data.k, [data.x, data.y]);
             _this.zoom.scaleTo(d3.select(_this.canvas), data.k);
             _this.zoom.translateTo(d3.select(_this.canvas), data.x, data.y);
-
-
         }
     }
 
@@ -806,8 +815,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         // return d ? d.x + entry.root.getX() : 0;
     }
 
-
-
     mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
     setWidthsTween: Map<AbstractNodeShell, Map<number, Tween<any>>> = new Map();
 
@@ -924,6 +931,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         }
     }
 
+    private getNodeGraphCoordinates(n: AbstractNode, offsetX = 0, offsetY = 0): { x: number, y: number } {
+        return n.entry ? { x: n.entry.x + n.getX() + offsetX, y: n.entry.y + n.getY() + offsetY } : { x: 0, y: 0 };
+    }
+
     updateColumns: boolean = true;
 
     private drawCanvas(ctx: CanvasRenderingContext2D, isShadow: boolean = false) {
@@ -948,14 +959,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 const d = this.getNodesBoundingBox();
                 ctx.fillRect(d.x, d.y, d.w, d.h);
             }
-
             for (let index = 0; index < this.rootNodes.length; index++) {
                 const entry: AbstractNodeShell = this.rootNodes[index];
                 ctx.save();
                 ctx.translate(entry.x, entry.y);
                 let nodes: AbstractNode[] = entry.nodes;
                 let links: AbstractLink[] = entry.links;
-
 
                 let widths: { x: number, width: number }[] = [];
 
@@ -1011,9 +1020,12 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
                 ctx.fillStyle = "rgb(170,170,170)";
 
+
                 this.drawLinks(ctx, isShadow, links, widths, entry);
                 this.drawNodes(ctx, isShadow, nodes, widths, entry);
                 this.drawText(ctx, isShadow, nodes, widths, entry);
+
+
 
 
                 if (entry && entry.columnForceMap) {
@@ -1039,6 +1051,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 ctx.restore();
             }
 
+
         }
 
         ctx.restore();
@@ -1052,24 +1065,20 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     }
 
 
-    // nodeCulling(n: AbstractNode): boolean {
+    nodeCulling(n: AbstractNode): boolean {
 
-    //     let viewportWidth: number = this.size.w;
-    //     let viewportHeight: number = this.size.h;
+        const viewportWidth: number = this.size.w;
+        const viewportHeight: number = this.size.h;
 
-    //     let x = -(this.transform ? this.transform.x + viewportWidth / 2 : 0); // nach rechts draggen macht x kleiner, also -100 usw.
-    //     let y = -(this.transform ? this.transform.y + viewportWidth / 2 : 0);  // nach unten macht y kleiner, also -100 usw.
+        const screen = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, OV_COLUMNWIDTH));
+        const screenR = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, -OV_COLUMNWIDTH));
 
-    //     let scale = this.transform ? this.transform.k : 1;
-    //     let nodeX = Math.round(n.getX()) * scale;
-    //     let nodeY = Math.round(n.getY()) * scale;
+        if (screen.x < 0 || screenR.x > viewportWidth || screen.y + 100 < 0 || screen.y - 100 > viewportHeight) {
+            return true;
+        }
+        return false;
 
-
-    //     return (nodeX > x - viewportWidth / 2 &&
-    //         nodeX < x + viewportWidth / 2 &&
-    //         nodeY > y - viewportHeight / 2 &&
-    //         nodeY < y + viewportHeight / 2);
-    // }
+    }
 
 
     /**
@@ -1228,6 +1237,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             const n = links[i];
             let start = n.source;
             let end = n.target;
+
+
+            if (this.nodeCulling(start) && this.nodeCulling(end)) continue;
+
+
             const opacity = this.notFound.get(end);
             if (!isShadow && opacity) {
                 ctx.globalAlpha = opacity.o;
@@ -1297,6 +1311,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         }
     }
 
+
     drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
 
         ctx.lineWidth = this.getFixedSize(12, 10, 26);
@@ -1305,6 +1320,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         while (i < len) {
 
             const node = nodes[i];
+
+            if (this.nodeCulling(node)) { i++; continue; }
 
             const opacity = this.notFound.get(node);
             if (opacity) {
@@ -1376,16 +1393,20 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         const limitText = (text: string) => {
             let cut = false;
-            while (ctx.measureText(text + "...").width > this.textMaxWidth) {
-                text = text.substring(0, text.length - 1);
-                cut = true;
-            } return text + (cut ? "..." : "");
+            return ((text + "...").length > 18) ? text.substring(0, 18) + "..." : text;
+
+            // while (ctx.measureText(text + "...").width > this.textMaxWidth) {
+            //     text = text.substring(0, text.length - 1);
+            //     cut = true;
+            // } return text + (cut ? "..." : "");
         }
         /**
          * Draw Folder names
          */
         for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
+
+            if (this.nodeCulling(node)) continue;
 
             let isNodeHovered = this.isHoveredNode(node);
 

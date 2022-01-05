@@ -508,7 +508,7 @@ console.log("create window");
       label: "Window",
       submenu: [
         {
-          accelerator: 'F1',
+          accelerator: 'F9',
           label: 'Distract free mode',
           click() {
             if (win) {
@@ -517,7 +517,7 @@ console.log("create window");
           }
         },
         {
-          accelerator: 'F2',
+          accelerator: 'F10',
           label: 'Hide Menu',
           // does not work in osx
           visible: process.platform != 'darwin',
@@ -529,7 +529,7 @@ console.log("create window");
         },
         {
           role: "togglefullscreen",
-          accelerator: 'F3',
+          accelerator: 'F11',
           label: 'Fullscreen'
         },
         // {
@@ -581,7 +581,7 @@ console.log("create window");
       submenu: [
         {
           accelerator: "F5",
-          label: 'Keyboard Shortcuts',
+          label: 'Controls',
           click() {
             if (win) {
               sendToRender('show-help');
