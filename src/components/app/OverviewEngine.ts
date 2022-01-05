@@ -110,8 +110,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     public static framecounter: number = 0;
     // milliseconds till last frame
     private static delta: number = 0;
-// matrix(0.377901, 0, 0, 0.377901, -58.9503, -715.279)
-// matrix(0.377901, 0, 0, 0.377901, -36.673, -444.974)
+    // matrix(0.377901, 0, 0, 0.377901, -58.9503, -715.279)
+    // matrix(0.377901, 0, 0, 0.377901, -36.673, -444.974)
     private static startClock(): void {
         OverviewEngine.fpsInterval = 1000 / 144;
         OverviewEngine.then = performance.now();
@@ -1096,9 +1096,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
      */
     public setColorScale<N extends AbstractNode>(statAttribute: string,
         min: number, max: number,
-        getColor: (node: N, stat: number, min: number, max: number) => string,
+        getColor: (node: N, stat: number, min: number, max: number) => string | "h",
         duration: number = 40): void {
-
+        this.getColor = getColor;
         this.colorSettings = { attr: statAttribute, min: min, max: max, colorFunction: getColor };
 
         for (let index = 0; index < this.rootNodes.length; index++) {
@@ -1123,6 +1123,18 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
         this.colorTransitionElapsed = 1;
         this.colorTransitionTarget = duration;
+    }
+
+    private nodeHiddenByFeature(n: AbstractNode) {
+        if (this.colorSettings) {
+            const nodeValue = n.getStatsValue(this.colorSettings.attr);
+            const colorOld = this.getColorForNode(n, false, false);
+            if (colorOld && nodeValue != undefined && this.getColor) {
+                let colorNew = this.getColor(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                return colorNew == "h";
+            }
+        }
+        return false;
     }
 
     private getFixedSize(value: number, min: number = value, max: number = Infinity) {
@@ -1175,6 +1187,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     colorTransitionTarget: number = 150;
     colorNodeDefault: string = "rgb(200,200,200)";
     colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
+    getColor: ((node: any, stat: number, min: number, max: number) => string | "h") | undefined;
     readonly textPadding: number = 105;
     readonly textMaxWidth: number = 200;
 
@@ -1198,9 +1211,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             let scale = this.colorTransitionMap.get(node);
             if (scale) {
                 const color = scale(this.colorTransitionElapsed);
-                // if (hoverHighlighting && this.listnodesHovered.includes(node)) {
-                //     return d3.rgb(color).brighter().formatRgb();
-                // }
                 return color;
             }
         } else {
@@ -1209,19 +1219,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 if (c == "h") {
                     return getHiddenInfo ? "h" : OverviewEngine.hiddenColor;
                 }
-                // if (hoverHighlighting && this.listnodesHovered.includes(node)) {
-                //     c = d3.rgb(c).brighter().formatRgb();
-                // }
                 return c;
             }
         }
-        // 
-        // if (hoverHighlighting && this.listnodesHovered.includes(node)) {
-        //     return d3.rgb(this.colorNodeDefault).brighter().formatRgb();
-        // }
         return this.colorNodeDefault;
     }
-
 
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
 
@@ -1239,9 +1241,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             let start = n.source;
             let end = n.target;
 
-
             if (this.nodeCulling(start) && this.nodeCulling(end)) continue;
-
 
             const opacity = this.notFound.get(end);
             if (!isShadow && opacity) {
@@ -1436,7 +1436,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         let yName = node.getY() - translate;
                         this.textMaxWidth
 
-                        ctx.fillStyle = "#fff";
+
+
+                        ctx.fillStyle = this.nodeHiddenByFeature(node) ? OverviewEngine.hiddenColor : "#fff";
+
                         if (this.selection.includes(node)) {
                             ctx.fillStyle = OverviewEngine.colorSelection;
                         }

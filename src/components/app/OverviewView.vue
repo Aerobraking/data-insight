@@ -46,8 +46,6 @@
       </div>
     </div>
 
-   
- 
     <div class="overview-wrapper" @mousedown="mousedown"></div>
 
     <div
@@ -72,7 +70,10 @@
       >
         <tippy>
           <button :class="{ 'button-active': model.overview.showAll }">
-            <Overscan @click="showAll()" />
+            <Overscan
+              @click.ctrl.left.exact="showAll()"
+              @click.left.exact="showAll(false)"
+            />
           </button>
           <template #content>Show All</template>
         </tippy>
@@ -202,7 +203,15 @@ gradients.push(
 );
 gradients.push(new Gradient(d3.interpolateWarm, "interpolateWarm"));
 gradients.push(new Gradient(d3.interpolatePuRd, "interpolatePuRd", !true));
-gradients.push(new Gradient(d3.interpolateMagma, "interpolateMagma", !true));
+gradients.push(
+  new Gradient(
+    d3.interpolateMagma,
+    "interpolateMagma",
+    !true,
+    d3.scaleLinear<number>().domain([0, 1]).clamp(true).range([0.3, 1]),
+    [0.3, 1]
+  )
+);
 
 export default defineComponent({
   name: "App",
@@ -522,11 +531,10 @@ export default defineComponent({
         Instance.getEngine(this.idOverview).zoomToFit(400);
         return;
       }
-      if (!this.model.overview.showAll) {
-        Instance.getEngine(this.idOverview).zoomToFit();
+      if (!this.model.overview.showAll) { 
         setTimeout(() => {
           this.model.overview.showAll = true;
-        }, 400);
+        }, 10);
       } else {
         this.model.overview.showAll = false;
       }
@@ -622,7 +630,7 @@ export default defineComponent({
       if (!e.shiftKey && !e.altKey && e.ctrlKey) {
         switch (e.key.toLowerCase()) {
           case " ":
-            this.showAll();
+            this.showAll(false);
             break;
           default:
             break;

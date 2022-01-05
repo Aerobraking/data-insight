@@ -423,10 +423,7 @@ export default defineComponent({
       if (newValue) {
         this.setFocusToWorkspace();
       }
-    },
-    "model.viewportTransform.x": function (newValue: number, oldValue: number) {
-      console.log("########new transform: ", newValue);
-    },
+    }, 
     searchString: function (newValue: string, oldValue: string) {
       this.searchUpdate();
     },
@@ -443,8 +440,7 @@ export default defineComponent({
   },
   mounted() {
     let _this = this;
-
-    console.log("######## original transform: ", this.model.viewportTransform);
+ 
     this.c = createContext({ debounceTime: 100, autoEnable: true });
 
     /**
@@ -486,10 +482,7 @@ export default defineComponent({
           if (this.skipInitialResize++ > 0) {
             let diffX = _this.getCanvas().width - w,
               diffY = _this.getCanvas().height - h;
-            console.log(
-              "########################################## Resizeobserver move"
-            );
-
+          
             this.panZoomInstance.moveTo(
               this.getCurrentTransform().x - diffX / 2,
               this.getCurrentTransform().y - diffY / 2
@@ -1729,9 +1722,7 @@ export default defineComponent({
           this.getWorkspaceWrapper().clientHeight / 2;
 
         if (rect.bottom == rect.top || rect.left == rect.right) return;
-
-        console.log("####################### gehe zu entry");
-
+ 
         if (zoom) {
           if (smooth) {
             this.panZoomInstance.smoothShowRectangle(rect);
@@ -2097,8 +2088,7 @@ export default defineComponent({
 
       if (this.model != undefined) {
         this.model.viewportTransform = this.getCurrentTransform();
-        console.log("#################", this.model.viewportTransform);
-      }
+       }
 
       WSUtils.Events.zoom(this);
     },

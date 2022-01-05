@@ -1,14 +1,23 @@
+
 export default class Gradient {
-    constructor(f: Function, id: string, reverse: boolean = false) {
+    constructor(f: Function, id: string, reverse: boolean = false, scale: ((n: number) => number) | undefined = undefined, range: number[] = [0, 1]) {
         this.f = f;
         this.id = id;
         this.reverse = reverse;
+        this.scale = scale;
+        this.range = range;
     }
     f: Function;
     id: string;
     reverse: boolean = false;
-
+    scale: ((n: number) => number) | undefined;
+    range: number[];
+    
     public getColor(value: number): string {
-        return this.f(this.reverse ? 1 - value : value)
+        if (this.scale) {
+            const v = value;
+            value = this.scale(value); 
+        }
+        return this.f(this.reverse ? this.range[1] - value : value)
     }
 }
