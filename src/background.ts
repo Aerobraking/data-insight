@@ -54,6 +54,10 @@ function createDragImage() {
   });
 }
 
+function isDevMode(){
+  return !app.isPackaged;
+}
+
 function sendToRender(id: string, ...args: any[]) {
   // if (win) {
   //   win.webContents.send("log", id + args.join(" # "));
@@ -371,7 +375,7 @@ function updateSettings() {
 }
 
 async function createWindow() {
-console.log("create window");
+  console.log("create window");
 
   detectUSBEvents();
 
@@ -392,6 +396,7 @@ console.log("create window");
     webPreferences: {
       enableRemoteModule: true,
       webSecurity: false,
+      devTools: isDevMode(),
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegrationInWorker: true,
@@ -432,8 +437,7 @@ console.log("create window");
     webPreferences: {
       enableRemoteModule: true,
       webSecurity: false,
-      // Use pluginOptions.nodeIntegration, leave this alone
-      // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
+      devTools: isDevMode(),
       nodeIntegrationInWorker: true,
       nodeIntegration: (process.env
         .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
@@ -444,13 +448,13 @@ console.log("create window");
   win.on('close', (e) => {
 
     if (win) {
-      updateSettings(); 
+      updateSettings();
       settings.setSync('settings_main', s);
     }
 
     usbDetect.stopMonitoring();
     if (win) {
-      e.preventDefault(); 
+      e.preventDefault();
       win.webContents.send('app-close');
     }
   });
@@ -532,32 +536,33 @@ console.log("create window");
           accelerator: 'F11',
           label: 'Fullscreen'
         },
-        // {
-        //   accelerator: 'F4',
-        //   label: 'Frameless',
-        //   // does not work in osx
-        //   visible: process.platform != 'darwin',
-        //   click() {
-        //     if (win) {
-        //       s.frame = s.frame == 0 ? 1 : 0;
-        //       switchFrameType = true;
-        //       if (win) {
-        //         updateSettings();
-        //         console.log("set settings: ", s);
-        //         settings.setSync('settings_main', s);
-        //       }
-
-        //       usbDetect.stopMonitoring();
-        //       if (win) {  
-        //         console.log("send close event manually");
-        //         win.webContents.send('app-close');
-        //       }
-
-        //     }
-        //   }
-        // },
+        /** {
+         //   accelerator: 'F4',
+         //   label: 'Frameless',
+         //   // does not work in osx
+         //   visible: process.platform != 'darwin',
+         //   click() {
+         //     if (win) {
+         //       s.frame = s.frame == 0 ? 1 : 0;
+         //       switchFrameType = true;
+         //       if (win) {
+         //         updateSettings();
+         //         console.log("set settings: ", s);
+         //         settings.setSync('settings_main', s);
+         //       }
+ 
+         //       usbDetect.stopMonitoring();
+         //       if (win) {  
+         //         console.log("send close event manually");
+         //         win.webContents.send('app-close');
+         //       }
+ 
+         //     }
+         //   }
+         // },*/
         {
           label: 'Reload Page',
+          visible: isDevMode(),
           accelerator: 'Ctrl+R',
           click() {
             if (win) {
@@ -567,6 +572,7 @@ console.log("create window");
         },
         {
           label: 'Dev Tools',
+          visible: isDevMode(),
           click() {
             if (win && windowWorker) {
               win.webContents.openDevTools();

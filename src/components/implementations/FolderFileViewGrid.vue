@@ -58,9 +58,7 @@ export default defineComponent({
       },
     };
     Dispatcher.instance.registerCallback(this.listener);
-
-    let el: any = this.$el;
-
+  
     const div: HTMLElement =
       this.$el.getElementsByClassName("folder-file-image")[0];
 
@@ -121,8 +119,7 @@ $color-Selection: rgba(57, 215, 255, 0.1);
 }
 
 .folder-file {
-  z-index: 100;
-  // will-change: transform;
+  z-index: 100; 
   padding: 10px;
   height: 180px;
   box-sizing: border-box;

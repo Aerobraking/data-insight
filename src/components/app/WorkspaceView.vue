@@ -70,6 +70,7 @@
               minZoom: 0.01,
               maxZoom: 20,
               bounds: false,
+              transformOrigin: null,
               initialX: model.viewportTransform.x,
               initialY: model.viewportTransform.y,
               initialZoom: model.viewportTransform.scale,
@@ -423,6 +424,9 @@ export default defineComponent({
         this.setFocusToWorkspace();
       }
     },
+    "model.viewportTransform.x": function (newValue: number, oldValue: number) {
+      console.log("########new transform: ", newValue);
+    },
     searchString: function (newValue: string, oldValue: string) {
       this.searchUpdate();
     },
@@ -436,21 +440,11 @@ export default defineComponent({
 
       bar.classList.toggle("splitpanes__splitter-hide", !newValue);
     },
-    "model.paneSize": function (newValue: number, oldValue: number) {
-      // const o =
-      //   (this.getCanvas().width * 0.01 * (newValue - oldValue)) *
-      //   this.getCurrentTransform().scale /2;
-      // console.log("diff: ",newValue - oldValue, "scale: ",  this.getCurrentTransform().scale, "width: ",this.getCanvas().width );
-      // console.log(o);
-      // this.panZoomInstance.moveTo(
-      //   this.getCurrentTransform().x - o,
-      //   this.getCurrentTransform().y
-      // );
-    },
   },
   mounted() {
     let _this = this;
 
+    console.log("######## original transform: ", this.model.viewportTransform);
     this.c = createContext({ debounceTime: 100, autoEnable: true });
 
     /**
@@ -492,6 +486,9 @@ export default defineComponent({
           if (this.skipInitialResize++ > 0) {
             let diffX = _this.getCanvas().width - w,
               diffY = _this.getCanvas().height - h;
+            console.log(
+              "########################################## Resizeobserver move"
+            );
 
             this.panZoomInstance.moveTo(
               this.getCurrentTransform().x - diffX / 2,
@@ -548,6 +545,13 @@ export default defineComponent({
 
     this.setFocusToWorkspace();
     this.paneButtonClicked(this.model.paneSize, false);
+
+    // this.panZoomInstance.zoomTo(
+    //   this.model.viewportTransform.x,
+    //   this.model.viewportTransform.y,
+    //   this.model.viewportTransform.scale
+    // );
+
     if (this.model.entries.length == 0) {
       this.panZoomInstance.moveTo(
         window.innerWidth / 2,
@@ -896,11 +900,13 @@ export default defineComponent({
           } else {
             f.x = viewport.x + viewport.w / 2 - f.width / 2;
             f.y = viewport.y + viewport.h / 2 - f.height / 2;
+            f.x -= f.width / 2;
+            f.y -= f.height / 2;
           }
         });
       }
 
-      this.addEntriesToWorkspace([], listFiles, position);
+      this.addEntriesToWorkspace([], listFiles, position, true);
 
       return listFiles[0] as T;
     },
@@ -1596,7 +1602,9 @@ export default defineComponent({
     getViewport(): ElementDimension {
       let currenTransform = this.getCurrentTransform();
 
-      let rect: ClientRect = this.$el.getBoundingClientRect();
+      let rect: DOMRect = this.$el
+        .getElementsByClassName("vue-pan-zoom-item")[0]
+        .getBoundingClientRect();
 
       let oldView: ElementDimension = {
         x: -currenTransform.x / this.getCurrentTransform().scale,
@@ -1721,6 +1729,8 @@ export default defineComponent({
           this.getWorkspaceWrapper().clientHeight / 2;
 
         if (rect.bottom == rect.top || rect.left == rect.right) return;
+
+        console.log("####################### gehe zu entry");
 
         if (zoom) {
           if (smooth) {
@@ -2087,6 +2097,7 @@ export default defineComponent({
 
       if (this.model != undefined) {
         this.model.viewportTransform = this.getCurrentTransform();
+        console.log("#################", this.model.viewportTransform);
       }
 
       WSUtils.Events.zoom(this);
@@ -2552,11 +2563,6 @@ div .resizer-top-left {
   border: 2px solid $color-Selection;
 }
 
-.vue-pan-zoom-item {
-  width: 100%;
-  height: 100%;
-}
-
 /**
 A top selection bar for entries to make them more easily selectable. 
  */
@@ -2614,10 +2620,6 @@ visually highlights elements for selection with a hover effect
 
   .zoomable {
     animation: fade-in 0.25s ease;
-    /**
-    Way of animating the viewport
-     */
-    // transition: transform 0.4s ease-in-out;
   }
 
   canvas {
@@ -2627,6 +2629,28 @@ visually highlights elements for selection with a hover effect
     top: 0;
     z-index: 780; // behind menu bar
   }
+}
+
+.vue-pan-zoom-item {
+  width: 100%;
+  height: 100%;
+}
+
+.vue-pan-zoom-scene {
+  outline: none;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  padding: 0;
+  margin: 0;
+
+  // old
+  // outline: none;
+  // width: 100%;
+  // height: 100%;
+  // position: fixed;
+  // padding: 0;
+  // margin: 0;
 }
 
 @keyframes fade-in {
@@ -2642,15 +2666,6 @@ visually highlights elements for selection with a hover effect
   transition: opacity 0.3s ease-in-out;
   position: absolute;
   // filter: drop-shadow(5px 5px 2px  #000000);
-}
-
-.vue-pan-zoom-scene {
-  outline: none;
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  padding: 0;
-  margin: 0;
 }
 
 .position-zero {

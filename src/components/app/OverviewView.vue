@@ -46,37 +46,8 @@
       </div>
     </div>
 
-    <panZoom
-      @init="panHappen"
-      tabIndex="0"
-      :options="{
-        zoomDoubleClickSpeed: 1,
-        minZoom: 0.03,
-        maxZoom: 15,
-        bounds: false,
-        initialX: model.overview.viewportTransform.x,
-        initialY: model.overview.viewportTransform.y,
-        initialZoom: model.overview.viewportTransform.scale,
-      }"
-      selector=".zoomable"
-    >
-      <div class="zoomable close-file-anim">
-        <!-- <div
-          :class="{ 'blend-out': model.entries.length > 0 }"
-          class="welcome-message"
-        >
-          <h2>
-            Let's drop some Folders to get going!
-            <EmoticonHappyOutline class="svg-smile" />
-          </h2>
-          <p>
-            <FolderOutline class="svg-folder" />
-          </p>
-          <p><Download class="svg-download" /></p>
-        </div> -->
-      </div>
-    </panZoom>
-
+   
+ 
     <div class="overview-wrapper" @mousedown="mousedown"></div>
 
     <div
@@ -151,6 +122,39 @@
 </template>
 
 <script lang="ts">
+/*
+ <panZoom
+      @init="panHappen"
+      tabIndex="0"
+      :options="{
+        zoomDoubleClickSpeed: 1,
+        minZoom: 0.03,
+        maxZoom: 15,
+        bounds: false,
+        initialX: model.overview.viewportTransform.x,
+        initialY: model.overview.viewportTransform.y,
+        initialZoom: model.overview.viewportTransform.scale,
+      }"
+      selector=".zoomable"
+    >
+      <div class="zoomable close-file-anim">
+        <!-- <div
+          :class="{ 'blend-out': model.entries.length > 0 }"
+          class="welcome-message"
+        >
+          <h2>
+            Let's drop some Folders to get going!
+            <EmoticonHappyOutline class="svg-smile" />
+          </h2>
+          <p>
+            <FolderOutline class="svg-folder" />
+          </p>
+          <p><Download class="svg-download" /></p>
+        </div> -->
+      </div>
+    </panZoom> 
+
+*/
 const fs = require("fs");
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
@@ -500,17 +504,17 @@ export default defineComponent({
       );
     },
     updateDivTransformation(value: { x: number; y: number; scale: number }) {
-      this.panZoomInstance.moveTo(value.x, value.y);
-      this.panZoomInstance.zoomAbs(value.x, value.y, value.scale);
+      // this.panZoomInstance.moveTo(value.x, value.y);
+      // this.panZoomInstance.zoomAbs(value.x, value.y, value.scale);
     },
     panHappen: function (p: any, id: String) {
-      p.setTransformOrigin(null);
-      this.panZoomInstance = p;
-      p.set;
-      p.on("panzoompan", function (e: any) {});
-      p.on("onDoubleClick", function (e: any) {
-        return false;
-      });
+      // p.setTransformOrigin(null);
+      // this.panZoomInstance = p;
+      // p.set;
+      // p.on("panzoompan", function (e: any) {});
+      // p.on("onDoubleClick", function (e: any) {
+      //   return false;
+      // });
     },
     showAll(automodeToggle: boolean = true): void {
       if (!automodeToggle) {

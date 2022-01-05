@@ -133,7 +133,7 @@ import * as WSUtils from "../app/WorkspaceUtils";
 import * as watcher from "../../utils/WatchSystem";
 import { add, remove, toggle } from "../../utils/ListUtils";
 import fs from "fs";
-import wsfolderfile from "./FolderFileView.vue";
+import wsfolderfile from "./FolderFileViewGrid.vue";
 import wsfolderfilelist from "./FolderFileViewList.vue";
 import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 import { defineComponent } from "vue";
@@ -587,24 +587,24 @@ export default defineComponent({
       this.dragActive = false;
     },
     keydown(e: KeyboardEvent) {
-      switch (e.key) {
-        case "Delete":
-          this.deleteSelection();
-          e.stopImmediatePropagation();
-          return;
-        case "Backspace":
-          this.folderBack();
-          e.stopImmediatePropagation();
-          return;
-        case "f":
-        case "y":
-        case "t":
-          console.log(e.key);
-
-          e.stopImmediatePropagation();
-          return;
-        default:
-          break;
+      if (!e.ctrlKey && !e.shiftKey && !e.altKey) {
+        switch (e.key) {
+          case "Delete":
+            this.deleteSelection();
+            e.stopImmediatePropagation();
+            return;
+          case "Backspace":
+            this.folderBack();
+            e.stopImmediatePropagation();
+            return;
+          case "f":
+          case "y":
+          case "t": 
+            e.stopImmediatePropagation(); 
+            return;
+          default:
+            break;
+        }
       }
 
       if (e.ctrlKey) {
@@ -632,7 +632,7 @@ export default defineComponent({
           default:
             break;
         }
-      } 
+      }
     },
     toggleAll(select: boolean | undefined = undefined) {
       if (select != undefined) {
