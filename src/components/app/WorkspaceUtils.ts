@@ -1,3 +1,4 @@
+import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { ElementDimension, getCoordinatesFromElement } from "@/utils/resize";
 import {
@@ -103,7 +104,7 @@ export interface Listener {
     dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
 
     featureEvent?: ( 
-        feature: string|undefined,
+        feature: Feature|undefined,
         min: number, max: number,
         getColor: (node: any, stat: number, min: number, max: number) => string) => void;
 
@@ -137,7 +138,7 @@ export class Dispatcher {
     }
     
     featureEvent( 
-        statAttribute: string,
+        statAttribute: Feature,
         min: number, max: number,
         getColor: (node: any, stat: number, min: number, max: number) => string): void {
         this.callbacks.forEach((c) => {

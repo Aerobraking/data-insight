@@ -140,7 +140,7 @@ import { defineComponent } from "vue";
 import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
-} from "../../store/model/implementations/filesystem/FileSystemEntries";
+} from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
 import fse from "fs-extra";

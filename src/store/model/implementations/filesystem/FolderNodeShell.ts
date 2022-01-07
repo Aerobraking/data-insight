@@ -1,9 +1,9 @@
-import { AbstractNode, AbstractLink } from "../../app/overview/AbstractNode";
+import { AbstractLink } from "../../app/overview/AbstractNode";
 import { Exclude } from "class-transformer";
 import { FSWatcher } from "chokidar";
 import pathNodejs from "path";
 import { Instance } from "./FileSystemWatcher";
-import { FileSystemListener, FolderStatsResult, FolderSyncFinished, FolderSyncResult, Stats } from "./FileOverviewInterfaces";
+import { FileSystemListener, FolderFeatureResult, FolderSyncFinished, FolderSyncResult } from "./FileSystemMessages";
 import FolderNode from "./FolderNode";
 import { AbstractNodeShell } from "../../app/overview/AbstractNodeShell";
 
@@ -18,9 +18,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         super("folder", path ? path : "", new FolderNode(path ? pathNodejs.basename(path) : ""));
         this.root.entry = this;
     }
-
-
-
+  
     public createNode(name: string) {
         return new FolderNode(name);
     }
@@ -53,7 +51,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     @Exclude()
     interval: any = setInterval(this.handleEvents.bind(this), 100);
     @Exclude()
-    eventStack: (FolderSyncResult | FolderStatsResult | FolderSyncFinished)[] = [];
+    eventStack: (FolderSyncResult | FolderFeatureResult | FolderSyncFinished)[] = [];
 
     handleEvents(): void {
         s:
@@ -62,11 +60,14 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
             if (event) {
                 switch (event.type) {
                     case "foldersync":
+
+
                         const result: FolderSyncResult = event as unknown as FolderSyncResult;
+                        console.log("foldersync", event);
                         this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
                         break;
-                    case "folderstats":
-                        this.addStats(event.stats);
+                    case "folderfeatures":
+                        this.addFeatures(event.path, event.features);
                         break;
                     case "folderdeepsyncfinished":
                         this.isSyncing = false;
@@ -79,9 +80,10 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     }
 
-    event(e: FolderStatsResult | FolderSyncResult | FolderSyncFinished): void {
+    event(e: FolderFeatureResult | FolderSyncResult | FolderSyncFinished): void {
+
         switch (e.type) {
-            case "folderstats":
+            case "folderfeatures":
             case "folderdeepsyncfinished":
             case "foldersync":
                 this.eventStack.push(e);

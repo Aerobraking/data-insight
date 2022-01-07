@@ -33,7 +33,7 @@
 <script lang="ts">
 import Editor from "@tinymce/tinymce-vue";
 import { defineComponent } from "vue";
-import { WorkspaceEntryTextArea } from "../../store/model/implementations/filesystem/FileSystemEntries";
+import { WorkspaceEntryTextArea } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 import pell, { exec } from "pell";

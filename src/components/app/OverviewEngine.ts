@@ -5,16 +5,16 @@ import {
     D3DragEvent,
     ZoomTransform,
 } from "d3";
-import { AbstractNode, AbstractLink, EntryListener, ColumnTextWidth } from "../../store/model/app/overview/AbstractNode";
+import { AbstractNode, AbstractLink } from "../../store/model/app/overview/AbstractNode";
 import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
 import { Overview, Workspace } from "@/store/model/app/Workspace";
-import { AbstractNodeShell } from "@/store/model/app/overview/AbstractNodeShell";
-import AbstractNodeShellIfc from "@/store/model/app/overview/AbstractNodeShellIfc";
+import { AbstractNodeShell, NodeShellListener } from "@/store/model/app/overview/AbstractNodeShell";
 import { ipcRenderer } from "electron";
 import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
+import { Feature, FeatureDataSum } from "@/store/model/app/overview/AbstractNodeFeature";
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -81,7 +81,7 @@ export interface OverviewColorScale<N extends AbstractNode> {
 }
 
 export interface ColorStatsSettings<N> {
-    attr: string,
+    attr: Feature,
     min: number,
     max: number,
     colorFunction: (node: N, stat: number, min: number, max: number) => string
@@ -93,7 +93,7 @@ interface D3Drag extends DragEvent {
     subject: any;
 }
 
-export class OverviewEngine implements EntryListener<AbstractNode>{
+export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
 
     showShadowCanvas(show: boolean) {
@@ -177,37 +177,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
     private nodeFiltered: AbstractNode[] = [];
     private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
 
+    transform: ZoomTransform | undefined;
 
+    enablePainting: boolean = true;
 
-    public updateSelection(findNode: boolean = true, newSelectedNode: AbstractNode | undefined = undefined): AbstractNode | undefined {
+    private opacityMin = 0.04;
 
-        if (newSelectedNode) {
-            this.selection = [];
-            this.selection.push(newSelectedNode);
-        } else
-            if (findNode) {
-                const node: AbstractNode | undefined = this.getNodeAtMousePosition();
-                // if (e.shiftKey) {
-                //     if (node && !_this.selection.includes(node)) _this.selection.push(node);
-                // } else if (e.ctrlKey) {
-                //     if (node) _this.selection.includes(node) ? _this.selection.splice(_this.selection.indexOf(node), 1) : _this.selection.push(node);
-                // } else {
-                this.selection = [];
-                if (node) this.selection.push(node);
-                // }
-            }
-
-        const listSelection = [];
-        for (let i = 0; i < this.selection.length; i++) {
-            const n = this.selection[i];
-            listSelection.push(...n.descendants(), ...n.parents());
-        }
-
-        this.fireSelectionUpdate();
-        listSelection.length == 0 ? this.setFilterList("selection") : this.setFilterList("selection", listSelection);
-
-        return this.selection.length > 0 ? this.selection[0] : undefined;
-    }
+    mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
+    setWidthsTween: Map<AbstractNodeShell, Map<number, Tween<any>>> = new Map();
 
     constructor(div: HTMLElement, workspace: Workspace) {
 
@@ -477,6 +454,36 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
     }
 
+    public updateSelection(findNode: boolean = true, newSelectedNode: AbstractNode | undefined = undefined): AbstractNode | undefined {
+
+        if (newSelectedNode) {
+            this.selection = [];
+            this.selection.push(newSelectedNode);
+        } else
+            if (findNode) {
+                const node: AbstractNode | undefined = this.getNodeAtMousePosition();
+                // if (e.shiftKey) {
+                //     if (node && !_this.selection.includes(node)) _this.selection.push(node);
+                // } else if (e.ctrlKey) {
+                //     if (node) _this.selection.includes(node) ? _this.selection.splice(_this.selection.indexOf(node), 1) : _this.selection.push(node);
+                // } else {
+                this.selection = [];
+                if (node) this.selection.push(node);
+                // }
+            }
+
+        const listSelection = [];
+        for (let i = 0; i < this.selection.length; i++) {
+            const n = this.selection[i];
+            listSelection.push(...n.descendants(), ...n.parents());
+        }
+
+        this.fireSelectionUpdate();
+        listSelection.length == 0 ? this.setFilterList("selection") : this.setFilterList("selection", listSelection);
+
+        return this.selection.length > 0 ? this.selection[0] : undefined;
+    }
+
     public clearSelection() {
         this.selection = [];
         this.setFilterList("selection");
@@ -711,9 +718,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         node.colorID = this.autocolor.register(node);
         this.updateNodeColorScale(node);
         this.updateColumns = true;
-        // if (node.entry) {
-        //     node.x = this.getColumnX(node.entry, node);
-        // }
         this.updateSelection();
     }
 
@@ -750,9 +754,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         this.clearSelection();
     }
 
-    transform: ZoomTransform | undefined;
-
-    enablePainting: boolean = true;
 
     public tick(): void {
 
@@ -800,138 +801,6 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     }
 
-    private opacityMin = 0.04;
-
-    public getColumnX(entry: AbstractNodeShellIfc, n: AbstractNode) {
-
-        return n.depth * OV_COLUMNWIDTH;
-
-        // let d = this.getColumnData(entry, n.depth);
-        // return n.parent && d ? d.x + entry.root.getX() : n.getX();
-    }
-    public getColumnXByDepth(entry: AbstractNodeShell, depth: number) {
-
-        return depth * OV_COLUMNWIDTH;
-        // let d = this.getColumnData(entry, depth);
-        // return d ? d.x + entry.root.getX() : 0;
-    }
-
-    mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
-    setWidthsTween: Map<AbstractNodeShell, Map<number, Tween<any>>> = new Map();
-
-    public getColumnData(entry: AbstractNodeShell, depth: number, create: boolean = true) {
-
-        return { x: depth * OV_COLUMNWIDTH, width: OV_COLUMNWIDTH };
-
-        // let entryColumns = this.mapEntryColumns.get(entry.id);
-        // if (!entryColumns) {
-        //     entryColumns = new Map();
-        //     this.mapEntryColumns.set(entry.id, entryColumns);
-        // }
-
-        // let data = entryColumns.get(depth);
-        // if (!data && create) {
-        //     data = { x: 0, width: 100 };
-        //     const dataPrev = this.getColumnDataRawByID(entry.id, depth - 1);
-        //     if (dataPrev) {
-        //         data.x = dataPrev.x + dataPrev.width;
-        //     }
-
-        //     entryColumns.set(depth, data);
-        // }
-        // return data;
-    }
-
-    public getColumnDataRaw(entry: AbstractNodeShell, depth: number) {
-        return this.getColumnDataRawByID(entry.id, depth);
-    }
-
-    public getColumnDataRawByID(id: number, depth: number) {
-
-        let entryColumns = this.mapEntryColumns.get(id);
-        if (!entryColumns) {
-            entryColumns = new Map();
-            this.mapEntryColumns.set(id, entryColumns);
-        }
-        let data = entryColumns.get(depth);
-        return data;
-    }
-
-    public setColumnTextWidth(entry: AbstractNodeShell, value: ColumnTextWidth) {
-        let _this = this;
-        let data = this.getColumnData(entry, value.depth);
-        if (data) {
-            for (let i = 0; i < entry.nodes.length; i++) {
-                const n = entry.nodes[i];
-                if (!n.isRoot() && n.depth == value.depth) {
-                    n.x = n.fx = data.x;
-                }
-            }
-            if (data.width != value.max) {
-                /**
-                 * the changed column gets the new width directly as itself will not visibility be changed 
-                 */
-                data.width = value.max;
-
-                let diff = data.x;
-                /**
-                 * Update the x coord for the following columns.
-                 */
-                let i = value.depth + 1;
-                let index = 0;
-                let dataNext = this.getColumnDataRaw(entry, i);
-                while (dataNext) {
-                    let dataPrev = this.getColumnDataRaw(entry, i - 1);
-                    if (dataPrev) {
-
-                        diff += dataPrev.width;
-
-                        let entryTweenList = this.setWidthsTween.get(entry);
-
-                        if (!entryTweenList) {
-                            entryTweenList = new Map();
-                        }
-
-                        let tween = entryTweenList.get(i);
-                        if (tween) {
-                            tween.stop();
-                        }
-
-                        /**
-                         *  we give the next column 
-                         */
-                        tween = new TWEEN.Tween({ x: dataNext.x, id: entry.id, depth: i });
-                        tween.to({ x: diff }, 2000)
-                        tween.easing(TWEEN.Easing.Elastic.Out)
-                        tween.delay(index * 110)
-                        tween.onUpdate(function (object) {
-                            let d = _this.getColumnDataRawByID(object.id, object.depth);
-                            if (d) {
-                                d.x = object.x;
-                            }
-                        })
-                        tween.onComplete(function (object) {
-                            for (let k = 0; k < entry.nodes.length; k++) {
-                                const n = entry.nodes[k];
-                                if (n.isRoot() && n.depth == object.depth) {
-                                    n.x = n.fx = object.x;
-                                }
-                            }
-                        });
-                        tween.start();
-
-                        entryTweenList.set(value.depth, tween);
-
-                    }
-                    i++;
-                    index++;
-                    dataNext = this.getColumnDataRaw(entry, i);
-                }
-
-            }
-        }
-    }
-
     private getNodeGraphCoordinates(n: AbstractNode, offsetX = 0, offsetY = 0): { x: number, y: number } {
         return n.entry ? { x: n.entry.x + n.getX() + offsetX, y: n.entry.y + n.getY() + offsetY } : { x: 0, y: 0 };
     }
@@ -967,57 +836,18 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 let nodes: AbstractNode[] = entry.nodes;
                 let links: AbstractLink[] = entry.links;
 
+                /**
+                 * Caching the x position and width of any column for performance reasons. Otherwise
+                 * we would have to calculate this for each node
+                 */
                 let widths: { x: number, width: number }[] = [];
-
                 for (let i = 0, e = true; i < 40; i++) {
-                    let w = this.getColumnData(entry, i, false);
+                    let w = { x: i * OV_COLUMNWIDTH, width: OV_COLUMNWIDTH };
                     if (w) {
                         widths[i] = w;
                     }
                     e = w != undefined;
                 }
-                /**
-                 * Update column metrics
-                 */
-                // if (this.updateColumns || true) {
-
-                //     ctx.font = `${13}px Lato`;
-                //     ctx.fillStyle = "#fff";
-
-                //     /**
-                //      * collection of all column width for the current entry
-                //      */
-                //     let setWidths: Map<number, ColumnTextWidth> = new Map();
-
-                //     for (let i = 0; i < nodes.length && !isShadow; i++) {
-                //         const n = nodes[i];
-                //         let isNodeHovered = this.nodeHovered == n;
-
-                //         let textWidth: ColumnTextWidth | undefined = setWidths.get(n.depth);
-
-                //         if (!textWidth) {
-                //             textWidth = { min: 10000000, max: 0, depth: n.depth };
-                //             textWidth = { min: 800, max: 800, depth: n.depth };
-                //             setWidths.set(n.depth, textWidth);
-                //         }
-
-                //         // let textw = (Math.max(ctx.measureText(n.name).width, 250) * 2.5 + 200) * 2.2;
-                //         // textWidth.max = Math.max(textWidth.max, textw);
-                //         // textWidth.min = Math.min(textWidth.min, textw);
-
-                //     }
-
-                //     let depths: number[] = Array.from(setWidths.keys());
-                //     depths.sort();
-
-                //     for (let d = 0; d < depths.length; d++) {
-                //         const element = setWidths.get(d);
-                //         if (element) {
-                //             this.setColumnTextWidth(entry, element);
-                //         }
-                //     }
-
-                // }
 
                 ctx.fillStyle = "rgb(170,170,170)";
 
@@ -1094,7 +924,7 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
      * farbe 
      * 
      */
-    public setColorScale<N extends AbstractNode>(statAttribute: string,
+    public setColorScale<N extends AbstractNode>(statAttribute: Feature,
         min: number, max: number,
         getColor: (node: N, stat: number, min: number, max: number) => string | "h",
         duration: number = 40): void {
@@ -1107,10 +937,14 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
             for (let j = 0; j < nodes.length; j++) {
 
                 const n = nodes[j];
-                const nodeValue = n.getStatsValue(this.colorSettings.attr);
+
+                const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
+
+
+
                 const colorOld = this.getColorForNode(n, false, false);
                 if (colorOld && nodeValue != undefined) {
-                    let colorNew = getColor(n as N, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                    let colorNew = getColor(n as N, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
                     colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
                     var scale = d3.scaleLinear<string>()
                         .domain([0, duration])
@@ -1127,10 +961,10 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
 
     private nodeHiddenByFeature(n: AbstractNode) {
         if (this.colorSettings) {
-            const nodeValue = n.getStatsValue(this.colorSettings.attr);
+            const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
             const colorOld = this.getColorForNode(n, false, false);
             if (colorOld && nodeValue != undefined && this.getColor) {
-                let colorNew = this.getColor(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                let colorNew = this.getColor(n, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
                 return colorNew == "h";
             }
         }
@@ -1153,9 +987,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
         if (node) {
             const n = node;
             if (this.colorSettings) {
-                const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
                 if (nodeValue != undefined) {
-                    const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                    const colorNew = this.colorSettings.colorFunction(n, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
                     this.colorNodeMap.set(n, colorNew);
                 }
             }
@@ -1167,9 +1001,9 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                 for (let j = 0; j < nodes.length; j++) {
                     const n = nodes[j];
                     if (this.colorSettings) {
-                        const nodeValue = n.getStatsValue(this.colorSettings.attr);
+                        const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
                         if (nodeValue != undefined) {
-                            const colorNew = this.colorSettings.colorFunction(n, nodeValue, this.colorSettings.min, this.colorSettings.max);
+                            const colorNew = this.colorSettings.colorFunction(n, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
                             this.colorNodeMap.set(n, colorNew);
                         }
                     }
@@ -1446,8 +1280,8 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                         ctx.fillText(`${node.isCollection ? "+" + (node.collectionSize) : limitText(node.name)}  `, xPos, yName);
 
                         if (this.colorSettings && (isNodeHovered || this.selection.includes(node))) {
-                            let value = node.getStatsValue(this.colorSettings.attr);
-                            let s = (value ? formatBytes(value, 2) : " - MB")
+                            const value = node.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
+                            let s = (value ? formatBytes(value.s, 2) : " - MB")
                             ctx.fillText(s.trim(), xPos, yName + translate + (fontSize + 4) * 1);
                         }
 
@@ -1477,9 +1311,11 @@ export class OverviewEngine implements EntryListener<AbstractNode>{
                     ctx.fillText(name, xPos, yName);
 
                     if (this.colorSettings) {
-                        let value = node.getStatsValue(this.colorSettings.attr);
+
+                        const value = node.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
+
                         // feature
-                        let s = (value ? formatBytes(value, 1) : " - MB")
+                        let s = (value ? formatBytes(value.s, 1) : " - MB")
                         ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
                     }
 

@@ -83,13 +83,13 @@
         </tippy>
 
         <tippy>
-          <button :disabled="!nodeSelected">
+          <button :disabled="!nodeCollapsable">
             <RecordCircle @click="createCollection()" />
           </button>
           <template #content>Create Collection</template>
         </tippy>
         <tippy>
-          <button :disabled="!nodeSelected">
+          <button :disabled="isContainer">
             <FileTree @click="loadCollection()" />
           </button>
           <template #content>Open Collection</template>
@@ -192,6 +192,8 @@ import Gradient from "./Gradient";
 import { filesizeFormat } from "@/utils/format";
 import FolderNode from "@/store/model/implementations/filesystem/FolderNode";
 import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";
+import { test } from "@/store/model/implementations/FeatureList";
+import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
 
 const gradients: Gradient[] = [];
 gradients.push(
@@ -304,7 +306,7 @@ export default defineComponent({
   },
   mounted() {
     const _this = this;
-
+    test();
     /**
      * remove the node data from the vuex store
      */
@@ -396,7 +398,7 @@ export default defineComponent({
         slider: API
       ) => {
         this.sliderRange = values;
-        this.filterfunc(this, "size", Number(values[0]), Number(values[1]));
+        this.filterfunc(this, Feature.FolderSize, Number(values[0]), Number(values[1]));
       }
     );
 
@@ -417,6 +419,17 @@ export default defineComponent({
     nodeSelected(): boolean {
       return this.selection != undefined && !this.selection.isRoot();
     },
+    nodeCollapsable(): boolean {
+      return (
+        this.selection != undefined &&
+        !this.selection.isRoot() &&
+        this.selection.children.length > 0 &&
+        !this.selection.isCollection
+      );
+    },
+    isContainer(): boolean {
+      return this.selection != undefined && !this.selection.isCollection;
+    },
     getShowUI(): boolean {
       return this.$store.getters.getShowUI;
     },
@@ -429,7 +442,7 @@ export default defineComponent({
       return gradient;
     },
     filterfunc: _.throttle(
-      (_this: any, stats: string, min: number, max: number) => {
+      (_this: any, stats: Feature, min: number, max: number) => {
         const colorFunction = (
           node: FolderNode,
           stat: number,
@@ -507,7 +520,7 @@ export default defineComponent({
 
       this.filterfunc(
         this,
-        "size",
+       Feature.FolderSize ,
         Number(this.sliderRange[0]),
         Number(this.sliderRange[1])
       );
@@ -531,7 +544,7 @@ export default defineComponent({
         Instance.getEngine(this.idOverview).zoomToFit(400);
         return;
       }
-      if (!this.model.overview.showAll) { 
+      if (!this.model.overview.showAll) {
         setTimeout(() => {
           this.model.overview.showAll = true;
         }, 10);
@@ -570,6 +583,10 @@ export default defineComponent({
       // no modifier
       if (!e.shiftKey && !e.altKey && !e.ctrlKey) {
         switch (e.key) {
+          case "Delete":
+          case "delete":
+            this.deleteSelection();
+            break;
           case " ":
             this.showAll(false);
             break;
@@ -711,6 +728,15 @@ export default defineComponent({
         if (n && n.isCollection && n.entry) {
           n.entry.loadCollection(n);
         }
+
+        /**
+         * A dirty hack to update the computed property on the selection, as the synced subfolders will be added after the syncing that takes some time. For huge folders this may not work.
+         */
+        setTimeout(() => {
+          const t = this.selection;
+          this.selection = undefined;
+          this.selection = t;
+        }, 100);
       }
     },
     createCollection() {
@@ -718,6 +744,10 @@ export default defineComponent({
         let n: FolderNode = Instance.getEngine(this.idOverview)
           .selection[0] as FolderNode;
         !n.isCollection && n.parent ? n.createCollection() : 0;
+
+        const t = this.selection;
+        this.selection = undefined;
+        this.selection = t;
       }
     },
     createRootFromNode() {

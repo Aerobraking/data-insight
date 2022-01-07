@@ -1,6 +1,6 @@
 import * as _ from "underscore";
 import { Type } from "class-transformer";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "../implementations/filesystem/FileSystemEntries";
+import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "../implementations/filesystem/FileSystemWorkspaceEntries";
 import WorkspaceEntry from "./WorkspaceEntry";
 
 

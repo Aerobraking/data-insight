@@ -14,7 +14,7 @@
 <script lang="ts">
 import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
-import { FolderWindowFile } from "../../store/model/implementations/filesystem/FileSystemEntries";
+import { FolderWindowFile } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import * as icons from "../../utils/IconHandler";
 import { Dispatcher } from "../app/WorkspaceUtils";
 export default defineComponent({
@@ -52,7 +52,7 @@ export default defineComponent({
           return;
         }
         const color = getColor(undefined, _this.entry.size, min, max);
-        console.log(color);
+    
         _this.$el.style.opacity = color == "h" ? "0.05" : "";
         _this.$el.style.color = color;
       },

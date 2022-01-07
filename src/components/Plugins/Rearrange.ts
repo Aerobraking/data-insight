@@ -1,5 +1,5 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
-import Plugin, { PluginDecorator } from "./AbstractPlugin"
+import Plugin, { PluginDecorator } from "../app/plugins/AbstractPlugin"
 
 @PluginDecorator()
 export default class ReArrange extends Plugin {

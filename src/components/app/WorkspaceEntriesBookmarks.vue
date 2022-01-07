@@ -4,9 +4,9 @@ import { defineComponent } from "vue";
 import draggable from "vuedraggable";
 import overviewview from "./OverviewView.vue";
 import { PlaylistStar } from "mdue";
-import { Tippy, TippySingleton } from "vue-tippy";
+import { Tippy } from "vue-tippy";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
-import AbstractPlugin from "../Plugins/AbstractPlugin";
+import AbstractPlugin from "./plugins/AbstractPlugin";
 
 class DragPlugin extends AbstractPlugin {
   constructor() {

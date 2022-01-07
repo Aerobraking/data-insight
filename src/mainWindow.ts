@@ -1,9 +1,12 @@
+
+
 import 'reflect-metadata';
 import { createApp } from 'vue'
 import App from './App.vue'
 import { initStore, Store } from './store/store'
 import panZoom from 'vue-panzoom';
 import VueTippy from 'vue-tippy';
+
 
 /**
  * Workspace Entries
@@ -27,6 +30,7 @@ import fs from "fs";
 import { deserialize } from 'class-transformer';
 import { InsightFile } from './store/model/state';
 
+
 ipcRenderer.send("show-window");
 
 ipcRenderer.on("send-args", (event: any, args: string[]) => {
@@ -39,6 +43,8 @@ ipcRenderer.on("send-args", (event: any, args: string[]) => {
                 let jsonString = fs.readFileSync(a, "utf8");
                 let file: InsightFile = deserialize(InsightFile, jsonString);
                 file.initAfterLoading();
+              
+                
                 let store = initStore(file);
                 startApp(store);
                 return;
@@ -55,6 +61,7 @@ ipcRenderer.on("send-args", (event: any, args: string[]) => {
 ipcRenderer.send("get-args", {});
 
 function startApp(store: Store) {
+
 
     const app = createApp(App);
     app

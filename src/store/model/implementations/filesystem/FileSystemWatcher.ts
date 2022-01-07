@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron";
-import { FileSystemListener, FolderStatsResult, FolderSync, FolderSyncFinished, FolderSyncResult } from "./FileOverviewInterfaces";
+import { FileSystemListener, FolderFeatureResult,  FolderSync, FolderSyncFinished, FolderSyncResult } from "./FileSystemMessages";
 
 export class FileSystemWatcher {
 
@@ -26,8 +26,9 @@ export class FileSystemWatcher {
                         listener.event(msg);
                     }
                 }
-                if (payload.type == "folderstats") {
-                    let msg: FolderStatsResult = payload;
+                
+                if (payload.type == "folderfeatures") {
+                    let msg: FolderFeatureResult = payload;
 
                     let listener: FileSystemListener | undefined = _this.hashDeepSync.get(msg.id);
 

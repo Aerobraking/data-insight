@@ -1,6 +1,5 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
-import { timeHours } from "d3"; 
-import Plugin, { PluginDecorator } from "./AbstractPlugin"
+import Plugin, { PluginDecorator } from "../app/plugins/AbstractPlugin"
 
 @PluginDecorator()
 export default class Resize extends Plugin {

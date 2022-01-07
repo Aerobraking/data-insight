@@ -20,7 +20,7 @@ const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
 import * as watcher from "../../utils/WatchSystem";
-import { WorkspaceEntryFile } from "../../store/model/implementations/filesystem/FileSystemEntries";
+import { WorkspaceEntryFile } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import * as icons from "../../utils/IconHandler";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";

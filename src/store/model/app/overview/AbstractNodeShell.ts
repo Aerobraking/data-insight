@@ -1,14 +1,19 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
-import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";
-// import { FolderNode, FolderOverviewEntry } from "./FileEngine";
+import { Simulation, ForceLink, ForceY, Quadtree } from "d3";
 import path from "path";
 import CollideExtend from "@/utils/CollideExtend";
-import { AbstractLink, AbstractNode, EntryListener, RectangleCollide } from "./AbstractNode";
+import { AbstractLink, AbstractNode, RectangleCollide } from "./AbstractNode";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { OverviewEngine } from "@/components/app/OverviewEngine";
-import { StatsType, Stats } from "../../implementations/filesystem/FileOverviewInterfaces";
 import FolderNode from "../../implementations/filesystem/FolderNode";
+import { NodeFeatures, Feature,    FeatureDataHandler } from "./AbstractNodeFeature";  
+import { FeatureInstanceList } from "./AbstractNodeFeatureRender";
+
+export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
+    nodeAdded(node: D): void;
+    nodeUpdate(): void;
+}
 
 export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> implements AbstractNodeShellIfc {
 
@@ -86,7 +91,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     public isSyncing = false;
 
     @Exclude()
-    engine: EntryListener<AbstractNode> | undefined;
+    engine: NodeShellListener<AbstractNode> | undefined;
 
     // disables the d3 force simulation when false
     public isSimulationActive: boolean = true;
@@ -127,52 +132,77 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     }
 
-    public addStats(stats: Stats) {
-        let node = this.getNodeByPath(stats.path);
+
+    public addFeatures(path: string, features: NodeFeatures) {
+        console.log("addFeatures", features);
+
+        let node = this.getNodeByPath(path);
         if (node) {
-            node.stats = stats;
+            node.features = features;
             node.updateForce();
 
             let parent: N | undefined = node;
 
             while (parent) {
 
-                // reset the recursive stats so we can recalculate them
-                parent.statsRec = { path: "", stats: {} }
-                if (parent.stats) {
-                    parent.statsRec = JSON.parse(JSON.stringify(parent.stats));
-                }
-
-                let statsParent = parent.statsRec;
+                // reset the recursive features so we can recalculate them. when the parent has data for itself, use this as the "base" for the recurisve data
+                parent.featuresRecursive = parent.features ? JSON.parse(JSON.stringify(parent.features)) : {};
+                let featuresParentRecurisve = parent.featuresRecursive;
 
                 /**
-                 * We recalculate the stats for the node and then for all coming parent nodes.
-                 * For that we combine the stat of the node folder with the stats of all its child nodes
+                 * We recalculate the features for the parent node and then for all coming parent nodes.
+                 * For that we combine the Features of all child nodes + the Features of the node itself.
                  */
+                const childData = new Map<Feature, any[]>();
+
                 for (let i = 0; i < parent.getChildren().length; i++) {
                     const c = parent.getChildren()[i];
-                    let childStats = c.statsRec;
-                    if (childStats) {
-                        Object.keys(childStats.stats).forEach((key: string) => {
-                            if (statsParent && childStats) {
-                                if (childStats.stats[key]) {
+                    let childFeatures = c.featuresRecursive;
+                    if (childFeatures) {
 
-                                    // init the value in the stats if not available yet 
-                                    if (statsParent.stats[key] == undefined) {
-                                        statsParent.stats[key] = { value: 0, type: childStats.stats[key].type }
-                                    }
-                                    /**
-                                     * We add the values together when we have a sum value.
-                                     */
-                                    if (childStats.stats[key].type == StatsType.SUM) {
-                                        statsParent.stats[key].value += childStats.stats[key].value;
+                        /**
+                         * Iterate over all Features/Feature Data of the child node. When the parent is missing one of the Features, create a new instance for it. Collect all Data instances of the children in a list.
+                         */
+                        Object.keys(childFeatures).forEach((key: string) => {
+                            let f: Feature = key as Feature;
+
+                            if (childFeatures[f]) {
+
+                                let dataArray = childData.get(f);
+                                if (!dataArray) { dataArray = []; childData.set(f, dataArray); }
+                                dataArray.push(childFeatures[f]);
+
+                                // init the data for the features  if not available yet 
+                                if (featuresParentRecurisve[f] == undefined) {
+
+                                    if (FeatureInstanceList[f] != undefined) {
+
+                                        const d: any = FeatureInstanceList[f]?.getNewDataInstance();
+                                        if (d) featuresParentRecurisve[f] = d;
                                     }
                                 }
 
                             }
+
                         })
+
                     }
                 }
+
+                /**
+                 * Use the FeatureDataHandler instances to combine the children data for the parent
+                 */
+                childData.forEach((value: any[], key: Feature) => {
+                    let f: Feature = key as Feature;
+
+                    const dataParent = featuresParentRecurisve[f];
+                    if (dataParent) {
+                        const dataHandler = FeatureDataHandler[dataParent.t];
+                        if (dataHandler) {
+                            dataHandler(dataParent as any, value)
+                        }
+                    }
+                })
 
                 parent.updateForce();
                 parent = parent.parent;
@@ -217,7 +247,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      * @returns 
      */
     public addEntryPath(nodePath: string, isCollection: boolean = false, collectionSize: number = 0) {
-        console.log(nodePath);
 
         nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
         if (nodePath == ".") return;

@@ -15,7 +15,7 @@
 <script lang="ts">
 import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
-import { FolderWindowFile } from "../../store/model/implementations/filesystem/FileSystemEntries";
+import { FolderWindowFile } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import * as icons from "../../utils/IconHandler";
 import { Dispatcher } from "../app/WorkspaceUtils";
 

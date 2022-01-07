@@ -255,7 +255,7 @@ import {
   WorkspaceEntryTextArea,
   WorkspaceEntryVideo,
   WorkspaceEntryYoutube,
-} from "@/store/model/implementations/filesystem/FileSystemEntries";
+} from "@/store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
 import OverviewView from "./OverviewView.vue";
@@ -276,16 +276,6 @@ import WorkspaceViewIfc from "./WorkspaceViewIfc";
 import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
 const fs = require("fs");
 let clipboard: WorkspaceEntryCollection;
-let points: { x: number; y: number; z: number }[] = [];
-
-for (let index = 0; index < 100; index++) {
-  points.push({
-    x: (Math.random() * 1000 - 500) * 2,
-    y: (Math.random() * 1000 - 500) * 2,
-    z: Math.random(),
-  });
-}
-
 import {
   FormTextbox,
   Resize,
@@ -309,11 +299,12 @@ import {
 } from "mdue";
 import { Workspace } from "@/store/model/app/Workspace";
 import ReArrange from "./../Plugins/Rearrange";
-import AbstractPlugin from "./../Plugins/AbstractPlugin";
+import AbstractPlugin from "./plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import WorkspaceEntryCollection from "@/store/model/app/WorkspaceEntryCollection";
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
-import { createContext, getPlugins } from "@/components/Plugins/PluginList";
+import { getPlugins } from "@/components/Plugins/PluginList";
+import { createKeyboardInputContext } from "@/components/app/plugins/KeyboardShortcut";
 
 getPlugins();
 
@@ -423,7 +414,7 @@ export default defineComponent({
       if (newValue) {
         this.setFocusToWorkspace();
       }
-    }, 
+    },
     searchString: function (newValue: string, oldValue: string) {
       this.searchUpdate();
     },
@@ -440,8 +431,11 @@ export default defineComponent({
   },
   mounted() {
     let _this = this;
- 
-    this.c = createContext({ debounceTime: 100, autoEnable: true });
+
+    this.c = createKeyboardInputContext({
+      debounceTime: 100,
+      autoEnable: true,
+    });
 
     /**
      * Somehow making it contenteditable in the beginning causes the paste litener to
@@ -482,7 +476,7 @@ export default defineComponent({
           if (this.skipInitialResize++ > 0) {
             let diffX = _this.getCanvas().width - w,
               diffY = _this.getCanvas().height - h;
-          
+
             this.panZoomInstance.moveTo(
               this.getCurrentTransform().x - diffX / 2,
               this.getCurrentTransform().y - diffY / 2
@@ -1722,7 +1716,7 @@ export default defineComponent({
           this.getWorkspaceWrapper().clientHeight / 2;
 
         if (rect.bottom == rect.top || rect.left == rect.right) return;
- 
+
         if (zoom) {
           if (smooth) {
             this.panZoomInstance.smoothShowRectangle(rect);
@@ -2088,7 +2082,7 @@ export default defineComponent({
 
       if (this.model != undefined) {
         this.model.viewportTransform = this.getCurrentTransform();
-       }
+      }
 
       WSUtils.Events.zoom(this);
     },

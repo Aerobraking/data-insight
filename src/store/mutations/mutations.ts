@@ -38,45 +38,10 @@ export type Mutations<S = State> = {
   }): void
   [MutationTypes.SHOW_UI](state: S, payload: {
     showUI: boolean
-  }): void
+  }): void  
+
 }
-
-
-
-
-export interface Mutations2<S = State> {
-  // als key für die methode nehmen wir die einzelnen enum types. und da wir die method eh nicht direkt aurufen ala setCounter() sondern per commit("setCounter", parameter ...)
-  // haben wir dann einfach das enum anstelle des strings commit(MutationTypes.SET_COUNTER,parameter ...)  
-  [MutationTypes.CREATE_WORKSPACE](state: S): void
-  [MutationTypes.CREATE_OVERVIEW](state: S): void
-  [MutationTypes.ADD_FILES](state: S, payload: {
-    model: Workspace,
-    listFiles: Array<WorkspaceEntry>,
-  }): void
-  [MutationTypes.SORT_WORKSPACES](state: S, payload: {
-    listWorkspaces: Array<Workspace>,
-  }): void
-  [MutationTypes.REMOVE_ENTRIES](state: S, payload: {
-    model: Workspace,
-    listIndices: Array<Number>,
-  }): void
-  [MutationTypes.DELETE_WORKSPACE](state: S, payload: {
-    index: number,
-  }): void
-  [MutationTypes.COPY_WORKSPACE](state: S, payload: {
-    index: number,
-  }): void
-  [MutationTypes.SELECT_WORKSPACE](state: S, payload: {
-    index: number,
-  }): void
-  [MutationTypes.LOAD_INSIGHT_FILE](state: S, payload: {
-    insightFile: InsightFile
-  }): void
-  [MutationTypes.SHOW_UI](state: S, payload: {
-    showUI: boolean
-  }): void
-}
-
+  
 /**
  * Implementiert unser type (interface), hier haben wir dann also den code für jede methode die wir definiert haben im type.
  */

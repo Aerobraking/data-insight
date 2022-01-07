@@ -1,9 +1,9 @@
 import { OV_COLUMNWIDTH } from "@/components/app/OverviewEngineValues";
-import { Type, Exclude } from "class-transformer";
+import { Type, Exclude, Expose } from "class-transformer";
 import * as d3 from "d3";
 import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";
-// import { COLUMNWIDTH } from "../../components/app/OverviewEngine";
-import { Stats } from "../../implementations/filesystem/FileOverviewInterfaces";
+import { Feature, FeatureDataList, FeatureDataMedian, FeatureDataSum, NodeFeatures, NodeFeaturesClass } from "./AbstractNodeFeature";
+// import { COLUMNWIDTH } from "../../components/app/OverviewEngine"; 
 
 /**
  * collision nur pro spalte
@@ -210,10 +210,10 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         if (this.isRoot()) {
             return 100;
         } else if (this.entry) {
-            let abs = this.entry.root.getStatsValue("size");
-            let part = this.getStatsValue("size");
+            let abs = (this.entry.root as AbstractNode).getFeatureValue<FeatureDataSum>(Feature.FolderSize);
+            let part = this.getFeatureValue<FeatureDataSum>(Feature.FolderSize);
             if (abs != undefined && part != undefined) {
-                let r = abs > 0 ? Math.sqrt(31415 * (part / abs) / Math.PI) : 1;
+                let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
                 r = 100 * 0.1 + r * 0.9;
                 return Math.max(r, 16);
             }
@@ -224,97 +224,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     public updateSimulation() {
         this.simulation.nodes(this.children);
     }
-
-    // used for debug informations
-    @Exclude()
-    flag: number = 0;
-    forceRadius: number = 16;
-
-    // the d3 simulation instance
-    @Exclude()
-    simulation: Simulation<this, AbstractLink<this>>;
-
-    /**
-     * Our abstract AbstractNode class can't know the types of its children, as they are implemented classes of itself, which would lead to circular dependencies. So the childrens list is abstract and we have to Type() the list in the implemented classes.
-     */
-    public abstract children: Array<this>;
-
-    // the colorid for the overview engine, will be generated on the fly while rendering
-    @Exclude()
-    colorID: string | null = null;
-
-    // the parent node. will be set after loading from the json file.
-    @Exclude()
-    parent: this | undefined;
-
-    // the OverviewEntry this nodes belongs to. will be set after loading from the json
-    @Exclude()
-    entry: {
-        nodeUpdate(): void;
-        nodeRemoved(): void;
-        path: string;
-        root: any;
-        x:number;
-        y:number;
-        simulation: any;
-        id: number;
-        isSimulationActive: boolean;
-        nodeAdded(node: any): void;
-        loadCollection(node: any): void;
-    } | undefined;
-
-    // the depth inside the tree structure, relative to the root node
-    depth: number = 0;
-
-    // string for json that links to the javascript implemented class
-    nodetype: string;
-
-    //
-    id?: string | number;
-    // stats for this node
-
-    stats: Stats | undefined;
-    // stats that combines the stats for all descendent nodes and this node
-
-    statsRec: Stats | undefined;
-
-    // the name of this string, should be unique inside the parents node childrens list
-    private _name: string;
-
-    /**
-     * Node’s zero-based index into nodes array.
-     * This property is set during the initialization process of a simulation.
-     */
-    index?: number | undefined;
-
-    isCollection: boolean = false;
-    collectionSize: number = 0;
-
-    /**
-   * Node’s current x-position.
-   */
-
-    private _x?: number | undefined;
-    /**
-    * Node’s current y-position. Given by the d3 interface
-    */
-    y?: number | undefined;
-    /**
-     * Node’s current x-velocity. Given by the d3 interface
-     */
-    vx?: number | undefined;
-    /**
-     * Node’s current y-velocity. Given by the d3 interface
-     */
-    vy?: number | undefined;
-    /**
-     * Node’s fixed x-position (if position was fixed). Given by the d3 interface
-     */
-    fx?: number | null | undefined;
-    /**
-     * Node’s fixed y-position (if position was fixed). Given by the d3 interface
-     */
-    fy?: number | null | undefined;
 
     public createCollection() {
         this.collectionSize = this.children.length;
@@ -353,19 +262,19 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.simulation.tick();
     }
 
-    public getStatsValue(key: string, recursive: boolean = true): number | undefined {
+    public getFeatureValue<D>(key: Feature, recursive: boolean = true): D | undefined {
         if (recursive) {
-            if (this.statsRec) {
-                let e = this.statsRec.stats[key];
+            if (this.featuresRecursive) {
+                let e = this.featuresRecursive[key];
                 if (e) {
-                    return e.value;
+                    return e as unknown as D;
                 }
             }
         } else {
-            if (this.stats) {
-                let e = this.stats.stats[key];
+            if (this.features) {
+                let e = this.featuresRecursive[key];
                 if (e) {
-                    return e.value;
+                    return e as unknown as D;
                 }
             }
         }
@@ -376,6 +285,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     public isRoot(): boolean {
         return this.parent == undefined;
     }
+
     /**
      * The x position of the nodes are defined  by the OV_COLUMNWIDTH and depth value (OV_COLUMNWIDTH*depth), only the root node uses this as an actual node. 
      */
@@ -390,7 +300,9 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this._x = value;
     }
 
-
+    public getColumnData() {
+        return { x: this.depth * OV_COLUMNWIDTH, width: OV_COLUMNWIDTH };
+    }
 
     public getX() {
         return OV_COLUMNWIDTH * this.depth;
@@ -457,12 +369,11 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         }
         return p;
     }
-
     /**
-   * Returns an array of links for this node, where each link is an object that defines source and target properties.
-   * The source of each link is the parent node, and the target is a child node.
-   * @returns
-   */
+     * Returns an array of links for this node, where each link is an object that defines source and target properties.
+     * The source of each link is the parent node, and the target is a child node.
+     * @returns 
+     */
     links(): Array<AbstractLink<this>> {
         let a: Array<AbstractLink<this>> = [];
         this.collectLinks(this, a);
@@ -476,8 +387,108 @@ export abstract class AbstractNode implements SimulationNodeDatum {
             this.collectLinks(c, a);
         }
     }
-}
 
+    @Expose({ name: 'f' })
+    features: NodeFeaturesClass = {};
+
+    @Expose({ name: 'fs' })
+    featuresRecursive: NodeFeaturesClass = {};
+
+    // used for debug informations
+    @Exclude()
+    flag: number = 0;
+
+    @Expose({ name: 'fr' })
+    forceRadius: number = 16;
+
+    /**
+     * Our abstract AbstractNode class can't know the types of its children, as they are implemented classes of itself, which would lead to circular dependencies. So the childrens list is abstract and we have to Type() the list in the implemented classes.
+     */
+    @Expose({ name: 'c' })
+    public abstract children: Array<this>;
+
+    // the OverviewEntry this nodes belongs to. will be set after loading from the json
+    @Exclude()
+    entry: {
+        nodeUpdate(): void;
+        nodeRemoved(): void;
+        path: string;
+        root: any;
+        x: number;
+        y: number;
+        simulation: any;
+        id: number;
+        isSimulationActive: boolean;
+        nodeAdded(node: any): void;
+        loadCollection(node: any): void;
+    } | undefined;
+
+    // the depth inside the tree structure, relative to the root node
+    @Expose({ name: 'd' })
+    depth: number = 0;
+
+    // string for json that links to the javascript implemented class
+    nodetype: string;
+
+    id?: string | number;
+
+    /**
+     * the name of this string, should be unique inside the parents node childrens list
+     */
+    @Expose({ name: 'n' })
+    private _name: string;
+
+    /**
+     * Node’s zero-based index into nodes array.
+     * This property is set during the initialization process of a simulation.
+     */
+    @Expose({ name: 'i' })
+    index?: number | undefined;
+
+    @Expose({ name: 'ic' })
+    isCollection: boolean = false;
+    @Expose({ name: 'cs' })
+    collectionSize: number = 0;
+
+    /**
+     * Node’s current x-position.
+     */
+    private _x?: number | undefined;
+    /**
+    * Node’s current y-position. Given by the d3 interface
+    */
+    y?: number | undefined;
+    /**
+     * Node’s current x-velocity. Given by the d3 interface
+     */
+    vx?: number | undefined;
+    /**
+     * Node’s current y-velocity. Given by the d3 interface
+     */
+    vy?: number | undefined;
+    /**
+     * Node’s fixed x-position (if position is fixed). Given by the d3 interface
+     */
+    fx?: number | null | undefined;
+    /**
+     * Node’s fixed y-position (if position is fixed). Given by the d3 interface
+     */
+    fy?: number | null | undefined;
+
+    // the d3 simulation instance
+    @Exclude()
+    simulation: Simulation<this, AbstractLink<this>>;
+
+    // the colorid for the overview engine, will be generated on the fly while rendering
+    @Exclude()
+    colorID: string | null = null;
+
+    // the parent node. will be set after loading from the json file.
+    @Exclude()
+    parent: this | undefined;
+
+
+}
 
 /**
  * Defines the Link between two AbstractNode instances. Extend it to use it with your AbstractNode subclass.
@@ -491,36 +502,26 @@ export class AbstractLink<D extends AbstractNode = AbstractNode> implements Simu
     target: D;
 }
 
-export interface EntryListener<D extends AbstractNode = AbstractNode> {
-    nodeAdded(node: D): void;
-    nodeUpdate(): void;
-}
 
-export interface ColumnTextWidth {
-    depth: number,
-    min: number,
-    max: number
-}
+// export class ColumnNodeContainer<D extends AbstractNode>{
 
-export class ColumnNodeContainer<D extends AbstractNode>{
+//     private listNodes: D[] = [];
+//     simulation: Simulation<D, undefined>;
+//     constructor() {
+//         this.simulation = d3
+//             .forceSimulation<D>([] as Array<D>)
+//             .force("collide", d3.forceCollide<D>().radius(d => {
+//                 var r = d.forceRadius * 1.1;
+//                 return r;
+//             }).iterations(2).strength(0.4))
+//             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
+//             .alphaMin(0.003)
+//             .alphaTarget(0.004)
+//             .stop();
+//     }
 
-    private listNodes: D[] = [];
-    simulation: Simulation<D, undefined>;
-    constructor() {
-        this.simulation = d3
-            .forceSimulation<D>([] as Array<D>)
-            .force("collide", d3.forceCollide<D>().radius(d => {
-                var r = d.forceRadius * 1.1;
-                return r;
-            }).iterations(2).strength(0.4))
-            .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-            .alphaMin(0.003)
-            .alphaTarget(0.004)
-            .stop();
-    }
-
-    addNode(node: D) {
-        this.listNodes.push(node);
-        this.simulation.nodes(this.listNodes);
-    }
-}
+//     addNode(node: D) {
+//         this.listNodes.push(node);
+//         this.simulation.nodes(this.listNodes);
+//     }
+// }

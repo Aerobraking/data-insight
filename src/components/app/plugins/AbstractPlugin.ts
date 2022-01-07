@@ -1,11 +1,6 @@
-import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
-
-
-export type Constructor<T> = {
-    new(...args: any[]): T;
-    readonly prototype: T;
-}
-
+import WorkspaceViewIfc from "../WorkspaceViewIfc";
+import { Constructor } from "./Constructor";
+  
 export const RegisteredPlugins: Constructor<AbstractPlugin>[] = [];
 export function PluginDecorator() {
     return function <T extends Constructor<AbstractPlugin>>(target: T) {
@@ -14,6 +9,7 @@ export function PluginDecorator() {
 }
 
 
+ 
 export default abstract class AbstractPlugin {
 
     constructor() {
@@ -28,7 +24,7 @@ export default abstract class AbstractPlugin {
     }
 
     abstract shortcut: string;
-    
+
     // 
     public abstract isModal(): boolean;
     public abstract init(): void;

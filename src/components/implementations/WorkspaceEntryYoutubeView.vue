@@ -61,7 +61,7 @@ function htmlToElement(html: string) {
 import { defineComponent } from "vue"; 
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
-import { WorkspaceEntryYoutube } from "@/store/model/implementations/filesystem/FileSystemEntries";
+import { WorkspaceEntryYoutube } from "@/store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 export default defineComponent({
   name: "wsentryyoutube",
   data() {

@@ -210,6 +210,7 @@ export default defineComponent({
       this.loadInsightFile(file);
     },
     loadInsightFile(file: InsightFile) {
+        console.log("File: ",file);
       let tabs: HTMLElement[] = Array.from(
         document.querySelectorAll(".close-file-anim")
       ) as HTMLElement[];

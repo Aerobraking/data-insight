@@ -2,7 +2,10 @@
 import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
-import { FolderSync, FolderStat, FolderSyncResult, StatsType, FolderStatsResult, FolderSyncFinished } from './store/model/implementations/filesystem/FileOverviewInterfaces';
+import { FolderSync, FolderSyncResult, FolderSyncFinished, FolderFeatureResult } from './store/model/implementations/filesystem/FileSystemMessages';
+import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, NodeFeaturesRequired } from './store/model/app/overview/AbstractNodeFeature';
+// import { path } from 'd3';
+import path from "path";
 
 ipcRenderer.on("log", (event, log) => {
     // console.log("log", log);
@@ -48,8 +51,8 @@ ipcRenderer.on("msg-main",
 
                 const isCollection: boolean = folders.length >= msg.collectionSize || depthChildren > maxDepth || depthChildren > 100;
 
-                console.log("folder: "+pathCurrent);
-                
+                console.log("folder: " + pathCurrent);
+
                 listFoldersToSync.push({ id: msg.id, childCount: folders.length, path: pathCurrent, type: "foldersync", collection: isCollection });
 
 
@@ -74,11 +77,60 @@ ipcRenderer.on("msg-main",
                 ipcRenderer.send('msg-worker', element);
             }
 
-            console.log("Scan finished");
-            console.log("Start Feature creation");
-
             let updateSteps = 0;
-            function collectStatsRec(rootPath: string, pathF: string, depth: number = 0, fStats: FolderStat): void {
+
+            function handleDirectory(pathF: string, files: string[], features: NodeFeaturesRequired, sendResults: boolean = true) {
+
+                /**
+                 * Add the stats from all files together
+                 */
+
+                for (let i = 0; i < files.length; i++) {
+                    const fileName = files[i];
+                    const absolutePath = pathF + "/" + fileName;
+                    const stats = fs.statSync(absolutePath);
+                    if (stats.isFile()) {
+
+                        // size feature
+                        if (features[Feature.FolderSize]) features[Feature.FolderSize].s += stats.size;
+                        sizeAll += stats.size;
+
+                        // file quantity feature
+                        features[Feature.FolderQuantity].s += 1;
+
+                        // file type feature
+                        const fileExtention = path.extname(fileName);
+                        if (features[Feature.FolderFileTypes].l[fileExtention] == undefined) {
+                            features[Feature.FolderFileTypes].l[fileExtention] = 0;
+                        }
+                        features[Feature.FolderFileTypes].l[fileExtention] += 1;
+
+                        // folderStat.stats.mtime.value += isNaN(stats.mtimeMs) ? 0 : stats.mtimeMs; // last modifiy
+                        // folderStat.stats.atime.value += isNaN(stats.atimeMs) ? 0 : stats.atimeMs; // last access
+                        // folderStat.stats.ctime.value += isNaN(stats.birthtimeMs) ? 0 : stats.birthtimeMs; // creation time
+                    }
+                }
+
+                // create the mean values
+                if (features[Feature.FolderQuantity].s > 0) {
+                    // folderStat.stats.mtime.value /= fileCount;
+                    // folderStat.stats.atime.value /= fileCount;
+                    // folderStat.stats.ctime.value /= fileCount;
+                }
+
+                if (sendResults || updateSteps++ % 20 == 0) {
+                    let result: FolderFeatureResult = {
+                        type: "folderfeatures",
+                        id: msg.id,
+                        features: features,
+                        path: pathF
+                    }
+                    ipcRenderer.send('msg-worker', result);
+                }
+
+            }
+
+            function collectFeaturesRec(rootPath: string, pathF: string, depth: number = 0, features: NodeFeaturesRequired): void {
 
                 let files: string[] = fs.readdirSync(pathF);
 
@@ -89,77 +141,44 @@ ipcRenderer.on("msg-main",
                     const absolutePath = pathF + "/" + fileName;
                     const stats = fs.statSync(absolutePath);
                     if (stats.isDirectory() && msg.depth < 100) {
-                        collectStatsRec(rootPath, absolutePath, depthChildren, fStats)
+                        collectFeaturesRec(rootPath, absolutePath, depthChildren, features)
                     }
                 }
 
-                let fileCount = 0;
-                for (let i = 0; i < files.length; i++) {
-                    const fileName = files[i];
-                    const absolutePath = pathF + "/" + fileName;
-                    const stats = fs.statSync(absolutePath);
-                    if (stats.isFile()) {
-                        fileCount++;
-                        fStats.stats.size.value += stats.size;
-                        sizeAll += stats.size;
-                        fStats.stats.mtime.value += isNaN(stats.mtimeMs) ? 0 : stats.mtimeMs; // last modifiy
-                        fStats.stats.atime.value += isNaN(stats.atimeMs) ? 0 : stats.atimeMs; // last access
-                        fStats.stats.ctime.value += isNaN(stats.birthtimeMs) ? 0 : stats.birthtimeMs; // creation time
-                    }
-                }
-
-                fStats.stats.amount.value += fileCount;
-
-                if (updateSteps++ % 20 == 0) {
-                    let result: FolderStatsResult = {
-                        type: "folderstats",
-                        id: msg.id,
-                        stats: fStats,
-                        path: rootPath
-                    }
-
-                    ipcRenderer.send('msg-worker', result);
-                }
-
+                handleDirectory(pathF, files, features, false);
 
             }
 
-
             /**
-             * Scan Meta Data
+             * Scan Meta Data for Feature Creation
              */
             for (let i = 0; i < listFoldersToSync.length; i++) {
                 const element = listFoldersToSync[i];
                 const pathF = element.path;
 
+                let features: NodeFeaturesRequired = {
+                    [Feature.FolderSize]: new FeatureDataSum(),
+                    [Feature.FolderQuantity]: new FeatureDataSum(),
+                    [Feature.FolderFileTypes]: new FeatureDataList()
+                };
+
                 if (element.collection) {
                     /**
                      * Collect data from the folder and all subfolders
                      */
-                    let folderStat: FolderStat = {
-                        path: pathF,
-                        stats:
-                        {
-                            amount: { value: 0, type: StatsType.SUM },
-                            size: { value: 0, type: StatsType.SUM },
-                            mtime: { value: 0, type: StatsType.MEDIAN },
-                            atime: { value: 0, type: StatsType.MEDIAN },
-                            ctime: { value: 0, type: StatsType.MEDIAN },
-                        },
-                    };
 
-                    collectStatsRec(pathF, pathF, 0, folderStat);
+                    collectFeaturesRec(pathF, pathF, 0, features);
 
-                    if (folderStat.stats.amount.value > 0) {
-                        folderStat.stats.mtime.value /= folderStat.stats.amount.value;
-                        folderStat.stats.atime.value /= folderStat.stats.amount.value;
-                        folderStat.stats.ctime.value /= folderStat.stats.amount.value;
-                    }
+                    // if (features.stats.amount.value > 0) {
+                    //     features.stats.mtime.value /= features.stats.amount.value;
+                    //     features.stats.atime.value /= features.stats.amount.value;
+                    //     features.stats.ctime.value /= features.stats.amount.value;
+                    // }
 
-                    let result: FolderStatsResult = {
-                        type: "folderstats",
+                    let result: FolderFeatureResult = {
+                        type: "folderfeatures",
                         id: msg.id,
-                        stats: folderStat,
+                        features: features,
                         path: pathF
                     }
 
@@ -168,64 +187,16 @@ ipcRenderer.on("msg-main",
                     /**
                      * Collect data from the folder 
                      */
+
+
                     let files: string[] = fs.readdirSync(pathF);
 
-                    let folderStat: FolderStat = {
-                        path: pathF,
-                        stats:
-                        {
-                            amount: { value: 0, type: StatsType.SUM },
-                            size: { value: 0, type: StatsType.SUM },
-                            mtime: { value: 0, type: StatsType.MEDIAN },
-                            atime: { value: 0, type: StatsType.MEDIAN },
-                            ctime: { value: 0, type: StatsType.MEDIAN },
-                        },
-                    };
-
-                    /**
-                     * Add the stats from all files together
-                     */
-                    let fileCount = 0;
-                    for (let i = 0; i < files.length; i++) {
-                        const fileName = files[i];
-                        const absolutePath = pathF + "/" + fileName;
-                        const stats = fs.statSync(absolutePath);
-                        if (stats.isFile()) {
-                            fileCount++;
-                            folderStat.stats.size.value += stats.size;
-                            sizeAll += stats.size;
-                            folderStat.stats.mtime.value += isNaN(stats.mtimeMs) ? 0 : stats.mtimeMs; // last modifiy
-                            folderStat.stats.atime.value += isNaN(stats.atimeMs) ? 0 : stats.atimeMs; // last access
-                            folderStat.stats.ctime.value += isNaN(stats.birthtimeMs) ? 0 : stats.birthtimeMs; // creation time
-                        }
-                    }
-                    folderStat.stats.amount.value = fileCount;
-
-                    // create the mean values
-                    if (fileCount > 0) {
-                        folderStat.stats.mtime.value /= fileCount;
-                        folderStat.stats.atime.value /= fileCount;
-                        folderStat.stats.ctime.value /= fileCount;
-                    }
-
-                    /**
-                     * bei einem leaf ordner keine collection raus machen
-                     * 
-                     * muss eigl im abstract node passieren und nicht hier :/
-                     */
-                    let result: FolderStatsResult = {
-                        type: "folderstats",
-                        id: msg.id,
-                        stats: folderStat,
-                        path: pathF
-                    }
-
-                    ipcRenderer.send('msg-worker', result);
+                    handleDirectory(pathF, files, features, true);
 
                 }
 
             }
- 
+
             ipcRenderer.send('msg-worker', {
                 type: "folderdeepsyncfinished",
                 id: msg.id,
