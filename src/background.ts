@@ -169,7 +169,8 @@ ipcMain.on('get-args', (event: any, arg: any) => {
     }
   }
 
-  sendToRender('send-args', sendTemp ? [getTempFilePath()] : args);
+  // sendToRender('send-args', sendTemp ? [getTempFilePath()] : args);
+  sendToRender('send-args', sendTemp ? ["empty"] : args);
 })
 
 ipcMain.on('show-window', (event: any, arg: any) => {

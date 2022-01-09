@@ -6,12 +6,15 @@ import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, Workspa
 import View from "./AbstractView";
 import { AbstractNodeShell } from "./overview/AbstractNodeShell";
 import { Instance } from "./overview/OverviewDataCache";
+import { FeatureSettingsList } from "./overview/AbstractNodeFeatureView";
+import { Feature } from "./overview/AbstractNodeFeature";
 
 export class Overview {
 
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.25 }
-    gradientId: string = "interpolateMagma";
+    featureSettings: FeatureSettingsList = {};
     showAll: boolean = false;
+    featureActive: Feature | undefined = Feature.FolderSize;
     // features: NodeFeatures.AbstractNodeFeature[];
     // activeFeatureId: string|undefined;
 
@@ -48,7 +51,7 @@ export class Workspace extends View {
     @Type(() => Overview)
     overview: Overview;
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.266 }
-    paneSize: number = 100;
+    paneSize: number = 0;
     showBookmarks: boolean = true;
     showFilterSettings: boolean = true;
     overviewOpen: boolean;

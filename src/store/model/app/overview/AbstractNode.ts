@@ -210,8 +210,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         if (this.isRoot()) {
             return 100;
         } else if (this.entry) {
-            let abs = (this.entry.root as AbstractNode).getFeatureValue<FeatureDataSum>(Feature.FolderSize);
-            let part = this.getFeatureValue<FeatureDataSum>(Feature.FolderSize);
+            let abs = (this.entry.root as AbstractNode).getFeatureValue(Feature.FolderSize);
+            let part = this.getFeatureValue(Feature.FolderSize);
             if (abs != undefined && part != undefined) {
                 let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
                 r = 100 * 0.1 + r * 0.9;
@@ -261,26 +261,61 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.simulation.alpha(1);
         this.simulation.tick();
     }
-
-    public getFeatureValue<D>(key: Feature, recursive: boolean = true): D | undefined {
+/*
+    export enum SettingsKey {
+        hasOnboarded = 'hasOnboarded',
+        phoneNumber = 'phoneNumber'
+    }
+    
+    type SettingsKeyReturnType = {
+        [SettingsKey.hasOnboarded]: boolean,
+        [SettingsKey.phoneNumber]: string
+    }
+    export async function getSetting<K extends SettingsKey>(storage: Storage, key: K): Promise<SettingsKeyReturnType[K]> {
+        return storage.get(key)
+    }
+    let a = getSetting(window.localStorage, SettingsKey.phoneNumber); // Promise<string>
+    let b = getSetting(window.localStorage, SettingsKey.hasOnboarded); // Promise<booelan> 
+*/
+    
+    public getFeatureValue<K extends Feature>(key: K, recursive: boolean = true): NodeFeatures[K] | undefined {
         if (recursive) {
             if (this.featuresRecursive) {
                 let e = this.featuresRecursive[key];
                 if (e) {
-                    return e as unknown as D;
+                    return e ;
                 }
             }
         } else {
             if (this.features) {
                 let e = this.featuresRecursive[key];
                 if (e) {
-                    return e as unknown as D;
+                    return e;
                 }
             }
         }
 
         return undefined;
     }
+    // public getFeatureValue<D>(key: Feature, recursive: boolean = true): D | undefined {
+    //     if (recursive) {
+    //         if (this.featuresRecursive) {
+    //             let e = this.featuresRecursive[key];
+    //             if (e) {
+    //                 return e as unknown as D;
+    //             }
+    //         }
+    //     } else {
+    //         if (this.features) {
+    //             let e = this.featuresRecursive[key];
+    //             if (e) {
+    //                 return e as unknown as D;
+    //             }
+    //         }
+    //     }
+
+    //     return undefined;
+    // }
 
     public isRoot(): boolean {
         return this.parent == undefined;

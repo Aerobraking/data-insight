@@ -51,7 +51,6 @@ export default defineComponent({
     if (this.entry.isClipboard) {
       _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
     } else {
-      // setTimeout(() => {
       if (this.entry.previewBase64) {
         var img = new Image();
         img.src = this.entry.previewBase64;
@@ -85,48 +84,43 @@ export default defineComponent({
         this.entry.imageCreated = true;
       }
     },
-    cacheImageEvent(
-      url: string,
-      type:
-        | "finish"
-        | "error"
-        | "preview"
-        | "tiny"
-        | "small"
-        | "medium"
-        | "original"
-    ): void { 
+    cacheImageEvent(url: string, type: cache.ImageSize): void {
+      console.log("cacheImageEvent", url, type);
 
       switch (type) {
-        case "error": 
+        case cache.ImageSize.error:
           this.entry.alert = "Image could not be loaded";
           return;
-        case "finish":
+        case cache.ImageSize.finish:
           return;
         default:
           this.entry.alert = undefined;
       }
 
       const div = this.$el.getElementsByClassName("image-canvas")[0];
-      if (type == "preview") {
+      if (type == cache.ImageSize.preview) {
         this.entry.previewBase64 = url;
       }
       if (
-        type == "tiny" &&
+        type == cache.ImageSize.tiny &&
         (!this.$el.style.backgroundImage ||
           this.$el.style.backgroundImage == "")
       ) {
         this.$el.style.backgroundImage = url;
       }
-      if (type == "medium") {
+      if (type == cache.ImageSize.medium) {
         div.style.backgroundImage = url;
-        setTimeout(() => {
-          this.$el.style.backgroundImage = "";
-        }, 500);
+        if (this.$el.style.backgroundImage != "") {
+          setTimeout(() => {
+            this.$el.style.backgroundImage = "";
+          }, 500);
+        }
+
         this.$el.classList.toggle("gradient-border", false);
       }
     },
-    watcherEvent(type:string) {
+    watcherEvent(type: string) {
+      console.log("watcherEvent", type);
       cache.ImageCache.registerPath(
         this.entry.getURL(),
         this.cacheListener,
@@ -137,7 +131,7 @@ export default defineComponent({
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },
-    doubleClick(e: MouseEvent) { 
+    doubleClick(e: MouseEvent) {
       this.$emit("zoomed");
     },
     clickStart(e: MouseEvent) {},

@@ -6,18 +6,16 @@ export default class Gradient {
         this.reverse = reverse;
         this.scale = scale;
         this.range = range;
+
     }
-    f: Function;
+    private f: Function;
     id: string;
     reverse: boolean = false;
     scale: ((n: number) => number) | undefined;
     range: number[];
-    
+
     public getColor(value: number): string {
-        if (this.scale) {
-            const v = value;
-            value = this.scale(value); 
-        }
+        if (this.scale) value = this.scale(value);
         return this.f(this.reverse ? this.range[1] - value : value)
     }
 }

@@ -1982,10 +1982,9 @@ export default defineComponent({
       return list;
     },
     getViewByID: function (id: Number): HTMLElement | null {
-      let list: WorkspaceEntry[] = [];
-
-      for (let index = 0; index < this.getEntries().length; index++) {
-        const v = this.getEntries()[index];
+      let entryViews: HTMLElement[] = this.getEntries();
+      for (let index = 0; index < entryViews.length; index++) {
+        const v = entryViews[index];
         let idv = Number(v.getAttribute("name"));
         if (idv === id) {
           return v;
@@ -1996,11 +1995,18 @@ export default defineComponent({
     },
     getViewsByModels: function (entries: WorkspaceEntry[]): HTMLElement[] {
       let list: HTMLElement[] = [];
+      let entryViews: HTMLElement[] = this.getEntries();
 
-      for (let index = 0; index < entries.length; index++) {
+      first: for (let index = 0; index < entries.length; index++) {
         const e = entries[index];
-        const v = this.getViewByID(e.id);
-        if (v) list.push(v);
+        for (let k = 0; k < entryViews.length; k++) {
+          const v = entryViews[k];
+          let idv = Number(v.getAttribute("name"));
+          if (idv === e.id) {
+            list.push(v);
+            continue first;
+          }
+        }
       }
 
       return list;

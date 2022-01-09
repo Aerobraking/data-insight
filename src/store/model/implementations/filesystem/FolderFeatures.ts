@@ -1,12 +1,17 @@
 import { filesizeFormat } from "@/utils/format";
-import { FeatureDataSum, Feature } from "../../app/overview/AbstractNodeFeature";
-import { AbstractNodeFeatureGradient, FeatureDecorator } from "../../app/overview/AbstractNodeFeatureRender";
+import { FeatureDataSum, Feature, FeatureView } from "../../app/overview/AbstractNodeFeature";
+import { AbstractNodeFeatureGradient, FeatureGradientSettings, FeatureViewDecorator } from "../../app/overview/AbstractNodeFeatureView";
 import { AbstractNodeShell } from "../../app/overview/AbstractNodeShell";
-  
+
 import FolderNode from "./FolderNode";
 
-@FeatureDecorator()
+@FeatureViewDecorator()
 export class NodeFeatureSize extends AbstractNodeFeatureGradient<FolderNode, FeatureDataSum> {
+
+    public getNewSettingsInstance(): FeatureGradientSettings {
+        return new FeatureGradientSettings(10, 1024 * 1024, FeatureView.gradient);
+    }
+
 
     public getNewDataInstance(): FeatureDataSum {
         return new FeatureDataSum();
@@ -15,36 +20,37 @@ export class NodeFeatureSize extends AbstractNodeFeatureGradient<FolderNode, Fea
     readonly id: Feature = Feature.FolderSize;
     min: number = 0;
     max: number = 1024 * 1024 * 1024 * 1024;
+    public readonly  readableName: string ="Folder Size";
 
     public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
         return 0;
     }
 
-    public getNodeColor(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
-        throw new Error("Method not implemented.");
-    }
 
     getGradientValue(node: FolderNode): number {
-        const data = node.getFeatureValue<FeatureDataSum>(Feature.FolderSize);
+        const data = node.getFeatureValue(Feature.FolderSize);
         return data ? data.s : 0;
     }
 
     public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
-        const data = nodes.getFeatureValue<FeatureDataSum>(Feature.FolderSize);
-        return data ? filesizeFormat(data.s) : "- MB";
+        const data = nodes.getFeatureValue(Feature.FolderSize);
+        return (data ? filesizeFormat(data.s) : "- MB");
     }
 }
 
 /**
  * Dieses Feature wird von Folder Nodes benutzt. Es nutzt einen Gradienten als view, dessen min und max werte hier enthalten sind.
  */
-@FeatureDecorator()
+@FeatureViewDecorator()
 export class NodeFeatureQuantity extends AbstractNodeFeatureGradient<FolderNode, FeatureDataSum> {
 
+    public getNewSettingsInstance(): FeatureGradientSettings {
+        return new FeatureGradientSettings(0, 64, FeatureView.gradient);
+    }
 
     public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
-        const data = nodes.getFeatureValue<FeatureDataSum>(Feature.FolderQuantity);
-        return data ? data.s + " Files" : "0 Files";
+        const data = nodes.getFeatureValue(Feature.FolderQuantity);
+        return (data ? data.s + " Files" : "0 Files");
     }
 
     public getNewDataInstance(): FeatureDataSum {
@@ -54,13 +60,11 @@ export class NodeFeatureQuantity extends AbstractNodeFeatureGradient<FolderNode,
     public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
         return 0;
     }
+    public readonly  readableName: string ="File Amount";
 
-    public getNodeColor(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
-        throw new Error("Method not implemented.");
-    }
 
     getGradientValue(node: FolderNode): number {
-        const data = node.getFeatureValue<FeatureDataSum>(Feature.FolderQuantity);
+        const data = node.getFeatureValue(Feature.FolderQuantity);
         return data ? data.s : 0;
     }
 

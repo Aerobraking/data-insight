@@ -8,7 +8,7 @@ import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { OverviewEngine } from "@/components/app/OverviewEngine";
 import FolderNode from "../../implementations/filesystem/FolderNode";
 import { NodeFeatures, Feature,    FeatureDataHandler } from "./AbstractNodeFeature";  
-import { FeatureInstanceList } from "./AbstractNodeFeatureRender";
+import { FeatureInstanceList } from "./AbstractNodeFeatureView";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;

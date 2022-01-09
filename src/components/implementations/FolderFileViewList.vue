@@ -72,9 +72,9 @@ export default defineComponent({
       cache.ImageCache.registerPath(this.entry.path, {
         callback: (
           url: string,
-          type: "preview" | "tiny" | "small" | "medium" | "original"
+          type: cache.ImageSize
         ) => {
-          if (type == "small") {
+          if (type == cache.ImageSize.small) {
             el.getElementsByClassName(
               "folder-file-image"
             )[0].style.backgroundImage = url;

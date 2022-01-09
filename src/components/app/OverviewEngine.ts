@@ -15,6 +15,7 @@ import { AbstractNodeShell, NodeShellListener } from "@/store/model/app/overview
 import { ipcRenderer } from "electron";
 import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
 import { Feature, FeatureDataSum } from "@/store/model/app/overview/AbstractNodeFeature";
+import { AbstractNodeFeature } from "@/store/model/app/overview/AbstractNodeFeatureView";
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -40,35 +41,6 @@ import { Feature, FeatureDataSum } from "@/store/model/app/overview/AbstractNode
  * 
  */
 
-enum BackgroundBehaviour {
-    NORMAL,
-    SLOWDOWN,
-    PAUSE,
-}
-
-export class EngineState {
-
-    constructor() {
-
-    }
-
-    showLeafs: boolean = true;
-    engineActive: boolean = false;
-    backgroundBehaviour: BackgroundBehaviour = BackgroundBehaviour.NORMAL;
-}
-
-function formatBytes(bytes: number, decimals = 2) {
-    if (bytes === 0) return '0 Bytes';
-
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
 
 /**
           * 1. Das attr des Stats den wir nutzen wollen
@@ -85,12 +57,6 @@ export interface ColorStatsSettings<N> {
     min: number,
     max: number,
     colorFunction: (node: N, stat: number, min: number, max: number) => string
-}
-
-
-interface D3Drag extends DragEvent {
-    active: any;
-    subject: any;
 }
 
 export class OverviewEngine implements NodeShellListener<AbstractNode>{
@@ -110,8 +76,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     public static framecounter: number = 0;
     // milliseconds till last frame
     private static delta: number = 0;
-    // matrix(0.377901, 0, 0, 0.377901, -58.9503, -715.279)
-    // matrix(0.377901, 0, 0, 0.377901, -36.673, -444.974)
     private static startClock(): void {
         OverviewEngine.fpsInterval = 1000 / 144;
         OverviewEngine.then = performance.now();
@@ -169,7 +133,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     context: CanvasRenderingContext2D;
     contextShadow: CanvasRenderingContext2D;
     canvasShadow: HTMLCanvasElement;
-    engineActive: boolean = true;
     public showShadow: boolean = false;
     private _rootNodes: AbstractNodeShell[] = [];
 
@@ -178,13 +141,25 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
 
     transform: ZoomTransform | undefined;
-
     enablePainting: boolean = true;
-
-    private opacityMin = 0.04;
+    private static opacityMin = 0.04;
 
     mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
     setWidthsTween: Map<AbstractNodeShell, Map<number, Tween<any>>> = new Map();
+
+    colorChangeDuration: number = 200;
+    render!: AbstractNodeFeature;
+    static hiddenColor: string = "rgb(25,25,25)";
+    static colorNodeDefault: string = "rgb(250,250,250)";
+    static colorSelection: string = "rgb(57, 215, 255)";
+    colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
+    colorTransitionElapsed: number | undefined = 0;
+    colorTransitionTarget: number = 150;
+    colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
+
+    readonly textPadding: number = 105;
+    readonly textMaxWidth: number = 200;
+
 
     constructor(div: HTMLElement, workspace: Workspace) {
 
@@ -578,6 +553,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         this.setViewBox(this.getNodesBoundingBox(1.3, this.selection.length > 0 ? [this.selection[0].entry as AbstractNodeShell] : undefined), duration);
     }
+
     public zoomToFit(duration: number = 400) {
         this.setViewBox(this.getNodesBoundingBox(1.3), duration);
     }
@@ -716,8 +692,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     nodeAdded(node: AbstractNode) {
         node.colorID = this.autocolor.register(node);
-        this.updateNodeColorScale(node);
-        this.updateColumns = true;
+        this.updateNodeColors(node, false);
         this.updateSelection();
     }
 
@@ -725,11 +700,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
      * When a node is updated, we recalculate the column widths
      */
     nodeUpdate() {
-        /**
-         * Recalculate column widths
-         */
-        // this.updateColumns = true;
-        this.updateNodeColorScale();
+        this.updateNodeColors(undefined, false);
     }
 
     public get rootNodes(): any[] {
@@ -748,12 +719,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             }
             entry.root.colorID = this.autocolor.register(entry.root);
         }
-        this.updateNodeColorScale();
+        this.updateNodeColors(undefined, false);
 
-        this.updateColumns = true;
         this.clearSelection();
     }
-
 
     public tick(): void {
 
@@ -804,8 +773,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private getNodeGraphCoordinates(n: AbstractNode, offsetX = 0, offsetY = 0): { x: number, y: number } {
         return n.entry ? { x: n.entry.x + n.getX() + offsetX, y: n.entry.y + n.getY() + offsetY } : { x: 0, y: 0 };
     }
-
-    updateColumns: boolean = true;
 
     private drawCanvas(ctx: CanvasRenderingContext2D, isShadow: boolean = false) {
 
@@ -887,14 +854,12 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         ctx.restore();
 
-        this.updateColumns = false;
 
         if (!isShadow && this.showShadow) {
             ctx.drawImage(this.canvasShadow, 0, 0);
         }
 
     }
-
 
     nodeCulling(n: AbstractNode): boolean {
 
@@ -911,64 +876,80 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
+    public updateNodeColors(node: AbstractNode | undefined = undefined, transition: boolean = true): void {
 
-    /**
-     * wir speichern die farben für jede node ab und aktualisieren sie bei jedem update von nodes.
-     * 
-     * ändern wir die render eigenschaften, speichern wir die neuen farben in einer 2. map und erstellen
-     * für jede node ein d3.scaleLinear mit den beiden farben.
-     * 
-     * dann starten wir ne duration mit der wir uns dann die aktuelle farbe holen. 
-     * 
-     * werden die render settings wieder geändert, speichern wir die aktuelle farbe bei der duration als neue start
-     * farbe 
-     * 
-     */
-    public setColorScale<N extends AbstractNode>(statAttribute: Feature,
-        min: number, max: number,
-        getColor: (node: N, stat: number, min: number, max: number) => string | "h",
-        duration: number = 40): void {
-        this.getColor = getColor;
-        this.colorSettings = { attr: statAttribute, min: min, max: max, colorFunction: getColor };
+        if (node) {
 
-        for (let index = 0; index < this.rootNodes.length; index++) {
-            const entry: AbstractNodeShell = this.rootNodes[index];
-            let nodes: AbstractNode[] = entry.nodes;
-            for (let j = 0; j < nodes.length; j++) {
+            if (transition) {
 
-                const n = nodes[j];
+                const colorOld = this.getColorForNode(node, false, false);
+                let colorNew = this.render.getNodeColor(node, node.entry as AbstractNodeShell);
 
-                const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
+                var scale = d3.scaleLinear<string>()
+                    .domain([0, this.colorChangeDuration])
+                    .range([colorOld, colorNew]);
+                this.colorTransitionMap.set(node, scale);
+                this.colorNodeMap.set(node, colorNew);
 
+                this.colorTransitionElapsed = 1;
+                this.colorTransitionTarget = this.colorChangeDuration;
 
-
-                const colorOld = this.getColorForNode(n, false, false);
-                if (colorOld && nodeValue != undefined) {
-                    let colorNew = getColor(n as N, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
-                    colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
-                    var scale = d3.scaleLinear<string>()
-                        .domain([0, duration])
-                        .range([colorOld, colorNew]);
-                    this.colorTransitionMap.set(n, scale);
-                    this.colorNodeMap.set(n, colorNew);
-                }
+            } else {
+                let color = this.render.getNodeColor(node, node.entry as AbstractNodeShell);
+                this.colorNodeMap.set(node, color);
             }
+
+        } else {
+
+            if (transition) {
+
+                for (let i = 0; i < this.rootNodes.length; i++) {
+                    const entry: AbstractNodeShell = this.rootNodes[i];
+                    let nodes: AbstractNode[] = entry.nodes;
+                    for (let j = 0; j < nodes.length; j++) {
+                        const node = nodes[j];
+                        const colorOld = this.getColorForNode(node, false, false);
+
+                        if (colorOld) {
+                            let colorNew = this.render.getNodeColor(node, entry);
+                            colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
+                            var scale = d3.scaleLinear<string>()
+                                .domain([0, this.colorChangeDuration])
+                                .range([colorOld, colorNew]);
+                            this.colorTransitionMap.set(node, scale);
+                            this.colorNodeMap.set(node, colorNew);
+                        }
+                    }
+                }
+
+                this.colorTransitionElapsed = 1;
+                this.colorTransitionTarget = this.colorChangeDuration;
+
+            } else {
+
+                for (let index = 0; index < this.rootNodes.length; index++) {
+                    const entry: AbstractNodeShell = this.rootNodes[index];
+                    let nodes: AbstractNode[] = entry.nodes;
+                    for (let j = 0; j < nodes.length; j++) {
+                        const node = nodes[j];
+                        let color = this.render.getNodeColor(node, entry);
+                        this.colorNodeMap.set(node, color);
+                    }
+                }
+
+            }
+
         }
 
-        this.colorTransitionElapsed = 1;
-        this.colorTransitionTarget = duration;
     }
 
-    private nodeHiddenByFeature(n: AbstractNode) {
-        if (this.colorSettings) {
-            const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
-            const colorOld = this.getColorForNode(n, false, false);
-            if (colorOld && nodeValue != undefined && this.getColor) {
-                let colorNew = this.getColor(n, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
-                return colorNew == "h";
-            }
-        }
-        return false;
+    public setFeatureRender(render: AbstractNodeFeature) {
+        this.render = render;
+        this.updateNodeColors();
+    }
+
+    private isNodeHiddenByFeature(n: AbstractNode, entry: AbstractNodeShell) {
+        return this.render.isNodeHidden(n, entry);
     }
 
     private getFixedSize(value: number, min: number = value, max: number = Infinity) {
@@ -982,49 +963,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         return Math.max(1, r);
     }
 
-    public updateNodeColorScale(node: AbstractNode | undefined = undefined): void {
-
-        if (node) {
-            const n = node;
-            if (this.colorSettings) {
-                const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
-                if (nodeValue != undefined) {
-                    const colorNew = this.colorSettings.colorFunction(n, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
-                    this.colorNodeMap.set(n, colorNew);
-                }
-            }
-        } else {
-
-            for (let index = 0; index < this.rootNodes.length; index++) {
-                const entry: AbstractNodeShell = this.rootNodes[index];
-                let nodes: AbstractNode[] = entry.nodes;
-                for (let j = 0; j < nodes.length; j++) {
-                    const n = nodes[j];
-                    if (this.colorSettings) {
-                        const nodeValue = n.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
-                        if (nodeValue != undefined) {
-                            const colorNew = this.colorSettings.colorFunction(n, nodeValue.s, this.colorSettings.min, this.colorSettings.max);
-                            this.colorNodeMap.set(n, colorNew);
-                        }
-                    }
-                }
-            }
-        }
-
-    }
-
-    colorSettings: ColorStatsSettings<any> | undefined;
-    static hiddenColor: string = "rgb(25,25,25)";
-    static colorSelection: string = "rgb(57, 215, 255)";
-    colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
-    colorTransitionElapsed: number | undefined = 0;
-    colorTransitionTarget: number = 150;
-    colorNodeDefault: string = "rgb(200,200,200)";
-    colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
-    getColor: ((node: any, stat: number, min: number, max: number) => string | "h") | undefined;
-    readonly textPadding: number = 105;
-    readonly textMaxWidth: number = 200;
-
     private isHoveredNode(n: any) {
         return this.nodeHovered == n;
     }
@@ -1037,8 +975,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         // when the node is faded out completly, return the default color
         const opacity = this.notFound.get(node);
-        if (opacity && opacity.o == this.opacityMin) {
-            return this.colorNodeDefault;
+        if (opacity && opacity.o == OverviewEngine.opacityMin) {
+            return OverviewEngine.colorNodeDefault;
         }
 
         if (this.colorTransitionElapsed != undefined) {
@@ -1056,7 +994,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 return c;
             }
         }
-        return this.colorNodeDefault;
+        return OverviewEngine.colorNodeDefault;
     }
 
     drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
@@ -1226,15 +1164,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         // the greater the zoom, the smaller the fontsize
         const fontSize = this.getFixedSize(20, 20, 35);
 
-        const limitText = (text: string) => {
-            let cut = false;
-            return ((text + "...").length > 18) ? text.substring(0, 18) + "..." : text;
+        const limitText = (text: string) => ((text + "...").length > 18) ? text.substring(0, 18) + "..." : text;
 
-            // while (ctx.measureText(text + "...").width > this.textMaxWidth) {
-            //     text = text.substring(0, text.length - 1);
-            //     cut = true;
-            // } return text + (cut ? "..." : "");
-        }
         /**
          * Draw Folder names
          */
@@ -1272,17 +1203,16 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
 
 
-                        ctx.fillStyle = this.nodeHiddenByFeature(node) ? OverviewEngine.hiddenColor : "#fff";
+                        ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#fff";
 
                         if (this.selection.includes(node)) {
                             ctx.fillStyle = OverviewEngine.colorSelection;
                         }
                         ctx.fillText(`${node.isCollection ? "+" + (node.collectionSize) : limitText(node.name)}  `, xPos, yName);
 
-                        if (this.colorSettings && (isNodeHovered || this.selection.includes(node))) {
-                            const value = node.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
-                            let s = (value ? formatBytes(value.s, 2) : " - MB")
-                            ctx.fillText(s.trim(), xPos, yName + translate + (fontSize + 4) * 1);
+                        if ((isNodeHovered || this.selection.includes(node))) {
+                            const text = this.render.getFeatureText(node, entry);
+                            if (text) ctx.fillText(text, xPos, yName + translate + (fontSize + 4) * 1);
                         }
 
                     }
@@ -1310,14 +1240,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     // path
                     ctx.fillText(name, xPos, yName);
 
-                    if (this.colorSettings) {
 
-                        const value = node.getFeatureValue(this.colorSettings.attr) as FeatureDataSum;
+                    const text = this.render.getFeatureText(node, entry);
+                    if (text) ctx.fillText(text, xPos, yName + (fontSize + 4) * 1);
 
-                        // feature
-                        let s = (value ? formatBytes(value.s, 1) : " - MB")
-                        ctx.fillText(s.trim(), xPos, yName + (fontSize + 4) * 1);
-                    }
 
                 }
             }

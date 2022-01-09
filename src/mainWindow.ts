@@ -29,6 +29,7 @@ import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
 import { InsightFile } from './store/model/state';
+import { Feature, FeatureView } from './store/model/app/overview/AbstractNodeFeature';
 
 
 ipcRenderer.send("show-window");
@@ -43,8 +44,8 @@ ipcRenderer.on("send-args", (event: any, args: string[]) => {
                 let jsonString = fs.readFileSync(a, "utf8");
                 let file: InsightFile = deserialize(InsightFile, jsonString);
                 file.initAfterLoading();
-              
-                
+
+
                 let store = initStore(file);
                 startApp(store);
                 return;
@@ -92,7 +93,7 @@ function startApp(store: Store) {
     app.component('wsentryyoutube', wsentryyoutube);
 
     // features
-    app.component('size', featuresize);
-    app.component('quantity', featurequantity);
+    app.component(Feature.FolderSize, featuresize);
+    app.component(Feature.FolderQuantity, featurequantity);
 
 }

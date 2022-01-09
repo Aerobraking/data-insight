@@ -1,4 +1,4 @@
-import { create } from "underscore";
+import { create } from "underscore"; 
 
 var canvasPreview: OffscreenCanvas;
 var ctxPreview: OffscreenCanvasRenderingContext2D | null = null;

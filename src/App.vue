@@ -181,7 +181,7 @@ export default defineComponent({
 
     // remove splash screen
     const splash = document.getElementById("splash");
-    if (splash) { 
+    if (splash) {
       splash.style.opacity = "0";
       setTimeout(() => {
         if (splash) {
@@ -210,7 +210,7 @@ export default defineComponent({
       this.loadInsightFile(file);
     },
     loadInsightFile(file: InsightFile) {
-        console.log("File: ",file);
+      console.log("File: ", file);
       let tabs: HTMLElement[] = Array.from(
         document.querySelectorAll(".close-file-anim")
       ) as HTMLElement[];
@@ -341,6 +341,10 @@ $color-Selection: rgba(57, 215, 255, 1);
   user-select: none;
 }
 $color-Selection: rgba(57, 215, 255, 0.95);
+
+.selected {
+  background: $color-Selection;
+}
 
 body {
   margin: 0;

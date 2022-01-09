@@ -52,13 +52,13 @@ export default defineComponent({
           return;
         }
         const color = getColor(undefined, _this.entry.size, min, max);
-    
+
         _this.$el.style.opacity = color == "h" ? "0.05" : "";
         _this.$el.style.color = color;
       },
     };
     Dispatcher.instance.registerCallback(this.listener);
-  
+
     const div: HTMLElement =
       this.$el.getElementsByClassName("folder-file-image")[0];
 
@@ -68,11 +68,8 @@ export default defineComponent({
 
     if (isImage) {
       cache.ImageCache.registerPath(this.entry.path, {
-        callback: (
-          url: string,
-          type: "preview" | "tiny" | "small" | "medium" | "original"
-        ) => {
-          if (type == "small") {
+        callback: (url: string, type: cache.ImageSize) => {
+          if (type == cache.ImageSize.small) {
             div.style.backgroundImage = url;
           }
         },
@@ -119,7 +116,7 @@ $color-Selection: rgba(57, 215, 255, 0.1);
 }
 
 .folder-file {
-  z-index: 100; 
+  z-index: 100;
   padding: 10px;
   height: 180px;
   box-sizing: border-box;

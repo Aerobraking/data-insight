@@ -80,14 +80,16 @@ export class Watcher {
             listCallbacks = [];
             this.watcher.add(path);
             this.hash.set(path, listCallbacks);
+//   hinterlegen ob eine datei existiert oder nicht um das zu melden. per watcher testen ob die datei wieder hergestellt wird was ja eh schon gemacht wird oder?.
+            try {
+                fs.accessSync(path, fs.constants.R_OK);
+            } catch (err) {
+                // inform about non existing file
+                this.callUpdatePrep(path, "unlink", true, true);
+            }
         }
         listCallbacks.push(callback);
-        try {
-            fs.accessSync(path, fs.constants.R_OK);
-        } catch (err) {
-            // inform about non existing file
-            this.callUpdatePrep(path, "unlink", true, true);
-        }
+
 
     }
 

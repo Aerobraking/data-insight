@@ -1,15 +1,26 @@
-import { Expose } from "class-transformer"; 
+import { Expose } from "class-transformer";
 
+/**
+ * The Data type the Feature is using
+ */
 export enum FeatureDataType {
     MEDIAN = "M",
     SUM = "S",
     LIST = "L"
 }
 
+/**
+ * Unique identifier for each Feature
+ */
 export enum Feature {
     FolderSize = "FS",
     FolderQuantity = "FQ",
     FolderFileTypes = "FFA"
+
+}
+
+export enum FeatureView {
+    gradient = "gradient", 
 
 }
 export abstract class FeatureData {
@@ -36,7 +47,7 @@ export class FeatureDataList extends FeatureData {
     l: { [any: string]: number } = {};
     t = FeatureDataType.LIST;
 }
- 
+
 /**
  * An Object that can contain any type of FeatureData
  */
@@ -52,7 +63,7 @@ export type NodeFeatures = {
     [Feature.FolderFileTypes]?: FeatureDataList,
 }
 
-export class NodeFeaturesClass  {
+export class NodeFeaturesClass implements NodeFeatures {
     [Feature.FolderSize]?: FeatureDataSum;
     [Feature.FolderQuantity]?: FeatureDataSum;
     [Feature.FolderFileTypes]?: FeatureDataList;

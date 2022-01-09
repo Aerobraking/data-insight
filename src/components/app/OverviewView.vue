@@ -17,22 +17,41 @@
           @click="model.showFilterSettings = !model.showFilterSettings"
         />
       </button>
+      <select
+        class="feature-select-list"
+        v-model="model.overview.featureActive"
+      >
+        <option
+          class="feature-select"
+          v-for="e in listFeatures"
+          :key="e.id"
+          :value="e.id"
+          :class="{ selected: model.overview.featureActive == e.id }"
+        >
+          {{ e.readableName }}
+        </option>
+      </select>
       <button>
         <CogOutline v-show="model.showFilterSettings" />
       </button>
 
-      <div v-show="model.showFilterSettings" class="slider"></div>
+      <div v-show="model.showFilterSettings" class="slider">
+        <keep-alive>
+          <component
+            class="feature-view"
+            v-for="e in listFeatures"
+            :key="e.id"
+            :model="e"
+            :workspace="model"
+            :is="e.id"
+            ref="featureview"
+            v-show="model.overview.featureActive == e.id"
+          >
+          </component>
+        </keep-alive>
+      </div>
       <div class="options">
         <h3>Features</h3>
-        <component
-          v-for="e in model.overview.features"
-          :is="e.id"
-          :name="e.id"
-          :key="e.id"
-          :entry="e"
-          :workspace="this"
-        >
-        </component>
 
         <h3>Gradient Style</h3>
         <ColorGradient
@@ -164,7 +183,6 @@ import { defineComponent } from "vue";
 import noUiSlider, { API, PipsMode } from "nouislider";
 import * as WSUtils from "./WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
-import { EngineState } from "./OverviewEngine";
 
 import path from "path";
 import {
@@ -192,8 +210,9 @@ import Gradient from "./Gradient";
 import { filesizeFormat } from "@/utils/format";
 import FolderNode from "@/store/model/implementations/filesystem/FolderNode";
 import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";
-import { test } from "@/store/model/implementations/FeatureList";
 import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
+import { AbstractNodeFeature } from "@/store/model/app/overview/AbstractNodeFeatureView";
+import { getFeatureList } from "@/store/model/implementations/FeatureList";
 
 const gradients: Gradient[] = [];
 gradients.push(
@@ -259,6 +278,12 @@ export default defineComponent({
     "selection.y": function (newValue: number, oldValue: number) {
       // funktioniert nicht
     },
+    "model.overview.featureActive": function (
+      newValue: Feature | undefined,
+      oldValue: Feature | undefined
+    ) {
+      this.setRender();
+    },
     selection: function (
       newValue: AbstractNode | undefined,
       oldValue: AbstractNode | undefined
@@ -285,14 +310,15 @@ export default defineComponent({
     sliderRange: (number | string)[];
     d3: any;
     gradients: Gradient[];
-    state: EngineState;
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
     panZoomInstance: any;
     selection: AbstractNode | undefined;
     gradientFunction: Gradient;
+    listFeatures: AbstractNodeFeature[];
   } {
     return {
+      listFeatures: [],
       sliderRange: [0, 100],
       gradients: gradients,
       d3: d3,
@@ -301,12 +327,10 @@ export default defineComponent({
       idOverview: 0,
       panZoomInstance: null,
       wsListener: undefined,
-      state: new EngineState(),
     };
   },
   mounted() {
     const _this = this;
-    test();
     /**
      * remove the node data from the vuex store
      */
@@ -359,50 +383,25 @@ export default defineComponent({
 
     Instance.getEngine(this.idOverview).setSelectionListener(l);
 
-    const sliderDiv = this.$el.getElementsByClassName("slider")[0];
+    /**
+     * Get all Features and add them to the list so the views for them will be created.
+     * Each feature has to get a viewsettings instance that is stored in the overview.
+     *
+     */
+    const listFeatures = getFeatureList();
 
-    var slider = noUiSlider.create(sliderDiv, {
-      start: [0, 1024 * 1024 * 1024 * 512],
-      connect: true,
-      behaviour: "drag",
-      orientation: "vertical",
-      tooltips: {
-        to: filesizeFormat,
-      },
-      margin: 1024 * 1024 * 8,
-      range: {
-        min: 0, // kb
-        "20%": [1024 * 1024 * 32], // mb
-        "40%": [1024 * 1024 * 256], // mb
-        "60%": [1024 * 1024 * 1024], // gb
-        "80%": [1024 * 1024 * 1024 * 16], // gb
-        max: [1024 * 1024 * 1024 * 512], // tb
-      },
-      pips: {
-        mode: PipsMode.Range,
-        density: 2,
-        format: {
-          to: filesizeFormat,
-        },
-      },
-    });
+    /**
+     * dad the settings from the overview to the view. when no settings exists, create a new instance.
+     */
+    for (let i = 0; i < listFeatures.length; i++) {
+      const f = listFeatures[i];
+      const settings = this.model.overview.featureSettings[f.id];
+      f.settings = settings ? settings : f.getNewSettingsInstance();
+      this.model.overview.featureSettings[f.id] = f.settings;
+      this.listFeatures.push(f);
+    }
 
-    slider.on(
-      "update.one",
-      (
-        values: (number | string)[],
-        handleNumber: number,
-        unencoded: number[],
-        tap: boolean,
-        locations: number[],
-        slider: API
-      ) => {
-        this.sliderRange = values;
-        this.filterfunc(this, Feature.FolderSize, Number(values[0]), Number(values[1]));
-      }
-    );
-
-    this.updateGradient(this.model.overview.gradientId);
+    this.setRender();
 
     WSUtils.Events.registerCallback(this.wsListener);
   },
@@ -435,108 +434,31 @@ export default defineComponent({
     },
   },
   methods: {
-    getGradienFunction(name: string): Gradient {
-      let gradient: Gradient | undefined = gradients.find((g) => g.id == name);
-      gradient = gradient ? gradient : gradients[0];
+    setRender() {
+      if (Instance.getEngine(this.model.id)) {
+        for (let i = 0; i < this.listFeatures.length; i++) {
+          const f = this.listFeatures[i] as AbstractNodeFeature;
 
-      return gradient;
-    },
-    filterfunc: _.throttle(
-      (_this: any, stats: Feature, min: number, max: number) => {
-        const colorFunction = (
-          node: FolderNode,
-          stat: number,
-          min: number,
-          max: number
-        ) => {
-          stat = stat < min ? 0 : stat > max ? max : stat;
-          // console.log(
-          //   stat,
-          //   min,
-          //   max,
-          //   _this.gradientFunction.getColor(1 - stat / max)
-          // );
-
-          return stat < min || stat > max
-            ? "h"
-            : _this.gradientFunction.getColor(1 - stat / max);
-        };
-
-        /**
-         * Sobald sich die Werte ändern, was eigentlich nur passiert wenn der filter angepasst wird? Dann ein event firen.
-         *
-         * Das muss dann von allen Files aufgegriffen werden um ihre Farbe zu aktualisieren.
-         */
-        WSUtils.Dispatcher.instance.featureEvent(
-          stats,
-          Number(min),
-          Number(max),
-          colorFunction
-        );
-
-        if (Instance.getEngine(_this.idOverview)) {
-          Instance.getEngine(_this.idOverview).setColorScale<FolderNode>(
-            stats,
-            Number(min),
-            Number(max),
-            colorFunction,
-            150
-          );
+          if (f.id == this.model.overview.featureActive) {
+            // set render engine
+            Instance.getEngine(this.model.id).setFeatureRender(f);
+            return;
+          }
         }
-      },
-      128
-    ),
-    /**
-     * Für jede stats erstellen wir eine objekt instanz in der overview, die die einstellungen hat (min, max) und eine eindeutige id
-     * Für jede stats brauchen wir eine componente die durch diese id geladen wird, wie bei den workspace entries
-     * 
-     * 
-     * 
-     * beim ändern des sliders ein emit machen mit den min/max
-     *
-     
-
-
-
-
-     */
-    updateGradient(name: string) {
-      this.model.overview.gradientId = name;
-
-      const gradient = this.getGradienFunction(name);
-      this.gradientFunction = gradient;
-
-      let values: string[] = [];
-      const steps = 5;
-      for (let i = 0; i <= steps; i++) {
-        const percent = Math.floor(100 * (i / steps));
-        values.push(`${gradient.getColor(i / steps)} ${percent}%`);
       }
-
-      const style = "linear-gradient( 0deg, " + values.join(", ") + ")";
-
-      let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
-      divs[0].style.backgroundImage = style;
-
-      this.filterfunc(
-        this,
-       Feature.FolderSize ,
-        Number(this.sliderRange[0]),
-        Number(this.sliderRange[1])
-      );
     },
     updateDivTransformation(value: { x: number; y: number; scale: number }) {
       // this.panZoomInstance.moveTo(value.x, value.y);
       // this.panZoomInstance.zoomAbs(value.x, value.y, value.scale);
     },
     panHappen: function (p: any, id: String) {
-      // p.setTransformOrigin(null);
+      /*p.setTransformOrigin(null);
       // this.panZoomInstance = p;
       // p.set;
       // p.on("panzoompan", function (e: any) {});
       // p.on("onDoubleClick", function (e: any) {
       //   return false;
-      // });
+      // });*/
     },
     showAll(automodeToggle: boolean = true): void {
       if (!automodeToggle) {
@@ -829,6 +751,13 @@ export default defineComponent({
 
 
 <style scoped lang="scss">
+.feature-select-list {
+  position: absolute;
+  right: 20px;
+  color: #444;
+  white-space: nowrap;
+}
+
 .vue-pan-zoom-item {
   width: 100%;
   height: 100%;
