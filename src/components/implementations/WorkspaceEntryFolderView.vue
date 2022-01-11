@@ -568,8 +568,7 @@ export default defineComponent({
           }
         }
 
-        if (listFilesToDrag.length > 0) {
-          console.log("starte drag oper");
+        if (listFilesToDrag.length > 0) { 
           ipcRenderer.send("ondragstart", listFilesToDrag);
           this.dragActive = false;
         }
@@ -623,8 +622,7 @@ export default defineComponent({
               .map((f) => f.path);
             e.stopImmediatePropagation();
             return;
-          case "v":
-            console.log(WSUtils.clipboard.listFilesClipboard);
+          case "v": 
             this.handleFileDrop(WSUtils.clipboard.listFilesClipboard);
             WSUtils.clipboard.listFilesClipboard = [];
             e.stopImmediatePropagation();

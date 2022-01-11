@@ -150,8 +150,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
         const id = this.getId();
         if (id) {
             var match = this.url?.match("t\\=\\d+");
-            console.log("timestamp", id);
-
+          
             const stamp = match ? `?start=${match[0].replace("t=", "")}` : "";
 
             return '<iframe  sandbox="allow-presentation allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" '
@@ -266,9 +265,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
             console.error(err);
             this.fileList = [];
         }
-
-        console.log("length: " + this.fileList.length);
-
+  
     }
 
     public getFileList(): Array<FolderWindowFile> {

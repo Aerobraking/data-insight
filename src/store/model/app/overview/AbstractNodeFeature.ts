@@ -13,36 +13,32 @@ export enum FeatureDataType {
  * Unique identifier for each Feature
  */
 export enum Feature {
+    None = "N",
     FolderSize = "FS",
     FolderQuantity = "FQ",
     FolderFileTypes = "FFA"
-
 }
 
-export enum FeatureView {
-    gradient = "gradient", 
-
-}
-export abstract class FeatureData {
+export abstract class AbstractFeatureData {
     abstract t: FeatureDataType;
 }
 
 @Expose({ name: "FDM" })
-export class FeatureDataMedian extends FeatureData {
+export class FeatureDataMedian extends AbstractFeatureData {
     // size 
     s: number = 0;
     t = FeatureDataType.MEDIAN;
 }
 
 @Expose({ name: "FDS" })
-export class FeatureDataSum extends FeatureData {
+export class FeatureDataSum extends AbstractFeatureData {
     // size 
     s: number = 0;
     t = FeatureDataType.SUM;
 }
 
 @Expose({ name: "FDL" })
-export class FeatureDataList extends FeatureData {
+export class FeatureDataList extends AbstractFeatureData {
     // list of element occurences 
     l: { [any: string]: number } = {};
     t = FeatureDataType.LIST;
@@ -51,7 +47,7 @@ export class FeatureDataList extends FeatureData {
 /**
  * An Object that can contain any type of FeatureData
  */
-export type NodeFeaturesRequired = {
+export type FolderNodeFeatures = {
     [Feature.FolderSize]: FeatureDataSum,
     [Feature.FolderQuantity]: FeatureDataSum,
     [Feature.FolderFileTypes]: FeatureDataList,
@@ -61,12 +57,14 @@ export type NodeFeatures = {
     [Feature.FolderSize]?: FeatureDataSum,
     [Feature.FolderQuantity]?: FeatureDataSum,
     [Feature.FolderFileTypes]?: FeatureDataList,
+    [Feature.None]?: FeatureDataSum;
 }
 
 export class NodeFeaturesClass implements NodeFeatures {
     [Feature.FolderSize]?: FeatureDataSum;
     [Feature.FolderQuantity]?: FeatureDataSum;
     [Feature.FolderFileTypes]?: FeatureDataList;
+    [Feature.None]?: FeatureDataSum;
 }
 
 export type AbstractNodeFeaturesTypes = {

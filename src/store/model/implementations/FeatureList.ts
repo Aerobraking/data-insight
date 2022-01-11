@@ -5,8 +5,8 @@ import { AbstractNodeFeature, internalCreateNewFeatureList } from '../app/overvi
  * 
  */
 export * from './filesystem/FolderFeatures'
-
-
-export function getFeatureList(): AbstractNodeFeature[] {
+import * as FN from './../app/overview/FeatureNone'
+ 
+export function getFeatureList(): AbstractNodeFeature[] { 
     return internalCreateNewFeatureList();
 }

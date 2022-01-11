@@ -84,8 +84,7 @@ export default defineComponent({
         this.entry.imageCreated = true;
       }
     },
-    cacheImageEvent(url: string, type: cache.ImageSize): void {
-      console.log("cacheImageEvent", url, type);
+    cacheImageEvent(url: string, type: cache.ImageSize): void { 
 
       switch (type) {
         case cache.ImageSize.error:
@@ -119,8 +118,7 @@ export default defineComponent({
         this.$el.classList.toggle("gradient-border", false);
       }
     },
-    watcherEvent(type: string) {
-      console.log("watcherEvent", type);
+    watcherEvent(type: string) { 
       cache.ImageCache.registerPath(
         this.entry.getURL(),
         this.cacheListener,

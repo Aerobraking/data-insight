@@ -1,64 +1,74 @@
 <template>
-  <div ref="el" class="slider"></div>
+  <div class="gradient-feature-view">
+    <tippy
+      :trigger="'click'"
+      :interactiveBorder="10"
+      delay="0"
+      :placement="'left-end'"
+      :offset="[-25, 40]"
+      :zIndex="9950"
+      :interactive="true"
+    >
+      <button>
+        <CogOutline />
+      </button>
+      <template #content>
+        <h3>Gradient Style</h3>
+        <ColorGradient
+          v-for="e in model.gradients"
+          :class="{ 'gradient-selected': e.id === model.settings.gradientId }"
+          :key="e.id" 
+          @mouseup="updateGradient(e.id)"
+          :id="e.id"
+          :gradient="e"
+        />
+      </template>
+    </tippy>
+
+    <div ref="el" class="slider"></div>
+  </div>
 </template>
 
 <script lang="ts">
-import * as d3 from "d3";
-
-const gradients: Gradient[] = [];
-gradients.push(
-  new Gradient((n: number) => {
-    let value = n * 255 * 0.3;
-    value = 180;
-    return `rgb(${value},${value},${value})`;
-  }, "default")
-);
-gradients.push(new Gradient(d3.interpolateWarm, "interpolateWarm"));
-gradients.push(new Gradient(d3.interpolatePuRd, "interpolatePuRd", !true));
-gradients.push(
-  new Gradient(
-    d3.interpolateMagma,
-    "interpolateMagma",
-    !true,
-    d3.scaleLinear<number>().domain([0, 1]).clamp(true).range([0.3, 1]),
-    [0.3, 1]
-  )
-);
-
+import { Tippy } from "vue-tippy";
 import { defineComponent } from "vue";
 import * as _ from "underscore";
-import noUiSlider, { API, PipsMode } from "nouislider";
-import { filesizeFormat } from "@/utils/format";
+import noUiSlider, { API, PipsMode } from "nouislider"; 
 import { Instance } from "@/store/model/app/overview/OverviewDataCache";
 import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
-import FolderNode from "@/store/model/implementations/filesystem/FolderNode";
-import * as WSUtils from "@/components/app/WorkspaceUtils";
-import Gradient from "@/components/app/Gradient";
 import { Workspace } from "@/store/model/app/Workspace";
+import ColorGradient from "@/components/app/ColorGradient.vue";
+import { NodeFeatureSize } from "@/store/model/implementations/filesystem/FolderFeatures";
+import { CogOutline } from "mdue";
 import { AbstractNodeFeatureGradient } from "@/store/model/app/overview/AbstractNodeFeatureView";
 
 export default defineComponent({
   name: Feature.FolderSize,
+  components: {
+    ColorGradient,
+    CogOutline,
+    Tippy,
+  },
   props: {
     workspace: {
       type: Workspace,
       required: true,
     },
     model: {
-      type: AbstractNodeFeatureGradient,
+      type: AbstractNodeFeatureGradient as any,
       required: true,
     },
   },
-  data(): { gradientFunction: Gradient } {
+  data(): {
+    tempGradientId: string | undefined;
+  } {
     return {
-      gradientFunction: gradients[2],
+      tempGradientId: undefined,
     };
   },
-  unmounted() {
-    console.log("UNMOUNTED");
-  },
+  unmounted() {},
   mounted() {
-    const sliderDiv = this.$el;
+    const sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
     var slider = noUiSlider.create(sliderDiv, {
       start: [
@@ -69,22 +79,15 @@ export default defineComponent({
       behaviour: "drag",
       orientation: "vertical",
       tooltips: {
-        to: filesizeFormat,
+        to: this.model.formatter,
       },
-      margin: 1024 * 1024 * 8,
-      range: {
-        min: 0, // kb
-        "20%": [1024 * 1024 * 32], // mb
-        "40%": [1024 * 1024 * 256], // mb
-        "60%": [1024 * 1024 * 1024], // gb
-        "80%": [1024 * 1024 * 1024 * 16], // gb
-        max: [1024 * 1024 * 1024 * 512], // tb
-      },
+      margin: this.model.margin,
+      range: this.model.range,
       pips: {
         mode: PipsMode.Range,
         density: 2,
         format: {
-          to: filesizeFormat,
+          to: this.model.formatter,
         },
       },
     });
@@ -100,29 +103,25 @@ export default defineComponent({
         slider: API
       ) => {
         this.model.settings.sliderRange = values as [number, number];
-        this.filterfunc(
-          this,
-          Feature.FolderSize,
-          Number(values[0]),
-          Number(values[1])
-        );
+        this.filterfunc(this);
       }
     );
 
     this.updateGradient(this.model.settings.gradientId);
   },
   methods: {
-    getGradienFunction(name: string): Gradient {
-      let gradient: Gradient | undefined = gradients.find((g) => g.id == name);
-      gradient = gradient ? gradient : gradients[0];
-
-      return gradient;
+    restoreGradient() {
+      if (
+        this.tempGradientId &&
+        this.tempGradientId != this.model.settings.gradientId
+      ) {
+        this.updateGradient(this.tempGradientId);
+      }
     },
-    updateGradient(name: string) {
-      this.model.settings.gradientId = name;
-
-      const gradient = this.getGradienFunction(name);
-      this.gradientFunction = gradient;
+    updateGradient(name: string, temp: boolean = false) {
+      if (temp) this.tempGradientId = this.model.settings.gradientId;
+      if (!temp) this.tempGradientId = undefined;
+      const gradient = this.model.setGradienFunction(name);
 
       let values: string[] = [];
       const steps = 5;
@@ -136,41 +135,25 @@ export default defineComponent({
       let divs: HTMLElement[] = this.$el.getElementsByClassName("noUi-connect");
       divs[0].style.backgroundImage = style;
 
-      this.model.colorFunction = (n: number) => {
-        return this.gradientFunction.getColor(n);
-      };
-
-      this.filterfunc(
-        this,
-        Feature.FolderSize,
-        Number(this.model.settings.sliderRange[0]),
-        Number(this.model.settings.sliderRange[1])
-      );
+      this.filterfunc(this);
     },
-    filterfunc: _.throttle(
-      (_this: any, feature: Feature, min: number, max: number) => {
-        /**
-         * Sobald sich die Werte ändern, was eigentlich nur passiert wenn der filter angepasst wird? Dann ein event firen.
-         *
-         * Das muss dann von allen Files aufgegriffen werden um ihre Farbe zu aktualisieren.
-         */
-        // WSUtils.Dispatcher.instance.featureEvent(
-        //   stats,
-        //   Number(min),
-        //   Number(max),
-        //   _this.gradientFunction.getColor
-        // );
+    filterfunc: _.throttle((_this: any) => {
+      /**
+       * Sobald sich die Werte ändern, was eigentlich nur passiert wenn der filter angepasst wird? Dann ein event firen.
+       *
+       * Das muss dann von allen Files aufgegriffen werden um ihre Farbe zu aktualisieren.
+       */
+      // WSUtils.Dispatcher.instance.featureEvent(
+      //   stats,
+      //   Number(min),
+      //   Number(max),
+      //   _this.gradientFunction.getColor
+      // );
 
-        _this.model.colorFunction = (n: number) => {
-          return _this.gradientFunction.getColor(n);
-        };
-
-        if (Instance.getEngine(_this.workspace.id)) {
-          Instance.getEngine(_this.workspace.id).updateNodeColors();
-        }
-      },
-      128
-    ),
+      if (Instance.getEngine(_this.workspace.id)) {
+        Instance.getEngine(_this.workspace.id).updateNodeColors();
+      }
+    }, 128),
   },
 });
 </script>
@@ -178,21 +161,24 @@ export default defineComponent({
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 $color-Selection: rgba(57, 215, 255, 1);
-
-.color-gradient-div {
-  box-sizing: border-box;
-  width: 100%;
-  height: 40px;
-  margin: 0;
-  margin-top: 5px;
-
-  &:hover {
-    cursor: pointer;
-    border: 3px solid $color-Selection;
+.gradient-feature-view {
+  height: 100%;
+  transform-origin: top right;
+  transform: scale(0.8);
+  h3 {
+    white-space: nowrap;
+    margin: 5px;
+  }
+  button {
+    margin-left: -6px;
+    margin-bottom: 15px;
   }
 }
-.gradient-selected {
-  border: 2px solid $color-Selection;
+
+.slider {
+  height: 100%;
+  transform-origin: top right;
+  transform: scale(0.8);
 }
 </style>
 

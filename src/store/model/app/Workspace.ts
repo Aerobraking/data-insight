@@ -1,5 +1,5 @@
 import * as _ from "underscore";
-import { Type } from "class-transformer";
+import { Expose, Type } from "class-transformer";
 import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";
 import WorkspaceEntry from "./WorkspaceEntry";
 import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "../implementations/filesystem/FileSystemWorkspaceEntries";
@@ -12,11 +12,11 @@ import { Feature } from "./overview/AbstractNodeFeature";
 export class Overview {
 
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.25 }
+  
+    @Expose({ name: 'featureSettings' })
     featureSettings: FeatureSettingsList = {};
     showAll: boolean = false;
-    featureActive: Feature | undefined = Feature.FolderSize;
-    // features: NodeFeatures.AbstractNodeFeature[];
-    // activeFeatureId: string|undefined;
+    featureActive: Feature | undefined = Feature.FolderSize; 
 
     @Type(() => AbstractNodeShell, {
         keepDiscriminatorProperty: true,

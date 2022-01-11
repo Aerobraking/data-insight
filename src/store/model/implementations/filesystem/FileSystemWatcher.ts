@@ -57,7 +57,7 @@ export class FileSystemWatcher {
 
         let msg: FolderSync = {
             type: "folderdeepsync",
-            collectionSize: 50,
+            collectionSize: 45,
             path: listener.getPath(),
             depth: 4,
             id: listener.getID()

@@ -12,11 +12,6 @@
       class="filter-settings"
       :class="{ 'filter-settings-hide': !model.showFilterSettings }"
     >
-      <button>
-        <TuneVerticalVariant
-          @click="model.showFilterSettings = !model.showFilterSettings"
-        />
-      </button>
       <select
         class="feature-select-list"
         v-model="model.overview.featureActive"
@@ -31,11 +26,13 @@
           {{ e.readableName }}
         </option>
       </select>
-      <button>
-        <CogOutline v-show="model.showFilterSettings" />
+      <button class="show-filter-settings">
+        <TuneVerticalVariant
+          @click="model.showFilterSettings = !model.showFilterSettings"
+        />
       </button>
 
-      <div v-show="model.showFilterSettings" class="slider">
+      <div v-show="model.showFilterSettings" class="feature-view-list">
         <keep-alive>
           <component
             class="feature-view"
@@ -49,19 +46,6 @@
           >
           </component>
         </keep-alive>
-      </div>
-      <div class="options">
-        <h3>Features</h3>
-
-        <h3>Gradient Style</h3>
-        <ColorGradient
-          v-for="e in gradients"
-          :class="{ 'gradient-selected': e === model.overview.gradientId }"
-          :key="e.id"
-          @mouseup="updateGradient(e.id)"
-          :id="e.id"
-          :gradient="e"
-        />
       </div>
     </div>
 
@@ -175,15 +159,13 @@
     </panZoom> 
 
 */
-const fs = require("fs");
+import fs from "fs";
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
 import { Workspace } from "@/store/model/app/Workspace";
 import { defineComponent } from "vue";
-import noUiSlider, { API, PipsMode } from "nouislider";
 import * as WSUtils from "./WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
-
 import path from "path";
 import {
   Pause,
@@ -206,33 +188,11 @@ import * as d3 from "d3";
 import _ from "underscore";
 import { Instance } from "@/store/model/app/overview/OverviewDataCache";
 import { AbstractNodeShell } from "@/store/model/app/overview/AbstractNodeShell";
-import Gradient from "./Gradient";
-import { filesizeFormat } from "@/utils/format";
 import FolderNode from "@/store/model/implementations/filesystem/FolderNode";
 import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";
 import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
 import { AbstractNodeFeature } from "@/store/model/app/overview/AbstractNodeFeatureView";
 import { getFeatureList } from "@/store/model/implementations/FeatureList";
-
-const gradients: Gradient[] = [];
-gradients.push(
-  new Gradient((n: number) => {
-    let value = n * 255 * 0.3;
-    value = 180;
-    return `rgb(${value},${value},${value})`;
-  }, "default")
-);
-gradients.push(new Gradient(d3.interpolateWarm, "interpolateWarm"));
-gradients.push(new Gradient(d3.interpolatePuRd, "interpolatePuRd", !true));
-gradients.push(
-  new Gradient(
-    d3.interpolateMagma,
-    "interpolateMagma",
-    !true,
-    d3.scaleLinear<number>().domain([0, 1]).clamp(true).range([0.3, 1]),
-    [0.3, 1]
-  )
-);
 
 export default defineComponent({
   name: "App",
@@ -309,20 +269,16 @@ export default defineComponent({
   data(): {
     sliderRange: (number | string)[];
     d3: any;
-    gradients: Gradient[];
     wsListener: WSUtils.Listener | undefined;
     idOverview: number;
     panZoomInstance: any;
     selection: AbstractNode | undefined;
-    gradientFunction: Gradient;
     listFeatures: AbstractNodeFeature[];
   } {
     return {
       listFeatures: [],
       sliderRange: [0, 100],
-      gradients: gradients,
       d3: d3,
-      gradientFunction: gradients[2],
       selection: undefined,
       idOverview: 0,
       panZoomInstance: null,
@@ -331,6 +287,7 @@ export default defineComponent({
   },
   mounted() {
     const _this = this;
+
     /**
      * remove the node data from the vuex store
      */
@@ -343,6 +300,30 @@ export default defineComponent({
       this.model
     );
 
+    /**
+     * Get all Features and add them to the list so the views for them will be created.
+     * Each feature has to get a viewsettings instance that is stored in the overview.
+     *
+     */
+    const listFeatures = getFeatureList();
+
+    /**
+     * get the settings from the overview to the view. when no settings exists, create a new instance.
+     */
+    for (let i = 0; i < listFeatures.length; i++) {
+      const f = listFeatures[i]; 
+      
+      const settings = this.model.overview.featureSettings[f.id];
+      f.settings = settings ? settings : f.getNewSettingsInstance();
+      this.model.overview.featureSettings[f.id] = f.settings;
+      this.listFeatures.push(f);
+    }
+
+    this.setRender();
+
+    /**
+     * Set the data after the render is set.
+     */
     Instance.getEngine(this.idOverview).rootNodes = Instance.getData(
       this.idOverview
     );
@@ -382,26 +363,6 @@ export default defineComponent({
     };
 
     Instance.getEngine(this.idOverview).setSelectionListener(l);
-
-    /**
-     * Get all Features and add them to the list so the views for them will be created.
-     * Each feature has to get a viewsettings instance that is stored in the overview.
-     *
-     */
-    const listFeatures = getFeatureList();
-
-    /**
-     * dad the settings from the overview to the view. when no settings exists, create a new instance.
-     */
-    for (let i = 0; i < listFeatures.length; i++) {
-      const f = listFeatures[i];
-      const settings = this.model.overview.featureSettings[f.id];
-      f.settings = settings ? settings : f.getNewSettingsInstance();
-      this.model.overview.featureSettings[f.id] = f.settings;
-      this.listFeatures.push(f);
-    }
-
-    this.setRender();
 
     WSUtils.Events.registerCallback(this.wsListener);
   },
@@ -751,11 +712,31 @@ export default defineComponent({
 
 
 <style scoped lang="scss">
+.feature-view-list {
+  height: 100%;
+  margin-top: 60px;
+}
 .feature-select-list {
   position: absolute;
-  right: 20px;
-  color: #444;
+  right: 30px;
+  top: 7px;
+  height: 22px;
+  color: white;
+  background: transparent;
   white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  outline: none;
+
+  option {
+    background-color: #333;
+    border: none;
+    white-space: nowrap;
+    color: white;
+    padding: 5px;
+    margin: 5px;
+    height: 30px;
+  }
 }
 
 .vue-pan-zoom-item {
@@ -770,18 +751,13 @@ export default defineComponent({
 <style   lang="scss">
 .filter-settings {
   position: absolute;
-  top: 30px;
+  top: 1px;
   right: 24px;
   width: 20px;
   height: 70%;
   z-index: 9900;
   transition: all 0.2s ease-in-out;
-  .slider {
-    height: 100%;
-    margin-top: 60px;
-    transform-origin: top right;
-    transform: scale(0.8);
-  }
+
   .options {
     h3 {
       margin: 15px 0 5px 0;
@@ -796,7 +772,7 @@ export default defineComponent({
     border-radius: 2px;
   }
 
-  button {
+  .show-filter-settings {
     position: absolute;
     outline: none;
     color: white;
@@ -804,17 +780,14 @@ export default defineComponent({
     padding: 0;
     margin: 0;
     background-color: transparent;
-    top: 5px;
-    svg {
-      font-size: 26px;
-      margin: 0;
-    }
-  }
-  button:nth-child(1) {
+    top: 0px;
+
     right: -10px;
   }
-  button:nth-child(2) {
-    right: 20px;
+
+  svg {
+    font-size: 26px;
+    margin: 0;
   }
 
   button:disabled,

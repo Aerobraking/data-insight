@@ -133,8 +133,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     }
 
 
-    public addFeatures(path: string, features: NodeFeatures) {
-        console.log("addFeatures", features);
+    public addFeatures(path: string, features: NodeFeatures) { 
 
         let node = this.getNodeByPath(path);
         if (node) {
@@ -435,41 +434,36 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     tick() {
 
-        let y: ForceY<N> | undefined = this.simulation.force(
-            "y"
-        );
+        // let y: ForceY<N> | undefined = this.simulation.force(
+        //     "y"
+        // );
 
-        if (y) {
-            y.y(function (d: N) {
-                return d.parent ? d.parent.getY() : d.getY();
-            }).strength(function (d: N, i: number, data: N[]) {
-                // return d.parent ? d.parent.isRoot() ? 0.0005 : 0.001 : 0;
-                return 1;
-            })
-        }
-
-        let vyMax = 0;
-
-        for (let i = 0; i < this.nodes.length; i++) {
-            this.nodes[i].tick();
-            if (OverviewEngine.framecounter % 400 == 0) {
-                if (this.nodes[i].getChildren().length == 0) {
-                    this.nodes[i].updateForce();
-                }
-            }
-            let vy: number = this.nodes[i].vy ? this.nodes[i].vy as number : 0;
-            vy = Math.abs(vy);
-            vyMax = vy > vyMax ? vy : vyMax;
-        }
-
-        // if (OverviewEngine.framecounter % 60 == 0) {
-        //     console.log("vyMax: ");
-        //     console.log(vyMax);
+        // if (y) {
+        //     y.y(function (d: N) {
+        //         return d.parent ? d.parent.getY() : d.getY();
+        //     }).strength(function (d: N, i: number, data: N[]) {
+        //         // return d.parent ? d.parent.isRoot() ? 0.0005 : 0.001 : 0;
+        //         return 1;
+        //     })
         // }
 
+        // let vyMax = 0;
 
-        this.simulation.alpha(1);
-        this.simulation.tick();
+        // for (let i = 0; i < this.nodes.length; i++) {
+        //     this.nodes[i].tick();
+        //     if (OverviewEngine.framecounter % 400 == 0) {
+        //         if (this.nodes[i].getChildren().length == 0) {
+        //             this.nodes[i].updateForce();
+        //         }
+        //     }
+        //     let vy: number = this.nodes[i].vy ? this.nodes[i].vy as number : 0;
+        //     vy = Math.abs(vy);
+        //     vyMax = vy > vyMax ? vy : vyMax;
+        // }
+
+  
+        // this.simulation.alpha(1);
+        // this.simulation.tick();
 
         // const columnForces = Array.from(this.columnForceMap.values());
 
@@ -483,8 +477,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
             .y(function (d) { return d.getY(); });
 
         this.quadtree.addAll(this.nodes);
-
-        // console.log("update qTree", this.nodes.length);
+ 
 
 
     }

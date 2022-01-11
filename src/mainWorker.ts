@@ -3,12 +3,11 @@ import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
 import { FolderSync, FolderSyncResult, FolderSyncFinished, FolderFeatureResult } from './store/model/implementations/filesystem/FileSystemMessages';
-import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, NodeFeaturesRequired } from './store/model/app/overview/AbstractNodeFeature';
-// import { path } from 'd3';
+import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, FolderNodeFeatures } from './store/model/app/overview/AbstractNodeFeature'; 
 import path from "path";
 
 ipcRenderer.on("log", (event, log) => {
-    // console.log("log", log);
+    //  console.log("log", log);
 });
 
 /**
@@ -79,7 +78,7 @@ ipcRenderer.on("msg-main",
 
             let updateSteps = 0;
 
-            function handleDirectory(pathF: string, files: string[], features: NodeFeaturesRequired, sendResults: boolean = true) {
+            function handleDirectory(pathF: string, files: string[], features: FolderNodeFeatures, sendResults: boolean = true) {
 
                 /**
                  * Add the stats from all files together
@@ -105,9 +104,9 @@ ipcRenderer.on("msg-main",
                         }
                         features[Feature.FolderFileTypes].l[fileExtention] += 1;
 
-                        // folderStat.stats.mtime.value += isNaN(stats.mtimeMs) ? 0 : stats.mtimeMs; // last modifiy
-                        // folderStat.stats.atime.value += isNaN(stats.atimeMs) ? 0 : stats.atimeMs; // last access
-                        // folderStat.stats.ctime.value += isNaN(stats.birthtimeMs) ? 0 : stats.birthtimeMs; // creation time
+                        // folderStat.stats.mtime.value += isNaN(stats.mtimeMs) ?       0 : stats.mtimeMs;      // last modifiy
+                        // folderStat.stats.atime.value += isNaN(stats.atimeMs) ?       0 : stats.atimeMs;      // last access
+                        // folderStat.stats.ctime.value += isNaN(stats.birthtimeMs) ?   0 : stats.birthtimeMs;  // creation time
                     }
                 }
 
@@ -130,7 +129,7 @@ ipcRenderer.on("msg-main",
 
             }
 
-            function collectFeaturesRec(rootPath: string, pathF: string, depth: number = 0, features: NodeFeaturesRequired): void {
+            function collectFeaturesRec(rootPath: string, pathF: string, depth: number = 0, features: FolderNodeFeatures): void {
 
                 let files: string[] = fs.readdirSync(pathF);
 
@@ -156,7 +155,7 @@ ipcRenderer.on("msg-main",
                 const element = listFoldersToSync[i];
                 const pathF = element.path;
 
-                let features: NodeFeaturesRequired = {
+                let features: FolderNodeFeatures = {
                     [Feature.FolderSize]: new FeatureDataSum(),
                     [Feature.FolderQuantity]: new FeatureDataSum(),
                     [Feature.FolderFileTypes]: new FeatureDataList()

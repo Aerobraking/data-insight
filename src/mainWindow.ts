@@ -22,14 +22,14 @@ import wsentryyoutube from "./components/implementations/WorkspaceEntryYoutubeVi
 /**
  * Features
  */
-import featuresize from "./components/implementations/features/FeatureSizeComp.vue";
-import featurequantity from "./components/implementations/features/FeatureQuantityComp.vue";
+import featurenone from "./components/implementations/features/FeatureNone.vue";
+import featuresize from "./components/implementations/features/FeatureSizeComp.vue"; 
 
 import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
 import { InsightFile } from './store/model/state';
-import { Feature, FeatureView } from './store/model/app/overview/AbstractNodeFeature';
+import { Feature } from './store/model/app/overview/AbstractNodeFeature';
 
 
 ipcRenderer.send("show-window");
@@ -93,7 +93,8 @@ function startApp(store: Store) {
     app.component('wsentryyoutube', wsentryyoutube);
 
     // features
+    app.component(Feature.None, featurenone);
     app.component(Feature.FolderSize, featuresize);
-    app.component(Feature.FolderQuantity, featurequantity);
+    app.component(Feature.FolderQuantity, featuresize);
 
 }

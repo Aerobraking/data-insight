@@ -166,8 +166,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         let index = this.children.indexOf(c);
         if (index > -1) {
             this.children.splice(index, 1);
-            console.log(this);
-            console.log(this.entry);
             this.entry?.nodeRemoved();
             this.updateSimulation();
             this.updateForce();
@@ -261,29 +259,13 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.simulation.alpha(1);
         this.simulation.tick();
     }
-/*
-    export enum SettingsKey {
-        hasOnboarded = 'hasOnboarded',
-        phoneNumber = 'phoneNumber'
-    }
-    
-    type SettingsKeyReturnType = {
-        [SettingsKey.hasOnboarded]: boolean,
-        [SettingsKey.phoneNumber]: string
-    }
-    export async function getSetting<K extends SettingsKey>(storage: Storage, key: K): Promise<SettingsKeyReturnType[K]> {
-        return storage.get(key)
-    }
-    let a = getSetting(window.localStorage, SettingsKey.phoneNumber); // Promise<string>
-    let b = getSetting(window.localStorage, SettingsKey.hasOnboarded); // Promise<booelan> 
-*/
-    
+
     public getFeatureValue<K extends Feature>(key: K, recursive: boolean = true): NodeFeatures[K] | undefined {
         if (recursive) {
             if (this.featuresRecursive) {
                 let e = this.featuresRecursive[key];
                 if (e) {
-                    return e ;
+                    return e;
                 }
             }
         } else {
@@ -297,26 +279,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
         return undefined;
     }
-    // public getFeatureValue<D>(key: Feature, recursive: boolean = true): D | undefined {
-    //     if (recursive) {
-    //         if (this.featuresRecursive) {
-    //             let e = this.featuresRecursive[key];
-    //             if (e) {
-    //                 return e as unknown as D;
-    //             }
-    //         }
-    //     } else {
-    //         if (this.features) {
-    //             let e = this.featuresRecursive[key];
-    //             if (e) {
-    //                 return e as unknown as D;
-    //             }
-    //         }
-    //     }
-
-    //     return undefined;
-    // }
-
     public isRoot(): boolean {
         return this.parent == undefined;
     }

@@ -121,7 +121,7 @@ const v = remote.app.getVersion();
 var fs = require("fs");
 
 ipcRenderer.on("log", (event, log) => {
-  // console.log("log", log);
+  //  console.log("log", log);
 });
 
 export default defineComponent({
@@ -209,8 +209,7 @@ export default defineComponent({
       file.initAfterLoading();
       this.loadInsightFile(file);
     },
-    loadInsightFile(file: InsightFile) {
-      console.log("File: ", file);
+    loadInsightFile(file: InsightFile) { 
       let tabs: HTMLElement[] = Array.from(
         document.querySelectorAll(".close-file-anim")
       ) as HTMLElement[];
@@ -396,6 +395,25 @@ h4 {
   padding-bottom: 5px;
   margin-bottom: 5px;
   border-bottom: 1px solid white;
+}
+
+button {
+  
+  outline: none;
+  color: #eee;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  svg {
+    cursor: pointer;
+    margin: 5px 15px 5px 15px;
+    padding: 5px;
+    font-size: 32px;
+    opacity: 1;
+    transition: all 0.2s ease-in-out;
+    transition-property: opacity, transform;
+  }
 }
 
 .prevent-input {

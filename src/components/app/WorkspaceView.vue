@@ -1,6 +1,6 @@
 <template>
   <div @keydown="keydownGlobal" class="wrapper">
-    <div class="workspace-search" v-show="getShowUI">
+    <div class="workspace-search prevent-input" v-show="getShowUI">
       <div class="prevent-input"></div>
       <input
         class="workspace-search-input"
@@ -767,60 +767,9 @@ export default defineComponent({
             );
           }
         }
-
-        // let v = this.getEntries();
-        // let m = this.getModelEntriesFromView(this.getEntries());
-
-        // for (let index = 0; index < v.length; index++) {
-        //   const view = v[index];
-        //   const model = m[index];
-        //   if (model instanceof WorkspaceEntryImage) {
-        //     let c = this.getCoordinatesFromElement(view);
-
-        //     c.x = c.x * currentC.scale + currentC.x;
-        //     c.x2 = c.x2 * currentC.scale + currentC.x;
-
-        //     c.y = c.y * currentC.scale + currentC.y;
-        //     c.y2 = c.y2 * currentC.scale + currentC.y;
-
-        //     c.w = c.w * currentC.scale;
-        //     c.h = c.h * currentC.scale;
-
-        //     ImageCache.registerPath(model.getURL(), {
-        //       callback: (
-        //         url: string,
-        //         type: "small" | "medium" | "original"
-        //       ) => {},
-        //       callbackSize: (dim: ImageDim) => {},
-        //     });
-        //     let url = ImageCache.getUrlRaw(model.getURL(), "small");
-
-        //     if (url && context) {
-        //       let image = new Image();
-        //       image.onload = function () {
-        //         if (context) {
-        //           context.drawImage(image, c.x, c.y, c.w, c.h);
-        //           console.log("draw image");
-        //         }
-
-        //         image.src = url ? url : "";
-        //       };
-        //     }
-        //   }
-        // }
+ 
       }
-
-      // b = 150;
-      // context.fillStyle = "rgb(" + b + "," + b + "," + b + ")";
-
-      // for (let p of points) {
-      //   context.fillRect(
-      //     (p.x + currentC.x * p.z) ,
-      //     (p.y + currentC.y * p.z) ,
-      //     6 * p.z,
-      //     6 * p.z
-      //   );
-      // }
+ 
     },
     createEntry<T extends WorkspaceEntry>(
       type: "files" | "folders" | "frame" | "text" | "youtube" | "image",
@@ -2416,7 +2365,7 @@ svg {
   grid-template-rows: 1fr;
 
   input {
-    pointer-events: all;
+    pointer-events: all !important;
     background: #222;
     height: 28px;
     border: none;
@@ -2439,12 +2388,13 @@ svg {
     }
   }
   .search-results {
+    pointer-events: all !important;
     background: #222;
     position: absolute;
     top: 100%;
     left: 33.33%;
     width: 33.33%;
-    min-height: 10px;
+    min-height: 0px;
     max-height: 350px;
     overflow-x: hidden;
     overflow-y: auto;

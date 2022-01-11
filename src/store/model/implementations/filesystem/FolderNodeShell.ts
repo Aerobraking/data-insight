@@ -60,10 +60,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
             if (event) {
                 switch (event.type) {
                     case "foldersync":
-
-
-                        const result: FolderSyncResult = event as unknown as FolderSyncResult;
-                        console.log("foldersync", event);
+                        const result: FolderSyncResult = event as unknown as FolderSyncResult; 
                         this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
                         break;
                     case "folderfeatures":
@@ -81,7 +78,6 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     }
 
     event(e: FolderFeatureResult | FolderSyncResult | FolderSyncFinished): void {
-
         switch (e.type) {
             case "folderfeatures":
             case "folderdeepsyncfinished":

@@ -112,6 +112,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     pauseHovering: boolean = false;
     public selection: AbstractNode[] = [];
+    public selectionBelongingNodes: AbstractNode[] = [];
     mousePosition: { x: number, y: number } = { x: 0, y: 0 };
     autocolor: ColorTracker = new ColorTracker();
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
@@ -149,7 +150,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     colorChangeDuration: number = 200;
     render!: AbstractNodeFeature;
-    static hiddenColor: string = "rgb(25,25,25)";
+    static hiddenColor: string = "rgb(17,18,19)";
     static colorNodeDefault: string = "rgb(250,250,250)";
     static colorSelection: string = "rgb(57, 215, 255)";
     colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
@@ -433,6 +434,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         if (newSelectedNode) {
             this.selection = [];
+            this.selectionBelongingNodes = [];
             this.selection.push(newSelectedNode);
         } else
             if (findNode) {
@@ -443,6 +445,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 //     if (node) _this.selection.includes(node) ? _this.selection.splice(_this.selection.indexOf(node), 1) : _this.selection.push(node);
                 // } else {
                 this.selection = [];
+                this.selectionBelongingNodes = [];
                 if (node) this.selection.push(node);
                 // }
             }
@@ -451,6 +454,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         for (let i = 0; i < this.selection.length; i++) {
             const n = this.selection[i];
             listSelection.push(...n.descendants(), ...n.parents());
+            this.selectionBelongingNodes.push(...n.descendants(), ...n.parents());
         }
 
         this.fireSelectionUpdate();
@@ -461,6 +465,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     public clearSelection() {
         this.selection = [];
+        this.selectionBelongingNodes = [];
         this.setFilterList("selection");
         this.fireSelectionUpdate();
     }
@@ -882,7 +887,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             if (transition) {
 
-                const colorOld = this.getColorForNode(node, false, false);
+                const colorOld = this.getColorForNode(node);
                 let colorNew = this.render.getNodeColor(node, node.entry as AbstractNodeShell);
 
                 var scale = d3.scaleLinear<string>()
@@ -908,7 +913,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     let nodes: AbstractNode[] = entry.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
-                        const colorOld = this.getColorForNode(node, false, false);
+                        const colorOld = this.getColorForNode(node);
 
                         if (colorOld) {
                             let colorNew = this.render.getNodeColor(node, entry);
@@ -933,7 +938,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
                         let color = this.render.getNodeColor(node, entry);
-                        this.colorNodeMap.set(node, color);
+                        this.colorNodeMap.set(node, color == "h" ? OverviewEngine.hiddenColor : color);
                     }
                 }
 
@@ -967,32 +972,20 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         return this.nodeHovered == n;
     }
 
-    getColorForNode(node: AbstractNode, getHiddenInfo: boolean = false, hoverHighlighting: boolean = true): string {
-
-        if (node.flag == 1) {
-            // return "rgb(0,0,240)";
-        }
+    getColorForNode(node: AbstractNode): string {
 
         // when the node is faded out completly, return the default color
         const opacity = this.notFound.get(node);
         if (opacity && opacity.o == OverviewEngine.opacityMin) {
-            return OverviewEngine.colorNodeDefault;
+            return OverviewEngine.hiddenColor;
         }
 
         if (this.colorTransitionElapsed != undefined) {
             let scale = this.colorTransitionMap.get(node);
-            if (scale) {
-                const color = scale(this.colorTransitionElapsed);
-                return color;
-            }
+            if (scale) return scale(this.colorTransitionElapsed);
         } else {
             let c = this.colorNodeMap.get(node);
-            if (c) {
-                if (c == "h") {
-                    return getHiddenInfo ? "h" : OverviewEngine.hiddenColor;
-                }
-                return c;
-            }
+            if (c) return c;
         }
         return OverviewEngine.colorNodeDefault;
     }
@@ -1001,7 +994,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         let scale = this.transform ? this.transform.k : 1;
         let weight = 0.7;
+
         let lineWidth = (4 * weight) + (4 / scale) * (1 - weight);
+        if (entry.isSyncing) lineWidth += Math.sin(OverviewEngine.elapsedTotal / 300) * 10;
         let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
         op = 1 - op;
         op = Math.max(op, 0.075)
@@ -1066,9 +1061,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             let colorStart = this.getColorForNode(start);
 
-            let colorEnd = this.getColorForNode(end, true);
-            if (colorEnd == "h") {
-                colorStart = colorEnd;
+            let colorEnd = this.getColorForNode(end);
+            if (colorEnd == OverviewEngine.hiddenColor) {
+                // colorStart = colorEnd;
             }
 
             const grd = ctx.createLinearGradient(xStart, 0, xEnd, 0);
@@ -1107,12 +1102,12 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                 var r = this.getRadius(node);
 
-                if (node.isRoot() && entry.isSyncing) {
-                    r += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
-                }
-
                 ctx.fillStyle = this.getColorForNode(node);
                 ctx.strokeStyle = ctx.fillStyle;
+
+                if (node.isRoot() && entry.isSyncing) r += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
+
+
 
                 let xPos = widths[node.depth] ? widths[node.depth].x : 0;
 
@@ -1210,7 +1205,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         }
                         ctx.fillText(`${node.isCollection ? "+" + (node.collectionSize) : limitText(node.name)}  `, xPos, yName);
 
-                        if ((isNodeHovered || this.selection.includes(node))) {
+                        if ((isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
                             const text = this.render.getFeatureText(node, entry);
                             if (text) ctx.fillText(text, xPos, yName + translate + (fontSize + 4) * 1);
                         }

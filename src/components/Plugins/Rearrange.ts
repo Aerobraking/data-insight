@@ -130,8 +130,7 @@ export default class ReArrange extends Plugin {
 
 
         if (this.onlyResizable && e.key == "f") {
-            this.fitSize = !this.fitSize;
-            console.log(this.onlyResizable, this.fitSize);
+            this.fitSize = !this.fitSize; 
             this.fitElementSize();
         }
 

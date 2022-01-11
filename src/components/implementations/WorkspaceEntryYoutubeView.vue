@@ -51,8 +51,7 @@ function htmlToElement(html: string) {
   try {
     html = html.trim(); // Never return a text node of whitespace as the result
     template.innerHTML = html;
-  } catch (error) {
-    console.log("feeeeehler");
+  } catch (error) { 
   }
 
   return template.content.firstChild;

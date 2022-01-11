@@ -36,16 +36,14 @@ $color-Selection: rgba(57, 215, 255, 1);
   box-sizing: border-box;
   width: 100%;
   height: 40px;
-  margin: 0;
-  margin-top: 5px;
-
+  margin: 5px 0 5px 0; 
   &:hover {
     cursor: pointer;
     border: 3px solid $color-Selection;
   }
 }
 .gradient-selected {
-  border: 2px solid $color-Selection;
+  border: 4px solid $color-Selection;
 }
 </style>
 
