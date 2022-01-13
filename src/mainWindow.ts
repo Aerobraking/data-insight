@@ -94,6 +94,7 @@ function startApp(store: Store) {
 
     // features
     app.component(Feature.None, featurenone);
+    app.component(Feature.FolderLastModify, featuresize);
     app.component(Feature.FolderSize, featuresize);
     app.component(Feature.FolderQuantity, featuresize);
 

@@ -7,7 +7,7 @@ import { AbstractLink, AbstractNode, RectangleCollide } from "./AbstractNode";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { OverviewEngine } from "@/components/app/OverviewEngine";
 import FolderNode from "../../implementations/filesystem/FolderNode";
-import { NodeFeatures, Feature,    FeatureDataHandler } from "./AbstractNodeFeature";  
+import { NodeFeatures, Feature, FeatureDataHandler } from "./AbstractNodeFeature";
 import { FeatureInstanceList } from "./AbstractNodeFeatureView";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
@@ -133,7 +133,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     }
 
 
-    public addFeatures(path: string, features: NodeFeatures) { 
+    public addFeatures(path: string, features: NodeFeatures) {
 
         let node = this.getNodeByPath(path);
         if (node) {
@@ -177,7 +177,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
                                     if (FeatureInstanceList[f] != undefined) {
 
                                         const d: any = FeatureInstanceList[f]?.getNewDataInstance();
-                                        if (d) featuresParentRecurisve[f] = d;
+                                        if (d != undefined) featuresParentRecurisve[f] = d;
                                     }
                                 }
 
@@ -199,7 +199,12 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
                         const dataHandler = FeatureDataHandler[dataParent.t];
                         if (dataHandler) {
                             dataHandler(dataParent as any, value)
+                        } else {
+                            console.error("dataHandler von parent nicht gefunden", f);
                         }
+                    } else {
+                        console.error("Data von parent nicht gefunden", f);
+
                     }
                 })
 
@@ -461,7 +466,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         //     vyMax = vy > vyMax ? vy : vyMax;
         // }
 
-  
+
         // this.simulation.alpha(1);
         // this.simulation.tick();
 
@@ -477,7 +482,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
             .y(function (d) { return d.getY(); });
 
         this.quadtree.addAll(this.nodes);
- 
+
 
 
     }

@@ -222,13 +222,13 @@ export abstract class AbstractNodeFeatureGradient<N extends AbstractNode = Abstr
 
     public colorFunction?: (n: number) => string;
 
-    public abstract getGradientValue(node: N): number|undefined;
+    public abstract getGradientValue(node: N): number | undefined;
 
     public getNodeColor(node: N, entry: AbstractNodeShell<N>): string {
 
         if (this.colorFunction) {
 
-            let data =this.getGradientValue(node);
+            let data = this.getGradientValue(node);
             if (data) {
                 // round the numbers to the < | > works correctly with the large numbers.
                 const max = Math.round(this.settings.sliderRange[1]), min = Math.round(this.settings.sliderRange[0]);

@@ -12,12 +12,13 @@
       <button>
         <CogOutline />
       </button>
+
       <template #content>
         <h3>Gradient Style</h3>
         <ColorGradient
           v-for="e in model.gradients"
           :class="{ 'gradient-selected': e.id === model.settings.gradientId }"
-          :key="e.id" 
+          :key="e.id"
           @mouseup="updateGradient(e.id)"
           :id="e.id"
           :gradient="e"
@@ -26,6 +27,9 @@
     </tippy>
 
     <div ref="el" class="slider"></div>
+    <button class="fit-range" @click="setRange()">
+      <ArrowExpandVertical />
+    </button>
   </div>
 </template>
 
@@ -33,25 +37,30 @@
 import { Tippy } from "vue-tippy";
 import { defineComponent } from "vue";
 import * as _ from "underscore";
-import noUiSlider, { API, PipsMode } from "nouislider"; 
+import noUiSlider, { API, PipsMode } from "nouislider";
 import { Instance } from "@/store/model/app/overview/OverviewDataCache";
 import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
 import { Workspace } from "@/store/model/app/Workspace";
 import ColorGradient from "@/components/app/ColorGradient.vue";
-import { NodeFeatureSize } from "@/store/model/implementations/filesystem/FolderFeatures";
-import { CogOutline } from "mdue";
+import { CogOutline, ArrowExpandVertical } from "mdue";
 import { AbstractNodeFeatureGradient } from "@/store/model/app/overview/AbstractNodeFeatureView";
+import { AbstractNode } from "@/store/model/app/overview/AbstractNode";
 
 export default defineComponent({
   name: Feature.FolderSize,
   components: {
     ColorGradient,
+    ArrowExpandVertical,
     CogOutline,
     Tippy,
   },
   props: {
     workspace: {
       type: Workspace,
+      required: true,
+    },
+    selection: {
+      type: AbstractNode as any | undefined,
       required: true,
     },
     model: {
@@ -61,8 +70,10 @@ export default defineComponent({
   },
   data(): {
     tempGradientId: string | undefined;
+    slider: any;
   } {
     return {
+      slider: undefined,
       tempGradientId: undefined,
     };
   },
@@ -70,7 +81,7 @@ export default defineComponent({
   mounted() {
     const sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
-    var slider = noUiSlider.create(sliderDiv, {
+    this.slider = noUiSlider.create(sliderDiv, {
       start: [
         this.model.settings.sliderRange[0],
         this.model.settings.sliderRange[1],
@@ -92,7 +103,7 @@ export default defineComponent({
       },
     });
 
-    slider.on(
+    this.slider.on(
       "update.one",
       (
         values: (number | string)[],
@@ -110,6 +121,38 @@ export default defineComponent({
     this.updateGradient(this.model.settings.gradientId);
   },
   methods: {
+    setRange() {
+      let min = Infinity,
+        max = -Infinity;
+      const data = Instance.getData(this);
+
+      const checkValue = (n: AbstractNode) => {
+        const v = this.model.getGradientValue(n, n.entry);
+        v != undefined && v > 0 && v < min ? (min = v) : "";
+        v != undefined && v > 0 && v > max ? (max = v) : "";
+      };
+
+      if (this.selection != undefined) {
+        [...(this.selection as AbstractNode).descendants()].forEach((n) =>
+          checkValue(n)
+        );
+      } else {
+        data.forEach((s) => s.nodes.forEach((n) => checkValue(n)));
+      }
+
+      if (data.length == 0 || (min == Infinity && max == -Infinity)) return;
+
+      min < this.model.rangeValues[0] ? (min = this.model.rangeValues[0]) : "";
+      max > this.model.rangeValues[this.model.rangeValues.length - 1]
+        ? (max = this.model.rangeValues[this.model.rangeValues.length - 1])
+        : "";
+
+      this.slider.set([min, max]);
+
+      if (Instance.getEngine(this)) {
+        Instance.getEngine(this).updateNodeColors();
+      }
+    },
     restoreGradient() {
       if (
         this.tempGradientId &&
@@ -161,24 +204,27 @@ export default defineComponent({
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 $color-Selection: rgba(57, 215, 255, 1);
+.fit-range {
+  margin-top: 4px;
+}
 .gradient-feature-view {
-  height: 100%;
+  height: 80%;
   transform-origin: top right;
-  transform: scale(0.8);
+  transform: scale(0.9);
   h3 {
     white-space: nowrap;
     margin: 5px;
   }
   button {
-    margin-left: -6px;
+    margin-left: -9px;
     margin-bottom: 15px;
   }
 }
 
 .slider {
-  height: 100%;
+  height: 80%;
   transform-origin: top right;
-  transform: scale(0.8);
+  // transform: scale(0.8);
 }
 </style>
 

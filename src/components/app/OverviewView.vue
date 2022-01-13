@@ -40,6 +40,7 @@
             :key="e.id"
             :model="e"
             :workspace="model"
+            :selection="selection"
             :is="e.id"
             ref="featureview"
             v-show="model.overview.featureActive == e.id"

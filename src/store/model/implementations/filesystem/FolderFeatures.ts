@@ -1,5 +1,5 @@
-import { fileamountFormat, filesizeFormat } from "@/utils/format";
-import { FeatureDataSum, Feature } from "../../app/overview/AbstractNodeFeature";
+import { fileamountFormat, filesizeFormat, timeFormat } from "@/utils/format";
+import { FeatureDataSum, Feature, FeatureDataMedian } from "../../app/overview/AbstractNodeFeature";
 import { AbstractNodeFeatureGradient, FeatureGradientSettings, FeatureViewDecorator } from "../../app/overview/AbstractNodeFeatureView";
 import { AbstractNodeShell } from "../../app/overview/AbstractNodeShell";
 
@@ -50,6 +50,55 @@ export class NodeFeatureSize extends AbstractNodeFeatureGradient<FolderNode, Fea
     }
 }
 
+@FeatureViewDecorator()
+export class NodeFeatureLastModifiy extends AbstractNodeFeatureGradient<FolderNode, FeatureDataMedian> {
+    public formatter: (value: number) => string = timeFormat;
+    public margin: number = 60 * 10;
+
+    public getNewSettingsInstance(): FeatureGradientSettings {
+        return new FeatureGradientSettings(0, 60 * 60 * 24 * 365);
+    }
+
+    public getNewDataInstance(): FeatureDataMedian {
+        return new FeatureDataMedian();
+    }
+
+    readonly id: Feature = Feature.FolderLastModify;
+    readonly min: number = 0;
+    readonly max: number = 1024 * 1024 * 1024 * 1024;
+    public readonly readableName: string = "Last Modified";
+
+    constructor() {
+        super({
+            min: 0, // kb
+            20: 60 * 60, // 1 Stunde
+            40: 60 * 60 * 24, // 1 Tag
+            60: 60 * 60 * 24 * 30, // 1 Monat
+            80: 60 * 60 * 24 * 365, // 1 Jahr
+            max: 60 * 60 * 24 * 365 * 10, // 10 Jahre
+        });
+    }
+
+
+    public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
+        return 0;
+    }
+
+    getGradientValue(node: FolderNode): number | undefined {
+        const data = node.getFeatureValue(Feature.FolderLastModify);
+        return data && data.m && data.m > 0 ? (new Date().getTime() / 1000) - data.m : undefined;
+    }
+
+    public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
+        const data = nodes.getFeatureValue(Feature.FolderLastModify);
+        if (data != undefined && data.m != undefined && (Math.floor(new Date().getTime() / 1000)) - data.m < 0)
+            return "W: " + data.m + " | " + data.m?.toString().length + " | " + ((Math.floor(new Date().getTime() / 1000)) - data.m);
+            
+        const hours = data && data.m && data.m > 0 ? (Math.floor(new Date().getTime() / 1000)) - data.m : undefined;
+        return hours ? timeFormat(hours) + ": " + (data && data.m ? data.m + " | " + data.m?.toString().length + " | " + ((Math.floor(new Date().getTime() / 1000)) - data.m) : "") : "No Value";
+    }
+}
+
 /**
  * Dieses Feature wird von Folder Nodes benutzt. Es nutzt einen Gradienten als view, dessen min und max werte hier enthalten sind.
  */
@@ -68,7 +117,7 @@ export class NodeFeatureQuantity extends AbstractNodeFeatureGradient<FolderNode,
     }
 
     public getNewSettingsInstance(): FeatureGradientSettings {
-        return new FeatureGradientSettings(0, 64);
+        return new FeatureGradientSettings(0, 50000);
     }
 
     public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {

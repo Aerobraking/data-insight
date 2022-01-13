@@ -14,6 +14,7 @@ export enum FeatureDataType {
  */
 export enum Feature {
     None = "N",
+    FolderLastModify = "FLM", // last modifiy
     FolderSize = "FS",
     FolderQuantity = "FQ",
     FolderFileTypes = "FFA"
@@ -26,7 +27,8 @@ export abstract class AbstractFeatureData {
 @Expose({ name: "FDM" })
 export class FeatureDataMedian extends AbstractFeatureData {
     // size 
-    s: number = 0;
+    m: number | undefined = undefined; // the sum of the values of the entries divided through "c"
+    c: number = 0; // number of entries
     t = FeatureDataType.MEDIAN;
 }
 
@@ -48,12 +50,14 @@ export class FeatureDataList extends AbstractFeatureData {
  * An Object that can contain any type of FeatureData
  */
 export type FolderNodeFeatures = {
+    [Feature.FolderLastModify]: FeatureDataMedian,
     [Feature.FolderSize]: FeatureDataSum,
     [Feature.FolderQuantity]: FeatureDataSum,
     [Feature.FolderFileTypes]: FeatureDataList,
 }
 
 export type NodeFeatures = {
+    [Feature.FolderLastModify]?: FeatureDataMedian,
     [Feature.FolderSize]?: FeatureDataSum,
     [Feature.FolderQuantity]?: FeatureDataSum,
     [Feature.FolderFileTypes]?: FeatureDataList,
@@ -61,6 +65,7 @@ export type NodeFeatures = {
 }
 
 export class NodeFeaturesClass implements NodeFeatures {
+    [Feature.FolderLastModify]?: FeatureDataMedian;
     [Feature.FolderSize]?: FeatureDataSum;
     [Feature.FolderQuantity]?: FeatureDataSum;
     [Feature.FolderFileTypes]?: FeatureDataList;
@@ -72,19 +77,25 @@ export type AbstractNodeFeaturesTypes = {
 }
 
 export interface FeatureDataHandlerIfc extends AbstractNodeFeaturesTypes {
-    [FeatureDataType.MEDIAN]: (data: FeatureDataSum, dataToAdd: FeatureDataSum[]) => void
+    [FeatureDataType.MEDIAN]: (data: FeatureDataMedian, dataToAdd: FeatureDataMedian[]) => void
     [FeatureDataType.SUM]: (data: FeatureDataSum, dataToAdd: FeatureDataSum[]) => void
     [FeatureDataType.LIST]: (data: FeatureDataList, dataToAdd: FeatureDataList[]) => void
 }
 
 export const FeatureDataHandler: FeatureDataHandlerIfc
     = {
+    [FeatureDataType.MEDIAN]: (data: FeatureDataMedian, dataToAdd: FeatureDataMedian[]) => {
+        if (data.m == undefined) data.m = 0, data.c = 0; // init value if not present
+        let sumEntries = data.c;
+        dataToAdd.forEach(d => d.c != undefined ? sumEntries += d.c : ""); // get the total amount of entries
 
-    [FeatureDataType.MEDIAN]: (data: FeatureDataSum, dataToAdd: FeatureDataSum[]) => {
-        let divider = 0;
+        const getShare = (d: FeatureDataMedian) => d.c / sumEntries;  // add the median value based on the percentage it takes of all the entries
+        let newMedian = getShare(data);
+
         for (const d of dataToAdd) {
-            data.s += d.s;
+            if (d.m != undefined) newMedian += getShare(d);
         }
+
     },
     [FeatureDataType.SUM]: (data: FeatureDataSum, dataToAdd: FeatureDataSum[]) => {
         for (const d of dataToAdd) {

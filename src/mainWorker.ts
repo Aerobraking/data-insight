@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
 import { FolderSync, FolderSyncResult, FolderSyncFinished, FolderFeatureResult } from './store/model/implementations/filesystem/FileSystemMessages';
-import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, FolderNodeFeatures } from './store/model/app/overview/AbstractNodeFeature'; 
+import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, FolderNodeFeatures, FeatureDataMedian } from './store/model/app/overview/AbstractNodeFeature';
 import path from "path";
 
 ipcRenderer.on("log", (event, log) => {
@@ -48,7 +48,7 @@ ipcRenderer.on("msg-main",
 
                 const depthChildren = depth + 1;
 
-                const isCollection: boolean = folders.length >= msg.collectionSize || depthChildren > maxDepth || depthChildren > 100;
+                const isCollection: boolean = (folders.length >= msg.collectionSize && depthChildren > 1) || depthChildren > maxDepth || depthChildren > 100;
 
                 console.log("folder: " + pathCurrent);
 
@@ -78,8 +78,13 @@ ipcRenderer.on("msg-main",
 
             let updateSteps = 0;
 
+            function calculateMedian(features: FolderNodeFeatures) {
+                features[Feature.FolderLastModify].m = Math.floor(features[Feature.FolderLastModify].m as number / features[Feature.FolderLastModify].c);
+            }
+
             function handleDirectory(pathF: string, files: string[], features: FolderNodeFeatures, sendResults: boolean = true) {
 
+                let mtimeCount = 0;
                 /**
                  * Add the stats from all files together
                  */
@@ -97,25 +102,34 @@ ipcRenderer.on("msg-main",
                         // file quantity feature
                         features[Feature.FolderQuantity].s += 1;
 
+
                         // file type feature
                         const fileExtention = path.extname(fileName);
                         if (features[Feature.FolderFileTypes].l[fileExtention] == undefined) {
                             features[Feature.FolderFileTypes].l[fileExtention] = 0;
                         }
                         features[Feature.FolderFileTypes].l[fileExtention] += 1;
+                        if (!isNaN(stats.mtimeMs)) {
+                            features[Feature.FolderLastModify].m == undefined ? features[Feature.FolderLastModify].m = 0 : ""; // init value
+                            features[Feature.FolderLastModify].m = features[Feature.FolderLastModify].m as number + Math.floor(stats.mtimeMs / 1000);
+                            mtimeCount++;
+                            features[Feature.FolderLastModify].c += 1;
+                        }
 
-                        // folderStat.stats.mtime.value += isNaN(stats.mtimeMs) ?       0 : stats.mtimeMs;      // last modifiy
-                        // folderStat.stats.atime.value += isNaN(stats.atimeMs) ?       0 : stats.atimeMs;      // last access
-                        // folderStat.stats.ctime.value += isNaN(stats.birthtimeMs) ?   0 : stats.birthtimeMs;  // creation time
+
+                        //  = isNaN(stats.mtimeMs) ?       0 : stats.mtimeMs;      // last modifiy
+                        //  = isNaN(stats.atimeMs) ?       0 : stats.atimeMs;      // last access
+                        //  = isNaN(stats.birthtimeMs) ?   0 : stats.birthtimeMs;  // creation time
                     }
                 }
 
-                // create the mean values
-                if (features[Feature.FolderQuantity].s > 0) {
-                    // folderStat.stats.mtime.value /= fileCount;
-                    // folderStat.stats.atime.value /= fileCount;
-                    // folderStat.stats.ctime.value /= fileCount;
+                // get average of the file modify time
+                if (sendResults && features[Feature.FolderLastModify] && features[Feature.FolderLastModify].m != undefined) {
+                    console.log(features[Feature.FolderLastModify].m, "file count: ", mtimeCount);
+                    calculateMedian(features);
                 }
+
+
 
                 if (sendResults || updateSteps++ % 20 == 0) {
                     let result: FolderFeatureResult = {
@@ -156,6 +170,7 @@ ipcRenderer.on("msg-main",
                 const pathF = element.path;
 
                 let features: FolderNodeFeatures = {
+                    [Feature.FolderLastModify]: new FeatureDataMedian(),
                     [Feature.FolderSize]: new FeatureDataSum(),
                     [Feature.FolderQuantity]: new FeatureDataSum(),
                     [Feature.FolderFileTypes]: new FeatureDataList()
@@ -168,11 +183,7 @@ ipcRenderer.on("msg-main",
 
                     collectFeaturesRec(pathF, pathF, 0, features);
 
-                    // if (features.stats.amount.value > 0) {
-                    //     features.stats.mtime.value /= features.stats.amount.value;
-                    //     features.stats.atime.value /= features.stats.amount.value;
-                    //     features.stats.ctime.value /= features.stats.amount.value;
-                    // }
+                    calculateMedian(features);
 
                     let result: FolderFeatureResult = {
                         type: "folderfeatures",

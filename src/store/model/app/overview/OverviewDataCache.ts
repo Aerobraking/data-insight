@@ -2,7 +2,7 @@ import { OverviewEngine } from "@/components/app/OverviewEngine";
 import { Workspace } from "../Workspace";
 import { AbstractNodeShell } from "./AbstractNodeShell";
 
- 
+
 
 export class OverviewTransferHandler {
 
@@ -25,11 +25,11 @@ export class OverviewTransferHandler {
         }
     }
 
-    getData(id: number): AbstractNodeShell[] {
-        let a = this.hash.get(id);
+    getData(id: number | { workspace: Workspace }): AbstractNodeShell[] {
+        let a = (typeof id == 'number') ? this.hash.get(id) : this.hash.get(id.workspace.id);
         if (!a) {
             a = [];
-            this.hash.set(id, a);
+            this.hash.set((typeof id == 'number') ? id : id.workspace.id, a);
         }
         return a;
     }
@@ -54,12 +54,11 @@ export class OverviewTransferHandler {
         this.mapEngines.set(id, overviewEngine);
         return ws;
     }
-    
-    getEngine(id: number): OverviewEngine {
-        let a = this.mapEngines.get(id);
-        return a as OverviewEngine;
-    }
 
+    getEngine(id: number | { workspace: Workspace }): OverviewEngine {
+        if (typeof id == 'number') return this.mapEngines.get(id) as OverviewEngine;
+        else return this.mapEngines.get(id.workspace.id) as OverviewEngine;
+    }
 }
 
 
