@@ -78,8 +78,7 @@ export class NodeFeatureLastModifiy extends AbstractNodeFeatureGradient<FolderNo
             max: 60 * 60 * 24 * 365 * 10, // 10 Jahre
         });
     }
-
-
+ 
     public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
         return 0;
     }
@@ -91,11 +90,8 @@ export class NodeFeatureLastModifiy extends AbstractNodeFeatureGradient<FolderNo
 
     public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
         const data = nodes.getFeatureValue(Feature.FolderLastModify);
-        if (data != undefined && data.m != undefined && (Math.floor(new Date().getTime() / 1000)) - data.m < 0)
-            return "W: " + data.m + " | " + data.m?.toString().length + " | " + ((Math.floor(new Date().getTime() / 1000)) - data.m);
-            
-        const hours = data && data.m && data.m > 0 ? (Math.floor(new Date().getTime() / 1000)) - data.m : undefined;
-        return hours ? timeFormat(hours) + ": " + (data && data.m ? data.m + " | " + data.m?.toString().length + " | " + ((Math.floor(new Date().getTime() / 1000)) - data.m) : "") : "No Value";
+        const value = data && data.m && data.m > 0 ? (Math.floor(new Date().getTime() / 1000)) - data.m : undefined;
+        return value ? timeFormat(value) /*+ ": " + (data && data.m ? data.m + " | " + data.m?.toString().length + " | " + ((Math.floor(new Date().getTime() / 1000)) - data.m) : "") */ : "No Value";
     }
 }
 

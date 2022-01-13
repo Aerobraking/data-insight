@@ -200,10 +200,10 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
                         if (dataHandler) {
                             dataHandler(dataParent as any, value)
                         } else {
-                            console.error("dataHandler von parent nicht gefunden", f);
+                            console.error("DataHandler for parent data not found", f);
                         }
                     } else {
-                        console.error("Data von parent nicht gefunden", f);
+                        console.error("Data of parent not found", f);
 
                     }
                 })

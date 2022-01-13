@@ -27,9 +27,17 @@
     </tippy>
 
     <div ref="el" class="slider"></div>
-    <button class="fit-range" @click="setRange()">
-      <ArrowExpandVertical />
-    </button>
+    <tippy :interactiveBorder="10" :placement="'left'" :offset="[0, 20]">
+      <button
+        class="fit-range"
+        :class="{ 'button-active': model.settings.autoSetRange }"
+        @click.ctrl.left.exact="fitRangeClicked(true)"
+        @click.left.exact="fitRangeClicked()"
+      >
+        <ArrowExpandVertical />
+      </button>
+      <template #content> Fit Range to (selected) Data </template>
+    </tippy>
   </div>
 </template>
 
@@ -61,27 +69,39 @@ export default defineComponent({
     },
     selection: {
       type: AbstractNode as any | undefined,
-      required: true,
+      required: false,
     },
     model: {
       type: AbstractNodeFeatureGradient as any,
       required: true,
     },
   },
+  watch: {
+    "workspace.overview.featureActive": function (
+      newValue: Feature | undefined,
+      oldValue: Feature | undefined
+    ) {
+      this.updateFeatureStatus();
+    },
+  },
   data(): {
     tempGradientId: string | undefined;
     slider: any;
+    sliderDiv: HTMLDivElement | undefined;
+    fitRangeTimer: NodeJS.Timeout | undefined;
   } {
     return {
+      sliderDiv: undefined,
+      fitRangeTimer: undefined,
       slider: undefined,
       tempGradientId: undefined,
     };
   },
   unmounted() {},
   mounted() {
-    const sliderDiv = this.$el.getElementsByClassName("slider")[0];
+    this.sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
-    this.slider = noUiSlider.create(sliderDiv, {
+    this.slider = noUiSlider.create(this.sliderDiv as any, {
       start: [
         this.model.settings.sliderRange[0],
         this.model.settings.sliderRange[1],
@@ -119,9 +139,43 @@ export default defineComponent({
     );
 
     this.updateGradient(this.model.settings.gradientId);
+
+    this.updateFeatureStatus();
   },
   methods: {
-    setRange() {
+    updateFeatureStatus() {
+      const f: Feature | undefined = this.workspace.overview.featureActive;
+
+      if (this.fitRangeTimer) clearTimeout(this.fitRangeTimer);
+
+      if (
+        f == this.model.id &&
+        (this.model as AbstractNodeFeatureGradient).settings.autoSetRange
+      ) {
+        this.sliderDiv?.setAttribute("disabled", "true");
+        this.fitRangeTimer = setInterval(() => {
+          this.fitRange();
+        }, 500);
+      } else {
+        this.sliderDiv?.removeAttribute("disabled");
+        this.fitRangeTimer = undefined;
+      }
+    },
+    fitRangeClicked(toggle: boolean | undefined = undefined) {
+      toggle == undefined ? (toggle = false) : 0;
+
+      (this.model as AbstractNodeFeatureGradient).settings.autoSetRange = toggle
+        ? !(this.model as AbstractNodeFeatureGradient).settings.autoSetRange
+        : false;
+
+      this.updateFeatureStatus();
+
+      if (!(this.model as AbstractNodeFeatureGradient).settings.autoSetRange) {
+        this.fitRange();
+      }
+    },
+
+    fitRange() {
       let min = Infinity,
         max = -Infinity;
       const data = Instance.getData(this);

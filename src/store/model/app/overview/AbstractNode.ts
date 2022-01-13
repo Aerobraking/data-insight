@@ -3,6 +3,7 @@ import { Type, Exclude, Expose } from "class-transformer";
 import * as d3 from "d3";
 import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";
 import { Feature, FeatureDataList, FeatureDataMedian, FeatureDataSum, NodeFeatures, NodeFeaturesClass } from "./AbstractNodeFeature";
+import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 // import { COLUMNWIDTH } from "../../components/app/OverviewEngine"; 
 
 /**
@@ -406,19 +407,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     // the OverviewEntry this nodes belongs to. will be set after loading from the json
     @Exclude()
-    entry: {
-        nodeUpdate(): void;
-        nodeRemoved(): void;
-        path: string;
-        root: any;
-        x: number;
-        y: number;
-        simulation: any;
-        id: number;
-        isSimulationActive: boolean;
-        nodeAdded(node: any): void;
-        loadCollection(node: any): void;
-    } | undefined;
+    entry: AbstractNodeShellIfc  | undefined;
 
     // the depth inside the tree structure, relative to the root node
     @Expose({ name: 'd' })

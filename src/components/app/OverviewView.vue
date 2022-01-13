@@ -312,8 +312,8 @@ export default defineComponent({
      * get the settings from the overview to the view. when no settings exists, create a new instance.
      */
     for (let i = 0; i < listFeatures.length; i++) {
-      const f = listFeatures[i]; 
-      
+      const f = listFeatures[i];
+
       const settings = this.model.overview.featureSettings[f.id];
       f.settings = settings ? settings : f.getNewSettingsInstance();
       this.model.overview.featureSettings[f.id] = f.settings;
@@ -606,21 +606,25 @@ export default defineComponent({
     },
     loadCollection() {
       if (Instance.getEngine(this.idOverview)) {
-        let n: FolderNode = Instance.getEngine(this.idOverview)
-          .selection[0] as FolderNode;
+        let n: AbstractNode = Instance.getEngine(this.idOverview).selection[0];
 
-        if (n && n.isCollection && n.entry) {
-          n.entry.loadCollection(n);
+        if (n &&  n.entry) {
+          if (n.isCollection ) {
+              n.entry.loadCollection(n);
+          } else {
+            n.descendants().filter(c=>c.isCollection).forEach(c=>n.entry?.loadCollection(c))
+          }
+        
         }
 
         /**
          * A dirty hack to update the computed property on the selection, as the synced subfolders will be added after the syncing that takes some time. For huge folders this may not work.
          */
-        setTimeout(() => {
-          const t = this.selection;
-          this.selection = undefined;
-          this.selection = t;
-        }, 100);
+        // setTimeout(() => {
+        //   const t = this.selection;
+        //   this.selection = undefined;
+        //   this.selection = t;
+        // }, 100);
       }
     },
     createCollection() {

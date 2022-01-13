@@ -87,14 +87,21 @@ export class FeatureGradientSettings extends AbstractFeatureSettings {
 
     sliderRange: [number, number];
     gradientId: string = "interpolateWarm";
+    public autoSetRange:boolean=false;
 }
+
+// #################
+//
+// Following functions are extracted from NoUISlider Package (and modified for using with my code) for rectrieving the percentage value of the slider.
+//
+// #################
 
 function subRangeRatio(pa: number, pb: number) {
     return 100 / (pb - pa);
 }
-// (percentage) How many percent is this value of this range?
+
 /**
- * 
+ * (percentage) How many percent is this value of this range?
  * @param {*} range  [2]number
  * @param {*} value 
  * @param {*} startRange number, normalerweise 0
@@ -103,9 +110,9 @@ function subRangeRatio(pa: number, pb: number) {
 function fromPercentage(range: number[], value: number, startRange: number) {
     return (value * 100) / (range[startRange + 1] - range[startRange]);
 }
-// (percentage) Where is this value on this range?
+
 /**
- * 
+ * (percentage) Where is this value on this range?
  * @param {*} range [2]number
  * @param {*} value number
  * @returns 
@@ -126,14 +133,15 @@ function getJ(value: number, arr: number[]) {
         j += 1;
     }
     return j;
-}/**
- * 
+}
+
+/**
+ * (percentage) Input a value, find where, on a scale of 0-100, it applies.
  * @param {*} xVal Konkrete Werte, also 0 bytes bis 194523452345 bytes
  * @param {*} xPct Die Prozentwerte zu dem xVal, also 0, 20, 40, usw.
  * @param {*} value Der Wert in Bytes
  * @returns 
  */
-// (percentage) Input a value, find where, on a scale of 0-100, it applies.
 function toStepping(xVal: number[], xPct: number[], value: number) {
 
     // ist unser wert größer als das maximum, geb 100 zurück
@@ -173,16 +181,19 @@ export abstract class AbstractNodeFeatureGradient<N extends AbstractNode = Abstr
         this.setGradienFunction("");
     }
 
-    rangeValues: number[];
-    rangePercentage: number[];
+    private rangeValues: number[];
+    private rangePercentage: number[];
 
+    /**
+     * Interface from nouislider
+     */
     public readonly range: {
         min: number;
         max: number;
         [key: string]: number;
     };
 
-    gradients: Gradient[] = [
+    private gradients: Gradient[] = [
         new Gradient((n: number) => {
             let value = n * 255 * 0.3;
             value = 180;
@@ -199,7 +210,12 @@ export abstract class AbstractNodeFeatureGradient<N extends AbstractNode = Abstr
         )
     ];
 
-    setGradienFunction(name: string): Gradient {
+    public abstract formatter: (value: number) => string;
+    public abstract margin: number;
+    public abstract id: Feature;
+    public abstract readonly readableName: string;
+
+    public setGradienFunction(name: string): Gradient {
         let gradient: Gradient | undefined = this.gradients.find((g) => g.id == name);
         gradient = gradient ? gradient : this.gradients[0];
         if (gradient) this.colorFunction = (n: number) => {
@@ -208,13 +224,6 @@ export abstract class AbstractNodeFeatureGradient<N extends AbstractNode = Abstr
         this.settings.gradientId = name;
         return gradient;
     }
-
-    public abstract formatter: (value: number) => string;
-    public abstract margin: number;
-    public abstract id: Feature;
-    public abstract readonly readableName: string;
-
-
 
     public isNodeHidden(nodes: N, entry: AbstractNodeShell<N>): boolean {
         return this.getNodeColor(nodes, entry) == "h";
@@ -238,9 +247,7 @@ export abstract class AbstractNodeFeatureGradient<N extends AbstractNode = Abstr
                 const pmax = toStepping(this.rangeValues, this.rangePercentage, max);
                 const pR = Math.min(1, (p - pmin) / (pmax - pmin));
 
-                return p < pmin || p > pmax
-                    ? "h"
-                    : this.colorFunction(1 - pR);
+                return p < pmin || p > pmax ? "h" : this.colorFunction(1 - pR);
             }
 
             return "white";

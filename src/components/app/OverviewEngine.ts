@@ -698,7 +698,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     nodeAdded(node: AbstractNode) {
         node.colorID = this.autocolor.register(node);
         this.updateNodeColors(node, false);
-        this.updateSelection();
+        this.updateSelection(false);
     }
 
     /**
@@ -1194,7 +1194,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                         ctx.fillText(`${node.isCollection ? limitText(node.name) + " (+ " + (node.collectionSize) + ")" : limitText(node.name)}  `, xPos, yName);
 
-                        if ((isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
+                        if (true|| (isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
                             const text = this.render.getFeatureText(node, entry);
                             if (text) ctx.fillText(text, xPos, yName + translate + (fontSize + 4) * 1);
                         }

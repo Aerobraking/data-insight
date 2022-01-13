@@ -85,16 +85,19 @@ export interface FeatureDataHandlerIfc extends AbstractNodeFeaturesTypes {
 export const FeatureDataHandler: FeatureDataHandlerIfc
     = {
     [FeatureDataType.MEDIAN]: (data: FeatureDataMedian, dataToAdd: FeatureDataMedian[]) => {
+        //  debugger
         if (data.m == undefined) data.m = 0, data.c = 0; // init value if not present
         let sumEntries = data.c;
-        dataToAdd.forEach(d => d.c != undefined ? sumEntries += d.c : ""); // get the total amount of entries
+        dataToAdd.forEach(d => d.m != undefined && d.c > 0 ? sumEntries += d.c : ""); // get the total amount of entries
 
-        const getShare = (d: FeatureDataMedian) => d.c / sumEntries;  // add the median value based on the percentage it takes of all the entries
+        const getShare = (d: FeatureDataMedian) => (d.m != undefined && d.c > 0) ? d.m * (d.c / sumEntries) : 0;  // add the median value based on the percentage it takes of all the entries
         let newMedian = getShare(data);
 
         for (const d of dataToAdd) {
-            if (d.m != undefined) newMedian += getShare(d);
+            newMedian += getShare(d);
         }
+
+        sumEntries > 0 ? (() => { data.c = sumEntries, data.m = Math.floor(newMedian); })() : "";
 
     },
     [FeatureDataType.SUM]: (data: FeatureDataSum, dataToAdd: FeatureDataSum[]) => {
@@ -114,14 +117,3 @@ export const FeatureDataHandler: FeatureDataHandlerIfc
         }
     }
 }
-
-/**
- * Jedes Feature braucht ein enum oder string als ident. Das muss im Node und hier im Feature hinterlegt werden.
- * Die Features werden dann mit ihrer View in der Overview geladen.
- * Die Features brauchen einen Typen der sagt wie sie kombiniert werden in den Nodes. Mir fallen ein:
- * Sum
- * Average
- * List {jpg:23,png:4,ini}
- * Für jedes Feature ne Klasse erstellen die Berechnungen im Node durchführen per Klassen Instanzen Liste?
- * Das Rendering in der Overview auch pro Feature machen?
- */
