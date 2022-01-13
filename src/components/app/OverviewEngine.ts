@@ -14,8 +14,9 @@ import { Overview, Workspace } from "@/store/model/app/Workspace";
 import { AbstractNodeShell, NodeShellListener } from "@/store/model/app/overview/AbstractNodeShell";
 import { ipcRenderer } from "electron";
 import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
-import { Feature, FeatureDataSum } from "@/store/model/app/overview/AbstractNodeFeature";
+import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
 import { AbstractNodeFeature } from "@/store/model/app/overview/AbstractNodeFeatureView";
+import { Layouter } from "@/store/model/app/overview/NodeLayout";
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -364,7 +365,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         }
 
                         // prevent freeze while dragging
-                        node.entry?.simulation.alpha(1);  // prevent freeze while dragging
+                        // node.entry?.simulation.alpha(1);  // prevent freeze while dragging
                     }
                     _this.fireSelectionUpdate();
 
@@ -732,9 +733,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     public tick(): void {
 
 
-        for (let index = 0; index < this._rootNodes.length; index++) {
-            this._rootNodes[index].tick();
-        }
+        Layouter.tick(this._rootNodes);
+        this._rootNodes.forEach(s=>s.tick()); 
 
 
         if (this.colorTransitionElapsed != undefined) {
@@ -1194,7 +1194,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                         ctx.fillText(`${node.isCollection ? limitText(node.name) + " (+ " + (node.collectionSize) + ")" : limitText(node.name)}  `, xPos, yName);
 
-                        if (true|| (isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
+                        if (true || (isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
                             const text = this.render.getFeatureText(node, entry);
                             if (text) ctx.fillText(text, xPos, yName + translate + (fontSize + 4) * 1);
                         }

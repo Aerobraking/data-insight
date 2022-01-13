@@ -8,8 +8,6 @@ export function PluginDecorator() {
     };
 }
 
-
- 
 export default abstract class AbstractPlugin {
 
     constructor() {

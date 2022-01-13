@@ -1,9 +1,10 @@
 import { OV_COLUMNWIDTH } from "@/components/app/OverviewEngineValues";
-import { Type, Exclude, Expose } from "class-transformer";
+import { Exclude, Expose } from "class-transformer";
 import * as d3 from "d3";
-import { SimulationNodeDatum, SimulationLinkDatum, Simulation, ForceLink, ForceY, Quadtree, ForceCollide } from "d3";
-import { Feature, FeatureDataList, FeatureDataMedian, FeatureDataSum, NodeFeatures, NodeFeaturesClass } from "./AbstractNodeFeature";
+import { SimulationNodeDatum, SimulationLinkDatum, Simulation, Quadtree, ForceCollide } from "d3";
+import { Feature, NodeFeatures, NodeFeaturesClass } from "./AbstractNodeFeature";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
+// import { Layouter } from "./NodeLayout";
 // import { COLUMNWIDTH } from "../../components/app/OverviewEngine"; 
 
 /**
@@ -144,19 +145,10 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         c.entry = this.entry;
         c.depth = c.parents().length;
 
-        const nodes: this[] = [];
-        if (this.entry) this.entry.root.collectNodes(this.entry.root, nodes);
-
-        const listNodes = nodes.filter(n => n.getDepth() == this.getDepth() + 1);
-
-        listNodes.sort((a, b) => a.getY() - b.getY());
-
-        let bottom = listNodes.length ? listNodes[listNodes.length - 1] : undefined;
-        let BottomFromList = bottom ? bottom.getY() + 150 : this.getY();
-        let yfromParent = this.getY();
 
 
-        c.y = Math.max(yfromParent, BottomFromList);
+        // Layouter.addNode(this.entry as any, this, c)
+
         this.children.push(c);
         this.entry?.nodeAdded(c);
         this.updateSimulation();
@@ -407,7 +399,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     // the OverviewEntry this nodes belongs to. will be set after loading from the json
     @Exclude()
-    entry: AbstractNodeShellIfc  | undefined;
+    entry: AbstractNodeShellIfc | undefined;
 
     // the depth inside the tree structure, relative to the root node
     @Expose({ name: 'd' })

@@ -30,19 +30,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     syncStructure(): void {
     }
 
-    public initAfterLoading(): void {
-        this.updateSimulationData();
-        this.updateColumnForces();
-        for (let i = 0; i < this.nodes.length; i++) {
-            const n = this.nodes[i];
-            n.entry = this;
-            n.updateSimulation();
-            for (let j = 0; j < n.getChildren().length; j++) {
-                const c = n.getChildren()[j];
-                c.parent = n;
-            }
-        }
-    }
+    
 
     private ignoredFolders: string[] = [];
 

@@ -2,7 +2,7 @@
 export const filesizeFormat = (value: number) => {
   value = Math.round(value);
   if (value < 1024) {
-    return "1 MB";
+    return "0 KB";
   } else if (value < 1024 * 1024) {
     return Math.round(value / Math.pow(1024, 1)) + " KB";
   } else if (value < 1024 * 1024 * 1024) {

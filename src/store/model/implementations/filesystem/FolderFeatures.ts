@@ -8,7 +8,7 @@ import FolderNode from "./FolderNode";
 @FeatureViewDecorator()
 export class NodeFeatureSize extends AbstractNodeFeatureGradient<FolderNode, FeatureDataSum> {
     public formatter: (value: number) => string = filesizeFormat;
-    public margin: number = 1024 * 1024 * 8;
+    public margin: number = 1024 * 1024 * 1;
 
     public getNewSettingsInstance(): FeatureGradientSettings {
         return new FeatureGradientSettings(10, 1024 * 1024 * 1024 * 16);
@@ -39,9 +39,9 @@ export class NodeFeatureSize extends AbstractNodeFeatureGradient<FolderNode, Fea
         return 0;
     }
 
-    getGradientValue(node: FolderNode): number {
+    getGradientValue(node: FolderNode): number | undefined {
         const data = node.getFeatureValue(Feature.FolderSize);
-        return data ? data.s : 0;
+        return data ? data.s : undefined;
     }
 
     public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
@@ -53,7 +53,7 @@ export class NodeFeatureSize extends AbstractNodeFeatureGradient<FolderNode, Fea
 @FeatureViewDecorator()
 export class NodeFeatureLastModifiy extends AbstractNodeFeatureGradient<FolderNode, FeatureDataMedian> {
     public formatter: (value: number) => string = timeFormat;
-    public margin: number = 60 * 10;
+    public margin: number = 60;
 
     public getNewSettingsInstance(): FeatureGradientSettings {
         return new FeatureGradientSettings(0, 60 * 60 * 24 * 365);
@@ -78,7 +78,7 @@ export class NodeFeatureLastModifiy extends AbstractNodeFeatureGradient<FolderNo
             max: 60 * 60 * 24 * 365 * 10, // 10 Jahre
         });
     }
- 
+
     public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
         return 0;
     }
@@ -102,7 +102,7 @@ export class NodeFeatureLastModifiy extends AbstractNodeFeatureGradient<FolderNo
 export class NodeFeatureQuantity extends AbstractNodeFeatureGradient<FolderNode, FeatureDataSum> {
 
     public formatter: (value: number) => string = fileamountFormat;
-    public margin: number = 10;
+    public margin: number = 3;
 
     constructor() {
         super({

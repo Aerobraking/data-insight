@@ -1,14 +1,14 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
-import { Simulation, ForceLink, ForceY, Quadtree } from "d3";
+import { Simulation, ForceLink, Quadtree } from "d3";
 import path from "path";
 import CollideExtend from "@/utils/CollideExtend";
 import { AbstractLink, AbstractNode, RectangleCollide } from "./AbstractNode";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
-import { OverviewEngine } from "@/components/app/OverviewEngine";
 import FolderNode from "../../implementations/filesystem/FolderNode";
 import { NodeFeatures, Feature, FeatureDataHandler } from "./AbstractNodeFeature";
 import { FeatureInstanceList } from "./AbstractNodeFeatureView";
+import { Layouter } from "./NodeLayout";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;
@@ -30,38 +30,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.root.fx = 0;
         this.root.fy = 0;
 
-        this.simulation = d3
-            .forceSimulation([] as Array<N>)
-            .force('link', d3.forceLink<AbstractNode, AbstractLink>()
-                .strength(function (d: AbstractLink, i: number, data: AbstractLink[]) {
-                    // return d.source.isRoot() ? 0.0002 : 0.01;
-                    return 100;
-                }).distance(1).iterations(2)
-            )
-            // .force("collide", d3.forceCollide<D>().radius(d => {
-            //     var r = d.getRadius() * 1.1;
-            //     return r;
-            // }).iterations(2).strength(0.3))
-            .force(
-                "y",
-                d3.forceY()
-                    .y(function (d: any) {
-                        return 0;
-                    })
-                    .strength(0.0)
-            )
-            .force(
-                "collideExt",
-                CollideExtend()
-                    .radius(function (d: any) {
-                        return d.forceRadius;
-                    })
-                    .strength(0)
-            )
-            .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-            .alphaMin(0.003)
-            .alphaTarget(0.004)
-            .stop();
+
 
     }
 
@@ -99,9 +68,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     // identifier for json serializing
     nodetype: string;
 
-    // the d3 simulation instance
-    @Exclude()
-    simulation: Simulation<N, AbstractLink<N>>;
     // list of all nodes inside this entry. will be set everytime the amount of nodes changes
     @Exclude()
     nodes: N[] = [];
@@ -109,11 +75,25 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     @Exclude()
     links: AbstractLink[] = [];
     @Exclude()
-    quadtree: Quadtree<N> | undefined;
+    quadtree: Quadtree<N> | undefined = d3.quadtree<N>()
+        .x(function (d) { return d.getX(); })
+        .y(function (d) { return d.getY(); });;
 
     public abstract loadCollection(node: any): void;
 
-    public abstract initAfterLoading(): void;
+    public initAfterLoading(): void {
+        this.updateSimulationData();
+        this.updateColumnForces();
+        for (let i = 0; i < this.nodes.length; i++) {
+            const n = this.nodes[i];
+            n.entry = this;
+            n.updateSimulation();
+            for (let j = 0; j < n.getChildren().length; j++) {
+                const c = n.getChildren()[j];
+                c.parent = n;
+            }
+        }
+    }
 
     public abstract createNode(name: string): N;
 
@@ -281,8 +261,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         }
 
         if (foldersCreated) {
-            this.simulation.alpha(1);
-            this.updateSimulationData(false);
+            this.updateSimulationData();
         }
 
     }
@@ -304,8 +283,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         // remove folder if found
         if (currentFolder && currentFolder.parent) {
             currentFolder.parent.removeChild(currentFolder);
-            this.simulation.alpha(1);
-            this.updateSimulationData(false);
+            this.updateSimulationData();
         }
     }
 
@@ -337,6 +315,8 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.updateSimulationData();
         this.updateColumnForces();
         this.engine?.nodeAdded(c);
+
+        Layouter.addNode(this, c.parent as AbstractNode, c)
 
         const depth = c.getDepth();
         // if (depth > 1) {
@@ -422,19 +402,13 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      */
     protected updateSimulationData(reheat: boolean = true) {
 
-        if (reheat) {
-            this.simulation.alpha(1);
-        }
-
-        let f: ForceLink<N, AbstractLink<N>> | undefined = this.simulation.force<ForceLink<N, AbstractLink<N>>>('link');
+        // if (reheat) {
+        //     this.simulation.alpha(1);
+        // } 
         this.nodes = this.root.descendants();
         this.links = this.root.links();
 
-        if (f) {
-            f.links(this.links as any);
-        }
-        this.simulation.nodes(this.nodes);
-
+        Layouter.shellContentUpdate(this);
     }
 
     tick() {
@@ -467,8 +441,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         // }
 
 
-        // this.simulation.alpha(1);
-        // this.simulation.tick();
 
         // const columnForces = Array.from(this.columnForceMap.values());
 
@@ -477,13 +449,8 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         //     f.tick();
         // }
 
-        this.quadtree = d3.quadtree<N>()
-            .x(function (d) { return d.getX(); })
-            .y(function (d) { return d.getY(); });
-
-        this.quadtree.addAll(this.nodes);
 
 
-
+        this.quadtree?.removeAll(this.quadtree.data()).addAll(this.nodes);
     }
 }

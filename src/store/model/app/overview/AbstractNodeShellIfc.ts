@@ -3,9 +3,10 @@ export default interface AbstractNodeShellIfc {
     nodeRemoved(): void;
     path: string;
     root: any;
+    nodes: any[];
+    links: any[];
     x: number;
-    y: number;
-    simulation: any;
+    y: number; 
     id: number;
     isSimulationActive: boolean;
     nodeAdded(node: any): void;
