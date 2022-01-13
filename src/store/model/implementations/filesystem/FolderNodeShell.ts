@@ -6,6 +6,7 @@ import { Instance } from "./FileSystemWatcher";
 import { FileSystemListener, FolderFeatureResult, FolderSyncFinished, FolderSyncResult } from "./FileSystemMessages";
 import FolderNode from "./FolderNode";
 import { AbstractNodeShell } from "../../app/overview/AbstractNodeShell";
+import * as watcher from "../../../../utils/WatchSystem";
 
 
 
@@ -18,7 +19,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         super("folder", path ? path : "", new FolderNode(path ? pathNodejs.basename(path) : ""));
         this.root.entry = this;
     }
-  
+
     public createNode(name: string) {
         return new FolderNode(name);
     }
@@ -53,6 +54,16 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     @Exclude()
     eventStack: (FolderSyncResult | FolderFeatureResult | FolderSyncFinished)[] = [];
 
+    watcherEvent = (type: string, path?: string) => {
+        console.log(type, path);
+
+
+        Instance.syncFolder(this);
+        if (type == "unlinkdir" && path) {
+            this.removeEntryPath(path);
+        }
+    };
+
     handleEvents(): void {
         s:
         for (let i = 0; i < 10; i++) {
@@ -60,7 +71,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
             if (event) {
                 switch (event.type) {
                     case "foldersync":
-                        const result: FolderSyncResult = event as unknown as FolderSyncResult; 
+                        const result: FolderSyncResult = event as unknown as FolderSyncResult;
                         this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
                         break;
                     case "folderfeatures":
@@ -101,10 +112,12 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     }
 
     stopWatcher(): void {
-
+        watcher.FileSystemWatcher.unregisterPath(this.path, this.watcherEvent, true);
     }
 
     startWatcher(): void {
+
+        watcher.FileSystemWatcher.registerPath(this.path, this.watcherEvent, true);
 
         /**
          * this starts the syncing of the folder for this entry.

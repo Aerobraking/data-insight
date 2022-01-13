@@ -109,15 +109,12 @@ ipcRenderer.on("msg-main",
                             features[Feature.FolderFileTypes].l[fileExtention] = 0;
                         }
                         features[Feature.FolderFileTypes].l[fileExtention] += 1;
-                        if (!isNaN(stats.mtimeMs)) {
+                        if (!isNaN(stats.mtimeMs)) { // last modify time
                             features[Feature.FolderLastModify].m == undefined ? features[Feature.FolderLastModify].m = 0 : ""; // init value
                             features[Feature.FolderLastModify].m = features[Feature.FolderLastModify].m as number + Math.floor(stats.mtimeMs / 1000);
                             mtimeCount++;
                             features[Feature.FolderLastModify].c += 1;
                         }
-
-
-                        //  = isNaN(stats.mtimeMs) ?       0 : stats.mtimeMs;      // last modifiy
                         //  = isNaN(stats.atimeMs) ?       0 : stats.atimeMs;      // last access
                         //  = isNaN(stats.birthtimeMs) ?   0 : stats.birthtimeMs;  // creation time
                     }
