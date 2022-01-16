@@ -31,8 +31,9 @@ if (sLoaded) s = sLoaded;
 
 var args = process.argv;
 
-let win: BrowserWindow | null;
-let windowWorker: BrowserWindow | null;
+let win!: BrowserWindow | null;
+let windowWorker!: BrowserWindow | null;
+let windowWorkerFile!: BrowserWindow | null;
 const FileEnding: string = ".ins";
 /**
  * Error launching app
@@ -54,7 +55,7 @@ function createDragImage() {
   });
 }
 
-function isDevMode(){
+function isDevMode() {
   return !app.isPackaged;
 }
 
@@ -83,12 +84,26 @@ function getTempFilePath(): string {
   return userdata + path.sep + "temp-file" + FileEnding;
 }
 
+/**
+ * For the Folder Sync worker
+ */
 ipcMain.on('msg-worker', (event: any, arg: any) => {
   sendToRender("msg-worker", arg);
 });
 
 ipcMain.on('msg-main', (event: any, arg: any) => {
   sendToRender("msg-main", arg);
+})
+
+/**
+ * For the file worker
+ */
+ipcMain.on('msg-main-to-file', (event: any, arg: any) => {
+  sendToRender("msg-main-to-file", arg);
+})
+
+ipcMain.on('msg-file-to-main', (event: any, arg: any) => {
+  sendToRender("msg-file-to-main", arg);
 })
 
 ipcMain.on('ondragstart', (event: any, filePaths: string[]) => {
@@ -212,13 +227,15 @@ ipcMain.on('save-insight-file', (event: any, arg:
 ipcMain.on('closed', e => {
   usbDetect.stopMonitoring();
 
-  if (win && windowWorker) {
+  if (win && windowWorker && windowWorkerFile) {
     win.close();
     windowWorker.close();
+    windowWorkerFile.close();
   }
 
   win = null;
   windowWorker = null;
+  windowWorkerFile = null;
 
   if (switchFrameType) {
     switchFrameType = false;
@@ -409,31 +426,32 @@ async function createWindow() {
 
   if (s.maximized == 1) win.maximize();
 
-  win.on('resize', (e: any) => {
-    updateSettings();
-  });
-  win.on('move', (e: any) => {
-    updateSettings();
-  });
-  win.on('minimize', (e: any) => {
-    updateSettings();
-  });
-  win.on('maximize', (e: any) => {
-    s.maximized = 1;
-  });
-  win.on('unmaximize', (e: any) => {
-    s.maximized = 0;
-  });
-  win.on('enter-full-screen', (e: any) => {
-    if (win) s.fullscreen = 1;
-  });
-  win.on('leave-full-screen', (e: any) => {
-    if (win) s.fullscreen = 0;
-  });
+  win.on('resize', (e: any) => updateSettings());
+  win.on('move', (e: any) => updateSettings());
+  win.on('minimize', (e: any) => updateSettings());
+  win.on('maximize', (e: any) => s.maximized = 1);
+  win.on('unmaximize', (e: any) => s.maximized = 0);
+  win.on('enter-full-screen', (e: any) => (win) ? s.fullscreen = 1 : "");
+  win.on('leave-full-screen', (e: any) => win ? s.fullscreen = 0 : "");
 
   // Create the worker window.
   windowWorker = new BrowserWindow({
     title: "worker",
+    show: !true,
+    webPreferences: {
+      enableRemoteModule: true,
+      webSecurity: false,
+      devTools: isDevMode(),
+      nodeIntegrationInWorker: true,
+      nodeIntegration: (process.env
+        .ELECTRON_NODE_INTEGRATION as unknown) as boolean,
+      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
+    }
+  })
+
+  // Create the file worker window.
+  windowWorkerFile = new BrowserWindow({
+    title: "workerfile",
     show: !true,
     webPreferences: {
       enableRemoteModule: true,
@@ -575,9 +593,10 @@ async function createWindow() {
           label: 'Dev Tools',
           visible: isDevMode(),
           click() {
-            if (win && windowWorker) {
+            if (win && windowWorker&&windowWorkerFile) {
               win.webContents.openDevTools();
               windowWorker.webContents.openDevTools();
+              windowWorkerFile.webContents.openDevTools();
             }
           }
         },
@@ -615,6 +634,7 @@ async function createWindow() {
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage')
+    windowWorkerFile.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage2')
     // Load the url of the dev server if in development mode
     win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
     if (!process.env.IS_TEST) win.webContents.openDevTools()
@@ -622,6 +642,7 @@ async function createWindow() {
     createProtocol('app')
     // Load the index.html when not in development 
     windowWorker.loadURL(`app://./subpage.html`)
+    windowWorkerFile.loadURL(`app://./subpage2.html`)
     win.loadURL('app://./index.html')
   }
 

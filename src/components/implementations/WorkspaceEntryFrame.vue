@@ -3,7 +3,7 @@
     <!-- <wsentrydisplayname :entry="entry" /> -->
      <slot></slot>
     <div class="ws-entry-frame-internal-wrapper">
-      <div
+      <!-- <div
         @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
         @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
         @mousedown.left.stop.exact="entrySelectedLocal('single')"
@@ -13,7 +13,7 @@
           selectable-highlight
           ws-zoom-fixed
         "
-      ></div>
+      ></div> -->
     </div>
   </div>
 </template>
@@ -93,7 +93,7 @@ export default defineComponent({
   mounted() {},
   inject: ["entrySelected", "entrySelected"],
   methods: {
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },

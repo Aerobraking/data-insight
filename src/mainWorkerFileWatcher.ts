@@ -1,24 +1,32 @@
 import { FSWatcher } from "chokidar";
-
 import chokidar from "chokidar";
 import fs from "fs";
 import pathNjs from "path";
-
-interface WatcherListener {
-    (type: string, path?: string): void;
-}
+import 'reflect-metadata';
+import { ipcRenderer } from "electron";
 
 
-interface MapCallbacks extends Map<string, WatcherListener[]> {
+interface MapCallbacks extends Map<string, number> {
 
 }
 
+interface FileWatcherUpdate {
+    id: "filewatcherupdate",
+    map: "default" | "recursive",
+    type: string,
+    path: string
+}
+interface FileWatcherSend {
+    type: "register" | "unregister",
+    path: string
+    recursive: boolean
+}
 
-export class Watcher {
+class Watcher2 {
 
     private hash: MapCallbacks = new Map();
     private hashRecursive: MapCallbacks = new Map();
-    private static _instance = new Watcher();
+    private static _instance = new Watcher2();
 
     private watcher: FSWatcher;
     private watcherRecursive: FSWatcher;
@@ -33,12 +41,9 @@ export class Watcher {
              * "alwaysStat: false"  disables the creation of the stats object for each file in a folder, which speedup things a lot
              * "depth:0"            makes sure only the current directory is watched and no subdirectories.
              */
-             usePolling:true,
-            useFsEvents: false,
-            interval:10000,
             alwaysStat: false,
             followSymlinks: false,
-            depth: 4
+            depth: 15
         });
 
         this.watcher = chokidar.watch([], {
@@ -54,50 +59,46 @@ export class Watcher {
             depth: 0
         });
 
-
-
         this.watcher
             .on("ready", (path: any) => {
             }).on("add", (path: any) => {
                 // also call an update for the directory of the file, in case a folder view has this directory open.
-                this.callUpdatePrep(path, "add", this.hash);
+                this.callUpdatePrep(path, "add", "default");
             })
             .on("change", (path: any) => {
-                this.callUpdatePrep(path, "change", this.hash);
+                this.callUpdatePrep(path, "change", "default");
             })
             .on("unlink", (path: any) => {
-                this.callUpdatePrep(path, "unlink", this.hash);
+                this.callUpdatePrep(path, "unlink", "default");
             })
             .on("addDir", (path: any) => {
-                this.callUpdatePrep(path, "adddir", this.hash);
+                this.callUpdatePrep(path, "adddir", "default");
             })
             .on("unlinkDir", (path: any) => {
-                this.callUpdatePrep(path, "unlinkdir", this.hash);
+                this.callUpdatePrep(path, "unlinkdir", "default");
             });
 
         this.watcherRecursive
             .on("ready", (path: any) => {
             }).on("add", (path: any) => {
                 // also call an update for the directory of the file, in case a folder view has this directory open.
-                this.callUpdatePrep(path, "add", this.hashRecursive);
+                this.callUpdatePrep(path, "add", "recursive");
             })
             .on("change", (path: any) => {
-                this.callUpdatePrep(path, "change", this.hashRecursive);
+                this.callUpdatePrep(path, "change", "recursive");
             })
             .on("unlink", (path: any) => {
-                this.callUpdatePrep(path, "unlink", this.hashRecursive);
+                this.callUpdatePrep(path, "unlink", "recursive");
             })
             .on("addDir", (path: any) => {
-                this.callUpdatePrep(path, "adddir", this.hashRecursive);
+                this.callUpdatePrep(path, "adddir", "recursive");
             })
             .on("unlinkDir", (path: any) => {
-                this.callUpdatePrep(path, "unlinkdir", this.hashRecursive);
+                this.callUpdatePrep(path, "unlinkdir", "recursive");
             });
     }
 
-    private callUpdatePrep(path: string, type: string, map: MapCallbacks) {
-        console.log("watcher", path, type);
-
+    private callUpdatePrep(path: string, type: string, map: "recursive" | "default") {
         path = path.replace(/\\/g, "/");
         path = path.endsWith("/") ? path.slice(0, -1) : path;
         this.callUpdate(path, type, map); // update for file / dir
@@ -109,25 +110,27 @@ export class Watcher {
         return relative && !relative.startsWith('..') && !pathNjs.isAbsolute(relative);
     }
 
-    private callUpdate(path: string, type: string, map: MapCallbacks): void {
+    private callUpdate(path: string, type: string, map: "recursive" | "default"): void {
+
+
+        console.log("callUpdate", path, type, map);
 
         const call = (p: string) => {
-            try {
-                let listCallbacks: { (type: string, path?: string): void; }[] | undefined = map.get(p); //get
-                if (listCallbacks != undefined) {
-                    for (let index = 0; index < listCallbacks.length; index++) {
-                        const c = listCallbacks[index];
-                        c(type, path);
-                    }
-                }
-            } catch (err) {
-                console.error("no access!");
+
+            let result: FileWatcherUpdate = {
+                id: "filewatcherupdate",
+                map: map,
+                type: type,
+                path: path
             }
+
+            ipcRenderer.send('msg-file-to-main', result);
+
         };
 
         let defaultCall = true;
 
-        map.forEach((value: WatcherListener[], key: string, map: MapCallbacks) => {
+        (map == "recursive" ? this.hashRecursive : this.hash).forEach((value: number, key: string, map: MapCallbacks) => {
             if (this.isSubDir(key, path)) call(key), defaultCall = false;
         });
 
@@ -139,7 +142,7 @@ export class Watcher {
         return this._instance;
     }
 
-    registerPath(path: string, callback: (type: string, path?: string) => void, recursive: boolean = false) {
+    registerPath(path: string, recursive: boolean = false) {
 
         path = path.replace(/\\/g, "/");
         path = path.endsWith("/") ? path.slice(0, -1) : path;
@@ -147,10 +150,10 @@ export class Watcher {
         const mapToUse = recursive ? this.hashRecursive : this.hash;
         const watcherToUse = recursive ? this.watcherRecursive : this.watcher;
 
-        let listCallbacks: { (type: string): void; }[] | undefined = mapToUse.get(path);
+        let listCallbacks: number | undefined = mapToUse.get(path);
 
         if (listCallbacks == undefined) {
-            listCallbacks = [];
+            listCallbacks = 0;
             watcherToUse.add(path);
             mapToUse.set(path, listCallbacks);
             //   hinterlegen ob eine datei existiert oder nicht um das zu melden. per watcher testen ob die datei wieder hergestellt wird was ja eh schon gemacht wird oder?.
@@ -158,15 +161,18 @@ export class Watcher {
                 fs.accessSync(path, fs.constants.R_OK);
             } catch (err) {
                 // inform about non existing file
-                this.callUpdatePrep(path, "unlink", mapToUse);
+                this.callUpdatePrep(path, "unlink", recursive ? "recursive" : "default");
             }
         }
-        listCallbacks.push(callback);
+
+        listCallbacks++;
+        mapToUse.set(path, listCallbacks);
+        console.log("register", path, recursive);
 
 
     }
 
-    unregisterPath(path: string, callback: (type: string, path?: string) => void, recursive: boolean = false) {
+    unregisterPath(path: string, recursive: boolean = false) {
 
         path = path.replace(/\\/g, "/");
         path = path.endsWith("/") ? path.slice(0, -1) : path;
@@ -174,24 +180,35 @@ export class Watcher {
         const mapToUse = recursive ? this.hashRecursive : this.hash;
         const watcherToUse = recursive ? this.watcherRecursive : this.watcher;
 
-        let listCallbacks: { (type: string): void; }[] | undefined = mapToUse.get(path); //get
+        let listCallbacks: number | undefined = mapToUse.get(path); //get
 
         if (listCallbacks != undefined) {
-            const index = listCallbacks.indexOf(callback);
-            if (index > -1) {
-                listCallbacks.splice(index, 1);
-            }
-
-            if (listCallbacks.length == 0) {
+            listCallbacks--;
+            mapToUse.set(path, listCallbacks);
+            if (listCallbacks <= 0) {
                 watcherToUse.unwatch(path);
                 mapToUse.delete(path);
             }
         }
 
+        console.log("unregister", path, recursive);
     }
 
 }
 
+const FileSystemWatcher = Watcher2.instance;
 
-// export const FileSystemWatcher = Watcher.instance;
+
+
+ipcRenderer.on("msg-main-to-file", (event, payload: FileWatcherSend) => {
+    switch (payload.type) {
+        case "register":
+            FileSystemWatcher.registerPath(payload.path, payload.recursive)
+            break;
+        case "unregister":
+            FileSystemWatcher.unregisterPath(payload.path, payload.recursive)
+            break;
+    }
+});
+
 

@@ -107,7 +107,7 @@ export default defineComponent({
   },
   inject: ["entrySelected"],
   methods: {
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },

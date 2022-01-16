@@ -2,12 +2,12 @@
   <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-textarea-wrapper">
      <slot></slot>
 
-    <div
+    <!-- <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       class="ws-window-bar-top select-element selectable-highlight"
-    ></div>
+    ></div> -->
 
     <div
       class="editor-enabler"
@@ -111,7 +111,7 @@ export default defineComponent({
       return this.$props.entry?.text.length == 0;
     },
     editorFocusLost() {},
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },

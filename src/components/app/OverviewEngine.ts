@@ -352,6 +352,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         obj.setCoordinates({ x: initPos.x + diffX, y: initPos.y + diffY })
                     } else {
                         const node = ev.subject as AbstractNode;
+
+
                         /**
                          * the root can be moved in any direction and moves the whole tree with it
                          */
@@ -362,6 +364,19 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                             const child: any = children[i];
                             const childInitPos = child.__initialDragPos;
                             child.fy = child.y = childInitPos.y + diffY;
+
+                        }
+
+                        if (node.parent) {
+                            7
+
+                            // const childrenTemp = [...node.parent.children].sort((a, b) => a.getY() - b.getY());
+                            node.parent.children.forEach(c => {
+                                c.customData["i"] = c.getY();
+                                c.customData["co"] = { y: c.getY(), vy: 0 }
+                            });
+                            Layouter.nodesUpdated(node.entry as any);
+
                         }
 
                         // prevent freeze while dragging
@@ -378,10 +393,24 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     const initPos = obj.__initialDragPos;
 
 
+
                     delete (obj.__initialDragPos);
 
                     if (obj instanceof AbstractNodeShell) {
                         return;
+                    }
+
+                    if (node.parent) {
+
+                        // const childrenTemp = [...node.parent.children].sort((a, b) => a.getY() - b.getY());
+                        node.parent.children.forEach(c => {
+                            c.customData["i"] = c.getY();
+                            c.customData["co"] = { y: c.getY(), vy: 0 }
+                        });
+                        node.descendants(false).forEach(c => c.customData["co"].vy = 0);
+                        (node.entry as AbstractNodeShell).nodes.forEach(n => n.fy = undefined);
+                        Layouter.nodesUpdated(node.entry as any);
+
                     }
 
                     if (node.entry) {
@@ -415,7 +444,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
-        this.zoom.scaleExtent([0.02, 2]);
+        this.zoom.scaleExtent([0.01, 2]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
             let t = d3.zoomTransform(this.canvas);
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
@@ -537,8 +566,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             for (let j = 0; j < shell.nodes.length; j++) {
                 const n = shell.nodes[j];
 
-                const x = n.getX() + shell.x;
-                const y = n.getY() + shell.y;
+                const p = this.getNodePosition(n);
+                const x = p.x + shell.x;
+                const y = p.y + shell.y;
 
                 d.x = d.x < x ? x : d.x;
                 d.x2 = d.x2 > x ? x : d.x2;
@@ -705,7 +735,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     /**
      * When a node is updated, we recalculate the column widths
      */
-    nodeUpdate() {
+    nodesUpdated() {
         this.updateNodeColors(undefined, false);
     }
 
@@ -733,8 +763,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     public tick(): void {
 
 
-        Layouter.tick(this._rootNodes);
-        this._rootNodes.forEach(s=>s.tick()); 
+        Layouter.tick(this._rootNodes, OverviewEngine.delta);
+        this._rootNodes.forEach(s => s.tick());
 
 
         if (this.colorTransitionElapsed != undefined) {
@@ -756,10 +786,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             const n = this.notFound.get(listOpacity[i]);
             if (n) {
                 n.o *= n.d ? stepPos : stepNeg;
-                n.o = Math.min(1, Math.max(0.04, n.o));
-                if (n.o >= 1) {
-                    this.notFound.delete(listOpacity[i]);
-                }
+                n.o = Math.min(1, Math.max(0.24, n.o));
+                if (n.o >= 1) this.notFound.delete(listOpacity[i]);
             }
         }
 
@@ -776,7 +804,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     }
 
     private getNodeGraphCoordinates(n: AbstractNode, offsetX = 0, offsetY = 0): { x: number, y: number } {
-        return n.entry ? { x: n.entry.x + n.getX() + offsetX, y: n.entry.y + n.getY() + offsetY } : { x: 0, y: 0 };
+        return n.entry ? { x: n.entry.x + this.getNodePosition(n).x + offsetX, y: n.entry.y + this.getNodePosition(n).y + offsetY } : { x: 0, y: 0 };
     }
 
     private drawCanvas(ctx: CanvasRenderingContext2D, isShadow: boolean = false) {
@@ -952,6 +980,11 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.updateNodeColors();
     }
 
+    private getNodePosition(n: AbstractNode): { x: number, y: number } {
+        return Layouter.getNodePosition(n);
+        // return  { x: n.getX(), y: n.getY() };
+    }
+
     private isNodeHiddenByFeature(n: AbstractNode, entry: AbstractNodeShell) {
         return this.render.isNodeHidden(n, entry);
     }
@@ -1028,21 +1061,24 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             const drawCurve = () => {
                 ctx.beginPath();
 
-                ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, start.getY());
-                ctx.lineTo(xStart, start.getY());
+                const yStart = this.getNodePosition(start).y;
+                const yEnd = this.getNodePosition(end).y;
+
+                ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, this.getNodePosition(start).y);
+                ctx.lineTo(xStart, yStart);
 
                 const midX = (xStart + xEnd) / 2;
                 ctx.bezierCurveTo(
                     midX,
-                    start.getY(),
+                    yStart,
                     midX,
-                    end.getY(),
+                    yEnd,
                     xEnd,
-                    end.getY()
+                    yEnd
                 );
 
-                ctx.moveTo(xEnd, end.getY());
-                ctx.lineTo(xEndLine, end.getY());
+                ctx.moveTo(xEnd, yEnd);
+                ctx.lineTo(xEndLine, yEnd);
 
                 ctx.stroke();
             }
@@ -1106,16 +1142,16 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                 ctx.beginPath();
 
-                if (node.isCollection) {
+                if (node.isCollection && node.collectionSize > 0) {
                     ctx.arc(
-                        xPos, node.getY(),
-                        Math.max(1, r - ctx.lineWidth / 2),
+                        xPos, this.getNodePosition(node).y,
+                        Math.max(1, 100 - ctx.lineWidth / 2),
                         0, angle
                     );
                     ctx.stroke();
                 } else {
                     ctx.arc(
-                        xPos, node.getY(),
+                        xPos, this.getNodePosition(node).y,
                         r,
                         0, angle
                     );
@@ -1127,7 +1163,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     ctx.globalAlpha = 1;
                     ctx.beginPath();
                     ctx.arc(
-                        xPos, node.getY(), Math.max(1, r - ctx.lineWidth / 2),
+                        xPos, this.getNodePosition(node).y, Math.max(1, r - ctx.lineWidth / 2),
                         0, angle
                     );
                     ctx.strokeStyle = OverviewEngine.colorSelection;
@@ -1186,7 +1222,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         ctx.font = `${fontSize}px Lato`;
 
                         xPos += this.textPadding;
-                        let yName = node.children.length == 0 ? node.getY() + (fontSize) / 4 : node.getY() - translate;
+                        let yName = node.children.length == 0 ? this.getNodePosition(node).y + (fontSize) / 4 : this.getNodePosition(node).y - translate;
 
                         ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#fff";
 
@@ -1211,7 +1247,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     ctx.font = `${fontSize}px Lato`;
 
                     let name = (isNodeHovered || this.selection.includes(node)) && entry ? entry.path : node.name;
-                    let yName = node.getY() + translate;
+                    let yName = this.getNodePosition(node).y + translate;
 
                     xPos -= r * 1.1;
 

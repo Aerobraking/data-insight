@@ -1,1 +1,1 @@
-export const OV_COLUMNWIDTH = 1300;
+export const OV_COLUMNWIDTH = 2100;

@@ -12,7 +12,7 @@ import { Layouter } from "./NodeLayout";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;
-    nodeUpdate(): void;
+    nodesUpdated(): void;
 }
 
 export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> implements AbstractNodeShellIfc {
@@ -75,9 +75,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     @Exclude()
     links: AbstractLink[] = [];
     @Exclude()
-    quadtree: Quadtree<N> | undefined = d3.quadtree<N>()
-        .x(function (d) { return d.getX(); })
-        .y(function (d) { return d.getY(); });;
+    quadtree: Quadtree<N> | undefined;
 
     public abstract loadCollection(node: any): void;
 
@@ -193,7 +191,8 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
             }
 
         }
-        this.nodeUpdate();
+
+        this.nodesUpdated();
     }
 
     /**
@@ -300,23 +299,37 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      */
     columnForceMap: Map<number, Simulation<RectangleCollide<N>, undefined>> = new Map();
 
-    public nodeUpdate() {
-        this.engine?.nodeUpdate();
+    public nodesUpdated() {
+        this.updateSimulationData();
+        this.engine?.nodesUpdated();
+        Layouter.nodesUpdated(this);
     }
 
-    public nodeRemoved() {
+    public nodeUpdate(n: N) {
         this.updateSimulationData();
-        this.updateColumnForces();
-        this.engine?.nodeUpdate();
+        this.engine?.nodesUpdated();
+        Layouter.nodeUpdated(this, n.parent as AbstractNode, n);
+    }
+
+    public nodeRemoved(n: N) {
+        this.updateSimulationData();
+        this.engine?.nodesUpdated();
+        Layouter.nodeRemoved(this, n.parent as AbstractNode, n);
+        // this.updateColumnForces();
+    }
+
+    public nodeChildrenRemoved(n: N) {
+        this.updateSimulationData();
+        this.engine?.nodesUpdated();
+        Layouter.nodeChildrenRemoved(this, n.parent as AbstractNode, n);
+        // this.updateColumnForces();
     }
 
     public nodeAdded(c: N) {
-
-        this.updateSimulationData();
-        this.updateColumnForces();
         this.engine?.nodeAdded(c);
+        // this.updateColumnForces();
 
-        Layouter.addNode(this, c.parent as AbstractNode, c)
+        Layouter.nodeAdded(this, c.parent as AbstractNode, c)
 
         const depth = c.getDepth();
         // if (depth > 1) {
@@ -447,10 +460,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         // for (let i = 0; i < columnForces.length; i++) {
         //     const f = columnForces[i];
         //     f.tick();
-        // }
-
-
-
-        this.quadtree?.removeAll(this.quadtree.data()).addAll(this.nodes);
+        // } 
+        this.quadtree = d3.quadtree<N>().x(n => n.getX()).y(n => n.getY()).addAll(this.nodes);
     }
 }

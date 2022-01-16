@@ -6,7 +6,7 @@ import { Instance } from "./FileSystemWatcher";
 import { FileSystemListener, FolderFeatureResult, FolderSyncFinished, FolderSyncResult } from "./FileSystemMessages";
 import FolderNode from "./FolderNode";
 import { AbstractNodeShell } from "../../app/overview/AbstractNodeShell";
-import * as watcher from "../../../../utils/WatchSystem";
+import * as watcher from "../../../../utils/WatchSystemMain";
 
 
 
@@ -24,13 +24,11 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         return new FolderNode(name);
     }
 
-    @Exclude()
-    private watcher: FSWatcher | undefined;
 
     syncStructure(): void {
     }
 
-    
+
 
     private ignoredFolders: string[] = [];
 
@@ -38,14 +36,11 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     renameMap: Map<string, NodeJS.Timeout> = new Map();
 
     @Exclude()
-    interval: any = setInterval(this.handleEvents.bind(this), 100);
+    interval: any = setInterval(this.handleEvents.bind(this), 2);
     @Exclude()
     eventStack: (FolderSyncResult | FolderFeatureResult | FolderSyncFinished)[] = [];
 
     watcherEvent = (type: string, path?: string) => {
-        console.log(type, path);
-
-
         Instance.syncFolder(this);
         if (type == "unlinkdir" && path) {
             this.removeEntryPath(path);
@@ -54,14 +49,14 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     handleEvents(): void {
         s:
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 4; i++) {
             let event = this.eventStack.shift();
             if (event) {
                 switch (event.type) {
                     case "foldersync":
                         const result: FolderSyncResult = event as unknown as FolderSyncResult;
                         this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
-                        break;
+                       return
                     case "folderfeatures":
                         this.addFeatures(event.path, event.features);
                         break;

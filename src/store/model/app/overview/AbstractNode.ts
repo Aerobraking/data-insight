@@ -159,7 +159,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         let index = this.children.indexOf(c);
         if (index > -1) {
             this.children.splice(index, 1);
-            this.entry?.nodeRemoved();
+            this.entry?.nodeRemoved(c);
             this.updateSimulation();
             this.updateForce();
         }
@@ -220,7 +220,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.collectionSize = this.children.length;
         this.children = [];
         this.isCollection = true;
-        this.entry?.nodeRemoved();
+        this.entry?.nodeChildrenRemoved(this);
         this.updateSimulation();
         this.updateForce();
     }
@@ -232,7 +232,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     public set name(value: string) {
         this._name = value;
         if (this.entry) {
-            this.entry.nodeUpdate();
+            this.entry.nodeUpdate(this);
         }
     }
 
@@ -452,6 +452,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
      * Node’s fixed y-position (if position is fixed). Given by the d3 interface
      */
     fy?: number | null | undefined;
+
+    customData: { [any: string]: any } = {};
 
     // the d3 simulation instance
     @Exclude()

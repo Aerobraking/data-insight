@@ -19,7 +19,7 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
-import * as watcher from "../../utils/WatchSystem";
+import * as watcher from "../../utils/WatchSystemMain";
 import { WorkspaceEntryFile } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import * as icons from "../../utils/IconHandler";
@@ -65,7 +65,7 @@ export default defineComponent({
           this.entry.alert = undefined;
       }
     },
-    entrySelectedLocal(type: "add" | "single" | "flip", event: MouseEvent) {
+    entrySelectedLocal(type: "add" | "single" | "toggle", event: MouseEvent) {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },

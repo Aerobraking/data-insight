@@ -1,6 +1,7 @@
 export default interface AbstractNodeShellIfc {
-    nodeUpdate(): void;
-    nodeRemoved(): void;
+    nodeUpdate(node:any): void;
+    nodeChildrenRemoved(node:any): void;
+    nodeRemoved(node: any): void;
     path: string;
     root: any;
     nodes: any[];

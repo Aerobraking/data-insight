@@ -9,12 +9,12 @@
   >
     <slot></slot>
     <wsentryalert :entry="entry" />
-    <div
+    <!-- <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       class="ws-window-bar-top select-element selectable-highlight"
-    ></div>
+    ></div> -->
     <input
       @mousedown.stop
       @mousemove.stop
@@ -97,7 +97,7 @@ export default defineComponent({
     },
 
     entrySelectedLocal(
-      type: "add" | "single" | "flip",
+      type: "add" | "single" | "toggle",
       e: MouseEvent | undefined
     ) {
       // @ts-ignore: Unreachable code error

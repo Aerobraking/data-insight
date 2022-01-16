@@ -1,5 +1,5 @@
 import _ from "underscore";
-import * as watcher from "./WatchSystem";
+import * as watcher from "./WatchSystemMain";
 
 export enum ImageSize {
     preview,

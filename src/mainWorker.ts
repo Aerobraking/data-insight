@@ -49,9 +49,7 @@ ipcRenderer.on("msg-main",
                 const depthChildren = depth + 1;
 
                 const isCollection: boolean = (folders.length >= msg.collectionSize && depthChildren > 1) || depthChildren > maxDepth || depthChildren > 100;
-
-                console.log("folder: " + pathCurrent);
-
+ 
                 listFoldersToSync.push({ id: msg.id, childCount: folders.length, path: pathCurrent, type: "foldersync", collection: isCollection });
 
 
@@ -66,8 +64,7 @@ ipcRenderer.on("msg-main",
             }
 
             countAndScanFolders(msg.path)
-
-            console.log("foldercount: " + count);
+ 
 
             for (let i = 0; i < listFoldersToSync.length; i++) {
                 const element = listFoldersToSync[i];
@@ -122,7 +119,7 @@ ipcRenderer.on("msg-main",
 
                 // get average of the file modify time
                 if (sendResults && features[Feature.FolderLastModify] && features[Feature.FolderLastModify].m != undefined) {
-                    console.log(features[Feature.FolderLastModify].m, "file count: ", mtimeCount);
+                    
                     calculateMedian(features);
                 }
 

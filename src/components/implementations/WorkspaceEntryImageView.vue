@@ -16,7 +16,7 @@
 
 <script lang="ts">
 import * as cache from "../../utils/ImageCache";
-import * as watcher from "../../utils/WatchSystem";
+import * as watcher from "../../utils/WatchSystemMain";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
@@ -125,7 +125,7 @@ export default defineComponent({
         true
       );
     },
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },

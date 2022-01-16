@@ -130,7 +130,7 @@ const path = require("path");
 const { shell } = require("electron");
 
 import * as WSUtils from "../app/WorkspaceUtils";
-import * as watcher from "../../utils/WatchSystem";
+import * as watcher from "../../utils/WatchSystemMain";
 import { add, remove, toggle } from "../../utils/ListUtils";
 import fs from "fs";
 import wsfolderfile from "./FolderFileViewGrid.vue";
@@ -313,7 +313,7 @@ export default defineComponent({
       //   e.stopPropagation();
       // }
     },
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },

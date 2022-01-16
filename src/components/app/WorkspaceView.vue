@@ -370,10 +370,11 @@ export default defineComponent({
     splitpaneTimeout: any | undefined;
     ignoreFileDrop: boolean;
     overviewfolder: WorkspaceEntryFolderWindow | undefined;
+    entryHover: HTMLElement | undefined;
     workspaceInterface: WorkspaceViewIfcWrapper;
     skipInitialResize: number;
     eventOnMouseup:
-      | { entries: HTMLElement[]; type: "add" | "single" | "flip" }
+      | { entries: HTMLElement[]; type: "add" | "single" | "toggle" }
       | undefined;
     c: any;
   } {
@@ -384,6 +385,7 @@ export default defineComponent({
       c: undefined,
       eventOnMouseup: undefined,
       workspaceInterface: new WorkspaceViewIfcWrapper(),
+      entryHover: undefined,
       overviewfolder: undefined,
       ignoreFileDrop: false,
       splitpaneTimeout: undefined,
@@ -767,9 +769,73 @@ export default defineComponent({
             );
           }
         }
- 
+
+        function distance(
+          rect: ElementDimensionInstance,
+          p: { x: number; y: number }
+        ) {
+          var dx = Math.max(rect.x - p.x, 0, p.x - rect.x2);
+          var dy = Math.max(rect.y - p.y, 0, p.y - rect.y2);
+          return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        var rect = this.$el
+          .getElementsByClassName("vue-pan-zoom-scene")[0]
+          .getBoundingClientRect();
+
+        const mouse = {
+          x: this.mousePositionLastRaw.x - rect.left,
+          y: this.mousePositionLastRaw.y - rect.top,
+        };
+
+        const closeEnough: {
+          e: HTMLElement;
+          d: number;
+          c: ElementDimensionInstance;
+        }[] = [];
+        context.lineWidth = 4;
+
+        let selectionRectangle: any = this.getSelectionRectangle();
+        let coordRect = this.getCoordinatesFromElement(selectionRectangle);
+
+        if (
+          !this.selectionDragActive&&
+          selectionRectangle.style.visibility != "visible" &&
+          coordRect.w == 0 &&
+          coordRect.h == 0
+
+        ) {
+          for (let e of this.getEntries()) {
+            let c = this.getCoordinatesFromElement(e);
+
+            c.x = c.x * currentC.scale + currentC.x;
+            c.x2 = c.x2 * currentC.scale + currentC.x;
+            c.y = c.y * currentC.scale + currentC.y;
+            c.y2 = c.y2 * currentC.scale + currentC.y;
+            c.w = c.w * currentC.scale;
+            c.h = c.h * currentC.scale;
+
+            const d = distance(c, mouse);
+            if (d < 20 && d > 0) closeEnough.push({ e, d, c });
+          }
+        }
+        this.entryHover = closeEnough.length > 0 ? closeEnough[0].e : undefined;
+
+        if (closeEnough.length > 0) {
+          var result = closeEnough.reduce((res, obj) => {
+            return obj.d < res.d ? obj : res;
+          });
+          if (result) {
+            let padding = 1;
+            context.strokeRect(
+              result.c.x - padding,
+              result.c.y - padding,
+              result.c.w + padding * 2,
+              result.c.h + padding * 2
+            );
+          }
+        }
       }
- 
     },
     createEntry<T extends WorkspaceEntry>(
       type: "files" | "folders" | "frame" | "text" | "youtube" | "image",
@@ -1215,13 +1281,19 @@ export default defineComponent({
         return;
       }
 
-      if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
-        this.startSelectionDrag({ x: e.clientX, y: e.clientY });
+      if (this.entryHover) {
+        console.log(" if (this.entryHover) {");
+
+        this.entriesSelected(
+          [this.entryHover],
+          e.shiftKey ? "add" : e.ctrlKey ? "toggle" : "single",
+          true
+        );
         return;
       }
 
-      if (e.altKey) {
-        this.startFileDrag();
+      if ((e.button == 0 && e.ctrlKey) || e.button == 2) {
+        this.startSelectionDrag({ x: e.clientX, y: e.clientY });
         return;
       }
 
@@ -1280,12 +1352,16 @@ export default defineComponent({
       if (this.preventEvent(e)) return;
 
       if (this.eventOnMouseup) {
+        const temp = {
+          entries: this.eventOnMouseup.entries,
+          type: this.eventOnMouseup.type,
+        };
+        this.eventOnMouseup = undefined;
         this.handleSelectionEvent(
-          this.eventOnMouseup.entries,
-          this.eventOnMouseup.type,
+          temp.entries,
+          temp.type,
           false // do not start drag in this case
         );
-        this.eventOnMouseup = undefined;
       }
 
       let selectionRectangle: any = this.getSelectionRectangle();
@@ -1314,8 +1390,14 @@ export default defineComponent({
             );
           })
         );
+        selectionRectangle.style.width = "0px";
+        selectionRectangle.style.height = "0px";
 
-        this.entriesSelected(entriesInside, "single", false);
+        this.entriesSelected(
+          entriesInside,
+          e.shiftKey ? "add" : e.ctrlKey ? "toggle" : "single",
+          false
+        );
 
         selectionRectangle.style.visibility = "hidden";
       }
@@ -1564,7 +1646,7 @@ export default defineComponent({
             ? this.getEntries()
             : this.$el.getElementsByClassName("welcome-message")[0]
         ),
-        0.6
+        0.02
       );
       this.panZoomInstance.smoothShowRectangle(bound);
     },
@@ -1578,7 +1660,7 @@ export default defineComponent({
             ? this.getEntries()
             : this.$el.getElementsByClassName("welcome-message")[0]
         ),
-        0.2
+        0.25
       );
       this.panZoomInstance.smoothShowRectangle(bound);
     },
@@ -1681,12 +1763,12 @@ export default defineComponent({
         }
       }
     },
-    entrySelected(entry: any, type: "add" | "single" | "flip") {
+    entrySelected(entry: any, type: "add" | "single" | "toggle") {
       this.entriesSelected([entry], type);
     },
     entriesSelected(
       entries: HTMLElement[],
-      type: "add" | "single" | "flip",
+      type: "add" | "single" | "toggle",
       activateDrag: boolean = true
     ) {
       /**
@@ -1697,20 +1779,23 @@ export default defineComponent({
       );
 
       if (
-        (type == "flip" || type == "single") &&
+        (type == "toggle" || type == "single") &&
         entries.length > 0 &&
         this.getSelectedEntries()
           .map((e) => e.getAttribute("name"))
           .includes(entries[0].getAttribute("name"))
       ) {
+        console.log("this.eventOnMouseup", entries);
+
         this.eventOnMouseup = { entries: entries, type: type };
       }
+      console.log("handleSelectionEvent");
 
       this.handleSelectionEvent(entries, type, activateDrag);
     },
     handleSelectionEvent(
       entries: HTMLElement[],
-      type: "add" | "single" | "flip",
+      type: "add" | "single" | "toggle",
       activateDrag: boolean = true
     ) {
       if (!this.eventOnMouseup) {
@@ -1722,8 +1807,10 @@ export default defineComponent({
           case "add":
             entries.forEach((e) => e.classList.add("workspace-is-selected"));
             break;
-          case "flip":
+          case "toggle":
             // ctrl click on an entry
+            console.log("entries", entries);
+
             entries.forEach((e) => e.classList.toggle("workspace-is-selected"));
             break;
         }
@@ -1869,7 +1956,7 @@ export default defineComponent({
       if (e.length != s.length) {
         this.entriesSelected(e, "add", false);
       } else {
-        this.entriesSelected(e, "flip", false);
+        this.entriesSelected(e, "toggle", false);
       }
     },
     getNodes() {

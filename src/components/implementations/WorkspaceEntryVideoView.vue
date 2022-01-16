@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import * as watcher from "../../utils/WatchSystem";
+import * as watcher from "../../utils/WatchSystemMain";
 import { defineComponent } from "vue"; 
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
@@ -84,7 +84,7 @@ export default defineComponent({
       }
     },
 
-    entrySelectedLocal(type: "add" | "single" | "flip") {
+    entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.$el, type);
     },
