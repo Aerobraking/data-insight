@@ -26,7 +26,7 @@
 
 <script lang="ts">
 import * as watcher from "../../utils/WatchSystemMain";
-import { defineComponent } from "vue"; 
+import { defineComponent } from "vue";
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 import { WorkspaceEntryVideo } from "@/store/model/implementations/filesystem/FileSystemWorkspaceEntries";
@@ -112,6 +112,7 @@ export default defineComponent({
   padding: 0px;
   width: 220px;
   height: 180px;
+  background: black;
   cursor: pointer;
 }
 </style>

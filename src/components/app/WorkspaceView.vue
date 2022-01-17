@@ -1502,6 +1502,7 @@ export default defineComponent({
           } else if (
             lc.endsWith("mp4") ||
             lc.endsWith("m4v") ||
+            lc.endsWith("mov") ||
             lc.endsWith("mkv") ||
             lc.endsWith("ogg") ||
             lc.endsWith("webm") ||

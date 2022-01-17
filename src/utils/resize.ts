@@ -94,12 +94,13 @@ export class ElementDimensionInstance implements ElementDimension {
     x2: number;
     y2: number;
 
-    public calculateSize() {
+    public calculateSize(minSize: number = 1) {
         this.w = this.x2 - this.x;
-        this.h = this.y2 - this.y;
+        this.h = this.y2 - this.y; 
+
     }
 
-    public scaleFromCenter(s: number = 1) {
+    public scaleFromCenter(s: number = 1) { 
         const oldW = this.w;
         const oldH = this.h;
         this.w *= s;
@@ -107,7 +108,7 @@ export class ElementDimensionInstance implements ElementDimension {
         this.x -= ((this.w - oldW) / 2);
         this.y -= ((this.h - oldH) / 2);
         this.x2 += ((this.w - oldW) / 2);
-        this.y2 += ((this.h - oldH) / 2);
+        this.y2 += ((this.h - oldH) / 2); 
     }
 }
 

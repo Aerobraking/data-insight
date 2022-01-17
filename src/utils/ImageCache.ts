@@ -2,14 +2,14 @@ import _ from "underscore";
 import * as watcher from "./WatchSystemMain";
 
 export enum ImageSize {
-    preview,
-    tiny,
-    small,
-    medium,
-    original,
-    finish,
-    error,
-    size
+    preview = "preview",
+    tiny = "tiny",
+    small = "small",
+    medium = "medium",
+    original = "original",
+    finish = "finish",
+    error = "error",
+    size = "size"
 }
 
 export function isImageTypeSupported(path: string): boolean {
@@ -28,8 +28,7 @@ export interface ImageDim {
 }
 
 // import os from "os";
-// const cpuCount = os.cpus().length
-import fs from "fs";
+// const cpuCount = os.cpus().length 
 import { remove } from "./ListUtils";
 export class Cache {
 

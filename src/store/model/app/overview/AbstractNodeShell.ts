@@ -23,7 +23,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.root = root;
         this.id = Math.floor(Math.random() * 10000000);
         // @ts-ignore: Unreachable code error
-        this.root.entry = this;
+        this.root.shell = this;
 
         this.nodes = this.root.descendants();
 
@@ -55,12 +55,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     // The absolute path to the root folder
     path: string;
 
-    // tells if the data of this shell is synced in the moment
-    @Exclude()
-    public isSyncing = false;
-
-    @Exclude()
-    engine: NodeShellListener<AbstractNode> | undefined;
+    customData: { [any: string]: any } = {};
 
     // disables the d3 force simulation when false
     public isSimulationActive: boolean = true;
@@ -71,11 +66,22 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     // list of all nodes inside this entry. will be set everytime the amount of nodes changes
     @Exclude()
     nodes: N[] = [];
+
     // list of all links between the nodes in this entry. will be set everytime the amount of nodes changes
     @Exclude()
     links: AbstractLink[] = [];
+
+    // used for selection in the overview
     @Exclude()
     quadtree: Quadtree<N> | undefined;
+
+    // tells if the data of this shell is synced in the moment
+    @Exclude()
+    public isSyncing = false;
+
+    @Exclude()
+    engine: NodeShellListener<AbstractNode> | undefined;
+
 
     public abstract loadCollection(node: any): void;
 
@@ -84,7 +90,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.updateColumnForces();
         for (let i = 0; i < this.nodes.length; i++) {
             const n = this.nodes[i];
-            n.entry = this;
+            n.shell = this;
             n.updateSimulation();
             for (let j = 0; j < n.getChildren().length; j++) {
                 const c = n.getChildren()[j];
@@ -192,7 +198,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
         }
 
-        this.nodesUpdated();
+        this.featuresUpdated();
     }
 
     /**
@@ -252,8 +258,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
                 if (i == folders.length - 1) {
                     // the sumbmitted folder
-                    childFound.isCollection = isCollection;
-                    childFound.collectionSize = collectionSize ? collectionSize : 0;
+                    if (isCollection && collectionSize > 0) childFound.collectionData = { depth: 1, size: collectionSize };
                 }
             }
             currentFolder = childFound;
@@ -298,6 +303,13 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      * so they are already colliding with each other.
      */
     columnForceMap: Map<number, Simulation<RectangleCollide<N>, undefined>> = new Map();
+
+
+
+    public featuresUpdated() { 
+        this.engine?.nodesUpdated();
+        Layouter.featuresUpdated(this);
+    }
 
     public nodesUpdated() {
         this.updateSimulationData();

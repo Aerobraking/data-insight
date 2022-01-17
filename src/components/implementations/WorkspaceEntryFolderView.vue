@@ -143,7 +143,7 @@ import {
 } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import { setupEntry } from "../app/WorkspaceUtils";
 import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
-import fse from "fs-extra";
+import fse, { Dirent } from "fs-extra";
 import {
   DriveListRoot,
   DriveListSystemInstance,
@@ -447,33 +447,66 @@ export default defineComponent({
 
         if (fs.existsSync(dir)) {
           this.entry.alert = undefined;
-          fs.readdirSync(dir).forEach((file: string) => {
-            let filePath = path.join(dir, file);
-            filePath = path.normalize(filePath).replace(/\\/g, "/");
-            try {
-              fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
-              const fileStat = fs.lstatSync(filePath);
-              this.list.push(
-                new FolderWindowFile(
-                  filePath,
-                  fileStat.isDirectory(),
-                  fileStat.isFile() ? fileStat.size : 0
-                )
-              );
-            } catch (err) {
-              console.error("no access! " + filePath);
+          fs.readdirSync(dir, { withFileTypes: true }).forEach(
+            (file: Dirent) => {
+              let filePath = path.join(dir, file.name);
+              filePath = path.normalize(filePath).replace(/\\/g, "/");
+              try {
+                fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
+                let size = 0;
+                if (file.isFile()) {
+                  const fileStat = fs.lstatSync(filePath);
+                  size = fileStat.size;
+                }
+
+                this.list.push(
+                  new FolderWindowFile(filePath, file.isDirectory(), size)
+                );
+              } catch (err) {
+                console.error("no access! " + filePath);
+              }
             }
-          });
+          );
         }
       } catch (err) {
         this.entry.alert = `Folder ${this.entry.path} does not exist`;
         console.error("no access! " + this.entry.path);
       }
+
+      const _this = this;
+
+      const callback = function (
+        entries: IntersectionObserverEntry[],
+        observer: IntersectionObserver
+      ) {
+        console.log("observer event");
+
+        const views: Element[] = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => e.target);
+
+        const models = _this.getModelEntriesFromView(views);
+
+        models.forEach((e) => {
+          e.loadImage = true;
+        });
+      };
+
+      const observer = new IntersectionObserver(callback, {
+        root: this.$el.getElementsByClassName("viewport")[0],
+      });
+      setTimeout(() => {
+        Array.from<HTMLElement>(
+          this.$el.getElementsByClassName("folder-file")
+        ).forEach((element) => { 
+          observer.observe(element);
+        });
+      }, 100);
     },
     getEntries: function (): HTMLElement[] {
       return Array.from(this.$el.querySelectorAll(".tile")) as HTMLElement[];
     },
-    getModelEntriesFromView(listViews: HTMLElement[]): FolderWindowFile[] {
+    getModelEntriesFromView(listViews: Element[]): FolderWindowFile[] {
       let list: FolderWindowFile[] = [];
 
       for (let index = 0; index < listViews.length; index++) {
@@ -568,7 +601,7 @@ export default defineComponent({
           }
         }
 
-        if (listFilesToDrag.length > 0) { 
+        if (listFilesToDrag.length > 0) {
           ipcRenderer.send("ondragstart", listFilesToDrag);
           this.dragActive = false;
         }
@@ -598,8 +631,8 @@ export default defineComponent({
             return;
           case "f":
           case "y":
-          case "t": 
-            e.stopImmediatePropagation(); 
+          case "t":
+            e.stopImmediatePropagation();
             return;
           default:
             break;
@@ -622,7 +655,7 @@ export default defineComponent({
               .map((f) => f.path);
             e.stopImmediatePropagation();
             return;
-          case "v": 
+          case "v":
             this.handleFileDrop(WSUtils.clipboard.listFilesClipboard);
             WSUtils.clipboard.listFilesClipboard = [];
             e.stopImmediatePropagation();

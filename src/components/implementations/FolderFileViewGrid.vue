@@ -27,6 +27,7 @@ export default defineComponent({
     searchstring: String,
     viewKey: Number,
   },
+
   data(): {
     listener: any;
   } {
@@ -67,14 +68,14 @@ export default defineComponent({
     div.classList.add(isImage ? "folder-file-preview" : "folder-file-icon");
 
     if (isImage) {
-      cache.ImageCache.registerPath(this.entry.path, {
-        callback: (url: string, type: cache.ImageSize) => {
-          if (type == cache.ImageSize.small) {
-            div.style.backgroundImage = url;
-          }
-        },
-        callbackSize: (dim: cache.ImageDim) => {},
-      });
+      // cache.ImageCache.registerPath(this.entry.path, {
+      //   callback: (url: string, type: cache.ImageSize) => {
+      //     if (type == cache.ImageSize.small) {
+      //       div.style.backgroundImage = url;
+      //     }
+      //   },
+      //   callbackSize: (dim: cache.ImageDim) => {},
+      // });
     } else {
       icons.IconHandler.registerPath(this.entry.path, (url: string) => {
         var img = new Image();
@@ -84,11 +85,36 @@ export default defineComponent({
     }
   },
   watch: {
+    // whenever the current folder path changes, update the file list
+    "entry.loadImage": function (newPath: boolean, oldPath: boolean) {
+      this.loadImage();
+    },
     searchstring: function (newValue: string, oldValue: string) {
       this.searchUpdate();
     },
   },
   methods: {
+    loadImage() {
+      console.log("loadImage");
+      
+      const div: HTMLElement =
+        this.$el.getElementsByClassName("folder-file-image")[0];
+
+      const isImage: boolean = cache.isImageTypeSupported(this.entry.path);
+
+      div.classList.add(isImage ? "folder-file-preview" : "folder-file-icon");
+
+      if (isImage) {
+        cache.ImageCache.registerPath(this.entry.path, {
+          callback: (url: string, type: cache.ImageSize) => {
+            if (type == cache.ImageSize.small) {
+              div.style.backgroundImage = url;
+            }
+          },
+          callbackSize: (dim: cache.ImageDim) => {},
+        });
+      }
+    },
     searchUpdate() {
       const found: boolean =
         !this.searchstring ||

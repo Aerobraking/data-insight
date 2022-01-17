@@ -283,7 +283,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             d3.drag<HTMLCanvasElement, unknown>().subject(() => {
                 const obj = this.getNodeAtMousePosition();
                 if (obj && obj.isRoot()) {
-                    return obj.entry;
+                    return obj.shell;
                 }
                 return obj; // Only drag nodes
             })
@@ -293,94 +293,41 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     _this.nodeShift = undefined;
                     if (ev.sourceEvent.altKey) {
                         _this.nodeShift = obj instanceof AbstractNodeShell ? undefined : obj;
-
                         return;
                     } else {
 
                         this.canvas.classList.add('grabbable');
-
                         _this.pauseHovering = true;
-
-                        obj.__initialDragPos = {
-                            x: obj.x,
-                            y: obj.y,
-                            fx: obj instanceof AbstractNodeShell ? obj.x : obj.fx,
-                            fy: obj instanceof AbstractNodeShell ? obj.y : obj.fy
-                        };
-
                         if (obj instanceof AbstractNodeShell) {
+                            (obj as any).__initialDragPos = { x: obj.x, y: obj.y, };
+                        }
 
-                        } else {
+                        if (!(obj instanceof AbstractNodeShell)) {
                             const node = ev.subject as AbstractNode;
-                            node.fy = node.y; // Fix points
+                            Layouter.nodeDragged(node, "start", undefined, d3.zoomTransform(this.canvas));
 
-                            if (node.entry) {
-                                node.entry.isSimulationActive = false;
-                            }
-
-                            let children = node.descendants(false);
-                            for (let i = 0; i < children.length; i++) {
-                                const child: any = children[i];
-                                child.__initialDragPos = { x: child.x, y: child.y, fx: child.fx, fy: child.fy };
-                                if (!ev.active) {
-                                    child.fy = child.y; // Fix points
-                                }
-                            }
-
+                            this.setFilterList("selection");
                         }
                     }
 
                 })
                 .on('drag', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
 
-                    if (_this.nodeShift) {
-                        return;
-                    }
+                    if (_this.nodeShift) return;
 
-                    // @ts-ignore: Unreachable code error
                     const obj = ev.subject;
-
-                    const initPos = obj.__initialDragPos;
                     const dragPos = ev;
-
-                    const k = d3.zoomTransform(this.canvas).k;
-
-                    let diffX = (dragPos.x - initPos.x) / k;
-                    let diffY = (dragPos.y - initPos.y) / k;
+                    const t = d3.zoomTransform(this.canvas);
 
                     if (obj instanceof AbstractNodeShell) {
-                        obj.setCoordinates({ x: initPos.x + diffX, y: initPos.y + diffY })
-                    } else {
-                        const node = ev.subject as AbstractNode;
-
-
                         /**
                          * the root can be moved in any direction and moves the whole tree with it
                          */
-                        node.fy = node.y = initPos.y + diffY;
-
-                        let children = node.descendants(false);
-                        for (let i = 0; i < children.length; i++) {
-                            const child: any = children[i];
-                            const childInitPos = child.__initialDragPos;
-                            child.fy = child.y = childInitPos.y + diffY;
-
-                        }
-
-                        if (node.parent) {
-                            7
-
-                            // const childrenTemp = [...node.parent.children].sort((a, b) => a.getY() - b.getY());
-                            node.parent.children.forEach(c => {
-                                c.customData["i"] = c.getY();
-                                c.customData["co"] = { y: c.getY(), vy: 0 }
-                            });
-                            Layouter.nodesUpdated(node.entry as any);
-
-                        }
-
-                        // prevent freeze while dragging
-                        // node.entry?.simulation.alpha(1);  // prevent freeze while dragging
+                        const initPos = (obj as any).__initialDragPos;
+                        let offset = { x: (dragPos.x - initPos.x) / t.k, y: (dragPos.y - initPos.y) / t.k };
+                        obj.setCoordinates({ x: initPos.x + offset.x, y: initPos.y + offset.y })
+                    } else {
+                        Layouter.nodeDragged(ev.subject as AbstractNode, "move", dragPos, t)
                     }
                     _this.fireSelectionUpdate();
 
@@ -389,44 +336,21 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     _this.pauseHovering = false;
                     this.canvas.classList.remove('grabbable');
 
-                    const obj = ev.subject; const node = ev.subject as AbstractNode;
-                    const initPos = obj.__initialDragPos;
-
-
-
+                    const obj = ev.subject;
                     delete (obj.__initialDragPos);
 
-                    if (obj instanceof AbstractNodeShell) {
-                        return;
+                    if (obj instanceof AbstractNodeShell) return;
+
+                    Layouter.nodeDragged(ev.subject as AbstractNode, "end", undefined, d3.zoomTransform(this.canvas))
+
+                    const listSelection = [];
+                    for (let i = 0; i < this.selection.length; i++) {
+                        const n = this.selection[i];
+                        listSelection.push(...n.descendants(), ...n.parents());
                     }
 
-                    if (node.parent) {
-
-                        // const childrenTemp = [...node.parent.children].sort((a, b) => a.getY() - b.getY());
-                        node.parent.children.forEach(c => {
-                            c.customData["i"] = c.getY();
-                            c.customData["co"] = { y: c.getY(), vy: 0 }
-                        });
-                        node.descendants(false).forEach(c => c.customData["co"].vy = 0);
-                        (node.entry as AbstractNodeShell).nodes.forEach(n => n.fy = undefined);
-                        Layouter.nodesUpdated(node.entry as any);
-
-                    }
-
-                    if (node.entry) {
-                        node.entry.isSimulationActive = true;
-                    }
-
-                    if (initPos.fy === undefined) { obj.fy = undefined; }
-
-                    let children = node.descendants(false);
-                    for (let i = 0; i < children.length; i++) {
-                        const child: any = children[i];
-                        const childInitPos = child.__initialDragPos;
-                        if (childInitPos.fy === undefined) { child.fy = undefined; }
-                        delete (child.__initialDragPos);
-                    }
-
+                    this.fireSelectionUpdate();
+                    listSelection.length == 0 ? this.setFilterList("selection") : this.setFilterList("selection", listSelection);
                 })
         );
 
@@ -480,15 +404,17 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 // }
             }
 
-        const listSelection = [];
+        const descendants: any[] = [];
+        this.selection.forEach(n => descendants.push(...n.descendants()));
+
         for (let i = 0; i < this.selection.length; i++) {
             const n = this.selection[i];
-            listSelection.push(...n.descendants(), ...n.parents());
-            this.selectionBelongingNodes.push(...n.descendants(), ...n.parents());
+            this.selectionBelongingNodes.push(...n.parents());
         }
 
+        this.selectionBelongingNodes.push(...descendants);
+        descendants.length < 2 ? this.setFilterList("selection") : this.setFilterList("selection", [... this.selectionBelongingNodes]);
         this.fireSelectionUpdate();
-        listSelection.length == 0 ? this.setFilterList("selection") : this.setFilterList("selection", listSelection);
 
         return this.selection.length > 0 ? this.selection[0] : undefined;
     }
@@ -556,27 +482,38 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         if (this.showAllTimer) clearTimeout(this.showAllTimer);
     }
 
-    public getNodesBoundingBox(padding: number = 1, shells: AbstractNodeShell[] | undefined = this._rootNodes): ElementDimension {
+    public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeShell[] | undefined = this._rootNodes): ElementDimension {
 
-        const d: ElementDimensionInstance = new ElementDimensionInstance(-Infinity, -Infinity, 0, 0, Infinity, Infinity);
+
+        const _this = this;
         let nodesThere = false;
-        for (let index = 0; index < shells.length; index++) {
+        const d: ElementDimensionInstance = new ElementDimensionInstance(Infinity, Infinity, 0, 0, -Infinity, -Infinity);
 
-            const shell = shells[index];
-            for (let j = 0; j < shell.nodes.length; j++) {
-                const n = shell.nodes[j];
+        function getNodeBound(n: AbstractNode): void {
 
-                const p = this.getNodePosition(n);
-                const x = p.x + shell.x;
-                const y = p.y + shell.y;
-
-                d.x = d.x < x ? x : d.x;
-                d.x2 = d.x2 > x ? x : d.x2;
-                d.y = d.y < y ? y : d.y;
-                d.y2 = d.y2 > y ? y : d.y2;
-                nodesThere = true;
+            function calc(x: number, y: number): void {
+                d.x = x < d.x ? x : d.x;
+                d.x2 = x > d.x2 ? x : d.x2;
+                d.y = y < d.y ? y : d.y;
+                d.y2 = y > d.y2 ? y : d.y2;
             }
+
+            const p = _this.getNodePosition(n);
+            const x = p.x + n.shell!.x;
+            const y = p.y + n.shell!.y;
+            calc(x + 50, y + 50);
+            calc(x - 50, y - 50);
+            nodesThere = true;
         }
+
+        if (selection instanceof Array) {
+            for (let index = 0; index < selection.length; index++) {
+                selection[index].nodes.forEach(n => getNodeBound(n));
+            }
+        } else if (selection instanceof AbstractNode) { 
+            getNodeBound(selection);
+        }
+
         if (nodesThere) {
             d.calculateSize();
             d.scaleFromCenter(padding);
@@ -585,9 +522,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         return d;
     }
 
-    public zoomToFitSelection(duration: number = 400) {
-
-        this.setViewBox(this.getNodesBoundingBox(1.3, this.selection.length > 0 ? [this.selection[0].entry as AbstractNodeShell] : undefined), duration);
+    public zoomToFitSelection(duration: number = 400, useShell: boolean = true, padding: number = 1.3) {
+        this.setViewBox(this.getNodesBoundingBox(padding, this.selection.length > 0 ? useShell ? [this.selection[0].shell as AbstractNodeShell] : this.selection[0] : undefined), duration);
     }
 
     public zoomToFit(duration: number = 400) {
@@ -737,6 +673,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
      */
     nodesUpdated() {
         this.updateNodeColors(undefined, false);
+        this.updateSelection(false);
     }
 
     public get rootNodes(): any[] {
@@ -786,7 +723,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             const n = this.notFound.get(listOpacity[i]);
             if (n) {
                 n.o *= n.d ? stepPos : stepNeg;
-                n.o = Math.min(1, Math.max(0.24, n.o));
+                n.o = Math.min(1, Math.max(OverviewEngine.minOpacity, n.o));
                 if (n.o >= 1) this.notFound.delete(listOpacity[i]);
             }
         }
@@ -803,8 +740,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
+    private static minOpacity: number = 0.045;
+
     private getNodeGraphCoordinates(n: AbstractNode, offsetX = 0, offsetY = 0): { x: number, y: number } {
-        return n.entry ? { x: n.entry.x + this.getNodePosition(n).x + offsetX, y: n.entry.y + this.getNodePosition(n).y + offsetY } : { x: 0, y: 0 };
+        return n.shell ? { x: n.shell.x + this.getNodePosition(n).x + offsetX, y: n.shell.y + this.getNodePosition(n).y + offsetY } : { x: 0, y: 0 };
     }
 
     private drawCanvas(ctx: CanvasRenderingContext2D, isShadow: boolean = false) {
@@ -915,7 +854,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             if (transition) {
 
                 const colorOld = this.getColorForNode(node);
-                let colorNew = this.render.getNodeColor(node, node.entry as AbstractNodeShell);
+                let colorNew = this.render.getNodeColor(node, node.shell as AbstractNodeShell);
 
                 var scale = d3.scaleLinear<string>()
                     .domain([0, this.colorChangeDuration])
@@ -927,7 +866,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 this.colorTransitionTarget = this.colorChangeDuration;
 
             } else {
-                let color = this.render.getNodeColor(node, node.entry as AbstractNodeShell);
+                let color = this.render.getNodeColor(node, node.shell as AbstractNodeShell);
                 this.colorNodeMap.set(node, color);
             }
 
@@ -1142,7 +1081,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                 ctx.beginPath();
 
-                if (node.isCollection && node.collectionSize > 0) {
+                if (node.isCollection() && node.collectionData!.size > 0) {
                     ctx.arc(
                         xPos, this.getNodePosition(node).y,
                         Math.max(1, 100 - ctx.lineWidth / 2),
@@ -1228,7 +1167,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                         if (this.selection.includes(node)) ctx.fillStyle = OverviewEngine.colorSelection;
 
-                        ctx.fillText(`${node.isCollection ? limitText(node.name) + " (+ " + (node.collectionSize) + ")" : limitText(node.name)}  `, xPos, yName);
+                        ctx.fillText(`${node.isCollection() ? limitText(node.name) + " (+ " + (node.collectionData?.size) + ")" : limitText(node.name)}  `, xPos, yName);
 
                         if (true || (isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
                             const text = this.render.getFeatureText(node, entry);

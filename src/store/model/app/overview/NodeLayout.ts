@@ -5,6 +5,7 @@ import { Simulation, ForceLink, Quadtree } from "d3";
 import CollideExtend from "@/utils/CollideExtend";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { Numeric_0 } from "mdue";
+import { shell } from "electron";
 
 export const Layouts: AbstractNodeLayout[] = [];
 export function LayoutDecorator() {
@@ -29,7 +30,9 @@ export abstract class AbstractNodeLayout {
 
     public abstract nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
 
+    public abstract featuresUpdated(shell: AbstractNodeShellIfc): void;
     public abstract nodesUpdated(shell: AbstractNodeShellIfc): void;
+    public abstract nodeDragged(node: AbstractNode, type: "start" | "move" | "end", offset: { x: number, y: number } | undefined, transform: { k: number }): void;
 
     public abstract nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
 
@@ -47,6 +50,12 @@ export abstract class AbstractNodeLayout {
 
 @LayoutDecorator()
 class NodeLayoutDefault extends AbstractNodeLayout {
+    public featuresUpdated(shell: AbstractNodeShellIfc): void {
+
+    }
+    public nodeDragged(node: AbstractNode, type: "move" | "end"): void {
+
+    }
     public nodesUpdated(shell: AbstractNodeShellIfc): void {
 
     }
@@ -147,6 +156,10 @@ class NodeLayoutDefault extends AbstractNodeLayout {
 
 @LayoutDecorator()
 class NodeLayoutStatic extends AbstractNodeLayout {
+    public featuresUpdated(shell: AbstractNodeShellIfc): void {
+    }
+    public nodeDragged(node: AbstractNode, type: "move" | "end"): void {
+    }
     public nodesUpdated(shell: AbstractNodeShellIfc): void {
 
     }
@@ -251,32 +264,100 @@ class NodeLayoutStatic extends AbstractNodeLayout {
 
 @LayoutDecorator()
 class NodeLayoutStaticDynamic extends AbstractNodeLayout {
+    public featuresUpdated(shell: AbstractNodeShellIfc): void {
+    }
 
     public id: LayoutType = LayoutType.STATICDYNAMIC;
 
+    static nodeBound: number = 100;
+
+    public nodeDragged(node: AbstractNode, type: "start" | "move" | "end", offset: { x: number, y: number } | undefined, t: { k: number }): void {
+        switch (type) {
+            case "start":
+                node.fy = node.y; // Fix points
+                node.customData["initDrag"] = { x: node.x, y: node.y, fx: node.fx, fy: node.fy };
+
+                let children = node.descendants(false);
+                for (let i = 0; i < children.length; i++) {
+                    const child = children[i];
+                    child.customData["initDrag"] = { x: child.x, y: child.y, fx: child.fx, fy: child.fy };
+                    child.fx = child.x;
+                    child.fy = child.y;
+                }
+
+                break;
+            case "move":
+                if (offset) {
+                    this.reheatShell(node.shell as any);
+
+                    offset = { x: (offset.x - node.customData["initDrag"].x) / t.k, y: (offset.y - node.customData["initDrag"].y) / t.k };
+
+                    node.fy = node.y = node.customData["initDrag"].y + offset.y;
+
+                    let children = node.descendants(false);
+                    for (let i = 0; i < children.length; i++) {
+                        const child = children[i];
+                        const childInitPos = child.customData["initDrag"];
+                        child.fy = child.y = childInitPos.y + offset.y;
+
+                    }
+
+                    if (node.parent) {
+                        node.parent.children.forEach(c => {
+                            c.customData["i"] = c.getY();
+                            c.customData["co"] = { y: c.getY(), vy: 0 }
+                        });
+                        Layouter.nodesUpdated(node.shell as any);
+                    }
+                }
+                break;
+            case "end":
+                if (node.parent) {
+
+                    this.reheatShell(node.shell as any);
+
+                    node.parent.children.forEach(c => {
+                        c.customData["i"] = c.getY();
+                        c.customData["co"] = { y: c.getY(), vy: 0 }
+                    });
+                    node.descendants(false).forEach(c => c.customData["co"].vy = 0);
+                    if (node.shell) node.shell.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
+
+                    this.nodesUpdated(node.shell as any);
+                }
+
+                node.descendants(false).forEach(c => delete c.customData["initDrag"]);
+
+                break;
+            default:
+                break;
+        }
+    }
+
     public nodesUpdated(shell: AbstractNodeShellIfc): void {
+        this.reheatShell(shell);
         this.update(shell.root)
     }
 
     public nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+        this.reheatShell(shell);
         this.update(shell.root)
     }
 
-    public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
-
-    }
+    public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void { }
 
     public nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+        this.reheatShell(shell);
         this.update(shell.root)
     }
 
     public shellContentUpdate(shell: AbstractNodeShellIfc): void {
-
+        this.reheatShell(shell);
     }
 
-    static nodeBound: number = 100;
-
     public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+        this.reheatShell(shell);
+        node.y = parent.y;
         this.update(shell.root)
     }
 
@@ -292,26 +373,29 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
             this.calculateBounds(c);
         }
 
-        if (n.children.length > 1) {
+        if (n.children.length >= 1) {
             let b = 0;
             n.children.forEach(c => b += (c.customData["b"] != undefined ? c.customData["b"] as number : 0));
+            // b *= this.padding;
             n.customData["b"] = b;
         } else {
             n.customData["b"] = NodeLayoutStatic.nodeBound;
         }
     }
 
-
+    padding: number = 1.04;
+    static coolDownTime: number = 500; // in frames
+    static alpha: number = 0.0001; // in frames
 
     private positionNodes(n: AbstractNode): void {
 
         if (n.isRoot()) n.y = 0;
 
-        const childBound = n.children.length > 0 ? n.children.map(c => c.customData["b"] as number).reduce((p, n) => p + n) : NodeLayoutStatic.nodeBound;
+        let childBound = n.children.length > 0 ? n.children.map(c => c.customData["b"] as number).reduce((p, n) => p + n) : NodeLayoutStatic.nodeBound;
 
         let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.getY(), vy: 0 } : n.customData["co"];
 
-        let yStart = (coord ? coord.y : n.getY()) - (childBound / 2);
+        let yStart = (coord ? coord.y : n.getY()) - ((childBound) / 2) /*+ (childBound / (this.padding * 10))*/;
 
         n.children.forEach((c, i) => c.customData["i"] == undefined ? c.customData["i"] = i : "");
         n.children.sort((a, b) => (a.customData["i"] == undefined ? 0 : a.customData["i"]) - (b.customData["i"] == undefined ? 0 : b.customData["i"]))
@@ -331,6 +415,8 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
     }
 
+    public reheatShell(shell: AbstractNodeShellIfc) { shell.customData["heat"] = { v: NodeLayoutStaticDynamic.coolDownTime }; };
+
     /**
      * 
      * @param shells 
@@ -340,25 +426,36 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
         shells.forEach(shell => {
 
-            shell.nodes.forEach(n => {
+            let heat: { v: number } = shell.customData["heat"];
+            if (heat == undefined) heat = shell.customData["heat"] = { v: NodeLayoutStaticDynamic.coolDownTime };
 
-                const coord = n.customData["co"];
+            if (heat.v > 0) {
+                let alpha = 0;
+                shell.nodes.forEach(n => {
+                    const coord = n.customData["co"];
 
-                if (coord != undefined) {
-                    const dist = coord.y - n.y;
-                    const abs = Math.abs(dist);
-                    if (abs > 0 && abs < 5) n.y = coord.y;
-                    else if (abs >= 5) {
-                        coord.vy += (dist) * delta * 0.0005;
-                        if (n.fy == undefined) n.y += coord.vy *= 0.7;
+                    if (coord != undefined) {
+                        let dist = coord.y - n.y;
+                        const abs = Math.abs(dist);
+                        dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
+                        if (abs > 0 && abs < .01) n.y = coord.y;
+                        else if (abs >= .01) {
+                            coord.vy += dist * delta * 0.0003;
+                            if (n.fy == undefined) n.y += coord.vy *= 0.84;
+                            alpha += Math.abs(coord.vy);
+                        }
+                    } else {
+                        n.y = n.parent ? n.parent.getY() : n.getY();
                     }
-                } else {
-                    n.y = n.parent ? n.parent.getY() : n.getY();
-                }
 
-            });
+                });
+
+                if (alpha < NodeLayoutStaticDynamic.alpha) heat.v--;
+            }
 
         })
+
+
     }
 
     public getNodePosition(n: AbstractNode): { x: number, y: number } {

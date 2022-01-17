@@ -1,4 +1,4 @@
-import { create } from "underscore"; 
+import { create } from "underscore";
 
 var canvasPreview: OffscreenCanvas;
 var ctxPreview: OffscreenCanvasRenderingContext2D | null = null;
@@ -32,7 +32,7 @@ function calculateAspectRatioFit(srcWidth: number, srcHeight: number, maxWidth: 
 }
 
 addEventListener('message', async function (e: MessageEvent) {
-
+  
     if (e.data.msg == "create") {
 
         try {
@@ -104,7 +104,7 @@ addEventListener('message', async function (e: MessageEvent) {
                         blob: blob
                     });
                 });
-
+  
                 canvasMedium = new OffscreenCanvas(mediumSize.width, mediumSize.height);
                 ctxMedium = canvasMedium.getContext("2d");
                 ctxMedium?.drawImage(bitmap, 0, 0, mediumSize.width, mediumSize.height);

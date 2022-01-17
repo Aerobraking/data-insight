@@ -17,7 +17,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     constructor(path: string | undefined) {
         super("folder", path ? path : "", new FolderNode(path ? pathNodejs.basename(path) : ""));
-        this.root.entry = this;
+        this.root.shell = this;
     }
 
     public createNode(name: string) {
@@ -36,7 +36,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     renameMap: Map<string, NodeJS.Timeout> = new Map();
 
     @Exclude()
-    interval: any = setInterval(this.handleEvents.bind(this), 2);
+    interval: any = setInterval(this.handleEvents.bind(this), 6);
     @Exclude()
     eventStack: (FolderSyncResult | FolderFeatureResult | FolderSyncFinished)[] = [];
 
@@ -49,14 +49,14 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     handleEvents(): void {
         s:
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 1; i++) {
             let event = this.eventStack.shift();
             if (event) {
                 switch (event.type) {
                     case "foldersync":
                         const result: FolderSyncResult = event as unknown as FolderSyncResult;
                         this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
-                       return
+                        return
                     case "folderfeatures":
                         this.addFeatures(event.path, event.features);
                         break;
@@ -90,8 +90,10 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     }
 
     loadCollection(node: FolderNode) {
-        node.isCollection = false;
-        Instance.syncOpenedCollection(this, node.getPath(), 1);
+        if (node.isCollection()) {
+            Instance.syncOpenedCollection(this, node.getPath(), Math.max(1, node.collectionData!.depth));
+            node.collectionData = undefined;
+        }
     }
 
     stopWatcher(): void {

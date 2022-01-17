@@ -5,6 +5,7 @@ import { ipcRenderer } from "electron";
 import { FolderSync, FolderSyncResult, FolderSyncFinished, FolderFeatureResult } from './store/model/implementations/filesystem/FileSystemMessages';
 import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, FolderNodeFeatures, FeatureDataMedian } from './store/model/app/overview/AbstractNodeFeature';
 import path from "path";
+import { Dirent } from 'fs-extra';
 
 ipcRenderer.on("log", (event, log) => {
     //  console.log("log", log);
@@ -28,58 +29,70 @@ ipcRenderer.on("msg-main",
 
             console.log("Start folder sync");
 
-            const listFoldersToSync: FolderSyncResult[] = [];
+            let listFoldersToSync: FolderSyncResult[] = [];
+            let listFoldersToSyncComplete: FolderSyncResult[] = [];
 
             function countAndScanFolders(pathCurrent: string, depth: number = 0): void {
 
-                let files: string[] = fs.readdirSync(pathCurrent);
-                let folders: string[] = [];
+                try {
+                    let files: Dirent[] = fs.readdirSync(pathCurrent, { withFileTypes: true });
+                    let folders: string[] = [];
 
-                for (let i = 0; i < files.length; i++) {
-                    const fileName = files[i];
-                    const absolutePath = pathCurrent + "/" + fileName;
-                    const stats = fs.statSync(absolutePath);
-                    if (stats.isDirectory() && !fileName.includes(".") && msg.depth < 100 && (msg.depth == 0 || depth <= maxDepth)) {
-                        folders.push(absolutePath);
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const absolutePath = pathCurrent + "/" + file.name;
+
+                        // const stats = fs.statSync(absolutePath);
+                        if (file.isDirectory() && !file.name.includes(".") && msg.depth < 100 && (msg.depth == 0 || depth <= maxDepth)) {
+                            folders.push(absolutePath);
+                        }
+
+
                     }
-                }
 
-                count += folders.length;
+                    count += folders.length;
 
-                const depthChildren = depth + 1;
+                    const depthChildren = depth + 1;
 
-                const isCollection: boolean = (folders.length >= msg.collectionSize && depthChildren > 1) || depthChildren > maxDepth || depthChildren > 100;
- 
-                listFoldersToSync.push({ id: msg.id, childCount: folders.length, path: pathCurrent, type: "foldersync", collection: isCollection });
+                    const isCollection: boolean = (folders.length >= msg.collectionSize && depthChildren > 1) || depthChildren > maxDepth || depthChildren > 100;
+
+                    const e: any = { id: msg.id, childCount: folders.length, path: pathCurrent, type: "foldersync", collection: isCollection };
+                    listFoldersToSync.push(e);
+                    listFoldersToSyncComplete.push(e);
 
 
-                for (let i = 0; i < folders.length; i++) {
-                    const f = folders[i];
-                    if (!isCollection) {
-                        countAndScanFolders(f, depthChildren);
+                    if (listFoldersToSync.length > 5) {
+                        listFoldersToSync.forEach(e => ipcRenderer.send('msg-worker', e))
+                        listFoldersToSync = [];
                     }
-                }
 
+
+                    for (let i = 0; i < folders.length; i++) {
+                        const f = folders[i];
+                        if (!isCollection) {
+                            countAndScanFolders(f, depthChildren);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error in scanning the folder ", path, error);
+
+                }
 
             }
 
-            countAndScanFolders(msg.path)
+            countAndScanFolders(msg.path);
+
+            listFoldersToSync.forEach(e => ipcRenderer.send('msg-worker', e))
+
+            console.log("Scanned folders, now extract features");
  
-
-            for (let i = 0; i < listFoldersToSync.length; i++) {
-                const element = listFoldersToSync[i];
-
-                // @ts-ignore: Unreachable code error
-                ipcRenderer.send('msg-worker', element);
-            }
-
             let updateSteps = 0;
 
             function calculateMedian(features: FolderNodeFeatures) {
                 features[Feature.FolderLastModify].m = Math.floor(features[Feature.FolderLastModify].m as number / features[Feature.FolderLastModify].c);
             }
 
-            function handleDirectory(pathF: string, files: string[], features: FolderNodeFeatures, sendResults: boolean = true) {
+            function handleDirectory(pathF: string, files: Dirent[], features: FolderNodeFeatures, sendResults: boolean = true) {
 
                 let mtimeCount = 0;
                 /**
@@ -87,10 +100,12 @@ ipcRenderer.on("msg-main",
                  */
 
                 for (let i = 0; i < files.length; i++) {
-                    const fileName = files[i];
-                    const absolutePath = pathF + "/" + fileName;
-                    const stats = fs.statSync(absolutePath);
-                    if (stats.isFile()) {
+                    const file = files[i];
+                    const absolutePath = pathF + "/" + file.name;
+
+                    if (file.isFile()) {
+
+                        const stats = fs.statSync(absolutePath);
 
                         // size feature
                         if (features[Feature.FolderSize]) features[Feature.FolderSize].s += stats.size;
@@ -101,7 +116,7 @@ ipcRenderer.on("msg-main",
 
 
                         // file type feature
-                        const fileExtention = path.extname(fileName);
+                        const fileExtention = path.extname(file.name);
                         if (features[Feature.FolderFileTypes].l[fileExtention] == undefined) {
                             features[Feature.FolderFileTypes].l[fileExtention] = 0;
                         }
@@ -119,7 +134,7 @@ ipcRenderer.on("msg-main",
 
                 // get average of the file modify time
                 if (sendResults && features[Feature.FolderLastModify] && features[Feature.FolderLastModify].m != undefined) {
-                    
+
                     calculateMedian(features);
                 }
 
@@ -139,15 +154,14 @@ ipcRenderer.on("msg-main",
 
             function collectFeaturesRec(rootPath: string, pathF: string, depth: number = 0, features: FolderNodeFeatures): void {
 
-                let files: string[] = fs.readdirSync(pathF);
+                let files: Dirent[] = fs.readdirSync(pathF, { withFileTypes: true });
 
                 let depthChildren = depth + 1;
 
                 for (let i = 0; i < files.length; i++) {
-                    const fileName = files[i];
-                    const absolutePath = pathF + "/" + fileName;
-                    const stats = fs.statSync(absolutePath);
-                    if (stats.isDirectory() && msg.depth < 100) {
+                    const file = files[i];
+                    const absolutePath = pathF + "/" + file.name;
+                    if (file.isDirectory() && msg.depth < 100) {
                         collectFeaturesRec(rootPath, absolutePath, depthChildren, features)
                     }
                 }
@@ -159,8 +173,8 @@ ipcRenderer.on("msg-main",
             /**
              * Scan Meta Data for Feature Creation
              */
-            for (let i = 0; i < listFoldersToSync.length; i++) {
-                const element = listFoldersToSync[i];
+            for (let i = 0; i < listFoldersToSyncComplete.length; i++) {
+                const element = listFoldersToSyncComplete[i];
                 const pathF = element.path;
 
                 let features: FolderNodeFeatures = {
@@ -193,7 +207,7 @@ ipcRenderer.on("msg-main",
                      */
 
 
-                    let files: string[] = fs.readdirSync(pathF);
+                    let files: Dirent[] = fs.readdirSync(pathF, { withFileTypes: true });
 
                     handleDirectory(pathF, files, features, true);
 

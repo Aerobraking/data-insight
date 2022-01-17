@@ -51,7 +51,7 @@ export class Workspace extends View {
     @Type(() => Overview)
     overview: Overview;
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.266 }
-    paneSize: number = 0;
+    paneSize: number = 100;
     showBookmarks: boolean = true;
     showFilterSettings: boolean = true;
     overviewOpen: boolean;

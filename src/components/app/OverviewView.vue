@@ -229,8 +229,8 @@ export default defineComponent({
   watch: {
     // only draw the canvas when the overview is visibile
     "model.isActive": function (newValue: boolean, oldValue: boolean) {
-      if (Instance.getEngine(this.idOverview)) {
-        Instance.getEngine(this.idOverview).enablePainting = newValue;
+      if (Instance.getEngine(this.id)) {
+        Instance.getEngine(this.id).enablePainting = newValue;
       }
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
@@ -271,7 +271,7 @@ export default defineComponent({
     sliderRange: (number | string)[];
     d3: any;
     wsListener: WSUtils.Listener | undefined;
-    idOverview: number;
+    id: number;
     panZoomInstance: any;
     selection: AbstractNode | undefined;
     listFeatures: AbstractNodeFeature[];
@@ -281,7 +281,7 @@ export default defineComponent({
       sliderRange: [0, 100],
       d3: d3,
       selection: undefined,
-      idOverview: 0,
+      id: 0,
       panZoomInstance: null,
       wsListener: undefined,
     };
@@ -293,10 +293,10 @@ export default defineComponent({
      * remove the node data from the vuex store
      */
     Instance.storeData(this.model);
-    this.idOverview = this.model.id;
+    this.id = this.model.id;
 
     Instance.createEngine(
-      this.idOverview,
+      this.id,
       this.$el.getElementsByClassName("overview-wrapper")[0],
       this.model
     );
@@ -313,7 +313,6 @@ export default defineComponent({
      */
     for (let i = 0; i < listFeatures.length; i++) {
       const f = listFeatures[i];
-
       const settings = this.model.overview.featureSettings[f.id];
       f.settings = settings ? settings : f.getNewSettingsInstance();
       this.model.overview.featureSettings[f.id] = f.settings;
@@ -325,9 +324,7 @@ export default defineComponent({
     /**
      * Set the data after the render is set.
      */
-    Instance.getEngine(this.idOverview).rootNodes = Instance.getData(
-      this.idOverview
-    );
+    Instance.getEngine(this.id).rootNodes = Instance.getData(this.id);
 
     /**
      * Update the model coordinates with the current ones from the html view.
@@ -363,12 +360,12 @@ export default defineComponent({
       this.selection = n;
     };
 
-    Instance.getEngine(this.idOverview).setSelectionListener(l);
+    Instance.getEngine(this.id).setSelectionListener(l);
 
     WSUtils.Events.registerCallback(this.wsListener);
   },
   unmounted() {
-    Instance.getEngine(this.idOverview).dispose();
+    Instance.getEngine(this.id).dispose();
     if (this.wsListener) {
       WSUtils.Events.unregisterCallback(this.wsListener);
     }
@@ -385,11 +382,11 @@ export default defineComponent({
         this.selection != undefined &&
         !this.selection.isRoot() &&
         this.selection.children.length > 0 &&
-        !this.selection.isCollection
+        !this.selection.isCollection()
       );
     },
     isContainer(): boolean {
-      return this.selection != undefined && !this.selection.isCollection;
+      return this.selection != undefined && !this.selection.isCollection();
     },
     getShowUI(): boolean {
       return this.$store.getters.getShowUI;
@@ -425,7 +422,7 @@ export default defineComponent({
     showAll(automodeToggle: boolean = true): void {
       if (!automodeToggle) {
         this.model.overview.showAll = false;
-        Instance.getEngine(this.idOverview).zoomToFit(400);
+        Instance.getEngine(this.id).zoomToFit(400);
         return;
       }
       if (!this.model.overview.showAll) {
@@ -437,36 +434,107 @@ export default defineComponent({
       }
     },
     deleteSelection(): void {
-      let l: AbstractNodeShell[] = Instance.getData(this.idOverview);
+      let l: AbstractNodeShell[] = Instance.getData(this.id);
 
-      if (Instance.getEngine(this.idOverview)) {
-        const o = Instance.getEngine(this.idOverview);
+      if (Instance.getEngine(this.id)) {
+        const o = Instance.getEngine(this.id);
         l = l.filter(
           (e) =>
-            o.selection.filter((s) => s.entry && s.entry.id == e.id).length == 0
+            o.selection.filter((s) => s.shell && s.shell.id == e.id).length == 0
         );
         // update the data
-        Instance.setData(this.idOverview, l);
+        Instance.setData(this.id, l);
         // tell the engine that we removed entries and clear selection
-        Instance.getEngine(this.idOverview).rootNodes = l;
-        Instance.getEngine(this.idOverview).clearSelection();
+        Instance.getEngine(this.id).rootNodes = l;
+        Instance.getEngine(this.id).clearSelection();
       }
     },
     mousedown(e: MouseEvent): void {
-      const node = Instance.getEngine(this.idOverview).getNodeAtMousePosition();
+      const node = Instance.getEngine(this.id).getNodeAtMousePosition();
 
       if (node) {
       }
     },
     keydown(e: KeyboardEvent) {
       let node: AbstractNode | undefined =
-        Instance.getEngine(this.idOverview).selection.length > 0
-          ? Instance.getEngine(this.idOverview).selection[0]
+        Instance.getEngine(this.id).selection.length > 0
+          ? Instance.getEngine(this.id).selection[0]
           : undefined;
+
+      /**
+       * Arrow key navigation
+       */
+      switch (e.key) {
+        case "ArrowUp":
+          if (node && node.parent) {
+            const childrenSorted = node.parent
+              .getChildren()
+              .sort((a, b) => a.getY() - b.getY());
+            const i = childrenSorted.indexOf(node);
+            const next = i - 1 < 0 ? childrenSorted.length - 1 : i - 1;
+            Instance.getEngine(this.id).updateSelection(
+              false,
+              childrenSorted[next]
+            );
+            if (e.ctrlKey)
+              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+            return;
+          }
+          break;
+        case "ArrowLeft":
+          if (node && node.parent) {
+            Instance.getEngine(this.id).updateSelection(false, node.parent);
+            if (e.ctrlKey)
+              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+            return;
+          }
+          break;
+        case "ArrowDown":
+          if (node && node.parent) {
+            const childrenSorted = node.parent
+              .getChildren()
+              .sort((a, b) => a.getY() - b.getY());
+            const i = childrenSorted.indexOf(node);
+            const next = i + 1 > childrenSorted.length - 1 ? 0 : i + 1;
+            Instance.getEngine(this.id).updateSelection(
+              false,
+              childrenSorted[next]
+            );
+            if (e.ctrlKey)
+              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+            return;
+          }
+          break;
+        case "ArrowRight":
+          if (node && node.getChildren().length > 0) {
+            Instance.getEngine(this.id).updateSelection(
+              false,
+              node.getChildren()[0]
+            );
+            if (e.ctrlKey)
+              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+            return;
+          }
+          break;
+      }
 
       // no modifier
       if (!e.shiftKey && !e.altKey && !e.ctrlKey) {
         switch (e.key) {
+          case "Tab":
+            for (let i = 0; i < this.listFeatures.length; i++) {
+              const f = this.listFeatures[i];
+              if (f.id == this.model.overview.featureActive) {
+                i++;
+                const fNew =
+                  this.listFeatures[i > this.listFeatures.length - 1 ? 0 : i];
+                this.model.overview.featureActive = fNew.id;
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
+            }
+            break;
           case "Delete":
           case "delete":
             this.deleteSelection();
@@ -479,48 +547,6 @@ export default defineComponent({
             break;
           case "-":
             this.createCollection();
-            break;
-          case "ArrowUp":
-            if (node && node.parent) {
-              const childrenSorted = node.parent
-                .getChildren()
-                .sort((a, b) => a.getY() - b.getY());
-              const i = childrenSorted.indexOf(node);
-              const next = i - 1 < 0 ? childrenSorted.length - 1 : i - 1;
-              Instance.getEngine(this.idOverview).updateSelection(
-                false,
-                childrenSorted[next]
-              );
-            }
-            break;
-          case "ArrowLeft":
-            if (node && node.parent) {
-              Instance.getEngine(this.idOverview).updateSelection(
-                false,
-                node.parent
-              );
-            }
-            break;
-          case "ArrowDown":
-            if (node && node.parent) {
-              const childrenSorted = node.parent
-                .getChildren()
-                .sort((a, b) => a.getY() - b.getY());
-              const i = childrenSorted.indexOf(node);
-              const next = i + 1 > childrenSorted.length - 1 ? 0 : i + 1;
-              Instance.getEngine(this.idOverview).updateSelection(
-                false,
-                childrenSorted[next]
-              );
-            }
-            break;
-          case "ArrowRight":
-            if (node && node.getChildren().length > 0) {
-              Instance.getEngine(this.idOverview).updateSelection(
-                false,
-                node.getChildren()[0]
-              );
-            }
             break;
           default:
             break;
@@ -539,11 +565,25 @@ export default defineComponent({
       }
 
       // shift modifier
-      if (e.shiftKey && !e.altKey && !e.ctrlKey) {
-        switch (e.key.toLowerCase()) {
+      if (e.shiftKey && !e.altKey && !e.ctrlKey) { 
+        switch (e.key) {
           case " ":
             this.model.overview.showAll = false;
-            Instance.getEngine(this.idOverview).zoomToFitSelection(600);
+            Instance.getEngine(this.id).zoomToFitSelection(600);
+            break;
+          case "Tab":
+            for (let i = 0; i < this.listFeatures.length; i++) {
+              const f = this.listFeatures[i];
+              if (f.id == this.model.overview.featureActive) {
+                i--;
+                const fNew =
+                  this.listFeatures[i < 0 ? this.listFeatures.length - 1 : i];
+                this.model.overview.featureActive = fNew.id;
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
+            }
             break;
           default:
             break;
@@ -572,13 +612,13 @@ export default defineComponent({
       let nodesMatching: AbstractNode[] = [];
 
       if (lowercase.length > 0) {
-        if (Instance.getEngine(this.idOverview)) {
+        if (Instance.getEngine(this.id)) {
           for (
             let i = 0;
-            i < Instance.getEngine(this.idOverview).rootNodes.length;
+            i < Instance.getEngine(this.id).rootNodes.length;
             i++
           ) {
-            const entry: AbstractNodeShell = Instance.getEngine(this.idOverview)
+            const entry: AbstractNodeShell = Instance.getEngine(this.id)
               .rootNodes[i];
 
             for (let j = 0; j < entry.nodes.length; j++) {
@@ -591,30 +631,28 @@ export default defineComponent({
           }
         }
 
-        Instance.getEngine(this.idOverview).setFilterList(
-          "search",
-          nodesMatching
-        );
+        Instance.getEngine(this.id).setFilterList("search", nodesMatching);
       } else {
-        Instance.getEngine(this.idOverview).setFilterList("search");
+        Instance.getEngine(this.id).setFilterList("search");
       }
     },
     toggleShadowCanvas() {
-      Instance.getEngine(this.idOverview).showShadowCanvas(
-        !Instance.getEngine(this.idOverview).showShadow
+      Instance.getEngine(this.id).showShadowCanvas(
+        !Instance.getEngine(this.id).showShadow
       );
     },
     loadCollection() {
-      if (Instance.getEngine(this.idOverview)) {
-        let n: AbstractNode = Instance.getEngine(this.idOverview).selection[0];
+      if (Instance.getEngine(this.id)) {
+        let n: AbstractNode = Instance.getEngine(this.id).selection[0];
 
-        if (n &&  n.entry) {
-          if (n.isCollection ) {
-              n.entry.loadCollection(n);
+        if (n && n.shell) {
+          if (n.isCollection()) {
+            n.shell.loadCollection(n);
           } else {
-            n.descendants().filter(c=>c.isCollection).forEach(c=>n.entry?.loadCollection(c))
+            n.descendants()
+              .filter((c) => c.isCollection())
+              .forEach((c) => n.shell?.loadCollection(c));
           }
-        
         }
 
         /**
@@ -628,10 +666,13 @@ export default defineComponent({
       }
     },
     createCollection() {
-      if (Instance.getEngine(this.idOverview)) {
-        let n: FolderNode = Instance.getEngine(this.idOverview)
+      if (Instance.getEngine(this.id)) {
+        let n: FolderNode = Instance.getEngine(this.id)
           .selection[0] as FolderNode;
-        !n.isCollection && n.parent ? n.createCollection() : 0;
+        if (n.children.length == 0) {
+          return;
+        }
+        !n.isCollection() && n.parent ? n.createCollection() : 0;
 
         const t = this.selection;
         this.selection = undefined;
@@ -639,26 +680,26 @@ export default defineComponent({
       }
     },
     createRootFromNode() {
-      if (Instance.getEngine(this.idOverview)) {
-        let n: FolderNode = Instance.getEngine(this.idOverview)
+      if (Instance.getEngine(this.id)) {
+        let n: FolderNode = Instance.getEngine(this.id)
           .selection[0] as FolderNode;
         this.addFolders([n.getPath()], { x: n.getX(), y: n.getY() });
       }
     },
     addEntries(entries: FolderNodeShell[], pos: { x: number; y: number }) {
-      let listEntries: AbstractNodeShell[] = Instance.getData(this.idOverview);
+      let listEntries: AbstractNodeShell[] = Instance.getData(this.id);
 
       entries.forEach((e) => {
         e.setCoordinates(pos);
-        e.engine = Instance.getEngine(this.idOverview);
+        e.engine = Instance.getEngine(this.id);
       });
 
       listEntries.push(...entries);
       /**
        * register the entries to the engine
        */
-      if (Instance.getEngine(this.idOverview)) {
-        Instance.getEngine(this.idOverview).rootNodes = listEntries;
+      if (Instance.getEngine(this.id)) {
+        Instance.getEngine(this.id).rootNodes = listEntries;
       }
 
       /**
@@ -687,7 +728,7 @@ export default defineComponent({
       if (listEntries.length > 0) {
         this.addEntries(listEntries, pos);
         setTimeout(() => {
-          Instance.getEngine(this.idOverview).selection = [
+          Instance.getEngine(this.id).selection = [
             listEntries[listEntries.length - 1].root,
           ];
         }, 33);
@@ -699,7 +740,7 @@ export default defineComponent({
       /**
        * create the entries based on the dropped files.
        */
-      if (e.dataTransfer && Instance.getEngine(this.idOverview)) {
+      if (e.dataTransfer && Instance.getEngine(this.id)) {
         for (let index = 0; index < e.dataTransfer?.files.length; index++) {
           const f = e.dataTransfer?.files[index];
           listFolders.push(f.path);
@@ -707,7 +748,7 @@ export default defineComponent({
 
         this.addFolders(
           listFolders,
-          Instance.getEngine(this.idOverview).screenToGraphCoords(e)
+          Instance.getEngine(this.id).screenToGraphCoords(e)
         );
       }
     },

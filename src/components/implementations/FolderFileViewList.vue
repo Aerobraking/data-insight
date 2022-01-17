@@ -68,29 +68,29 @@ export default defineComponent({
 
     div.classList.add(isImage ? "folder-file-preview" : "folder-file-icon");
 
-    if (isImage) {
-      cache.ImageCache.registerPath(this.entry.path, {
-        callback: (
-          url: string,
-          type: cache.ImageSize
-        ) => {
-          if (type == cache.ImageSize.small) {
-            el.getElementsByClassName(
-              "folder-file-image"
-            )[0].style.backgroundImage = url;
-          }
-        },
-        callbackSize: (dim: cache.ImageDim) => {},
-      });
-    } else {
-      icons.IconHandler.registerPath(this.entry.path, (url: string) => {
-        var img = new Image();
-        img.src = url;
-        el.getElementsByClassName(
-          "folder-file-image"
-        )[0].style.backgroundImage = "url('" + img.src + "')";
-      });
-    }
+    // if (isImage) {
+    //   cache.ImageCache.registerPath(this.entry.path, {
+    //     callback: (
+    //       url: string,
+    //       type: cache.ImageSize
+    //     ) => {
+    //       if (type == cache.ImageSize.small) {
+    //         el.getElementsByClassName(
+    //           "folder-file-image"
+    //         )[0].style.backgroundImage = url;
+    //       }
+    //     },
+    //     callbackSize: (dim: cache.ImageDim) => {},
+    //   });
+    // } else {
+    //   icons.IconHandler.registerPath(this.entry.path, (url: string) => {
+    //     var img = new Image();
+    //     img.src = url;
+    //     el.getElementsByClassName(
+    //       "folder-file-image"
+    //     )[0].style.backgroundImage = "url('" + img.src + "')";
+    //   });
+    // }
   },
   watch: {
     searchstring: function (newValue: string, oldValue: string) {

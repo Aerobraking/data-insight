@@ -1,5 +1,5 @@
 // import { path } from "d3";
-import _ from "underscore"; 
+import _ from "underscore";
 const fs = require("fs");
 const path = require("path");
 
@@ -150,7 +150,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
         const id = this.getId();
         if (id) {
             var match = this.url?.match("t\\=\\d+");
-          
+
             const stamp = match ? `?start=${match[0].replace("t=", "")}` : "";
 
             return '<iframe  sandbox="allow-presentation allow-scripts allow-same-origin allow-forms allow-modals allow-top-navigation allow-top-navigation-by-user-activation" '
@@ -265,7 +265,7 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
             console.error(err);
             this.fileList = [];
         }
-  
+
     }
 
     public getFileList(): Array<FolderWindowFile> {
@@ -303,4 +303,5 @@ export class FolderWindowFile {
     filename: string;
     size: number;
     isDirectory: boolean;
+    loadImage: boolean = false;
 }

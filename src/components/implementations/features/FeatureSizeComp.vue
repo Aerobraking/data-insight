@@ -181,7 +181,7 @@ export default defineComponent({
       const data = Instance.getData(this);
 
       const checkValue = (n: AbstractNode) => {
-        const v = this.model.getGradientValue(n, n.entry);
+        const v = this.model.getGradientValue(n, n.shell);
         v != undefined && v > 0 && v < min ? (min = v) : "";
         v != undefined && v > 0 && v > max ? (max = v) : "";
       };

@@ -142,7 +142,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     public addChild(c: this) {
         c.parent = this;
-        c.entry = this.entry;
+        c.shell = this.shell;
         c.depth = c.parents().length;
 
 
@@ -150,7 +150,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         // Layouter.addNode(this.entry as any, this, c)
 
         this.children.push(c);
-        this.entry?.nodeAdded(c);
+        this.shell?.nodeAdded(c);
         this.updateSimulation();
         this.updateForce();
     }
@@ -159,7 +159,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         let index = this.children.indexOf(c);
         if (index > -1) {
             this.children.splice(index, 1);
-            this.entry?.nodeRemoved(c);
+            this.shell?.nodeRemoved(c);
             this.updateSimulation();
             this.updateForce();
         }
@@ -198,10 +198,10 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     }
 
     public getRadius() {
-        if (this.isRoot()) {
+        if (this.isRoot() || this.isCollection()) {
             return 100;
-        } else if (this.entry) {
-            let abs = (this.entry.root as AbstractNode).getFeatureValue(Feature.FolderSize);
+        } else if (this.shell) {
+            let abs = (this.shell.root as AbstractNode).getFeatureValue(Feature.FolderSize);
             let part = this.getFeatureValue(Feature.FolderSize);
             if (abs != undefined && part != undefined) {
                 let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
@@ -217,10 +217,9 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     }
 
     public createCollection() {
-        this.collectionSize = this.children.length;
+        this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) }; 
         this.children = [];
-        this.isCollection = true;
-        this.entry?.nodeChildrenRemoved(this);
+        this.shell?.nodeChildrenRemoved(this);
         this.updateSimulation();
         this.updateForce();
     }
@@ -231,8 +230,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     public set name(value: string) {
         this._name = value;
-        if (this.entry) {
-            this.entry.nodeUpdate(this);
+        if (this.shell) {
+            this.shell.nodeUpdate(this);
         }
     }
 
@@ -350,7 +349,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     }
 
     getPath(absolute: boolean = true): string {
-        let p = this.entry && absolute ? this.entry.path : "";
+        let p = this.shell && absolute ? this.shell.path : "";
         const desc = this.parents(this.parent ? true : false, !absolute);
         desc.reverse();
         for (let i = 0; i < desc.length; i++) {
@@ -399,7 +398,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     // the OverviewEntry this nodes belongs to. will be set after loading from the json
     @Exclude()
-    entry: AbstractNodeShellIfc | undefined;
+    shell: AbstractNodeShellIfc | undefined;
 
     // the depth inside the tree structure, relative to the root node
     @Expose({ name: 'd' })
@@ -423,10 +422,13 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     @Expose({ name: 'i' })
     index?: number | undefined;
 
-    @Expose({ name: 'ic' })
-    isCollection: boolean = false;
-    @Expose({ name: 'cs' })
-    collectionSize: number = 0;
+
+    public isCollection(): boolean {
+        return this.collectionData != undefined;
+    }
+
+    @Expose({ name: 'id' })
+    collectionData: { size: number, depth: number } | undefined;
 
     /**
      * Node’s current x-position.
