@@ -36,7 +36,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     renameMap: Map<string, NodeJS.Timeout> = new Map();
 
     @Exclude()
-    interval: any = setInterval(this.handleEvents.bind(this), 6);
+    interval: any = setInterval(this.handleEvents.bind(this), 3);
     @Exclude()
     eventStack: (FolderSyncResult | FolderFeatureResult | FolderSyncFinished)[] = [];
 
@@ -49,14 +49,15 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     handleEvents(): void {
         s:
-        for (let i = 0; i < 1; i++) {
+        for (let i = 0; i < 2; i++) {
             let event = this.eventStack.shift();
             if (event) {
                 switch (event.type) {
                     case "foldersync":
                         const result: FolderSyncResult = event as unknown as FolderSyncResult;
                         this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
-                        return
+                        // return
+                        break;
                     case "folderfeatures":
                         this.addFeatures(event.path, event.features);
                         break;

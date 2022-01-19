@@ -189,6 +189,7 @@ export default defineComponent({
     list: Array<FolderWindowFile>;
     selected: Set<any>;
     lastItemSelected: number | undefined;
+    observer: IntersectionObserver | undefined;
     eventOnMouseup:
       | { id: number; type: "control" | "shift" | "single" }
       | undefined;
@@ -200,6 +201,7 @@ export default defineComponent({
       showTiles: true,
       dragActive: false,
       opaque: true,
+      observer: undefined,
       list: [],
       selected: new Set(),
     };
@@ -414,6 +416,14 @@ export default defineComponent({
       div.scrollLeft = div.scrollWidth;
     },
     updateUI(): void {
+      Array.from<HTMLElement>(
+        this.$el.getElementsByClassName("folder-file")
+      ).forEach((element) => {
+        if (this.observer != undefined) {
+          this.observer.unobserve(element);
+        }
+      });
+
       /**
        * Update breadcrumbs
        */
@@ -473,35 +483,34 @@ export default defineComponent({
         console.error("no access! " + this.entry.path);
       }
 
-      const _this = this;
-
-      const callback = function (
-        entries: IntersectionObserverEntry[],
-        observer: IntersectionObserver
-      ) {
-        console.log("observer event");
-
-        const views: Element[] = entries
-          .filter((e) => e.isIntersecting)
-          .map((e) => e.target);
-
-        const models = _this.getModelEntriesFromView(views);
-
-        models.forEach((e) => {
-          e.loadImage = true;
+      if (!this.observer) {
+        this.observer = new IntersectionObserver(this.observerUpdate, {
+           rootMargin: '1000px 0px 1000px 0px',
+          root: this.$el.getElementsByClassName("viewport")[0],
         });
-      };
+      }
 
-      const observer = new IntersectionObserver(callback, {
-        root: this.$el.getElementsByClassName("viewport")[0],
-      });
       setTimeout(() => {
         Array.from<HTMLElement>(
           this.$el.getElementsByClassName("folder-file")
-        ).forEach((element) => { 
-          observer.observe(element);
+        ).forEach((element) => {
+          if (this.observer) this.observer.observe(element);
         });
       }, 100);
+    },
+    observerUpdate: function (
+      entries: IntersectionObserverEntry[],
+      observer: IntersectionObserver
+    ) {
+      const views: Element[] = entries
+        .filter((e) => e.isIntersecting)
+        .map((e) => e.target);
+
+      const models = this.getModelEntriesFromView(views);
+
+      models.forEach((e) => {
+        e.loadImage = true;
+      });
     },
     getEntries: function (): HTMLElement[] {
       return Array.from(this.$el.querySelectorAll(".tile")) as HTMLElement[];

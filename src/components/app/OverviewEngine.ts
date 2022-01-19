@@ -510,7 +510,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             for (let index = 0; index < selection.length; index++) {
                 selection[index].nodes.forEach(n => getNodeBound(n));
             }
-        } else if (selection instanceof AbstractNode) { 
+        } else if (selection instanceof AbstractNode) {
             getNodeBound(selection);
         }
 
@@ -1125,9 +1125,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         let op: number = scale >= 0.05 && scale <= 0.1 ? (scale - 0.05) * 20 : scale < 0.1 ? 0 : 1;
 
         // the greater the zoom, the smaller the fontsize
-        const fontSize = this.getFixedSize(20, 20, 35);
+        const fontSize = this.getFixedSize(45, 45, 80);
+        const fontSize2 = this.getFixedSize(30, 30, 50);
 
-        const limitText = (text: string) => ((text + "...").length > 24) ? text.substring(0, 18) + "..." : text;
+        const limitText = (n: AbstractNode) => (n.children.length > 0 && (n.name + "...").length > 24) ? n.name.substring(0, 18) + "..." : n.name;
 
         /**
          * Draw Folder names
@@ -1158,7 +1159,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         ctx.textAlign = "left";
 
                         let translate = (fontSize) / 3;
-                        ctx.font = `${fontSize}px Lato`;
+                        ctx.font = `${fontSize}px Arial`;
 
                         xPos += this.textPadding;
                         let yName = node.children.length == 0 ? this.getNodePosition(node).y + (fontSize) / 4 : this.getNodePosition(node).y - translate;
@@ -1167,9 +1168,12 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                         if (this.selection.includes(node)) ctx.fillStyle = OverviewEngine.colorSelection;
 
-                        ctx.fillText(`${node.isCollection() ? limitText(node.name) + " (+ " + (node.collectionData?.size) + ")" : limitText(node.name)}  `, xPos, yName);
+                        ctx.fillText(`${node.isCollection() ? limitText(node) + " (+ " + (node.collectionData?.size) + ")" : limitText(node)}  `, xPos, yName);
 
                         if (true || (isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
+                            ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#ddd";
+                            translate = (fontSize2) / 3;
+                            ctx.font = `${fontSize2}px Arial italic`;
                             const text = this.render.getFeatureText(node, entry);
                             if (text) ctx.fillText(text, xPos, yName + translate + (fontSize + 4) * 1);
                         }
@@ -1183,7 +1187,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                     let fontSize = this.getFixedSize(20);
                     let translate = (fontSize) / 4;
-                    ctx.font = `${fontSize}px Lato`;
+                    ctx.font = `${fontSize}px Arial`;
 
                     let name = (isNodeHovered || this.selection.includes(node)) && entry ? entry.path : node.name;
                     let yName = this.getNodePosition(node).y + translate;
@@ -1198,7 +1202,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     // path
                     ctx.fillText(name, xPos, yName);
 
-
+                    ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#bbb";
                     const text = this.render.getFeatureText(node, entry);
                     if (text) ctx.fillText(text, xPos, yName + (fontSize + 4) * 1);
 
