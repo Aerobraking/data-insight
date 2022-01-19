@@ -630,7 +630,7 @@ async function createWindow() {
   Menu.setApplicationMenu(menu);
 
   // load the last session
-  win.webContents.once('dom-ready', () => { openFile(getTempFilePath()); });
+  win.webContents.once('dom-ready', () => { /*openFile(getTempFilePath()); */});
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage')
