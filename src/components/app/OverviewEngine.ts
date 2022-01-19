@@ -220,14 +220,14 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             for (let i = 0; i < entries.length && i < 1; i++) {
                 const e = entries[i];
                 e.target; // div element
-                let w = Math.max(10, e.contentRect.width);
-                let h = Math.max(10, e.contentRect.height);
+                let w = Math.max(2, e.contentRect.width);
+                let h = Math.max(2, e.contentRect.height);
 
                 if (this.skipInitialResize++ > 0) {
                     let diffX = this.canvas.width - w,
                         diffY = this.canvas.height - h;
-
-                    this.zoom.translateBy(d3.select(this.canvas), diffX / 2, diffY / 2);
+                    let t = d3.zoomTransform(this.canvas);
+                    this.zoom.translateBy(d3.select(this.canvas), -(diffX / 2) / t.k, -(diffY / 2) / t.k);
                 }
 
                 this.canvas.width = w, this.canvas.height = h;
@@ -236,10 +236,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 this.size.w = w;
                 this.size.h = h;
 
-
             }
             this.tick();
-        }, 5));
+        }, 33));
         this.divObserver.observe(div);
 
         d3.select(this.canvas).on('dblclick', function (e: MouseEvent) {
@@ -252,7 +251,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             _this.setView(1, pos.x, pos.y, 400);
         });
-
 
         d3.select(this.canvas).on('mousedown', function (e: MouseEvent) {
 
@@ -370,9 +368,13 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
         this.zoom.scaleExtent([0.01, 2]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
-            let t = d3.zoomTransform(this.canvas);
+            let t = d3.zoomTransform(this.canvas); 
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
         });
+        this.zoom.on("zoom", _.throttle((event: any, d: HTMLCanvasElement) => {
+            let t = d3.zoomTransform(this.canvas); 
+            this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
+        }, 100));
         this.zoom.on("start", (event: any, d: HTMLCanvasElement) => {
             _this.pauseHovering = true;
         });

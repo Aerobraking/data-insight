@@ -559,6 +559,8 @@ export default defineComponent({
           case " ":
             this.showAll(false);
             break;
+            case "f":
+              this.$emit("focusSearch");
           default:
             break;
         }

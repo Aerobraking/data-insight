@@ -150,7 +150,7 @@ export default defineComponent({
         <template v-else>
           <td>{{ "Node" }}</td>
           <td>{{ e.getPath(false) }}</td>
-          <td>{{ e.entry.root.name }}</td>
+          <td>{{ e.shell.root.name }}</td>
         </template>
       </tr>
     </keep-alive>

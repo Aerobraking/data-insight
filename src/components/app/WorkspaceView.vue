@@ -235,6 +235,7 @@
           @folderSelected="updateOverviewFolderSelection"
           class="overview"
           :model="model"
+          @focusSearch="focusSearch"
           :searchstring="searchString"
         />
       </pane>
@@ -543,7 +544,7 @@ export default defineComponent({
 
     if (this.model.entries.length == 0) {
       this.panZoomInstance.moveTo(
-        window.innerWidth / 2,
+        (window.innerWidth * (Math.max(2, this.model.paneSize) / 100)) / 2,
         window.innerHeight / 2
       );
     }
@@ -799,11 +800,10 @@ export default defineComponent({
         let coordRect = this.getCoordinatesFromElement(selectionRectangle);
 
         if (
-          !this.selectionDragActive&&
+          !this.selectionDragActive &&
           selectionRectangle.style.visibility != "visible" &&
           coordRect.w == 0 &&
           coordRect.h == 0
-
         ) {
           for (let e of this.getEntries()) {
             let c = this.getCoordinatesFromElement(e);
@@ -942,6 +942,12 @@ export default defineComponent({
         w: Math.abs(x2 - x),
         h: Math.abs(y2 - y),
       };
+    },
+    focusSearch() {
+      const search = this.$el.getElementsByClassName(
+        "workspace-search-input"
+      )[0];
+      if (search) search.focus();
     },
     startSelectionDrag(mousePosition: { x: number; y: number }) {
       /**
@@ -1083,12 +1089,7 @@ export default defineComponent({
             }
             break;
           case "f":
-            const search = this.$el.getElementsByClassName(
-              "workspace-search-input"
-            )[0];
-            if (search) {
-              search.focus();
-            }
+            this.focusSearch();
             break;
           case "v":
             this.$el.getElementsByClassName(
