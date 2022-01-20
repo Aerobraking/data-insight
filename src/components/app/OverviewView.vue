@@ -559,15 +559,15 @@ export default defineComponent({
           case " ":
             this.showAll(false);
             break;
-            case "f":
-              this.$emit("focusSearch");
+          case "f":
+            this.$emit("focusSearch");
           default:
             break;
         }
       }
 
       // shift modifier
-      if (e.shiftKey && !e.altKey && !e.ctrlKey) { 
+      if (e.shiftKey && !e.altKey && !e.ctrlKey) {
         switch (e.key) {
           case " ":
             this.model.overview.showAll = false;
@@ -671,10 +671,11 @@ export default defineComponent({
       if (Instance.getEngine(this.id)) {
         let n: FolderNode = Instance.getEngine(this.id)
           .selection[0] as FolderNode;
-        if (n.children.length == 0) {
-          return;
-        }
+        if (n.children.length == 0) return;
+
         !n.isCollection() && n.parent ? n.createCollection() : 0;
+
+        if (n.isRoot()) n.children.forEach((c) => c.createCollection());
 
         const t = this.selection;
         this.selection = undefined;

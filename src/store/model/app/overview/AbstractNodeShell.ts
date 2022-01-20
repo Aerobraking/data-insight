@@ -249,6 +249,9 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
             let childFound = currentFolder.getChildren().find(c => c.name == f);
             if (childFound) {
+                if(childFound.isCollection()) console.log("IS COLLECTIN");
+                
+                 if(childFound.isCollection()) return; // do not add nodes to a collection
                 // Child was found, go to next subfolder
             } else {
                 // Create new sub folder

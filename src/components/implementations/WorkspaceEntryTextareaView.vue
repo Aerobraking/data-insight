@@ -10,7 +10,7 @@
     ></div> -->
 
     <div
-      class="editor-enabler"
+      class="editor-enabler-div"
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"

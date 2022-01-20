@@ -24,7 +24,8 @@ export default class WorkspaceEntry {
     width: number = 220;
     height: number = 180;
     @Exclude()
-    alert: string|undefined;
+    alert: string | undefined;
+    readonly isInsideSelectable: boolean = true;
 
     public setDimensions(d: ElementDimension) {
         this.x = d.x;

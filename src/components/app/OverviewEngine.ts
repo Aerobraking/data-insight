@@ -17,6 +17,7 @@ import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
 import { Feature } from "@/store/model/app/overview/AbstractNodeFeature";
 import { AbstractNodeFeature } from "@/store/model/app/overview/AbstractNodeFeatureView";
 import { Layouter } from "@/store/model/app/overview/NodeLayout";
+import { IframeOutline } from "mdue";
 
 /**
  * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
@@ -765,7 +766,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         if (this.rootNodes && this.transform) {
 
             for (let i = 0; i < this.rootNodes.length; i++) {
-                const entry: AbstractNodeShell = this.rootNodes[i];
+                const shell: AbstractNodeShell = this.rootNodes[i];
 
                 // if (this.selection.includes(entry.root)) {
                 //     ctx.strokeStyle =OverviewEngine.colorSelection;
@@ -775,9 +776,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 // }
 
                 ctx.save();
-                ctx.translate(entry.x, entry.y);
-                let nodes: AbstractNode[] = entry.nodes;
-                let links: AbstractLink[] = entry.links;
+                ctx.translate(shell.x, shell.y);
+                let nodes: AbstractNode[] = shell.nodes;
+                let links: AbstractLink[] = shell.links;
 
                 /**
                  * Caching the x position and width of any column for performance reasons. Otherwise
@@ -794,12 +795,23 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                 ctx.fillStyle = "rgb(170,170,170)";
 
+                ctx.fillStyle = OverviewEngine.colorSelection;
+                var r = this.getRadius(shell.root, 5);
 
-                this.drawLinks(ctx, isShadow, links, widths, entry);
-                this.drawNodes(ctx, isShadow, nodes, widths, entry);
-                this.drawText(ctx, isShadow, nodes, widths, entry);
+                if (this.selection.includes(shell.root))
+                    ctx.fillRect(
+                        r,
+                        0 - (shell.root.customData["b"] ? shell.root.customData["b"] / 2 : 0),
+                        this.getFixedSize(2),
+                        shell.root.customData["b"] ? shell.root.customData["b"] : 0);
 
-                if (entry && entry.columnForceMap) {
+
+                this.drawLinks(ctx, links, widths, shell);
+                this.drawNodes(ctx, nodes, widths, shell);
+                this.drawText(ctx, nodes, widths, shell);
+
+
+                if (shell && shell.columnForceMap) {
 
                     // const columnForces = Array.from(entry.columnForceMap.values());
 
@@ -963,13 +975,13 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         return OverviewEngine.colorNodeDefault;
     }
 
-    drawLinks(ctx: CanvasRenderingContext2D, isShadow: boolean = false, links: AbstractLink[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
+    drawLinks(ctx: CanvasRenderingContext2D, links: AbstractLink[], widths: { x: number, width: number }[], shell: AbstractNodeShell) {
 
         let scale = this.transform ? this.transform.k : 1;
         let weight = 0.7;
 
         let lineWidth = (4 * weight) + (4 / scale) * (1 - weight);
-        if (entry.isSyncing) lineWidth += Math.sin(OverviewEngine.elapsedTotal / 300) * 10;
+        if (shell.isSyncing) lineWidth += Math.sin(OverviewEngine.elapsedTotal / 300) * 10;
         let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
         op = 1 - op;
         op = Math.max(op, 0.075)
@@ -982,7 +994,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             if (this.nodeCulling(start) && this.nodeCulling(end)) continue;
 
             const opacity = this.notFound.get(end);
-            if (!isShadow && opacity) {
+            if (opacity) {
                 ctx.globalAlpha = opacity.o;
             } else {
                 ctx.globalAlpha = 1;
@@ -990,7 +1002,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             var r = this.getRadius(end);
             var rStart = this.getRadius(start);
-            if (start.isRoot() && entry.isSyncing) rStart += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
+            if (start.isRoot() && shell.isSyncing) rStart += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
             let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x + rStart : widths[start.depth].x + this.textMaxWidth) : 0;
             let xEnd = widths[end.depth] ? widths[end.depth].x - r - 10 : 0;
             let xEndLine = widths[end.depth] ? widths[end.depth].x - r + 1 : 0; // point on the next circle
@@ -1025,11 +1037,11 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             }
 
             // draw selection highlighting
-            if ((entry && this.selection.includes(entry.root))) {
+            if ((shell && this.selection.includes(shell.root))) {
                 ctx.globalAlpha = 1;
                 ctx.strokeStyle = OverviewEngine.colorSelection;
                 ctx.lineWidth = lineWidth * 3.5;
-                drawCurve();
+                // drawCurve();
             }
 
             let colorStart = this.getColorForNode(start);
@@ -1052,7 +1064,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         }
     }
 
-    drawNodes(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
+    drawNodes(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], widths: { x: number, width: number }[], shell: AbstractNodeShell) {
 
         ctx.lineWidth = this.getFixedSize(12, 10, 26);
         const angle = 2 * Math.PI;
@@ -1077,7 +1089,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 ctx.fillStyle = this.getColorForNode(node);
                 ctx.strokeStyle = ctx.fillStyle;
 
-                if (node.isRoot() && entry.isSyncing) r += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
+                if (node.isRoot() && shell.isSyncing) r += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
 
                 let xPos = widths[node.depth] ? widths[node.depth].x : 0;
 
@@ -1100,7 +1112,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 }
 
                 // highlight selected or hovered nodes
-                if (this.nodeHovered == node || this.selection.includes(node) || (entry && this.selection.includes(entry.root))) {
+                if (this.nodeHovered == node || this.selection.includes(node)) {
                     ctx.globalAlpha = 1;
                     ctx.beginPath();
                     ctx.arc(
@@ -1118,7 +1130,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
-    drawText(ctx: CanvasRenderingContext2D, isShadow: boolean = false, nodes: AbstractNode[], widths: { x: number, width: number }[], entry: AbstractNodeShell) {
+    drawText(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], widths: { x: number, width: number }[], shell: AbstractNodeShell) {
 
         ctx.fillStyle = "#fff";
 
@@ -1151,7 +1163,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 if (!node.isRoot()) {
                     // child node
                     const opacity = this.notFound.get(node);
-                    if (!opacity || this.isHoveredNode(node) || this.selection.includes(entry.root)) {
+                    if (!opacity || this.isHoveredNode(node) || this.selection.includes(shell.root)) {
                         ctx.globalAlpha = op;
                     } else {
                         ctx.globalAlpha = opacity.o;
@@ -1161,7 +1173,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         xPos += node.isCollection() ? this.textPadding + 45 : this.textPadding;
                         ctx.textAlign = "left";
 
-                        ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#fff";
+                        ctx.fillStyle = this.isNodeHiddenByFeature(node, shell) ? OverviewEngine.hiddenColor : "#fff";
                         let translate = (fontSize) / 3;
                         ctx.font = `${fontSize}px Arial`;
                         let yName = node.children.length == 0 ? this.getNodePosition(node).y + (fontSize) / 4 : this.getNodePosition(node).y - translate;
@@ -1173,10 +1185,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         ctx.fillText(`${node.isCollection() ? limitText(node) + " (+ " + (node.collectionData?.size) + ")" : limitText(node)}  `, xPos, yName);
 
 
-                        ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#ddd";
+                        ctx.fillStyle = this.isNodeHiddenByFeature(node, shell) ? OverviewEngine.hiddenColor : "#ddd";
                         translate = (fontSize2) / (node.children.length == 0 ? 8 : 3);
                         ctx.font = `${fontSize2}px Arial italic`;
-                        const text = this.render.getFeatureText(node, entry);
+                        const text = this.render.getFeatureText(node, shell);
                         if (text) ctx.fillText(text, xPos, yName + translate + (fontSize2 + 4) * 1);
 
 
@@ -1191,7 +1203,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     let translate = (fontSize) / 4;
                     ctx.font = `${fontSize}px Arial`;
 
-                    let name = (isNodeHovered || this.selection.includes(node)) && entry ? entry.path : node.name;
+                    let name = (isNodeHovered || this.selection.includes(node)) && shell ? shell.path : node.name;
                     let yName = this.getNodePosition(node).y + translate;
 
                     xPos -= r * 1.1;
@@ -1204,8 +1216,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     // path
                     ctx.fillText(name, xPos, yName);
 
-                    ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#bbb";
-                    const text = this.render.getFeatureText(node, entry);
+                    ctx.fillStyle = this.isNodeHiddenByFeature(node, shell) ? OverviewEngine.hiddenColor : "#bbb";
+                    const text = this.render.getFeatureText(node, shell);
                     if (text) ctx.fillText(text, xPos, yName + (fontSize + 4) * 1);
 
 

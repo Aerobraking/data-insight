@@ -1,7 +1,8 @@
 import * as _ from "underscore";
 import { Type } from "class-transformer";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame, WorkspaceEntryVideo } from "../implementations/filesystem/FileSystemWorkspaceEntries";
+import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryVideo } from "../implementations/filesystem/FileSystemWorkspaceEntries";
 import WorkspaceEntry from "./WorkspaceEntry";
+import { WorkspaceEntryFrame } from "./WorkspaceEntryFrame";
 
 
 export default class WorkspaceEntryCollection {

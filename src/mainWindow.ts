@@ -6,13 +6,21 @@ import App from './App.vue'
 import { initStore, Store } from './store/store'
 import panZoom from 'vue-panzoom';
 import VueTippy from 'vue-tippy';
-
+import { ipcRenderer } from "electron";
+import fs from "fs";
+import { deserialize } from 'class-transformer';
+import { InsightFile } from './store/model/state';
+import { Feature } from './store/model/app/overview/AbstractNodeFeature';
 
 /**
  * Workspace Entries
  */
+import wsentryframe from "./components/app/WorkspaceEntryFrame.vue";
+
+/**
+ * Workspace Folder Entries
+ */
 import wsentryfile from "./components/implementations/WorkspaceEntryFileView.vue";
-import wsentryframe from "./components/implementations/WorkspaceEntryFrame.vue";
 import wsentrytextarea from "./components/implementations/WorkspaceEntryTextareaView.vue";
 import wsentryfolderview from "./components/implementations/WorkspaceEntryFolderView.vue";
 import wsentryimage from "./components/implementations/WorkspaceEntryImageView.vue";
@@ -23,14 +31,7 @@ import wsentryyoutube from "./components/implementations/WorkspaceEntryYoutubeVi
  * Features
  */
 import featurenone from "./components/implementations/features/FeatureNone.vue";
-import featuresize from "./components/implementations/features/FeatureSizeComp.vue"; 
-
-import { ipcRenderer } from "electron";
-import fs from "fs";
-import { deserialize } from 'class-transformer';
-import { InsightFile } from './store/model/state';
-import { Feature } from './store/model/app/overview/AbstractNodeFeature';
-
+import featuresize from "./components/implementations/features/FeatureSizeComp.vue";
 
 ipcRenderer.send("show-window");
 

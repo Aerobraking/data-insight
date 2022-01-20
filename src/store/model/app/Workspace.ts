@@ -2,21 +2,29 @@ import * as _ from "underscore";
 import { Expose, Type } from "class-transformer";
 import { FolderNodeShell } from "@/store/model/implementations/filesystem/FolderNodeShell";
 import WorkspaceEntry from "./WorkspaceEntry";
-import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow, WorkspaceEntryFrame } from "../implementations/filesystem/FileSystemWorkspaceEntries";
+import {
+    WorkspaceEntryFile,
+    WorkspaceEntryImage,
+    WorkspaceEntryYoutube,
+    WorkspaceEntryVideo,
+    WorkspaceEntryTextArea,
+    WorkspaceEntryFolderWindow
+} from "../implementations/filesystem/FileSystemWorkspaceEntries";
 import View from "./AbstractView";
 import { AbstractNodeShell } from "./overview/AbstractNodeShell";
 import { Instance } from "./overview/OverviewDataCache";
 import { FeatureSettingsList } from "./overview/AbstractNodeFeatureView";
 import { Feature } from "./overview/AbstractNodeFeature";
+import { WorkspaceEntryFrame } from "./WorkspaceEntryFrame";
 
 export class Overview {
 
     viewportTransform: { x: number, y: number, scale: number } = { x: 0, y: 0, scale: 0.05 }
-  
+
     @Expose({ name: 'featureSettings' })
     featureSettings: FeatureSettingsList = {};
     showAll: boolean = false;
-    featureActive: Feature | undefined = Feature.FolderSize; 
+    featureActive: Feature | undefined = Feature.FolderSize;
 
     @Type(() => AbstractNodeShell, {
         keepDiscriminatorProperty: true,

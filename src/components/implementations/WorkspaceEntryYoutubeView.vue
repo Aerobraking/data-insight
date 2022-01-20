@@ -29,7 +29,7 @@
     />
 
     <div
-      class="editor-enabler"
+      class="editor-enabler-div"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip', $event)"
       @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"
     ></div>

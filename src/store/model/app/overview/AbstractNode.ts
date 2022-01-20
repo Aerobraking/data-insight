@@ -216,8 +216,13 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.simulation.nodes(this.children);
     }
 
+    public canCreateCollection(): boolean {
+        return !this.isCollection() && this.children.length > 0 && !this.isRoot();
+    }
+
     public createCollection() {
-        this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) }; 
+        if (!this.canCreateCollection()) return;
+        this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) };
         this.children = [];
         this.shell?.nodeChildrenRemoved(this);
         this.updateSimulation();

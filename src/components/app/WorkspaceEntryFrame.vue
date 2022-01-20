@@ -22,12 +22,12 @@
 const { shell } = require("electron");
 
 import { defineComponent } from "vue";
-import { WorkspaceEntryFrame } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 import * as WSUtils from "../app/WorkspaceUtils";
 import { setupEntry } from "../app/WorkspaceUtils";
 import  WorkspaceViewIfc from "../app/WorkspaceViewIfc";
 import * as _ from "underscore";
 import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
+import { WorkspaceEntryFrame } from "@/store/model/app/WorkspaceEntryFrame";
 
 _.once(() => {
   WSUtils.Events.registerCallback({

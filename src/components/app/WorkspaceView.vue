@@ -250,8 +250,7 @@ import "splitpanes/dist/splitpanes.css";
 import { ipcRenderer } from "electron";
 import {
   WorkspaceEntryFile,
-  WorkspaceEntryFolderWindow,
-  WorkspaceEntryFrame,
+  WorkspaceEntryFolderWindow, 
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
   WorkspaceEntryVideo,
@@ -306,6 +305,7 @@ import WorkspaceEntryCollection from "@/store/model/app/WorkspaceEntryCollection
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { getPlugins } from "@/components/Plugins/PluginList";
 import { createKeyboardInputContext } from "@/components/app/plugins/KeyboardShortcut";
+import { WorkspaceEntryFrame } from "@/store/model/app/WorkspaceEntryFrame";
 
 getPlugins();
 
@@ -790,7 +790,7 @@ export default defineComponent({
         };
 
         const closeEnough: {
-          e: HTMLElement;
+          v: HTMLElement;
           d: number;
           c: ElementDimensionInstance;
         }[] = [];
@@ -805,8 +805,10 @@ export default defineComponent({
           coordRect.w == 0 &&
           coordRect.h == 0
         ) {
-          for (let e of this.getEntries()) {
-            let c = this.getCoordinatesFromElement(e);
+          this.getEntries().forEach((v, i) => {
+            const m = this.model.entries[i];
+
+            let c = this.getCoordinatesFromElement(v);
 
             c.x = c.x * currentC.scale + currentC.x;
             c.x2 = c.x2 * currentC.scale + currentC.x;
@@ -816,10 +818,10 @@ export default defineComponent({
             c.h = c.h * currentC.scale;
 
             const d = distance(c, mouse);
-            if (d < 20 && d > 0) closeEnough.push({ e, d, c });
-          }
+            if (d < 20 &&(m.isInsideSelectable|| d>0) ) closeEnough.push({ v, d, c });
+          });
         }
-        this.entryHover = closeEnough.length > 0 ? closeEnough[0].e : undefined;
+        this.entryHover = closeEnough.length > 0 ? closeEnough[0].v : undefined;
 
         if (closeEnough.length > 0) {
           var result = closeEnough.reduce((res, obj) => {
@@ -2224,7 +2226,7 @@ $color-Selection: rgba(57, 215, 255, 0.3);
 /*.
 Blocks input vor the content of an entry. When selected, this div will be made invisible
 */
-.editor-enabler {
+.editor-enabler-div {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -2240,17 +2242,13 @@ Blocks input vor the content of an entry. When selected, this div will be made i
     width: 100%;
     cursor: pointer;
   }
-
-  &:hover {
-    animation: circle 0.5s linear forwards;
-  }
 }
 
-.workspace-is-selected .editor-enabler {
+.workspace-is-selected .editor-enabler-div {
   display: none;
 }
 
-.prevent-input .editor-enabler {
+.prevent-input .editor-enabler-div {
   display: block !important;
 }
 
@@ -2621,7 +2619,7 @@ visually highlights elements for selection with a hover effect
 .select-element {
   cursor: pointer;
   &:hover {
-    animation: circle 0.5s linear forwards;
+    // animation: circle 0.5s linear forwards;
   }
 }
 

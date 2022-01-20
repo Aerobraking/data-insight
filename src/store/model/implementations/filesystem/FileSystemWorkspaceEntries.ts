@@ -16,6 +16,7 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
     name: string;
     path: string;
     filename: string;
+    readonly isInsideSelectable: boolean = true;
 
     public searchResultString(): string {
         return this.filename;
@@ -72,6 +73,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
     path: string;
     filename: string;
     imageCreated: boolean;
+    readonly isInsideSelectable: boolean = true;
 }
 
 export class WorkspaceEntryVideo extends WorkspaceEntry {
@@ -102,6 +104,7 @@ export class WorkspaceEntryVideo extends WorkspaceEntry {
     path: string;
     filename: string;
     created: boolean;
+    readonly isInsideSelectable: boolean = true;
 }
 
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
@@ -165,9 +168,14 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
     private videoId: string | undefined;
     url: string;
     name: string;
+    readonly isInsideSelectable: boolean = true;
 }
 
 export class WorkspaceEntryTextArea extends WorkspaceEntry {
+
+    text: string;
+    readonly isInsideSelectable: boolean = true;
+
     constructor(text: string = "Hello <b>World</b>") {
         super("wsentrytextarea", true);
         this.width = 450;
@@ -179,8 +187,6 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
         return "Found inside text";
     }
 
-    text: string;
-
     public searchLogic(input: string): boolean {
         let found: boolean = super.searchLogic(input);
         found = found || this.text.toLocaleLowerCase().includes(input);
@@ -188,26 +194,17 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
     }
 }
 
-export class WorkspaceEntryFrame extends WorkspaceEntry {
-
-    public static viewid: string = "wsentryframe";
-
-    constructor() {
-        super("wsentryframe", true);
-        this.width = 1400;
-        this.height = 1400;
-    }
-
-    public searchResultString(): string {
-        return "Found inside Name";
-    }
-
-    color: string = "rgb(10,10,10)";
-}
-
 export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 
     public static viewid: string = "wsentryfolder";
+    mode: "tile" | "list" = "tile";
+    fileList: Array<FolderWindowFile> = [];
+    name: string;
+    path: string;
+    defaultPath: string;
+    foldername: string;
+    sort: "manual" | "asc" | "desc";
+    readonly isInsideSelectable: boolean = false;
 
     constructor(path: string) {
         super("wsentryfolder", true);
@@ -273,13 +270,6 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
         return this.fileList;
     }
 
-    mode: "tile" | "list" = "tile";
-    fileList: Array<FolderWindowFile> = [];
-    name: string;
-    path: string;
-    defaultPath: string;
-    foldername: string;
-    sort: "manual" | "asc" | "desc";
 }
 import * as f from "@/utils/format";
 import WorkspaceEntry from "../../app/WorkspaceEntry";

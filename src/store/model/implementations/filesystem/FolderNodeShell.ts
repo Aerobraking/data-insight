@@ -24,11 +24,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         return new FolderNode(name);
     }
 
-
-    syncStructure(): void {
-    }
-
-
+    syncStructure(): void { }
 
     private ignoredFolders: string[] = [];
 
