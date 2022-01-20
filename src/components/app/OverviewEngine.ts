@@ -368,11 +368,11 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
         this.zoom.scaleExtent([0.01, 2]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
-            let t = d3.zoomTransform(this.canvas); 
+            let t = d3.zoomTransform(this.canvas);
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
         });
         this.zoom.on("zoom", _.throttle((event: any, d: HTMLCanvasElement) => {
-            let t = d3.zoomTransform(this.canvas); 
+            let t = d3.zoomTransform(this.canvas);
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
         }, 100));
         this.zoom.on("start", (event: any, d: HTMLCanvasElement) => {
@@ -1158,27 +1158,27 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     }
 
                     if (op > 0) {
+                        xPos += node.isCollection() ? this.textPadding + 45 : this.textPadding;
                         ctx.textAlign = "left";
 
+                        ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#fff";
                         let translate = (fontSize) / 3;
                         ctx.font = `${fontSize}px Arial`;
-
-                        xPos += this.textPadding;
                         let yName = node.children.length == 0 ? this.getNodePosition(node).y + (fontSize) / 4 : this.getNodePosition(node).y - translate;
 
-                        ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#fff";
+
 
                         if (this.selection.includes(node)) ctx.fillStyle = OverviewEngine.colorSelection;
 
                         ctx.fillText(`${node.isCollection() ? limitText(node) + " (+ " + (node.collectionData?.size) + ")" : limitText(node)}  `, xPos, yName);
 
-                        if (true || (isNodeHovered || this.selection.includes(node) || this.selectionBelongingNodes.includes(node))) {
-                            ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#ddd";
-                            translate = (fontSize2) / 3;
-                            ctx.font = `${fontSize2}px Arial italic`;
-                            const text = this.render.getFeatureText(node, entry);
-                            if (text) ctx.fillText(text, xPos, yName + translate + (fontSize + 4) * 1);
-                        }
+
+                        ctx.fillStyle = this.isNodeHiddenByFeature(node, entry) ? OverviewEngine.hiddenColor : "#ddd";
+                        translate = (fontSize2) / (node.children.length == 0 ? 8 : 3);
+                        ctx.font = `${fontSize2}px Arial italic`;
+                        const text = this.render.getFeatureText(node, entry);
+                        if (text) ctx.fillText(text, xPos, yName + translate + (fontSize2 + 4) * 1);
+
 
                     }
 

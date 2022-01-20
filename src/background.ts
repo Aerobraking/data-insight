@@ -56,7 +56,7 @@ function createDragImage() {
 }
 
 function isDevMode() {
-  return !app.isPackaged;
+  return true||!app.isPackaged;
 }
 
 function sendToRender(id: string, ...args: any[]) {

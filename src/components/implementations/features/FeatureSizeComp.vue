@@ -182,8 +182,10 @@ export default defineComponent({
 
       const checkValue = (n: AbstractNode) => {
         const v = this.model.getGradientValue(n, n.shell);
-        v != undefined && v > 0 && v < min ? (min = v) : "";
-        v != undefined && v > 0 && v > max ? (max = v) : "";
+        if (data.length > 1 || !n.isRoot()) { // ignore the root when we only have one shell 
+          v != undefined && v > 0 && v < min ? (min = v) : "";
+          v != undefined && v > 0 && v > max ? (max = v) : "";
+        }
       };
 
       if (this.selection != undefined) {

@@ -6,6 +6,7 @@ import CollideExtend from "@/utils/CollideExtend";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { Numeric_0 } from "mdue";
 import { shell } from "electron";
+import { Feature, FeatureDataType } from "./AbstractNodeFeature";
 
 export const Layouts: AbstractNodeLayout[] = [];
 export function LayoutDecorator() {
@@ -18,6 +19,7 @@ export enum LayoutType {
     DEFAULT,
     STATIC,
     STATICDYNAMIC,
+    STATICDYNAMICEXT,
 }
 
 export abstract class AbstractNodeLayout {
@@ -192,7 +194,7 @@ class NodeLayoutStatic extends AbstractNodeLayout {
         // }
     }
 
-    static nodeBound: number = 260;
+    static nodeBound: number = 100; // 260
 
     public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
         var startTime = performance.now()
@@ -269,11 +271,16 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
     public id: LayoutType = LayoutType.STATICDYNAMIC;
 
-    static nodeBound: number = 100;
+    static nodeBound: number = 200;
+
+    frictionNormal = 0.84;
 
     public nodeDragged(node: AbstractNode, type: "start" | "move" | "end", offset: { x: number, y: number } | undefined, t: { k: number }): void {
         switch (type) {
             case "start":
+                this.frictionNormal = NodeLayoutStaticDynamic.friction;
+                NodeLayoutStaticDynamic.friction = 0.40;
+
                 node.fy = node.y; // Fix points
                 node.customData["initDrag"] = { x: node.x, y: node.y, fx: node.fx, fy: node.fy };
 
@@ -307,25 +314,26 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                             c.customData["i"] = c.getY();
                             c.customData["co"] = { y: c.getY(), vy: 0 }
                         });
-                        Layouter.nodesUpdated(node.shell as any);
+                        this.nodesUpdated(node.shell as any);
                     }
                 }
                 break;
             case "end":
+                this.reheatShell(node.shell as any);
+
                 if (node.parent) {
-
-                    this.reheatShell(node.shell as any);
-
                     node.parent.children.forEach(c => {
                         c.customData["i"] = c.getY();
                         c.customData["co"] = { y: c.getY(), vy: 0 }
                     });
-                    node.descendants(false).forEach(c => c.customData["co"].vy = 0);
-                    if (node.shell) node.shell.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
-
-                    this.nodesUpdated(node.shell as any);
                 }
 
+                node.descendants(false).forEach(c => c.customData["co"].vy = 0);
+                if (node.shell) node.shell.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
+
+                this.nodesUpdated(node.shell as any);
+
+                NodeLayoutStaticDynamic.friction = this.frictionNormal;
                 node.descendants(false).forEach(c => delete c.customData["initDrag"]);
 
                 break;
@@ -366,7 +374,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
         this.positionNodes(node);
     }
 
-    private calculateBounds(n: AbstractNode): void {
+    calculateBounds(n: AbstractNode): void {
 
         for (let i = 0; i < n.children.length; i++) {
             const c = n.children[i];
@@ -379,19 +387,19 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
             // b *= this.padding;
             n.customData["b"] = b;
         } else {
-            n.customData["b"] = NodeLayoutStatic.nodeBound;
+            n.customData["b"] = NodeLayoutStaticDynamic.nodeBound;
         }
     }
 
-    padding: number = 1.04;
     static coolDownTime: number = 500; // in frames
-    static alpha: number = 0.0001; // in frames
+    static minAlpha: number = 0.0003; // cooldown start when alpha in current tick is less then minAlpha
+    static friction = 0.84;
 
-    private positionNodes(n: AbstractNode): void {
+    positionNodes(n: AbstractNode): void {
 
         if (n.isRoot()) n.y = 0;
 
-        let childBound = n.children.length > 0 ? n.children.map(c => c.customData["b"] as number).reduce((p, n) => p + n) : NodeLayoutStatic.nodeBound;
+        let childBound = n.children.length > 0 ? n.children.map(c => c.customData["b"] as number).reduce((p, n) => p + n) : NodeLayoutStaticDynamic.nodeBound;
 
         let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.getY(), vy: 0 } : n.customData["co"];
 
@@ -441,7 +449,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                         if (abs > 0 && abs < .01) n.y = coord.y;
                         else if (abs >= .01) {
                             coord.vy += dist * delta * 0.0003;
-                            if (n.fy == undefined) n.y += coord.vy *= 0.84;
+                            if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamic.friction;
                             alpha += Math.abs(coord.vy);
                         }
                     } else {
@@ -450,7 +458,8 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
                 });
 
-                if (alpha < NodeLayoutStaticDynamic.alpha) heat.v--;
+                // cooldown when minAlpha is reached or heat up till the maximum cooldowntime is reached.
+                alpha < NodeLayoutStaticDynamic.minAlpha ? heat.v-- : heat.v += heat.v < NodeLayoutStaticDynamic.coolDownTime ? 1 : 0;
             }
 
         })
@@ -462,6 +471,99 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
         return { x: n.getX(), y: n.getY() };
     }
 
+}
+
+
+@LayoutDecorator()
+class NodeLayoutStaticDynamicExt extends NodeLayoutStaticDynamic {
+
+    public id: LayoutType = LayoutType.STATICDYNAMICEXT;
+
+    calculateBounds(n: AbstractNode): void {
+
+        for (let i = 0; i < n.children.length; i++) {
+            const c = n.children[i];
+            this.calculateBounds(c);
+        }
+
+        if (n.children.length > 0) {
+            let b = 0;
+            let oneColumnBound = 0;
+            let lastBigNodeBound: number | undefined = 0;
+            let y = 0;
+
+            n.children.forEach((c, i) => c.customData["i"] == undefined ? c.customData["i"] = i : "");
+            n.children.sort((a, b) => (a.customData["i"] == undefined ? 0 : a.customData["i"]) - (b.customData["i"] == undefined ? 0 : b.customData["i"]))
+
+            n.children.forEach((c, i) => {
+                let cBound = (c.customData["b"] != undefined ? c.customData["b"] as number : 0);
+
+                if (cBound == NodeLayoutStaticDynamicExt.nodeBound && c.children.length == 0) {
+                    if (oneColumnBound == 0 && lastBigNodeBound) {
+                        oneColumnBound -= lastBigNodeBound / 2;
+                        lastBigNodeBound = undefined;
+                    }
+                    c.customData["rel"] = y;
+                    y += cBound; // just take the next row, no matter if we are inside a bound or not
+                    oneColumnBound += cBound;
+                } else {
+                    let diff = oneColumnBound - (cBound / 2);
+
+                    let toAdd = diff >= 0 ? diff + (cBound / 2) : Math.abs(diff) + (cBound / 2);
+
+                    b += toAdd;
+                    oneColumnBound = 0;
+                    lastBigNodeBound = cBound;
+
+                    y += Math.max(0, -diff) + NodeLayoutStaticDynamicExt.nodeBound;
+                    c.customData["rel"] = y; // take the minimum distance + the offset we "saved"
+                    y += NodeLayoutStaticDynamicExt.nodeBound;
+                }
+                // b += (c.customData["b"] != undefined ? c.customData["b"] as number : 0)
+                // c.featuresRecursive[Feature.FolderQuantity] = { s: c.customData["rel"], t: FeatureDataType.SUM };
+            });
+
+            b += oneColumnBound;
+
+            n.customData["b"] = b;
+            n.featuresRecursive[Feature.FolderQuantity] = { s: n.customData["b"], t: FeatureDataType.SUM };
+        } else {
+            n.customData["b"] = NodeLayoutStaticDynamicExt.nodeBound;
+            n.featuresRecursive[Feature.FolderQuantity] = { s: n.customData["b"], t: FeatureDataType.SUM };
+        }
+    }
+
+    positionNodes(n: AbstractNode): void {
+
+        if (n.isRoot()) n.y = 0;
+
+        let childBound = n.customData["b"] as number;
+
+        let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.getY(), vy: 0 } : n.customData["co"];
+
+        let yStart = (coord ? coord.y : n.getY()) - ((childBound) / 2) /*+ (childBound / (this.padding * 10))*/;
+
+        // n.children.forEach((c, i) => c.customData["i"] == undefined ? c.customData["i"] = i : "");
+        // n.children.sort((a, b) => (a.customData["i"] == undefined ? 0 : a.customData["i"]) - (b.customData["i"] == undefined ? 0 : b.customData["i"]))
+
+        for (let i = 0; i < n.children.length; i++) {
+            const c = n.children[i];
+            const yRel = c.customData["rel"] != undefined ? c.customData["rel"] : 0;
+
+
+            const newY = (n.getY() - (childBound / 2)) + yRel;
+            // c.featuresRecursive[Feature.FolderQuantity] = { s: c.children.length > 0 ? childBound : newY - n.getY(), t: FeatureDataType.SUM };
+            console.log(newY, n.getY(), childBound / 2, yRel, n.name);
+
+            let coordChild = c.customData["co"] == undefined ? c.customData["co"] = { y: newY, vy: 0 } : c.customData["co"];
+            coordChild.y = newY;
+
+            yStart = newY;
+        }
+
+        for (let i = 0; i < n.children.length; i++)  this.positionNodes(n.children[i]);
+
+    }
 }
 
 class LayouterClass {
