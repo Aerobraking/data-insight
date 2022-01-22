@@ -250,7 +250,7 @@ import "splitpanes/dist/splitpanes.css";
 import { ipcRenderer } from "electron";
 import {
   WorkspaceEntryFile,
-  WorkspaceEntryFolderWindow, 
+  WorkspaceEntryFolderWindow,
   WorkspaceEntryImage,
   WorkspaceEntryTextArea,
   WorkspaceEntryVideo,
@@ -818,7 +818,8 @@ export default defineComponent({
             c.h = c.h * currentC.scale;
 
             const d = distance(c, mouse);
-            if (d < 20 &&(m.isInsideSelectable|| d>0) ) closeEnough.push({ v, d, c });
+            if (d < 20 && (m.isInsideSelectable || d > 0))
+              closeEnough.push({ v, d, c });
           });
         }
         this.entryHover = closeEnough.length > 0 ? closeEnough[0].v : undefined;
@@ -1284,9 +1285,7 @@ export default defineComponent({
         return;
       }
 
-      if (this.entryHover) {
-        console.log(" if (this.entryHover) {");
-
+      if (e.button == 0 && this.entryHover) {
         this.entriesSelected(
           [this.entryHover],
           e.shiftKey ? "add" : e.ctrlKey ? "toggle" : "single",
