@@ -3,6 +3,7 @@
   "version": "0.8.1",
   "homepage": "https://github.com/Aerobraking/ma-data-insight",
   "description": "A modern File Explorer",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Aerobraking/ma-data-insight/issues",
     "email": "issues@aerobraking.de"
@@ -28,8 +29,6 @@
   "main": "background.js",
   "dependencies": {
     "@tinymce/tinymce-vue": "^4.0.4",
-    "@types/drivelist": "^6.4.2",
-    "@types/splitpanes": "^2.2.1",
     "@viselect/vanilla": "^3.0.0-beta.9",
     "chokidar": "^3.5.2",
     "class-transformer": "^0.4.0",
@@ -57,6 +56,8 @@
   },
   "devDependencies": {
     "@types/d3": "^6.7.5",
+    "@types/drivelist": "^6.4.2",
+    "@types/splitpanes": "^2.2.1",
     "@types/electron-devtools-installer": "^2.2.0",
     "@types/resize-observer-browser": "^0.1.6",
     "@types/underscore": "^1.11.3",

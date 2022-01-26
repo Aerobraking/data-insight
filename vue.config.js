@@ -25,6 +25,7 @@ module.exports = {
       builderOptions: {
         productName: "Data Insight",
         appId: 'com.aerobraking.datainsight',
+        // compression: 'maximum',
         fileAssociations: {
           "ext": "ins",
           "name": "INS",

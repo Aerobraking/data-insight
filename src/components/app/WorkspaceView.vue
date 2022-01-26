@@ -170,6 +170,12 @@
                 >
               </tippy>
               <tippy :offset="[0, 40]">
+                <button><Overscan @click="rearrange(false)" /></button>
+                <template #content
+                  >Rearrange <kbd>R</kbd></template
+                >
+              </tippy>
+              <tippy :offset="[0, 40]">
                 <button><FileOutline @click="createEntry('files')" /></button>
                 <template #content>Add Files <kbd>X</kbd></template>
               </tippy>
@@ -733,16 +739,8 @@ export default defineComponent({
 
       if (this.useCanvas) {
         context.save();
-
-        context.translate(
-          this.getCurrentTransform().x,
-          this.getCurrentTransform().y
-        );
-        context.scale(
-          this.getCurrentTransform().scale,
-          this.getCurrentTransform().scale
-        );
-
+        // context.translate(currentC.x, currentC.y);
+        // context.scale(currentC.scale, currentC.scale);
         context.restore();
 
         context.strokeStyle = "rgb(57, 215, 255)";
@@ -800,6 +798,7 @@ export default defineComponent({
         let coordRect = this.getCoordinatesFromElement(selectionRectangle);
 
         if (
+          this.highlightSelection &&
           !this.selectionDragActive &&
           selectionRectangle.style.visibility != "visible" &&
           coordRect.w == 0 &&
@@ -945,6 +944,11 @@ export default defineComponent({
         w: Math.abs(x2 - x),
         h: Math.abs(y2 - y),
       };
+    },
+    rearrange(useMouse: boolean = true) {
+      if (this.getSelectedEntries().length > 1) {
+        this.startPlugin(new ReArrange().setUseMouse(useMouse));
+      }
     },
     focusSearch() {
       const search = this.$el.getElementsByClassName(
@@ -1224,9 +1228,7 @@ export default defineComponent({
             this.showAll();
             break;
           case "r":
-            if (this.getSelectedEntries().length > 1) {
-              this.startPlugin(new ReArrange());
-            }
+            this.rearrange();
             break;
           case "t":
             this.createEntry("text", true);
@@ -1640,7 +1642,7 @@ export default defineComponent({
       oldView.y2 = oldView.y + oldView.h;
       return oldView;
     },
-    showSelection() {
+    showSelection(padding: number = 0.02) {
       let bound = this.getPanzoomRect(
         this.getBounds(
           this.getSelectedEntries().length > 0
@@ -1649,7 +1651,7 @@ export default defineComponent({
             ? this.getEntries()
             : this.$el.getElementsByClassName("welcome-message")[0]
         ),
-        0.02
+        padding
       );
       this.panZoomInstance.smoothShowRectangle(bound);
     },
@@ -1792,7 +1794,6 @@ export default defineComponent({
 
         this.eventOnMouseup = { entries: entries, type: type };
       }
-      console.log("handleSelectionEvent");
 
       this.handleSelectionEvent(entries, type, activateDrag);
     },
@@ -1937,6 +1938,16 @@ export default defineComponent({
         WSUtils.Events.pluginStarted(false);
       }
       this.activePlugin = null;
+    },
+    getPositionInDocument(e: { clientX: number; clientY: number }): {
+      x: number;
+      y: number;
+    } {
+      const currentC = this.getCurrentTransform();
+      return {
+        x: e.clientX * currentC.scale + currentC.x,
+        y: e.clientY * currentC.scale + currentC.y,
+      };
     },
     getPositionInWorkspace(e: { clientX: number; clientY: number }) {
       var rect = this.getWorkspaceWrapper().getBoundingClientRect();

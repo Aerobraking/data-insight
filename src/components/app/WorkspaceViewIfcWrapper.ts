@@ -1,4 +1,4 @@
- 
+
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { ElementDimension } from "@/utils/resize";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
@@ -13,7 +13,13 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
         x: number;
         y: number;
     } {
-        return { x: 0, y: 0 };
+        return this.ws ? this.ws.getPositionInDocument(e) : { x: 0, y: 0 };
+    }
+    getPositionInDocument(e: { clientX: number; clientY: number }): {
+        x: number;
+        y: number;
+    } {
+        return this.ws ? this.ws.getPositionInDocument(e) : { x: 0, y: 0 };
     }
     getCurrentTransform(): { scale: number; x: number; y: number } {
         return { scale: 0, x: 0, y: 0 };
@@ -51,7 +57,10 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     cancelPlugin(): void {
         this.ws ? this.ws.cancelPlugin() : [];
     }
-    
+    showSelection(padding: number | undefined): void {
+        this.ws ? this.ws.showSelection(padding) : [];
+    }
+
     public set highlightSelection(val: boolean) {
         this.ws ? this.ws.highlightSelection = val : [];
     }

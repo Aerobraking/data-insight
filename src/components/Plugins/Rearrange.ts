@@ -1,10 +1,17 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
+import { IframeOutline } from "mdue";
+import _ from "underscore";
 import Plugin, { PluginDecorator } from "../app/plugins/AbstractPlugin"
 
 @PluginDecorator()
 export default class ReArrange extends Plugin {
 
     shortcut: string = "alt+r";
+    buttonFit: HTMLButtonElement;
+    style: HTMLStyleElement;
+    slider: HTMLInputElement;
+    sliderColumns: HTMLInputElement;
+    useMouse: boolean = false;
 
     getClassName(a: HTMLElement): string {
         let classNameA = "";
@@ -21,6 +28,63 @@ export default class ReArrange extends Plugin {
 
     constructor() {
         super();
+        const _this = this;
+
+        this.sliderColumns = document.createElement("input");
+        this.slider = document.createElement("input");
+        this.buttonFit = document.createElement("button");
+        this.buttonFit.innerHTML = "Fit";
+        this.buttonFit.classList.add("button-fit");
+        this.buttonFit.addEventListener("click", function () {
+            _this.fitSize = !_this.fitSize;
+            _this.fitElementSize();
+        });
+        this.style = document.createElement('style');
+        this.style.textContent = `
+        .slider-fit{
+            color: #000;
+            position: fixed;
+            height: 24px;
+            width: auto;
+        } 
+        .button-fit{
+            background: #fff;
+            color: #000;
+            position: fixed;
+            height: 24px;
+            width: auto;
+            padding: 5px 20px 5px 20px;
+        } 
+        .button-fit:hover{
+           // background: #bbb;
+        }
+        .button-fit-active{
+            background: rgb(57, 215, 255);
+        }
+        `;
+
+        this.slider.classList.add("slider-fit");
+        this.slider.type = "range";
+        this.slider.min = "0";
+        this.slider.max = "300";
+        this.slider.value = "0";
+        this.slider.step = "1";
+        this.slider.oninput = _.throttle((ev: Event) => {
+            _this.padding = Number(_this.slider.value);
+            _this.fitElementSize();
+        }, 33);
+
+        this.sliderColumns.classList.add("slider-fit");
+        this.sliderColumns.type = "range";
+        this.sliderColumns.min = "10";
+        this.sliderColumns.max = "300";
+        this.sliderColumns.value = "10";
+        this.sliderColumns.step = "10";
+        this.sliderColumns.oninput = _.throttle((ev: Event) => {
+            _this.width = Number(_this.sliderColumns.value);
+            _this.fitElementSize();
+        }, 33);
+
     }
 
     public init(): void {
@@ -53,10 +117,15 @@ export default class ReArrange extends Plugin {
 
         });
 
+        const startCoord = { x: Infinity, y: Infinity };
+        let maxWidth = 0;
         for (let index = 0; index < this.selection.length; index++) {
             const e = this.selection[index];
             let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
             let id = e.getAttribute("name");
+            startCoord.x = d.x < startCoord.x ? d.x : startCoord.x;
+            startCoord.y = d.y < startCoord.y ? d.y : startCoord.y;
+            maxWidth += d.w;
             if (id) {
                 this.hash.set(id, d);
             }
@@ -67,12 +136,41 @@ export default class ReArrange extends Plugin {
             }
         }
 
+        this.sliderColumns.max = String(maxWidth);
+
+        if (!this.useMouse) this.mouseStart = startCoord;
+
         this.workspace.getUnselectedEntries().forEach(e => {
             e.classList.toggle("search-not-found", true);
         });
 
         this.workspace.preventInput(true);
+
         this.workspace.highlightSelection = false;
+
+        this.updateview();
+
+        setTimeout(() => {
+            this.workspace.showSelection(2.5);
+            setTimeout(() => {
+                const pos = this.workspace.getPositionInDocument({ clientX: startCoord.x, clientY: startCoord.y });
+                this.slider.style.left = `${pos.x - 50}px`;
+                this.slider.style.top = `${pos.y - 50}px`;
+
+                this.sliderColumns.style.left = `${pos.x - 50}px`;
+                this.sliderColumns.style.top = `${pos.y - 80}px`;
+
+
+                this.buttonFit.style.left = `${pos.x - 50}px`;
+                this.buttonFit.style.top = `${pos.y}px`;
+                if (!this.useMouse) {
+                    document.head.append(this.style);
+                    document.body.appendChild(this.buttonFit);
+                    document.body.appendChild(this.slider);
+                    document.body.appendChild(this.sliderColumns);
+                }
+            }, 400);
+        }, 250);
     }
 
     private hash: Map<String, ElementDimension> = new Map();
@@ -108,6 +206,13 @@ export default class ReArrange extends Plugin {
     }
 
     public finish(): boolean {
+
+        if (!this.useMouse) {
+            document.head.removeChild(this.style);
+            document.body.removeChild(this.slider);
+            document.body.removeChild(this.sliderColumns);
+            document.body.removeChild(this.buttonFit);
+        }
         this.workspace.preventInput(false);
         this.workspace.highlightSelection = true;
 
@@ -128,9 +233,8 @@ export default class ReArrange extends Plugin {
 
     public keydown(e: KeyboardEvent): boolean {
 
-
         if (this.onlyResizable && e.key == "f") {
-            this.fitSize = !this.fitSize; 
+            this.fitSize = !this.fitSize;
             this.fitElementSize();
         }
 
@@ -138,6 +242,8 @@ export default class ReArrange extends Plugin {
     }
 
     private fitElementSize(): void {
+
+        this.buttonFit.classList.toggle("button-fit-active", this.fitSize);
 
         if (this.fitSize) {
             /**
@@ -200,6 +306,7 @@ export default class ReArrange extends Plugin {
 
     public mousemove(e: MouseEvent): boolean {
 
+        if (!this.useMouse) return true;
 
         if (!this.mouseStart) {
             this.mouseStart = this.workspace.getPositionInWorkspace(e);
@@ -212,8 +319,13 @@ export default class ReArrange extends Plugin {
 
         this.width = width < 1 ? 1 : width;
         this.height = height < 1 ? 1 : height;
-        this.updateview();
+        if (this.useMouse) this.updateview();
         return true;
+    }
+
+    public setUseMouse(use: boolean) {
+        this.useMouse = use;
+        return this;
     }
 
     public updateview() {
@@ -280,6 +392,7 @@ export default class ReArrange extends Plugin {
     public wheel(e: any): boolean {
         this.padding += e.deltaY / 10;
         this.padding = this.padding < 0 ? 0 : this.padding;
+        this.slider.value = String(this.padding);
         this.updateview();
         return true;
     }
