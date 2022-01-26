@@ -170,12 +170,6 @@
                 >
               </tippy>
               <tippy :offset="[0, 40]">
-                <button><Overscan @click="rearrange(false)" /></button>
-                <template #content
-                  >Rearrange <kbd>R</kbd></template
-                >
-              </tippy>
-              <tippy :offset="[0, 40]">
                 <button><FileOutline @click="createEntry('files')" /></button>
                 <template #content>Add Files <kbd>X</kbd></template>
               </tippy>
@@ -198,6 +192,14 @@
                   <CommentTextOutline @click="createEntry('text')" />
                 </button>
                 <template #content>Create Text-Editor <kbd>T</kbd></template>
+              </tippy>
+              <tippy :offset="[0, 40]">
+                <button :disabled="selectedEntriesCount < 2">
+                  <Grid @click="rearrange(false)" />
+                </button>
+                <template #content
+                  >Rearrange <kbd>Ctrl</kbd>|<kbd>R</kbd></template
+                >
               </tippy>
               <tippy :offset="[0, 40]">
                 <button
@@ -302,6 +304,7 @@ import {
   FormatHorizontalAlignCenter,
   ArrowCollapseLeft,
   DeleteVariant,
+  Grid,
 } from "mdue";
 import { Workspace } from "@/store/model/app/Workspace";
 import ReArrange from "./../Plugins/Rearrange";
@@ -331,6 +334,7 @@ export default defineComponent({
     Download,
     FolderOutline,
     FileOutline,
+    Grid,
     FormatSize,
     ResizeBottomRight,
     BorderAll,
@@ -520,7 +524,7 @@ export default defineComponent({
         data: { target: string; files: string[]; directory: string }
       ) {
         if (_this.model.isActive && data.target == "w" + _this.model.id) {
-          _this.addEntriesToWorkspace(data.files, [], "center", true);
+          _this.addEntriesToWorkspace(data.files, [], "center");
           _this.model.folderSelectionPath = data.directory;
         }
       }
@@ -910,7 +914,7 @@ export default defineComponent({
         });
       }
 
-      this.addEntriesToWorkspace([], listFiles, position, true);
+      this.addEntriesToWorkspace([], listFiles, position);
 
       return listFiles[0] as T;
     },
@@ -1067,6 +1071,9 @@ export default defineComponent({
               return;
             }
             this.showAll();
+            break;
+          case "r":
+            this.rearrange(false);
             break;
           case "a":
             this.selectAll();
@@ -1873,7 +1880,9 @@ export default defineComponent({
         this.startSelectionDrag(this.mousePositionLastRaw);
       }
     },
-
+    getLastMousePosition(): { x: number; y: number } {
+      return this.mousePositionLast;
+    },
     setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
       if (!entry) return;

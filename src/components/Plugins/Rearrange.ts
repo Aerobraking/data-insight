@@ -7,11 +7,24 @@ import Plugin, { PluginDecorator } from "../app/plugins/AbstractPlugin"
 export default class ReArrange extends Plugin {
 
     shortcut: string = "alt+r";
-    buttonFit: HTMLButtonElement;
+    checkboxFit: HTMLInputElement;
     style: HTMLStyleElement;
+    span1: HTMLSpanElement;
+    span2: HTMLSpanElement;
+    span3: HTMLSpanElement;
     slider: HTMLInputElement;
     sliderColumns: HTMLInputElement;
     useMouse: boolean = false;
+
+    private hash: Map<String, ElementDimension> = new Map();
+    width: number = 10;
+    height: number = 10;
+    padding: number = 10;
+    selection: HTMLElement[] = [];
+    mouseStart: { x: number, y: number } | undefined;
+    fitSize: boolean = false;
+    onlyResizable: boolean = true;
+    averageWidth: number = 0;
 
     getClassName(a: HTMLElement): string {
         let classNameA = "";
@@ -32,36 +45,47 @@ export default class ReArrange extends Plugin {
 
         this.sliderColumns = document.createElement("input");
         this.slider = document.createElement("input");
-        this.buttonFit = document.createElement("button");
-        this.buttonFit.innerHTML = "Fit";
-        this.buttonFit.classList.add("button-fit");
-        this.buttonFit.addEventListener("click", function () {
-            _this.fitSize = !_this.fitSize;
+        this.checkboxFit = document.createElement("input");
+        this.span1 = document.createElement("span");
+        this.span2 = document.createElement("span");
+        this.span3 = document.createElement("span");
+
+        this.checkboxFit.type = "checkbox";
+        this.checkboxFit.classList.add("checkbox-fit");
+        this.checkboxFit.tabIndex = -1;
+        this.checkboxFit.addEventListener("change", function () {
+            _this.fitSize = _this.checkboxFit.checked;
             _this.fitElementSize();
+            _this.checkboxFit.blur();
         });
         this.style = document.createElement('style');
         this.style.textContent = `
-        .slider-fit{
-            color: #000;
-            position: fixed;
-            height: 24px;
-            width: auto;
-        } 
-        .button-fit{
-            background: #fff;
-            color: #000;
-            position: fixed;
-            height: 24px;
-            width: auto;
-            padding: 5px 20px 5px 20px;
-        } 
-        .button-fit:hover{
-           // background: #bbb;
-        }
-        .button-fit-active{
-            background: rgb(57, 215, 255);
-        }
+            .slider-fit{
+                color: #000;
+                position: fixed;
+                height: 24px;
+                width: auto;
+            } 
+            span {
+                text-align: right;
+                width: 200px;
+                position: fixed;
+                color: #fff;
+            }
+            .checkbox-fit{
+                position: fixed; 
+            } 
+            .button-fit:hover{
+            // background: #bbb;
+            }
+            .button-fit-active{
+                background: rgb(57, 215, 255);
+            }
         `;
+
+        this.span1.innerHTML = "<kbd>Mouse Wheel</kbd> Padding";
+        this.span2.innerHTML = "<kbd>Ctrl</kbd> + <kbd>Mouse</kbd> Columns";
+        this.span3.innerHTML = "<kbd>F</kbd> Normalize Size";
 
         this.slider.classList.add("slider-fit");
         this.slider.type = "range";
@@ -69,9 +93,11 @@ export default class ReArrange extends Plugin {
         this.slider.max = "300";
         this.slider.value = "0";
         this.slider.step = "1";
+        this.slider.tabIndex = -1;
         this.slider.oninput = _.throttle((ev: Event) => {
             _this.padding = Number(_this.slider.value);
             _this.fitElementSize();
+            _this.slider.blur();
         }, 33);
 
         this.sliderColumns.classList.add("slider-fit");
@@ -80,9 +106,11 @@ export default class ReArrange extends Plugin {
         this.sliderColumns.max = "300";
         this.sliderColumns.value = "10";
         this.sliderColumns.step = "10";
+        this.sliderColumns.tabIndex = -1;
         this.sliderColumns.oninput = _.throttle((ev: Event) => {
             _this.width = Number(_this.sliderColumns.value);
             _this.fitElementSize();
+            _this.sliderColumns.blur();
         }, 33);
 
     }
@@ -150,38 +178,40 @@ export default class ReArrange extends Plugin {
 
         this.updateview();
 
-        setTimeout(() => {
-            this.workspace.showSelection(2.5);
+        if (!this.useMouse) {
             setTimeout(() => {
-                const pos = this.workspace.getPositionInDocument({ clientX: startCoord.x, clientY: startCoord.y });
-                this.slider.style.left = `${pos.x - 50}px`;
-                this.slider.style.top = `${pos.y - 50}px`;
+                this.workspace.showSelection(2.5);
+                setTimeout(() => {
+                    const pos = this.workspace.getPositionInDocument({ clientX: startCoord.x, clientY: startCoord.y });
+                    this.slider.style.left = `${pos.x - 50}px`;
+                    this.slider.style.top = `${pos.y - 30}px`;
+                    this.span1.style.left = `${pos.x - 50 - 210}px`;
+                    this.span1.style.top = `${pos.y - 30}px`;
 
-                this.sliderColumns.style.left = `${pos.x - 50}px`;
-                this.sliderColumns.style.top = `${pos.y - 80}px`;
+                    this.sliderColumns.style.left = `${pos.x - 50}px`;
+                    this.sliderColumns.style.top = `${pos.y - 60}px`;
+                    this.span2.style.left = `${pos.x - 50 - 210}px`;
+                    this.span2.style.top = `${pos.y - 60}px`;
 
 
-                this.buttonFit.style.left = `${pos.x - 50}px`;
-                this.buttonFit.style.top = `${pos.y}px`;
-                if (!this.useMouse) {
+                    this.checkboxFit.style.left = `${pos.x - 50}px`;
+                    this.checkboxFit.style.top = `${pos.y}px`;
+                    this.span3.style.left = `${pos.x - 50 - 210}px`;
+                    this.span3.style.top = `${pos.y}px`;
+
+
                     document.head.append(this.style);
-                    document.body.appendChild(this.buttonFit);
-                    document.body.appendChild(this.slider);
-                    document.body.appendChild(this.sliderColumns);
-                }
-            }, 400);
-        }, 250);
-    }
+                    document.body.append(this.checkboxFit,
+                        this.slider, this.sliderColumns,
+                        this.span1, this.span2, this.span3);
 
-    private hash: Map<String, ElementDimension> = new Map();
-    width: number = 10;
-    height: number = 10;
-    padding: number = 10;
-    selection: HTMLElement[] = [];
-    mouseStart: { x: number, y: number } | undefined;
-    fitSize: boolean = false;
-    onlyResizable: boolean = true;
-    averageWidth: number = 0;
+                }, 650);
+            }, 200);
+        } else {
+            this.mouseStart = this.workspace.getLastMousePosition();
+            this.updateview();
+        }
+    }
 
     public isModal(): boolean { return true; }
 
@@ -209,9 +239,8 @@ export default class ReArrange extends Plugin {
 
         if (!this.useMouse) {
             document.head.removeChild(this.style);
-            document.body.removeChild(this.slider);
-            document.body.removeChild(this.sliderColumns);
-            document.body.removeChild(this.buttonFit);
+            [this.slider, this.sliderColumns, this.checkboxFit,
+            this.span1, this.span2, this.span3].forEach(e => document.body.removeChild(e));
         }
         this.workspace.preventInput(false);
         this.workspace.highlightSelection = true;
@@ -242,8 +271,6 @@ export default class ReArrange extends Plugin {
     }
 
     private fitElementSize(): void {
-
-        this.buttonFit.classList.toggle("button-fit-active", this.fitSize);
 
         if (this.fitSize) {
             /**
@@ -319,7 +346,8 @@ export default class ReArrange extends Plugin {
 
         this.width = width < 1 ? 1 : width;
         this.height = height < 1 ? 1 : height;
-        if (this.useMouse) this.updateview();
+
+        this.updateview();
         return true;
     }
 

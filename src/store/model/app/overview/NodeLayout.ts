@@ -393,7 +393,8 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
     static coolDownTime: number = 500; // in frames
     static minAlpha: number = 0.0003; // cooldown start when alpha in current tick is less then minAlpha
-    static friction = 0.84;
+    static gravity: number = 0.0002; // cooldown start when alpha in current tick is less then minAlpha
+    static friction = 0.94;
 
     positionNodes(n: AbstractNode): void {
 
@@ -443,15 +444,44 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                     const coord = n.customData["co"];
 
                     if (coord != undefined) {
-                        let dist = coord.y - n.y;
-                        const abs = Math.abs(dist);
-                        dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
-                        if (abs > 0 && abs < .01) n.y = coord.y;
-                        else if (abs >= .01) {
-                            coord.vy += dist * delta * 0.0003;
-                            if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamic.friction;
-                            alpha += Math.abs(coord.vy);
+
+                        // explicitEuler();
+                         midpoint();
+
+                        function explicitEuler() {
+                            let dist = coord.y - n.y;
+                            const abs = Math.abs(dist);
+                            dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
+                            if (abs > 0 && abs < .01) n.y = coord.y;
+                            else if (abs >= .01) {
+                                coord.vy += dist * delta * 0.0003;
+                                if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamic.friction;
+                                alpha += Math.abs(coord.vy);
+                            }
                         }
+
+                        function midpoint() {
+                            const delta2 = delta / 2;
+                            let dist = coord.y - n.y;
+                            let abs = Math.abs(dist);
+                            dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
+                            if (abs > 0 && abs < .01) n.y = coord.y;
+                            else if (abs >= .01) {
+                                // get acceleration at the half time step
+                                let vy2 = coord.vy + dist * delta2 * NodeLayoutStaticDynamic.gravity;
+                                let y2 = n.y + vy2 * NodeLayoutStaticDynamic.friction;
+                                dist = coord.y - y2;
+                                abs = Math.abs(dist);
+                                dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
+
+                                // use accerleration from halt time step for the full time step
+                                coord.vy += dist * delta * NodeLayoutStaticDynamic.gravity;
+                                if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamic.friction;
+                                alpha += Math.abs(coord.vy);
+                            }
+                        }
+
+
                     } else {
                         n.y = n.parent ? n.parent.getY() : n.getY();
                     }

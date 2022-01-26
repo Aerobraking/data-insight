@@ -7,10 +7,10 @@
     <template v-slot:body>
       Version: {{ version }} <br />
       <br />
-      Thank you for using my program. <br />
-      <br />
       When you find a bug or have an idea for any improvements or features, you
-      can create in issue on github: <br />
+      can create in issue on github:
+      <br />
+      <br />
       <a
         @click.capture.stop="
           openURL('https://github.com/Aerobraking/ma-data-insight')
@@ -19,7 +19,8 @@
         >https://github.com/Aerobraking/ma-data-insight</a
       >
       <br />
-      or contacting me directly <br />
+      <br />
+      or contacting me directly:
       <a @click.capture.stop href="mailto:issues@aerobraking.de">
         issues@aerobraking.de</a
       >
@@ -191,7 +192,7 @@ export default defineComponent({
     }
   },
   data() {
-    return { showAbout: false, showHelp: false, version: "2.4" };
+    return { showAbout: false, showHelp: false, version: v };
   },
   provide() {
     return {
@@ -209,7 +210,7 @@ export default defineComponent({
       file.initAfterLoading();
       this.loadInsightFile(file);
     },
-    loadInsightFile(file: InsightFile) { 
+    loadInsightFile(file: InsightFile) {
       let tabs: HTMLElement[] = Array.from(
         document.querySelectorAll(".close-file-anim")
       ) as HTMLElement[];
@@ -398,7 +399,6 @@ h4 {
 }
 
 button {
-  
   outline: none;
   color: #eee;
   border: none;

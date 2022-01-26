@@ -5,6 +5,7 @@ export default interface WorkspaceViewIfc {
     getCoordinatesFromElement(e: any): ElementDimension;
     getPositionInDocument(e: { clientX: number; clientY: number }): { x: number, y: number };
     getPositionInWorkspace(e: { clientX: number; clientY: number }): { x: number, y: number };
+    getLastMousePosition():{x:number,y:number};
     getCurrentTransform(): { scale: number; x: number; y: number };
     getSelectionRectangle(): Element;
     getSelectedEntries(): HTMLElement[];

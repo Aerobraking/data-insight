@@ -21,6 +21,9 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     } {
         return this.ws ? this.ws.getPositionInDocument(e) : { x: 0, y: 0 };
     }
+    getLastMousePosition(): { x: number, y: number } {
+        return this.ws ? this.getLastMousePosition() : { x: 0, y: 0 };
+    }
     getCurrentTransform(): { scale: number; x: number; y: number } {
         return { scale: 0, x: 0, y: 0 };
     }

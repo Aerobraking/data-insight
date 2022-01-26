@@ -101,6 +101,7 @@ $color-Selection: rgba(57, 215, 255, 1);
 .modal-body {
   position: relative;
   overflow-y: auto;
+  line-height: 150%;
 }
 
 .btn-close {
