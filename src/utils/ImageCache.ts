@@ -96,14 +96,25 @@ export class Cache {
                 }
 
                 if (e.data.type == ImageSize.medium) {
-                    const mediuamURl = URL.createObjectURL(e.data.blob);
+                    const mediumURL = URL.createObjectURL(e.data.blob);
 
                     let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(e.data.path);
-                    imageEntry?.set(ImageSize.medium, mediuamURl);
+                    imageEntry?.set(ImageSize.medium, mediumURL);
 
 
                     this.doCallback(e.data.path, (l: ImageListener) => {
-                        l.callback("url('" + mediuamURl + "')", e.data.type);
+                        l.callback("url('" + mediumURL + "')", e.data.type);
+                    });
+                }
+                if (e.data.type == ImageSize.original) {
+                    const origURL = URL.createObjectURL(e.data.blob);
+
+                    let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(e.data.path);
+                    imageEntry?.set(ImageSize.original, origURL);
+
+
+                    this.doCallback(e.data.path, (l: ImageListener) => {
+                        l.callback("url('" + origURL + "')", e.data.type);
                     });
                 }
 

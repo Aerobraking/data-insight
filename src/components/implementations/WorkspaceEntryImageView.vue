@@ -84,8 +84,7 @@ export default defineComponent({
         this.entry.imageCreated = true;
       }
     },
-    cacheImageEvent(url: string, type: cache.ImageSize): void { 
-
+    cacheImageEvent(url: string, type: cache.ImageSize): void {
       switch (type) {
         case cache.ImageSize.error:
           this.entry.alert = "Image could not be loaded";
@@ -106,8 +105,8 @@ export default defineComponent({
           this.$el.style.backgroundImage == "")
       ) {
         this.$el.style.backgroundImage = url;
-      }
-      if (type == cache.ImageSize.medium) {
+      } 
+      if (type == cache.ImageSize.original) {
         div.style.backgroundImage = url;
         if (this.$el.style.backgroundImage != "") {
           setTimeout(() => {
@@ -118,7 +117,7 @@ export default defineComponent({
         this.$el.classList.toggle("gradient-border", false);
       }
     },
-    watcherEvent(type: string) { 
+    watcherEvent(type: string) {
       cache.ImageCache.registerPath(
         this.entry.getURL(),
         this.cacheListener,
