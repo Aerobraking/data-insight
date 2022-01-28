@@ -51,7 +51,7 @@ export const DragIconPath = app.getPath('userData') + path.sep + "dragicon.png";
 function createDragImage() {
   var base64Data: any = dragpng.replace(/^data:image\/png;base64,/, "");
   fs.writeFile(DragIconPath, base64Data, { encoding: 'base64' }, function (err: any) {
-    console.log(err);
+   if(err) console.log(err);
   });
 }
 
@@ -392,8 +392,7 @@ function updateSettings() {
   }
 }
 
-async function createWindow() {
-  console.log("create window");
+async function createWindow() { 
 
   detectUSBEvents();
 

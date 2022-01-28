@@ -9,9 +9,7 @@ export default class ReArrange extends Plugin {
     shortcut: string = "alt+r";
     checkboxFit: HTMLInputElement;
     style: HTMLStyleElement;
-    span1: HTMLSpanElement;
-    span2: HTMLSpanElement;
-    span3: HTMLSpanElement;
+    div: HTMLDivElement;
     slider: HTMLInputElement;
     sliderColumns: HTMLInputElement;
     useMouse: boolean = false;
@@ -21,10 +19,13 @@ export default class ReArrange extends Plugin {
     height: number = 10;
     padding: number = 10;
     selection: HTMLElement[] = [];
-    mouseStart: { x: number, y: number } | undefined;
+    mouseStart: { x: number, y: number } = { x: 0, y: 0 };
+    startPositionAverage: { x: number, y: number } = { x: 0, y: 0 };
     fitSize: boolean = false;
     onlyResizable: boolean = true;
     averageWidth: number = 0;
+    ctrlDown: boolean = false;
+
 
     getClassName(a: HTMLElement): string {
         let classNameA = "";
@@ -46,9 +47,25 @@ export default class ReArrange extends Plugin {
         this.sliderColumns = document.createElement("input");
         this.slider = document.createElement("input");
         this.checkboxFit = document.createElement("input");
-        this.span1 = document.createElement("span");
-        this.span2 = document.createElement("span");
-        this.span3 = document.createElement("span");
+
+        this.div = document.createElement("div");
+        this.div.classList.add("descr");
+        this.div.innerHTML = `
+        <table>
+        <tr>
+            <td> <kbd>Ctrl</kbd> + <kbd>Mouse</kbd></td>
+            <td>Columns</td>
+        </tr>
+        <tr>     
+            <td><kbd>Mouse Wheel</kbd></td>
+            <td>Padding</td>
+        </tr>
+        <tr>
+            <td><kbd>F</kbd></td>
+            <td>Normalize Size</td>
+        </tr>
+        </table>
+        `.trim();
 
         this.checkboxFit.type = "checkbox";
         this.checkboxFit.classList.add("checkbox-fit");
@@ -60,6 +77,20 @@ export default class ReArrange extends Plugin {
         });
         this.style = document.createElement('style');
         this.style.textContent = `
+            .descr {
+                color: #fff;
+                position: fixed;   
+                text-align: right;
+
+               
+            }
+            .descr tr {
+                padding: 0;
+                line-height: 11px;
+            }
+            .descr td {
+                padding: 0;
+            }
             .slider-fit{
                 color: #000;
                 position: fixed;
@@ -83,10 +114,6 @@ export default class ReArrange extends Plugin {
             }
         `;
 
-        this.span1.innerHTML = "<kbd>Mouse Wheel</kbd> Padding";
-        this.span2.innerHTML = "<kbd>Ctrl</kbd> + <kbd>Mouse</kbd> Columns";
-        this.span3.innerHTML = "<kbd>F</kbd> Normalize Size";
-
         this.slider.classList.add("slider-fit");
         this.slider.type = "range";
         this.slider.min = "0";
@@ -95,8 +122,10 @@ export default class ReArrange extends Plugin {
         this.slider.step = "1";
         this.slider.tabIndex = -1;
         this.slider.oninput = _.throttle((ev: Event) => {
-            _this.padding = Number(_this.slider.value);
-            _this.fitElementSize();
+            if (!_this.useMouse) {
+                _this.padding = Number(_this.slider.value);
+                _this.fitElementSize();
+            }
             _this.slider.blur();
         }, 33);
 
@@ -108,15 +137,16 @@ export default class ReArrange extends Plugin {
         this.sliderColumns.step = "10";
         this.sliderColumns.tabIndex = -1;
         this.sliderColumns.oninput = _.throttle((ev: Event) => {
-            _this.width = Number(_this.sliderColumns.value);
-            _this.fitElementSize();
+            if (!_this.useMouse) {
+                _this.width = Number(_this.sliderColumns.value);
+                _this.fitElementSize();
+            }
             _this.sliderColumns.blur();
         }, 33);
 
     }
 
     public init(): void {
-        this.mouseStart = undefined;
         this.selection = this.workspace.getSelectedEntries();
 
         this.selection = this.selection.sort(function (a: HTMLElement, b: HTMLElement) {
@@ -166,7 +196,8 @@ export default class ReArrange extends Plugin {
 
         this.sliderColumns.max = String(maxWidth);
 
-        if (!this.useMouse) this.mouseStart = startCoord;
+        this.mouseStart = this.useMouse ? this.workspace.getLastMousePosition() : startCoord;
+        this.startPositionAverage = startCoord;
 
         this.workspace.getUnselectedEntries().forEach(e => {
             e.classList.toggle("search-not-found", true);
@@ -185,30 +216,23 @@ export default class ReArrange extends Plugin {
                     const pos = this.workspace.getPositionInDocument({ clientX: startCoord.x, clientY: startCoord.y });
                     this.slider.style.left = `${pos.x - 50}px`;
                     this.slider.style.top = `${pos.y - 30}px`;
-                    this.span1.style.left = `${pos.x - 50 - 210}px`;
-                    this.span1.style.top = `${pos.y - 30}px`;
 
                     this.sliderColumns.style.left = `${pos.x - 50}px`;
                     this.sliderColumns.style.top = `${pos.y - 60}px`;
-                    this.span2.style.left = `${pos.x - 50 - 210}px`;
-                    this.span2.style.top = `${pos.y - 60}px`;
 
+                    this.div.style.left = `${pos.x - 50 - 260}px`;
+                    this.div.style.top = `${pos.y - 62}px`;
 
                     this.checkboxFit.style.left = `${pos.x - 50}px`;
                     this.checkboxFit.style.top = `${pos.y}px`;
-                    this.span3.style.left = `${pos.x - 50 - 210}px`;
-                    this.span3.style.top = `${pos.y}px`;
-
 
                     document.head.append(this.style);
-                    document.body.append(this.checkboxFit,
+                    document.body.append(this.div, this.checkboxFit,
                         this.slider, this.sliderColumns,
-                        this.span1, this.span2, this.span3);
-
+                    );
                 }, 650);
             }, 200);
         } else {
-            this.mouseStart = this.workspace.getLastMousePosition();
             this.updateview();
         }
     }
@@ -239,8 +263,7 @@ export default class ReArrange extends Plugin {
 
         if (!this.useMouse) {
             document.head.removeChild(this.style);
-            [this.slider, this.sliderColumns, this.checkboxFit,
-            this.span1, this.span2, this.span3].forEach(e => document.body.removeChild(e));
+            [this.slider, this.sliderColumns, this.checkboxFit, this.div].forEach(e => document.body.removeChild(e));
         }
         this.workspace.preventInput(false);
         this.workspace.highlightSelection = true;
@@ -262,12 +285,65 @@ export default class ReArrange extends Plugin {
 
     public keydown(e: KeyboardEvent): boolean {
 
+        this.ctrlDown = e.ctrlKey;
+
         if (this.onlyResizable && e.key == "f") {
             this.fitSize = !this.fitSize;
+            this.checkboxFit.checked=this.fitSize;
             this.fitElementSize();
         }
 
+        this.fitElementSize();
+
         return true;
+    }
+
+    public keyup(e: KeyboardEvent): boolean {
+
+        this.ctrlDown = e.ctrlKey;
+
+        this.fitElementSize();
+
+        if (e.key == "Enter") {
+            this.workspace.finishPlugin();
+        }
+        return true;
+    }
+
+    public mouseup(e: MouseEvent): boolean {
+        return true;
+    }
+
+    public mousedown(e: MouseEvent): boolean {
+        this.workspace.finishPlugin();
+        return true;
+    }
+
+    public mousedownPan(e: any): boolean {
+        return true;
+    }
+
+    public mousemove(e: MouseEvent): boolean {
+
+        if (!(this.ctrlDown || this.useMouse)) return true;
+
+        var mCurrent = this.workspace.getPositionInWorkspace(e);
+
+        var width = -(this.mouseStart.x - mCurrent.x);
+        var height = -(this.mouseStart.y - mCurrent.y);
+
+        this.width = width < 1 ? 1 : width;
+        this.height = height < 1 ? 1 : height;
+
+        this.sliderColumns.value = String(this.width);
+
+        this.updateview();
+        return true;
+    }
+
+    public setUseMouse(use: boolean) {
+        this.useMouse = use;
+        return this;
     }
 
     private fitElementSize(): void {
@@ -306,64 +382,15 @@ export default class ReArrange extends Plugin {
             }
         }
 
-
         this.updateview();
 
-    }
-
-    public keyup(e: KeyboardEvent): boolean {
-        if (e.key == "Enter") {
-            this.workspace.finishPlugin();
-        }
-        return true;
-    }
-
-    public mouseup(e: MouseEvent): boolean {
-        return true;
-    }
-
-    public mousedown(e: MouseEvent): boolean {
-        this.workspace.finishPlugin();
-        return true;
-    }
-
-    public mousedownPan(e: any): boolean {
-        return true;
-    }
-
-    public mousemove(e: MouseEvent): boolean {
-
-        if (!this.useMouse) return true;
-
-        if (!this.mouseStart) {
-            this.mouseStart = this.workspace.getPositionInWorkspace(e);
-        }
-
-        var mCurrent = this.workspace.getPositionInWorkspace(e);
-
-        var width = -(this.mouseStart.x - mCurrent.x);
-        var height = -(this.mouseStart.y - mCurrent.y);
-
-        this.width = width < 1 ? 1 : width;
-        this.height = height < 1 ? 1 : height;
-
-        this.updateview();
-        return true;
-    }
-
-    public setUseMouse(use: boolean) {
-        this.useMouse = use;
-        return this;
     }
 
     public updateview() {
 
-        if (!this.mouseStart) {
-            return;
-        }
+        const mouseStartUse: { x: number, y: number } = this.ctrlDown || this.useMouse ? this.mouseStart : this.startPositionAverage;
 
         let padding = this.padding;
-
 
         if (this.fitSize) {
 
@@ -371,7 +398,7 @@ export default class ReArrange extends Plugin {
 
             let columnHeight: number[] = Array(columnCount).fill(0);
 
-            for (let index = 0, xCurrent = this.mouseStart.x, columnCurrent = 0, yCurrent = this.mouseStart.y; index < this.selection.length; index++) {
+            for (let index = 0, xCurrent = mouseStartUse.x, columnCurrent = 0, yCurrent = mouseStartUse.y; index < this.selection.length; index++) {
                 const e = this.selection[index];
                 let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
 
@@ -391,7 +418,7 @@ export default class ReArrange extends Plugin {
                 e.style.transition = "transform 0.2s";
             }
         } else {
-            for (let index = 0, widthCurrent = 0, heightRow = 0, heightCurrent = 0, xCurrent = this.mouseStart.x, yCurrent = this.mouseStart.y; index < this.selection.length; index++) {
+            for (let index = 0, widthCurrent = 0, heightRow = 0, heightCurrent = 0, xCurrent = mouseStartUse.x, yCurrent = mouseStartUse.y; index < this.selection.length; index++) {
                 const e = this.selection[index];
                 let d: ElementDimension = this.workspace.getCoordinatesFromElement(e);
 
