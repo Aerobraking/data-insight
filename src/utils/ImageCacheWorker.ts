@@ -6,10 +6,12 @@ var canvasSmall: OffscreenCanvas;
 var ctxSmall: OffscreenCanvasRenderingContext2D | null = null;
 var canvasMedium: OffscreenCanvas;
 var ctxMedium: OffscreenCanvasRenderingContext2D | null = null;
+var canvasOrig: OffscreenCanvas;
+var ctxOrig: OffscreenCanvasRenderingContext2D | null = null;
 
 const preview = 64;
 const small = 128;
-const medium = 1024 + 256;
+const medium = 1024;
 /**
  * Conserve aspect ratio of the original region. Useful when shrinking/enlarging
  * images to fit into a certain area.
@@ -113,6 +115,18 @@ addEventListener('message', async function (e: MessageEvent) {
                     postMessage({
                         path: e.data.path,
                         type: "medium",
+                        blob: blob
+                    });
+                });
+
+                canvasOrig = new OffscreenCanvas(bitmap.width, bitmap.height);
+                ctxOrig = canvasOrig.getContext("2d");
+                ctxOrig?.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
+                canvasOrig.convertToBlob().then((blob: any) => {
+                    // @ts-ignore: Unreachable code error
+                    postMessage({
+                        path: e.data.path,
+                        type: "original",
                         blob: blob
                     });
                 });

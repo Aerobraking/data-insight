@@ -2250,7 +2250,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   width: 100%;
   height: 100%;
   z-index: 500;
-  background: rgba(255, 255, 255, 0.4);
+  background: transparent;
   cursor: pointer;
   transition: background-color 0.4s ease-in-out !important;
   p {

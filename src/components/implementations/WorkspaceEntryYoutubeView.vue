@@ -22,7 +22,7 @@
       @keyup.stop
       @paste.stop
       class="url-input"
-      :class="{ showURL: entry.url.length == 0 }"
+      :class="{ showURL: entry.url.length == 0 || entry.alert}"
       type="text"
       v-model="entry.url"
       placeholder="Enter URL or simply the video id from the URL"
@@ -51,13 +51,12 @@ function htmlToElement(html: string) {
   try {
     html = html.trim(); // Never return a text node of whitespace as the result
     template.innerHTML = html;
-  } catch (error) { 
-  }
+  } catch (error) {}
 
   return template.content.firstChild;
 }
 
-import { defineComponent } from "vue"; 
+import { defineComponent } from "vue";
 import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 import { WorkspaceEntryYoutube } from "@/store/model/implementations/filesystem/FileSystemWorkspaceEntries";
@@ -134,12 +133,10 @@ export default defineComponent({
 .inner-wrapper {
   position: relative;
   width: 100%;
-  flex: 1 !important; 
+  flex: 1 !important;
   transition: pointer-events 5000ms;
   transition-delay: 5000ms;
 }
-
- 
 
 .ws-entry-youtube-wrapper {
   display: flex;
@@ -151,11 +148,12 @@ export default defineComponent({
   width: 220px;
   height: 180px;
   background-size: cover;
+  background-color: rgb(26, 26, 26);
   box-sizing: border-box;
 
   iframe,
   object,
-  embed { 
+  embed {
     position: absolute;
     top: 0;
     left: 0;
