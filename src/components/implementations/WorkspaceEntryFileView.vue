@@ -7,8 +7,8 @@
     ref="el"
     class="ws-entry-file-wrapper select-element sizefixed"
   >
-    <slot></slot>
-    <wsentryalert :entry="entry" />
+    <!-- <slot></slot> -->
+    <!-- <wsentryalert :entry="entry" /> -->
 
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>
@@ -32,16 +32,12 @@ export default defineComponent({
   },
   components: {
     wsentryalert,
-  },
-  setup(props) {
-    return setupEntry(props);
-  },
+  }, 
   props: {
     entry: {
       type: WorkspaceEntryFile,
       required: true,
-    },
-    viewKey: Number,
+    }
   },
   mounted() {
     let _this: any = this;
@@ -54,7 +50,7 @@ export default defineComponent({
     });
     watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
   },
-  inject: ["entrySelected", "entrySelected"],
+  inject: ["entrySelected"],
   methods: {
     watcherEvent(type: string) {  
       switch (type) {
@@ -67,7 +63,7 @@ export default defineComponent({
     },
     entrySelectedLocal(type: "add" | "single" | "toggle", event: MouseEvent) {
       // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
+      this.entrySelected(this.entry.id, type);
     },
     doubleClick(e: MouseEvent) {
       e.preventDefault();
@@ -85,8 +81,8 @@ export default defineComponent({
   position: absolute;
   color: #f1f1f1;
   padding: 10px;
-  width: 220px;
-  height: 180px;
+  // width: 220px;
+  // height: 180px;
   box-sizing: border-box;
 
   p {

@@ -38,7 +38,10 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
         }
         Events.registerCallback(listener);
 
-        if (true && el != null && el.value != null) {
+        console.log("onmounted");
+
+        if (el != null && el.value != null) {
+            console.log("1");
 
             el.value.querySelectorAll("div.ws-entry .wsentry-displayname")
                 .forEach((e: any) => {
@@ -47,7 +50,9 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
             el.value.style.transform = `translate3d(${e.x}px, ${e.y}px,0px)`;
 
-            if (e.isResizable) {
+            if (true || e.isResizable) {
+                console.log("size");
+
                 el.value.style.width = e.width + "px";
                 el.value.style.height = e.height + "px";
             }
@@ -62,7 +67,7 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
     return { el };
 }
- 
+
 /**
  * 
  * @param r1 rectangle that is tested to be inside r2
@@ -103,8 +108,8 @@ export interface Listener {
     searchEvent?: (value: string) => void;
     dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
 
-    featureEvent?: ( 
-        feature: Feature|undefined,
+    featureEvent?: (
+        feature: Feature | undefined,
         min: number, max: number,
         getColor: (node: any, stat: number, min: number, max: number) => string) => void;
 
@@ -136,13 +141,13 @@ export class Dispatcher {
             if (c.dragStarting) c.dragStarting(selection, workspace);
         });
     }
-    
-    featureEvent( 
+
+    featureEvent(
         statAttribute: Feature,
         min: number, max: number,
         getColor: (node: any, stat: number, min: number, max: number) => string): void {
         this.callbacks.forEach((c) => {
-            if (c.featureEvent) c.featureEvent( statAttribute, min, max, getColor);
+            if (c.featureEvent) c.featureEvent(statAttribute, min, max, getColor);
         });
     }
 

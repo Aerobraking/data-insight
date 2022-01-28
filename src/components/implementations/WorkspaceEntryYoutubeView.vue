@@ -7,8 +7,8 @@
     @click.stop
     class="ws-entry-youtube-wrapper"
   >
-    <slot></slot>
-    <wsentryalert :entry="entry" />
+    <!-- <slot></slot> -->
+    <!-- <wsentryalert :entry="entry" /> -->
     <!-- <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
@@ -68,12 +68,11 @@ export default defineComponent({
   components: {
     wsentryalert,
   },
-  setup(props) {
-    return setupEntry(props);
-  },
+  // setup(props) {
+  //   return setupEntry(props);
+  // },
   props: {
     entry: WorkspaceEntryYoutube,
-    viewKey: Number,
   },
   watch: {
     "entry.url": function (newValue: string, oldValue: string) {
@@ -100,7 +99,7 @@ export default defineComponent({
       e: MouseEvent | undefined
     ) {
       // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
+      this.entrySelected(this.entry.id, type);
 
       if (e) {
         // @ts-ignore: Unreachable code error
@@ -143,10 +142,7 @@ export default defineComponent({
   flex-flow: column;
 
   z-index: 100;
-  position: absolute;
   color: #f1f1f1;
-  width: 220px;
-  height: 180px;
   background-size: cover;
   background-color: rgb(26, 26, 26);
   box-sizing: border-box;

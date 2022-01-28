@@ -1,14 +1,5 @@
 <template>
   <div ref="el" v-on:dblclick="doubleClick" class="ws-entry-textarea-wrapper">
-     <slot></slot>
-
-    <!-- <div
-      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-      @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="ws-window-bar-top select-element selectable-highlight"
-    ></div> -->
-
     <div
       class="editor-enabler-div"
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -17,7 +8,6 @@
     >
       <span class="no-text" v-show="showEmpty()"># No Text</span>
     </div>
-
     <div
       class="text-editor-div"
       ondragstart="return false"
@@ -34,7 +24,6 @@
 import Editor from "@tinymce/tinymce-vue";
 import { defineComponent } from "vue";
 import { WorkspaceEntryTextArea } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
-import { setupEntry } from "../app/WorkspaceUtils";
 import wsentrydisplayname from "../app/WorkspaceEntryDisplayName.vue";
 import pell, { exec } from "pell";
 
@@ -44,12 +33,8 @@ export default defineComponent({
     editor: Editor,
     wsentrydisplayname,
   },
-  setup(props) {
-    return setupEntry(props);
-  },
   props: {
-    entry: WorkspaceEntryTextArea,
-    viewKey: Number,
+    entry: WorkspaceEntryTextArea, 
   },
   mounted() {
     let _this: any = this;
@@ -105,7 +90,7 @@ export default defineComponent({
       ? this.$props.entry.text
       : "No text yet";
   },
-  inject: ["entrySelected", "entrySelected"],
+  inject: ["entrySelected"],
   methods: {
     showEmpty() {
       return this.$props.entry?.text.length == 0;
@@ -113,7 +98,7 @@ export default defineComponent({
     editorFocusLost() {},
     entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
+      this.entrySelected(this.entry.id, type);
     },
     doubleClick(e: MouseEvent) {
       e.preventDefault();
@@ -139,11 +124,7 @@ export default defineComponent({
   flex-flow: column;
   overflow-x: hidden;
   overflow-y: hidden;
-}
-.workspace-is-selected .text-editor-div {
-  // overflow-x: auto;
-  // overflow-y: auto;
-}
+} 
 
 .pell-actionbar {
   overflow: hidden;
@@ -202,16 +183,14 @@ export default defineComponent({
 </style>
 
 <style scoped lang="scss">
+
 .ws-entry-textarea-wrapper {
   display: flex;
   flex-flow: column;
   z-index: 100;
   overflow: visible;
-  position: absolute;
   color: #f1f1f1;
   padding: 10px;
-  width: 600px;
-  height: 850px;
   background-size: cover;
   box-sizing: border-box;
   background-color: rgb(26, 26, 26);
@@ -219,4 +198,5 @@ export default defineComponent({
   padding: 0;
   margin: 0;
 }
+
 </style>

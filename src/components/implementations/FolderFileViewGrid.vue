@@ -24,8 +24,7 @@ export default defineComponent({
       type: FolderWindowFile,
       required: true,
     },
-    searchstring: String,
-    viewKey: Number,
+    searchstring: String, 
   },
 
   data(): {

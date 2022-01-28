@@ -9,7 +9,6 @@
 <script lang="ts"> 
 
 import { defineComponent } from "vue";
-import { setupEntry} from "../app/WorkspaceUtils";
 import  WorkspaceViewIfc  from "../app/WorkspaceViewIfc";
 import * as _ from "underscore"; 
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
@@ -17,17 +16,11 @@ import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 export default defineComponent({
   name: "wsentryX",
   components: {},
-  setup(props) {
-    return setupEntry(props, {
-      prepareFileSaving(): void {},
-    });
-  },
   data() {
     return {};
   },
   props: {
-    entry: { type: WorkspaceEntry, required: true },
-    viewKey: Number,
+    entry: { type: WorkspaceEntry, required: true }, 
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
   mounted() {},
@@ -35,7 +28,7 @@ export default defineComponent({
   methods: {
     entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
+      this.entrySelected(this.entry.id, type);
     },
   },
   computed: {},

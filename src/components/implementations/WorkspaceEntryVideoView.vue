@@ -7,8 +7,8 @@
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
   >
-    <slot></slot>
-    <wsentryalert :entry="entry" />
+    <!-- <slot></slot> -->
+    <!-- <wsentryalert :entry="entry" /> -->
 
     <!-- <div
       @dblclick.capture.stop="doubleClick"
@@ -41,16 +41,12 @@ export default defineComponent({
     return {
       cacheListener: undefined,
     };
-  },
-  setup(props) {
-    return setupEntry(props);
-  },
+  }, 
   props: {
     entry: {
       type: WorkspaceEntryVideo,
       required: true,
     },
-    viewKey: Number,
   },
   mounted() {
     let _this = this;
@@ -73,7 +69,7 @@ export default defineComponent({
     v.setAttribute("style", "width:100%; height:100%;");
   },
   unmounted() {},
-  inject: ["entrySelected", "entrySelected"],
+  inject: ["entrySelected"],
   methods: {
     cacheSizeEvent(w: number, h: number): void {
       if (!this.entry.created) {
@@ -86,7 +82,7 @@ export default defineComponent({
 
     entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
+      this.entrySelected(this.entry.id, type);
     },
     doubleClick(e: MouseEvent) {
       this.$emit("zoomed");

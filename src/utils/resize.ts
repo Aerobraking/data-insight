@@ -96,11 +96,11 @@ export class ElementDimensionInstance implements ElementDimension {
 
     public calculateSize(minSize: number = 1) {
         this.w = this.x2 - this.x;
-        this.h = this.y2 - this.y; 
+        this.h = this.y2 - this.y;
 
     }
 
-    public scaleFromCenter(s: number = 1) { 
+    public scaleFromCenter(s: number = 1) {
         const oldW = this.w;
         const oldH = this.h;
         this.w *= s;
@@ -108,7 +108,7 @@ export class ElementDimensionInstance implements ElementDimension {
         this.x -= ((this.w - oldW) / 2);
         this.y -= ((this.h - oldH) / 2);
         this.x2 += ((this.w - oldW) / 2);
-        this.y2 += ((this.h - oldH) / 2); 
+        this.y2 += ((this.h - oldH) / 2);
     }
 }
 
@@ -207,7 +207,7 @@ export class ResizerComplex {
         // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
         if (resizeElement != undefined) {
-            resizeElement.addEventListener('mousedown', ev => this.initDrag(ev), false);
+            resizeElement.addEventListener('mousedown', ev => this.initDrag(ev), { capture: true });
         } else {
             resizer = document.createElement('div');
             resizer.className = 'resizer-bottom-right';
@@ -232,8 +232,11 @@ export class ResizerComplex {
     lastMouseEvent: any;
 
     initDrag(e: MouseEvent) {
+
         this.startX = e.clientX;
         this.startY = e.clientY;
+        this.startWidth = parseInt(this.element.style.width.replace("px", ""));
+        this.startHeight = parseInt(this.element.style.height.replace("px", ""));
 
         this.elementSizeStart = getCoordinatesFromElement(this.element);
         this.listChildrenDimensions = [];
@@ -241,8 +244,6 @@ export class ResizerComplex {
             this.listChildrenDimensions.push(getCoordinatesFromElement(c));
         });
 
-        this.startWidth = parseInt(this.element.style.width.replace("px", ""));
-        this.startHeight = parseInt(this.element.style.height.replace("px", ""));
         document.documentElement.addEventListener('mousemove', this.mousemoveFunc = this.doDrag.bind(this), false);
         document.documentElement.addEventListener('keydown', this.keydownFunc = this.shiftDown.bind(this), false);
         document.documentElement.addEventListener('keyup', this.keyupFunc = this.shiftDown.bind(this), false);
@@ -379,6 +380,7 @@ export class ResizerComplex {
                      * the width/height act as vectors that can be scaled directly
                      */
                     setSize(element, eW, eH);
+
                 }
 
 

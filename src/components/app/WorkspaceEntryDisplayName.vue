@@ -37,31 +37,7 @@
     </button>
   </div>
 </template>
-
-  <!-- <div
-    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.stop.exact="entrySelectedLocal('single')"
-    class="border-selection-top"
-  ></div>
-  <div
-    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.stop.exact="entrySelectedLocal('single')"
-    class="border-selection-left"
-  ></div>
-  <div
-    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.stop.exact="entrySelectedLocal('single')"
-    class="border-selection-bottom"
-  ></div>
-  <div
-    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-    @mousedown.left.stop.exact="entrySelectedLocal('single')"
-    class="border-selection-right"
-  ></div> -->
+ 
 
 <script lang="ts">
 import { Tippy } from "vue-tippy";
@@ -94,7 +70,6 @@ export default defineComponent({
       type: WorkspaceEntry,
       required: true,
     },
-    viewKey: Number,
   },
   watch: {
     "entry.displaynameResize": function (newValue: boolean, oldValue: boolean) {
@@ -105,12 +80,7 @@ export default defineComponent({
     this.$el.getElementsByClassName("wsentry-displayname-input")[0].innerHTML =
       this.entry.displayname;
   },
-  inject: ["entrySelected"],
   methods: {
-    entrySelectedLocal(type: "add" | "single" | "toggle") {
-      // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
-    },
     keydown(e: KeyboardEvent) {
       // Prevent Linebreak in contenteditable, because it would create html tags
       if (e.key === "Enter") e.preventDefault();
@@ -204,7 +174,7 @@ $padding2: $padding * 2;
     min-width: 300px;
     white-space: nowrap;
     transform-origin: left bottom;
-    bottom: 0; 
+    bottom: 0;
   }
 }
 

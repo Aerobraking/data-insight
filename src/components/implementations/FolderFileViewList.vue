@@ -16,7 +16,6 @@
 import * as cache from "../../utils/ImageCache";
 import { defineComponent } from "vue";
 import { FolderWindowFile } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
-import * as icons from "../../utils/IconHandler";
 import { Dispatcher } from "../app/WorkspaceUtils";
 
 export default defineComponent({
@@ -26,8 +25,7 @@ export default defineComponent({
       type: FolderWindowFile,
       required: true,
     },
-    searchstring: String,
-    viewKey: Number,
+    searchstring: String, 
   },
   data(): {
     listener: any;

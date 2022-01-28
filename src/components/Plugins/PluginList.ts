@@ -1,5 +1,4 @@
 export * from './Rearrange'
-export * from './Resize'
 import  { RegisteredPlugins } from "../app/plugins/AbstractPlugin"
 
 export function getPlugins() {

@@ -13,8 +13,8 @@
     @mouseleave="mouseleave"
     @mousedown.capture="mousedown"
   >
-    <slot></slot>
-    <wsentryalert :entry="entry" />
+    <!-- <slot></slot> -->
+    <!-- <wsentryalert :entry="entry" /> -->
 
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -206,15 +206,14 @@ export default defineComponent({
       selected: new Set(),
     };
   },
-  setup(props) {
-    return setupEntry(props);
-  },
+  // setup(props) {
+  //   return setupEntry(props);
+  // },
   props: {
     entry: {
       type: WorkspaceEntryFolderWindow,
       required: true,
     },
-    viewKey: Number,
     searchstring: String,
     workspace: { type: Object as () => WorkspaceViewIfc },
   },
@@ -317,7 +316,7 @@ export default defineComponent({
     },
     entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
+      this.entrySelected(this.entry.id, type);
     },
     openDefault() {
       if (this.$props.entry != undefined) {
@@ -485,7 +484,7 @@ export default defineComponent({
 
       if (!this.observer) {
         this.observer = new IntersectionObserver(this.observerUpdate, {
-           rootMargin: '1000px 0px 1000px 0px',
+          rootMargin: "1000px 0px 1000px 0px",
           root: this.$el.getElementsByClassName("viewport")[0],
         });
       }
@@ -801,12 +800,7 @@ $colorFG: rgb(234, 234, 234);
 
   z-index: 100;
   resize: both;
-  height: 600px;
-  width: 600px;
-  min-width: 200px;
-  min-height: 200px;
 
-  position: absolute;
   color: $colorFG;
   background: $colorBG;
   border: 0px solid #949494;

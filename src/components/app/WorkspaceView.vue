@@ -85,6 +85,7 @@
               @input.stop.prevent
             >
               <div class="rectangle-selection"></div>
+
               <div class="rectangle-selection-wrapper">
                 <button class="ws-zoom-fixed resizer-bottom-right">
                   <ResizeBottomRight />
@@ -99,22 +100,24 @@
               </div>
 
               <keep-alive>
-                <component
-                  class="ws-entry"
+                <wsentry
                   v-for="e in model.entries"
-                  :name="e.id"
                   :key="e.id"
                   :entry="e"
-                  :viewKey="e.id"
+                  :name="e.id"
                   :workspace="workspaceInterface"
-                  @keydown="keydown"
-                  @zoomed="moveToEntry({ id: e.id, zoom: true })"
-                  :searchstring="searchString"
-                  :is="e.componentname"
-                  ref="wsentry"
                 >
-                  <wsentrydisplayname :entry="e" />
-                </component>
+                  <component
+                    :name="e.id"
+                    :entry="e"
+                    :workspace="workspaceInterface"
+                    @keydown="keydown"
+                    @zoomed="moveToEntry({ id: e.id, zoom: true })"
+                    :searchstring="searchString"
+                    :is="e.componentname"
+                  >
+                  </component>
+                </wsentry>
               </keep-alive>
 
               <div
@@ -310,6 +313,7 @@ import { Workspace } from "@/store/model/app/Workspace";
 import ReArrange from "./../Plugins/Rearrange";
 import AbstractPlugin from "./plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
+import wsentry from "./WorkspaceEntry.vue";
 import WorkspaceEntryCollection from "@/store/model/app/WorkspaceEntryCollection";
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { getPlugins } from "@/components/Plugins/PluginList";
@@ -323,6 +327,7 @@ export default defineComponent({
   name: "WorkspaceView",
   components: {
     wsentryfolder,
+    wsentry,
     Tippy,
     TippySingleton,
     Pane,
@@ -375,7 +380,8 @@ export default defineComponent({
     useCanvas: boolean;
     oldViewRect: ElementDimension | undefined;
     spacePressed: boolean;
-    highlightSelection: boolean;
+    showSelectionHighlighting: boolean;
+    showNearbySelection: boolean;
     divObserver: any;
     selectedEntriesCount: number;
     splitpaneTimeout: any | undefined;
@@ -400,7 +406,8 @@ export default defineComponent({
       overviewfolder: undefined,
       ignoreFileDrop: false,
       splitpaneTimeout: undefined,
-      highlightSelection: true,
+      showSelectionHighlighting: true,
+      showNearbySelection: true,
       activePlugin: null,
       skipInitialResize: 0,
       searchString: "",
@@ -431,7 +438,7 @@ export default defineComponent({
     searchString: function (newValue: string, oldValue: string) {
       this.searchUpdate();
     },
-    highlightSelection(newValue: boolean, oldValue: boolean) {
+    showSelectionHighlighting(newValue: boolean, oldValue: boolean) {
       this.updateSelectionWrapper();
     },
     getShowUI(newValue: boolean, oldValue: boolean) {
@@ -507,12 +514,14 @@ export default defineComponent({
       this.getSelectionWrapper().firstChild as HTMLElement,
       this,
       () => {
+        this.showNearbySelection = false;
         this.preventInput(true);
       },
       () => {
         this.drawCanvas();
       },
       () => {
+        this.showNearbySelection = true;
         this.preventInput(false);
       }
     );
@@ -545,12 +554,6 @@ export default defineComponent({
 
     this.setFocusToWorkspace();
     this.paneButtonClicked(this.model.paneSize, false);
-
-    // this.panZoomInstance.zoomTo(
-    //   this.model.viewportTransform.x,
-    //   this.model.viewportTransform.y,
-    //   this.model.viewportTransform.scale
-    // );
 
     if (this.model.entries.length == 0) {
       this.panZoomInstance.moveTo(
@@ -715,11 +718,11 @@ export default defineComponent({
     getWorkspaceIfc(): WorkspaceViewIfc {
       return this;
     },
+    updateUI(): void {
+      this.drawCanvas();
+      this.updateSelectionWrapper();
+    },
     drawCanvas() {
-      if (this.model.overviewOpen) {
-        //   return;
-      }
-
       let canvas: HTMLCanvasElement = this.getCanvas() as HTMLCanvasElement;
 
       let context = canvas.getContext("2d");
@@ -727,32 +730,21 @@ export default defineComponent({
       if (context == null) {
         return;
       }
-
-      let b = Math.min(
-        Math.max(15, 50 * (this.getCurrentTransform().scale * 10)),
-        90
-      );
-      b = 30;
-      context.fillStyle = "rgb(" + b + "," + b + "," + b + ")";
-
+ 
       context.clearRect(0, 0, canvas.width, canvas.height);
-      //  context.fillRect(0, 0, canvas.width, canvas.height);
 
-      b = 200;
       let currentC = this.getCurrentTransform();
 
-      if (this.useCanvas) {
-        context.save();
-        // context.translate(currentC.x, currentC.y);
-        // context.scale(currentC.scale, currentC.scale);
-        context.restore();
+      if (!this.useCanvas) return;
 
-        context.strokeStyle = "rgb(57, 215, 255)";
-        context.lineWidth = 2;
+      context.save();
+      context.restore();
 
-        for (let e of this.getSelectedEntries()) {
-          let c = this.getCoordinatesFromElement(e);
+      context.strokeStyle = "rgb(57, 215, 255)";
+      context.lineWidth = 1;
 
+      if (this.showSelectionHighlighting) {
+        function convert(c: any) {
           c.x = c.x * currentC.scale + currentC.x;
           c.x2 = c.x2 * currentC.scale + currentC.x;
 
@@ -761,85 +753,102 @@ export default defineComponent({
 
           c.w = c.w * currentC.scale;
           c.h = c.h * currentC.scale;
-
-          let padding = 1;
-          if (this.highlightSelection) {
-            context.strokeRect(
-              c.x - padding,
-              c.y - padding,
-              c.w + padding * 2,
-              c.h + padding * 2
-            );
-          }
         }
 
-        function distance(
-          rect: ElementDimensionInstance,
-          p: { x: number; y: number }
-        ) {
-          var dx = Math.max(rect.x - p.x, 0, p.x - rect.x2);
-          var dy = Math.max(rect.y - p.y, 0, p.y - rect.y2);
-          return Math.sqrt(dx * dx + dy * dy);
+        for (let e of this.getSelectedEntries().length > 1
+          ? [...this.getSelectedEntries(), this.getSelectionWrapper()]
+          : this.getSelectedEntries()) {
+          let c = this.getCoordinatesFromElement(e);
+
+          convert(c);
+
+          let padding = 1*currentC.scale;
+          context.strokeRect(
+            c.x - padding,
+            c.y - padding,
+            c.w + padding * 2,
+            c.h + padding * 2
+          );
         }
+      }
 
-        var rect = this.$el
-          .getElementsByClassName("vue-pan-zoom-scene")[0]
-          .getBoundingClientRect();
+      function distance(
+        rect: ElementDimensionInstance,
+        p: { x: number; y: number }
+      ) {
+        var dx = Math.max(rect.x - p.x, 0, p.x - rect.x2);
+        var dy = Math.max(rect.y - p.y, 0, p.y - rect.y2);
+        return Math.sqrt(dx * dx + dy * dy);
+      }
 
-        const mouse = {
-          x: this.mousePositionLastRaw.x - rect.left,
-          y: this.mousePositionLastRaw.y - rect.top,
-        };
+      var rect = this.$el
+        .getElementsByClassName("vue-pan-zoom-scene")[0]
+        .getBoundingClientRect();
 
-        const closeEnough: {
-          v: HTMLElement;
-          d: number;
-          c: ElementDimensionInstance;
-        }[] = [];
-        context.lineWidth = 4;
+      const mouse = {
+        x: this.mousePositionLastRaw.x - rect.left,
+        y: this.mousePositionLastRaw.y - rect.top,
+      };
 
-        let selectionRectangle: any = this.getSelectionRectangle();
-        let coordRect = this.getCoordinatesFromElement(selectionRectangle);
+      const closeEnough: {
+        v: HTMLElement;
+        d: number;
+        c: ElementDimensionInstance;
+      }[] = [];
+      context.lineWidth = 2;
 
-        if (
-          this.highlightSelection &&
-          !this.selectionDragActive &&
-          selectionRectangle.style.visibility != "visible" &&
-          coordRect.w == 0 &&
-          coordRect.h == 0
-        ) {
-          this.getEntries().forEach((v, i) => {
-            const m = this.model.entries[i];
+      let selectionRectangle: any = this.getSelectionRectangle();
+      let coordRect = this.getCoordinatesFromElement(selectionRectangle);
 
-            let c = this.getCoordinatesFromElement(v);
+      if (
+        this.showNearbySelection &&
+        !this.selectionDragActive &&
+        selectionRectangle.style.visibility != "visible" &&
+        coordRect.w == 0 &&
+        coordRect.h == 0
+      ) {
+        this.getEntries().forEach((v, i) => {
+          const m = this.model.entries[i];
 
-            c.x = c.x * currentC.scale + currentC.x;
-            c.x2 = c.x2 * currentC.scale + currentC.x;
-            c.y = c.y * currentC.scale + currentC.y;
-            c.y2 = c.y2 * currentC.scale + currentC.y;
-            c.w = c.w * currentC.scale;
-            c.h = c.h * currentC.scale;
+          let c = this.getCoordinatesFromElement(v);
 
-            const d = distance(c, mouse);
-            if (d < 20 && (m.isInsideSelectable || d > 0))
+          c.x = c.x * currentC.scale + currentC.x;
+          c.x2 = c.x2 * currentC.scale + currentC.x;
+          c.y = c.y * currentC.scale + currentC.y;
+          c.y2 = c.y2 * currentC.scale + currentC.y;
+          c.w = c.w * currentC.scale;
+          c.h = c.h * currentC.scale;
+
+          const d = distance(c, mouse);
+          if (d < 20 && (m.isInsideSelectable || d > 0))
+            if (
+              !(
+                mouse.x - c.x2 < 15 &&
+                mouse.x - c.x2 >= 0 &&
+                mouse.y - c.y2 < 15 &&
+                mouse.y - c.y2 >= 0
+              )
+            )
               closeEnough.push({ v, d, c });
-          });
-        }
-        this.entryHover = closeEnough.length > 0 ? closeEnough[0].v : undefined;
+        });
 
-        if (closeEnough.length > 0) {
-          var result = closeEnough.reduce((res, obj) => {
-            return obj.d < res.d ? obj : res;
-          });
-          if (result) {
-            let padding = 1;
-            context.strokeRect(
-              result.c.x - padding,
-              result.c.y - padding,
-              result.c.w + padding * 2,
-              result.c.h + padding * 2
-            );
-          }
+        100;
+        105;
+      }
+      this.entryHover = closeEnough.length > 0 ? closeEnough[0].v : undefined;
+
+      if (closeEnough.length > 0) {
+        var result = closeEnough.reduce((res, obj) => {
+          return obj.d < res.d ? obj : res;
+        });
+        if (result) {
+          let padding = 1;
+          context.strokeRect(
+            result.c.x - padding,
+            result.c.y - padding,
+            result.c.w + padding * 2,
+            result.c.h + padding * 2
+          );
         }
       }
     },
@@ -1274,8 +1283,19 @@ export default defineComponent({
 
       this.drawCanvas();
     },
+    keyupFunc: function (e: MouseEvent) {
+      console.log("keyupFunc");
+
+      this.mouseup(e);
+    },
     mousedown: function (e: MouseEvent) {
       if (this.preventEvent(e)) return;
+      const _this = this;
+      document.documentElement.addEventListener(
+        "mouseup",
+        _this.mouseup.bind(this),
+        false
+      );
 
       if (this.spacePressed) {
         this.spacePressed = false;
@@ -1361,6 +1381,12 @@ export default defineComponent({
     },
     mouseup: function (e: MouseEvent) {
       if (this.preventEvent(e)) return;
+
+      document.documentElement.removeEventListener(
+        "mouseup",
+        this.mouseup,
+        false
+      );
 
       if (this.eventOnMouseup) {
         const temp = {
@@ -1776,6 +1802,11 @@ export default defineComponent({
       }
     },
     entrySelected(entry: any, type: "add" | "single" | "toggle") {
+      console.log("entry selected");
+      entry =
+        entry instanceof HTMLElement
+          ? entry
+          : (this.getViewByID(entry) as HTMLElement);
       this.entriesSelected([entry], type);
     },
     entriesSelected(
@@ -2109,14 +2140,10 @@ export default defineComponent({
       selectionRectangle.style.width = Math.abs(x2 - x) + "px";
       selectionRectangle.style.height = Math.abs(y2 - y) + "px";
 
-      selectionRectangle.classList.toggle(
-        "wrapper-highlight",
-        this.getSelectedEntries().length > 1
-      );
-      selectionRectangle.style.visibility =
-        this.getSelectedEntries().length > 0 && this.highlightSelection
-          ? "visible"
-          : "hidden";
+      selectionRectangle.style.display =
+        this.getSelectedEntries().length > 0 && this.showSelectionHighlighting
+          ? "block"
+          : "none";
 
       this.drawCanvas();
     },
@@ -2523,18 +2550,12 @@ svg {
   pointer-events: all;
   padding: 0;
   margin: 0;
-}
+} 
 
-div .resizer-top-right {
+.resizer-bottom-right {
   @include theme;
-  top: 0;
-  right: 0;
-  cursor: ne-resize;
-}
-div .resizer-bottom-right {
-  @include theme;
-  bottom: -10px;
-  right: -10px;
+  left: 100%;
+  top: 100%; 
   transform-origin: center;
   cursor: se-resize;
   width: auto;
@@ -2597,17 +2618,16 @@ div .resizer-top-left {
   width: 0px;
   height: 0px;
   transform: translate3d(0px, 0px, 0px);
-
+  display: none;
   z-index: 4000;
-  padding: 10px;
+  padding: 0px;
   margin: -10px;
-  visibility: hidden;
   pointer-events: none;
 }
 
-.wrapper-highlight {
-  border: 2px solid $color-Selection;
-}
+// .wrapper-highlight {
+//   border: 2px solid $color-Selection;
+// }
 
 /**
 A top selection bar for entries to make them more easily selectable. 
@@ -2706,12 +2726,6 @@ visually highlights elements for selection with a hover effect
   100% {
     opacity: 1;
   }
-}
-
-.ws-entry {
-  transition: opacity 0.3s ease-in-out;
-  position: absolute;
-  // filter: drop-shadow(5px 5px 2px  #000000);
 }
 
 .position-zero {

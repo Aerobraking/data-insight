@@ -12,12 +12,15 @@ export default interface WorkspaceViewIfc {
     getModelEntries(): WorkspaceEntry[];
     getUnselectedEntries(): HTMLElement[];
     getEntries(): HTMLElement[];
+    updateUI(): void;
     finishPlugin(): void;
     preventInput(prevent: boolean): void;
-    highlightSelection: boolean;
+    showSelectionHighlighting: boolean;
+    showNearbySelection: boolean;
     updateSelectionWrapper(): void;
     startPlugin(p: any): void;
     showSelection(padding: number | undefined): void;
+    drawCanvas(): void;
     finishPlugin(): void;
     dispatchEvent(e: Event): void;
     cancelPlugin(): void;

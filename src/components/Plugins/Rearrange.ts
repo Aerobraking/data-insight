@@ -205,7 +205,8 @@ export default class ReArrange extends Plugin {
 
         this.workspace.preventInput(true);
 
-        this.workspace.highlightSelection = false;
+        this.workspace.showSelectionHighlighting = false;
+        this.workspace.showNearbySelection = false;
 
         this.updateview();
 
@@ -266,7 +267,8 @@ export default class ReArrange extends Plugin {
             [this.slider, this.sliderColumns, this.checkboxFit, this.div].forEach(e => document.body.removeChild(e));
         }
         this.workspace.preventInput(false);
-        this.workspace.highlightSelection = true;
+        this.workspace.showSelectionHighlighting = true;
+        this.workspace.showNearbySelection = true;
 
         setTimeout(() => {
             for (let index = 0; index < this.selection.length; index++) {

@@ -1,7 +1,7 @@
 <template>
   <div ref="el" class="ws-entry-image-wrapper">
-    <slot></slot>
-    <wsentryalert :entry="entry" />
+    <!-- <slot></slot> -->
+    <!-- <wsentryalert :entry="entry" /> -->
     <div
       @dblclick.capture.stop="doubleClick"
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
@@ -32,16 +32,12 @@ export default defineComponent({
     return {
       cacheListener: undefined,
     };
-  },
-  setup(props) {
-    return setupEntry(props);
-  },
+  }, 
   props: {
     entry: {
       type: WorkspaceEntryImage,
       required: true,
-    },
-    viewKey: Number,
+    }
   },
   mounted() {
     let _this = this;
@@ -74,7 +70,7 @@ export default defineComponent({
   unmounted() {
     //  cache.ImageCache.unregisterPath(path) ;
   },
-  inject: ["entrySelected", "entrySelected"],
+  inject: ["entrySelected"],
   methods: {
     cacheSizeEvent(dim: cache.ImageDim): void {
       if (!this.entry.imageCreated) {
@@ -105,7 +101,7 @@ export default defineComponent({
           this.$el.style.backgroundImage == "")
       ) {
         this.$el.style.backgroundImage = url;
-      } 
+      }
       if (type == cache.ImageSize.original) {
         div.style.backgroundImage = url;
         if (this.$el.style.backgroundImage != "") {
@@ -126,7 +122,7 @@ export default defineComponent({
     },
     entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
-      this.entrySelected(this.$el, type);
+      this.entrySelected(this.entry.id, type);
     },
     doubleClick(e: MouseEvent) {
       this.$emit("zoomed");
@@ -159,15 +155,10 @@ export default defineComponent({
   // images are behind the normal stuff to use them as a background
   z-index: 50;
   background: transparent;
-  position: absolute;
   color: #f1f1f1;
   padding: 0px;
-  width: 220px;
-  height: 180px;
   background-size: cover;
   box-sizing: border-box;
-}
-.loading-border {
 }
 
 @keyframes rotate {

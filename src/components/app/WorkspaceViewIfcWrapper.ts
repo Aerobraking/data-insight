@@ -25,10 +25,10 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
         return this.ws ? this.getLastMousePosition() : { x: 0, y: 0 };
     }
     getCurrentTransform(): { scale: number; x: number; y: number } {
-        return { scale: 0, x: 0, y: 0 };
+        return this.ws ? this.ws.getCurrentTransform() : { scale: 0, x: 0, y: 0 };
     }
     getSelectionRectangle(): Element {
-        return "" as unknown as Element;
+        return this.ws ? this.ws.getSelectionRectangle() : "" as unknown as Element;
     }
     getSelectedEntries(): HTMLElement[] {
         return this.ws ? this.ws.getSelectedEntries() : [];
@@ -42,8 +42,14 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     getEntries(): HTMLElement[] {
         return this.ws ? this.ws.getEntries() : [];
     }
+    drawCanvas(): void {
+        this.ws ? this.ws.drawCanvas() : "";
+    }
     finishPlugin(): void {
         this.ws ? this.ws.finishPlugin() : [];
+    }
+    updateUI(): void {
+        this.ws ? this.ws.updateUI() : [];
     }
     preventInput(prevent: boolean): void {
         this.ws ? this.ws.preventInput(prevent) : [];
@@ -63,11 +69,16 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     showSelection(padding: number | undefined): void {
         this.ws ? this.ws.showSelection(padding) : [];
     }
-
-    public set highlightSelection(val: boolean) {
-        this.ws ? this.ws.highlightSelection = val : [];
+    public set showSelectionHighlighting(val: boolean) {
+        this.ws ? this.ws.showSelectionHighlighting = val : [];
     }
-    public get highlightSelection(): boolean {
-        return this.ws ? this.ws.highlightSelection : true;
+    public get showSelectionHighlighting(): boolean {
+        return this.ws ? this.ws.showSelectionHighlighting : true;
+    }
+    public set showNearbySelection(val: boolean) {
+        this.ws ? this.ws.showNearbySelection = val : [];
+    }
+    public get showNearbySelection(): boolean {
+        return this.ws ? this.ws.showNearbySelection : true;
     }
 }
