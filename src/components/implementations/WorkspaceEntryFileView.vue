@@ -7,9 +7,6 @@
     ref="el"
     class="ws-entry-file-wrapper select-element sizefixed"
   >
-    <!-- <slot></slot> -->
-    <!-- <wsentryalert :entry="entry" /> -->
-
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>
   </div>
@@ -32,12 +29,12 @@ export default defineComponent({
   },
   components: {
     wsentryalert,
-  }, 
+  },
   props: {
     entry: {
       type: WorkspaceEntryFile,
       required: true,
-    }
+    },
   },
   mounted() {
     let _this: any = this;
@@ -52,10 +49,10 @@ export default defineComponent({
   },
   inject: ["entrySelected"],
   methods: {
-    watcherEvent(type: string) {  
+    watcherEvent(type: string) {
       switch (type) {
         case "unlink":
-          this.entry.alert = `Folder ${this.entry.path} does not exist`; 
+          this.entry.alert = `Folder ${this.entry.path} does not exist`;
           break;
         default:
           this.entry.alert = undefined;

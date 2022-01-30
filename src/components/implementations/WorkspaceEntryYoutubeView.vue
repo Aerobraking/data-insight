@@ -7,14 +7,6 @@
     @click.stop
     class="ws-entry-youtube-wrapper"
   >
-    <!-- <slot></slot> -->
-    <!-- <wsentryalert :entry="entry" /> -->
-    <!-- <div
-      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-      @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="ws-window-bar-top select-element selectable-highlight"
-    ></div> -->
     <input
       @mousedown.stop
       @mousemove.stop
@@ -22,7 +14,7 @@
       @keyup.stop
       @paste.stop
       class="url-input"
-      :class="{ showURL: entry.url.length == 0 || entry.alert}"
+      :class="{ showURL: entry.url.length == 0 || entry.alert }"
       type="text"
       v-model="entry.url"
       placeholder="Enter URL or simply the video id from the URL"
@@ -39,9 +31,6 @@
 </template>
 
 <script lang="ts">
-const { shell } = require("electron"); // deconstructing assignment
-import { resize } from "../../utils/resize";
-
 /**
  * @param {String} HTML representing a single element
  * @return {Element}
@@ -62,15 +51,7 @@ import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 import { WorkspaceEntryYoutube } from "@/store/model/implementations/filesystem/FileSystemWorkspaceEntries";
 export default defineComponent({
   name: "wsentryyoutube",
-  data() {
-    return {};
-  },
-  components: {
-    wsentryalert,
-  },
-  // setup(props) {
-  //   return setupEntry(props);
-  // },
+  components: { wsentryalert },
   props: {
     entry: WorkspaceEntryYoutube,
   },
@@ -107,8 +88,6 @@ export default defineComponent({
       }
     },
   },
-  computed: {},
-  created() {},
 });
 </script>
  

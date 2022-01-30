@@ -13,9 +13,6 @@
     @mouseleave="mouseleave"
     @mousedown.capture="mousedown"
   >
-    <!-- <slot></slot> -->
-    <!-- <wsentryalert :entry="entry" /> -->
-
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
       @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
@@ -25,8 +22,6 @@
     ></div>
 
     <div @mousedown.stop @mousemove.stop class="search-bar">
-      <!-- <button @click="showTiles = !showTiles">View</button>
-      <button @click="opaque = !opaque">Opaque</button> -->
       <button><ArrowUp @click="folderBack" /></button>
       <button>
         <HomeOutline
@@ -57,16 +52,6 @@
       <button :class="{ 'hightlight-fg': entry.mode == 'list' }">
         <ViewList @click="setMode($event, 'list')" />
       </button>
-
-      <!-- <input
-        @keydown.capture.stop
-        @keyup.capture.stop
-        @mousedown.stop
-        @mousemove.stop
-        v-model="searchstring"
-        class=""
-        placeholder="Search ..."
-      /> -->
     </div>
     <div @mousedown.stop @mousemove.stop class="breadcrumbs-wrapper">
       <div @mousedown.stop @mousemove.stop class="breadcrumbs"></div>
@@ -117,15 +102,6 @@
 </template>
 
 <script lang="ts">
-/*
-
- 
- @click.stop
-    @mousedown.stop
-    @mouseup.stop
-    @mousemove.stop
-
-*/
 const path = require("path");
 const { shell } = require("electron");
 
@@ -157,7 +133,10 @@ import {
 } from "mdue";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 import WorkspaceViewIfcWrapper from "../app/WorkspaceViewIfcWrapper";
-import { DriveListRoot, DriveListSystemInstance } from "@/filesystem/DriveListSystem";
+import {
+  DriveListRoot,
+  DriveListSystemInstance,
+} from "@/filesystem/DriveListSystem";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
@@ -773,8 +752,6 @@ $colorBG: rgb(34, 34, 34);
 $colorFG: rgb(234, 234, 234);
 
 .item-selected {
-  //box-sizing: border-box;
-  //border: 2px solid $color-Selection;
   background: $color-Selection !important;
 }
 
@@ -926,17 +903,7 @@ $tile-size: 150px;
   align-content: flex-start;
   -webkit-box-orient: horizontal;
   -webkit-box-direction: normal;
-  .tile {
-    // background: #c4262600;
-    // height: $tile-size;
-    // text-align: center;
-    // p {
-    //   align-self: flex-end;
-    //   width: 100%;
-    //   // makes the scaled text smoother in the rendering
-    //   backface-visibility: hidden;
-    // }
-
+  .tile { 
     .opaque {
       background: #a8a8a8;
     }
@@ -953,7 +920,4 @@ $tile-size: 150px;
   }
 }
 </style>
-
-function remove(listSelectionIds: number[], id: any) {
-  throw new Error("Function not implemented.");
-}
+ 

@@ -34,7 +34,7 @@ export default defineComponent({
     wsentrydisplayname,
   },
   props: {
-    entry: WorkspaceEntryTextArea, 
+    entry: WorkspaceEntryTextArea,
   },
   mounted() {
     let _this: any = this;
@@ -68,8 +68,6 @@ export default defineComponent({
           name: "heading2",
           result: () => exec("fontSize", "6"),
         },
-        // "olist",
-        // "ulist",
       ],
       classes: {
         actionbar: "pell-actionbar",
@@ -107,7 +105,7 @@ export default defineComponent({
 });
 </script>
   
-<style  lang="scss">
+<style scoped lang="scss">
 .no-text {
   position: absolute;
   top: 65px;
@@ -124,7 +122,7 @@ export default defineComponent({
   flex-flow: column;
   overflow-x: hidden;
   overflow-y: hidden;
-} 
+}
 
 .pell-actionbar {
   overflow: hidden;
@@ -180,9 +178,6 @@ export default defineComponent({
 .workspace-is-selected .pell-button {
   color: floralwhite !important;
 }
-</style>
-
-<style scoped lang="scss">
 
 .ws-entry-textarea-wrapper {
   display: flex;
@@ -198,5 +193,4 @@ export default defineComponent({
   padding: 0;
   margin: 0;
 }
-
 </style>

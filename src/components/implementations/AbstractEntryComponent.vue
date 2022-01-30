@@ -1,27 +1,24 @@
 <template>
-  <div ref="el" class="ws-entry-X">
-    <!-- <wsentrydisplayname :entry="entry" /> -->
-    <slot></slot>
+  <div ref="el">
     <div></div>
   </div>
 </template>
 
-<script lang="ts"> 
-
+<script lang="ts">
 import { defineComponent } from "vue";
-import  WorkspaceViewIfc  from "../app/WorkspaceViewIfc";
-import * as _ from "underscore"; 
+import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
+import * as _ from "underscore";
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 
 export default defineComponent({
-  name: "wsentryX",
+  name: "wsentryabstract",
   components: {},
   data() {
     return {};
   },
   props: {
-    entry: { type: WorkspaceEntry, required: true }, 
-    workspace: { type: Object as () => WorkspaceViewIfc },
+    entry: { type: WorkspaceEntry, required: true },
+    workspace: { type: Object as () => WorkspaceViewIfc, required: true },
   },
   mounted() {},
   inject: ["entrySelected"],
@@ -38,9 +35,6 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-.ws-entry-X {
-  background: red;
-}
 </style>
 
  
