@@ -1,10 +1,10 @@
-import { GetterTree } from 'vuex'  
-import { Workspace } from './model/app/Workspace';
+import { Workspace } from '@/core/model/Workspace';
+import { GetterTree } from 'vuex'
 import { State } from './model/state'
 
 export type Getters = {
 
-  getShowUI(state: State):boolean
+  getShowUI(state: State): boolean
   getViewList(state: State): Array<Workspace>
   getActiveWorkspaceIndex(state: State): number
 }

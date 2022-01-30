@@ -1,6 +1,6 @@
-import { Type } from 'class-transformer';
-import View from "./app/AbstractView";
-import { Workspace } from './app/Workspace';
+import View from '@/core/model/AbstractView';
+import { Workspace } from '@/core/model/Workspace';
+import { Type } from 'class-transformer'; 
 
 export class InsightFile {
     @Type(() => View, {

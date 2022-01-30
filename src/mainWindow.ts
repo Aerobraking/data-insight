@@ -10,28 +10,28 @@ import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
 import { InsightFile } from './store/model/state';
-import { Feature } from './store/model/app/overview/AbstractNodeFeature';
+import { Feature } from './core/model/overview/AbstractNodeFeature';
 
 /**
  * Workspace Entries
  */
-import wsentryframe from "./components/app/WorkspaceEntryFrame.vue";
+import wsentryframe from "./core/components/workspace/WorkspaceEntryFrame.vue";
 
 /**
  * Workspace Folder Entries
  */
-import wsentryfile from "./components/implementations/WorkspaceEntryFileView.vue";
-import wsentrytextarea from "./components/implementations/WorkspaceEntryTextareaView.vue";
-import wsentryfolderview from "./components/implementations/WorkspaceEntryFolderView.vue";
-import wsentryimage from "./components/implementations/WorkspaceEntryImageView.vue";
-import wsentryvideo from "./components/implementations/WorkspaceEntryVideoView.vue";
-import wsentryyoutube from "./components/implementations/WorkspaceEntryYoutubeView.vue";
+import wsentryfile from "./filesystem/components/WorkspaceEntryFileView.vue";
+import wsentrytextarea from "./filesystem/components/WorkspaceEntryTextareaView.vue";
+import wsentryfolderview from "./filesystem/components/WorkspaceEntryFolderView.vue";
+import wsentryimage from "./filesystem/components/WorkspaceEntryImageView.vue";
+import wsentryvideo from "./filesystem/components/WorkspaceEntryVideoView.vue";
+import wsentryyoutube from "./filesystem/components/WorkspaceEntryYoutubeView.vue";
 
 /**
  * Features
  */
-import featurenone from "./components/implementations/features/FeatureNone.vue";
-import featuresize from "./components/implementations/features/FeatureSizeComp.vue";
+import featurenone from "./core/components/features/FeatureNone.vue";
+import featuresize from "./core/components/features/FeatureSizeComp.vue";
 
 ipcRenderer.send("show-window");
 

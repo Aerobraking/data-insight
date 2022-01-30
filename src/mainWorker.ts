@@ -2,8 +2,8 @@
 import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
-import { FolderSync, FolderSyncResult, FolderSyncFinished, FolderFeatureResult } from './store/model/implementations/filesystem/FileSystemMessages';
-import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, FolderNodeFeatures, FeatureDataMedian } from './store/model/app/overview/AbstractNodeFeature';
+import { FolderSync, FolderSyncResult, FolderSyncFinished, FolderFeatureResult } from './filesystem/utils/FileSystemMessages';
+import { Feature, FeatureDataList, FeatureDataSum, NodeFeatures, FolderNodeFeatures, FeatureDataMedian } from './core/model/overview/AbstractNodeFeature';
 import path from "path";
 import { Dirent } from 'fs-extra';
 

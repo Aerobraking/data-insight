@@ -1,5 +1,4 @@
- 
-<template>
+ <template>
   <Tabs />
   <ModalDialog v-show="showAbout" @close="showAbout = false">
     <template v-slot:header> Data Insight </template>
@@ -155,17 +154,17 @@
 </template>
 
 <script lang="ts">
-import * as WSUtils from "./components/app/WorkspaceUtils";
 import { deserialize, plainToClass, serialize } from "class-transformer";
 import { ipcRenderer, shell, remote } from "electron";
 import { defineComponent } from "vue";
-import Tabs from "./components/app/Tabs.vue";
-import { MutationTypes } from "./store/mutations/mutation-types";
+import { getPlugins } from "./plugins/PluginList";
+import AbstractPlugin from "./core/plugin/AbstractPlugin";
 import { InsightFile } from "./store/model/state";
-import ModalDialog from "./components/app/ModalDialog.vue";
-import View from "./store/model/app/AbstractView";
-import { getPlugins } from "./components/Plugins/PluginList";
-import AbstractPlugin from "./components/app/plugins/AbstractPlugin";
+import View from "./core/model/AbstractView";
+import { MutationTypes } from "./store/mutations/mutation-types";
+import Tabs from "@/core/components/Tabs.vue";
+import ModalDialog from "@/core/components/ModalDialog.vue";
+import * as WSUtils from "@/core/components/workspace/WorkspaceUtils";
 
 const v = remote.app.getVersion();
 var fs = require("fs");
