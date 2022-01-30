@@ -191,7 +191,7 @@ import { AbstractNodeShell } from "@/core/model/overview/AbstractNodeShell";
 import { Instance } from "@/core/model/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell"; 
-import d3 from "d3";
+import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
 
 export default defineComponent({

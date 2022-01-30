@@ -367,7 +367,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
-        this.zoom.scaleExtent([0.01, 2]);
+        this.zoom.scaleExtent([0.0033, 2]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
             let t = d3.zoomTransform(this.canvas);
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
