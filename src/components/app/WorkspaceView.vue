@@ -108,6 +108,7 @@
                   :workspace="workspaceInterface"
                 >
                   <component
+                    :ref="setItemRef"
                     :name="e.id"
                     :entry="e"
                     :workspace="workspaceInterface"
@@ -222,21 +223,6 @@
                 <template #content>Delete <kbd>Del</kbd></template>
               </tippy>
             </tippy-singleton>
-            <!-- <button
-        style="transform: rotate(90deg)"
-        :disabled="selectedEntriesCount == 0"
-      >
-        <arrow-expand />
-      </button> -->
-
-            <!-- <button :disabled="selectedEntriesCount < 2"><BorderAll /></button> -->
-
-            <!-- <button
-              @click="toggleNameResizing()"
-              :disabled="selectedEntriesCount != 1"
-            >
-              <FormatSize />
-            </button> -->
           </div>
         </div>
       </pane>
@@ -255,6 +241,8 @@
 </template>
 
 <script lang="ts">
+const fs = require("fs");
+let clipboard: WorkspaceEntryCollection;
 import { Tippy, TippySingleton } from "vue-tippy";
 import { Splitpanes, Pane } from "splitpanes";
 import "splitpanes/dist/splitpanes.css";
@@ -285,8 +273,6 @@ import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
-const fs = require("fs");
-let clipboard: WorkspaceEntryCollection;
 import {
   FormTextbox,
   Resize,
@@ -311,16 +297,19 @@ import {
 } from "mdue";
 import { Workspace } from "@/store/model/app/Workspace";
 import ReArrange from "./../Plugins/Rearrange";
+import FitAspectRatio from "./../Plugins/FitAspectRatio";
 import AbstractPlugin from "./plugins/AbstractPlugin";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import wsentry from "./WorkspaceEntry.vue";
 import WorkspaceEntryCollection from "@/store/model/app/WorkspaceEntryCollection";
 import WorkspaceEntry from "@/store/model/app/WorkspaceEntry";
 import { getPlugins } from "@/components/Plugins/PluginList";
-import { createKeyboardInputContext } from "@/components/app/plugins/KeyboardShortcut";
+import {
+  createKeyboardInputContext,
+  PluginShortCutHandler,
+} from "@/components/app/plugins/KeyboardShortcut";
 import { WorkspaceEntryFrame } from "@/store/model/app/WorkspaceEntryFrame";
-
-getPlugins();
+import WorkspaceEntryAspectRatio from "@/store/model/app/WorkspaceEntry";
 
 export default defineComponent({
   el: ".wrapper",
@@ -386,6 +375,7 @@ export default defineComponent({
     selectedEntriesCount: number;
     splitpaneTimeout: any | undefined;
     ignoreFileDrop: boolean;
+    itemRefs: any[];
     overviewfolder: WorkspaceEntryFolderWindow | undefined;
     entryHover: HTMLElement | undefined;
     workspaceInterface: WorkspaceViewIfcWrapper;
@@ -393,13 +383,14 @@ export default defineComponent({
     eventOnMouseup:
       | { entries: HTMLElement[]; type: "add" | "single" | "toggle" }
       | undefined;
-    c: any;
+    c: PluginShortCutHandler | undefined;
   } {
     return {
       /**
        * ignores a file drop once when true, then it is set to false.
        */
       c: undefined,
+      itemRefs: [],
       eventOnMouseup: undefined,
       workspaceInterface: new WorkspaceViewIfcWrapper(),
       entryHover: undefined,
@@ -474,10 +465,11 @@ export default defineComponent({
     })();
 
     getPlugins().forEach((p) => {
-      const panel = new p();
-      this.c.register(panel.shortcut, () => {
-        alert(panel.shortcut);
-      });
+      const plugin = new p();
+      if (this.c)
+        this.c.register(plugin.shortcut, () => {
+          this.startPlugin(plugin);
+        });
     });
 
     _this.workspaceInterface.ws = _this.getWorkspaceIfc();
@@ -730,7 +722,7 @@ export default defineComponent({
       if (context == null) {
         return;
       }
- 
+
       context.clearRect(0, 0, canvas.width, canvas.height);
 
       let currentC = this.getCurrentTransform();
@@ -755,6 +747,29 @@ export default defineComponent({
           c.h = c.h * currentC.scale;
         }
 
+        const models = this.model.entries;
+        const views = this.getEntries();
+
+        for (let i = 0; i < models.length; i++) {
+          const m = models[i];
+          const v = views[i];
+
+          if (m instanceof WorkspaceEntryImage) {
+            if (m.imgOriginalLoaded) {
+              let c = this.getCoordinatesFromElement(v);
+              convert(c);
+
+              context.drawImage(
+                m.imgOriginal as HTMLImageElement,
+                c.x,
+                c.y,
+                c.w,
+                c.h
+              );
+            }
+          }
+        }
+
         for (let e of this.getSelectedEntries().length > 1
           ? [...this.getSelectedEntries(), this.getSelectionWrapper()]
           : this.getSelectedEntries()) {
@@ -762,7 +777,7 @@ export default defineComponent({
 
           convert(c);
 
-          let padding = 1*currentC.scale;
+          let padding = 1 * currentC.scale;
           context.strokeRect(
             c.x - padding,
             c.y - padding,
@@ -1040,7 +1055,7 @@ export default defineComponent({
       if (this.preventEvent(e, false)) return;
 
       /**
-       * No ... key down
+       * No modifier key down
        */
       if (!e.altKey && !e.ctrlKey) {
         switch (e.key) {
@@ -1069,6 +1084,8 @@ export default defineComponent({
       }
 
       if (this.preventEvent(e)) return;
+
+      if (this.c) this.c.keydown("ws", e);
 
       /**
        * Control key down
@@ -1168,9 +1185,6 @@ export default defineComponent({
        */
       if (e.altKey && !e.ctrlKey && e.shiftKey) {
         switch (e.key) {
-          case "r":
-            this.setFocusOnNameInput();
-            break;
         }
       }
 
@@ -1203,6 +1217,9 @@ export default defineComponent({
           case " ":
             this.showSelection();
             break;
+          case "r":
+            this.setFocusOnNameInput();
+            break;
         }
         switch (number) {
           case "1":
@@ -1224,6 +1241,24 @@ export default defineComponent({
        */
       if (!e.altKey && !e.shiftKey && !e.ctrlKey) {
         switch (e.key) {
+          // case "a":
+          //   const views = this.getSelectedEntries();
+          //   const models = this.getModelEntriesFromView(views);
+
+          //   for (let i = 0; i < models.length; i++) {
+          //     const m = models[i];
+          //     const v = views[i];
+
+          //     if (m instanceof WorkspaceEntryAspectRatio) {
+          //       if (m.aspectratio) {
+          //         let w: number = Number(v.offsetWidth);
+          //         v.style.width = w + "px";
+          //         v.style.height = w * m.aspectratio.ratio + "px";
+          //       }
+          //     }
+          //   }
+          //   this.updateUI();
+          //   break;
           case "1":
           case "2":
           case "3":
@@ -1243,6 +1278,7 @@ export default defineComponent({
             this.spacePressed = true;
             this.showAll();
             break;
+
           case "r":
             this.rearrange();
             break;
@@ -1284,8 +1320,6 @@ export default defineComponent({
       this.drawCanvas();
     },
     keyupFunc: function (e: MouseEvent) {
-      console.log("keyupFunc");
-
       this.mouseup(e);
     },
     mousedown: function (e: MouseEvent) {
@@ -1802,7 +1836,6 @@ export default defineComponent({
       }
     },
     entrySelected(entry: any, type: "add" | "single" | "toggle") {
-      console.log("entry selected");
       entry =
         entry instanceof HTMLElement
           ? entry
@@ -1828,8 +1861,6 @@ export default defineComponent({
           .map((e) => e.getAttribute("name"))
           .includes(entries[0].getAttribute("name"))
       ) {
-        console.log("this.eventOnMouseup", entries);
-
         this.eventOnMouseup = { entries: entries, type: type };
       }
 
@@ -1851,8 +1882,6 @@ export default defineComponent({
             break;
           case "toggle":
             // ctrl click on an entry
-            console.log("entries", entries);
-
             entries.forEach((e) => e.classList.toggle("workspace-is-selected"));
             break;
         }
@@ -1973,11 +2002,13 @@ export default defineComponent({
       this.activePlugin = null;
     },
     finishPlugin(): void {
-      if (this.activePlugin) {
-        this.activePlugin.finish();
-        WSUtils.Events.pluginStarted(false);
-      }
-      this.activePlugin = null;
+      setTimeout(() => {
+        if (this.activePlugin) {
+          this.activePlugin.finish();
+          WSUtils.Events.pluginStarted(false);
+        }
+        this.activePlugin = null;
+      }, 10);
     },
     getPositionInDocument(e: { clientX: number; clientY: number }): {
       x: number;
@@ -2181,6 +2212,16 @@ export default defineComponent({
     onZoom(e: any) {
       this.updateFixedZoomElements();
       this.onPanStart(e);
+
+      this.itemRefs.forEach((e: any) => {
+        if (e.workspaceEvent)
+          e.workspaceEvent({ scale: this.model.viewportTransform.scale });
+      });
+    },
+    setItemRef(el: any) {
+      if (el) {
+        this.itemRefs.push(el);
+      }
     },
     updateFixedZoomElements() {
       let zoomFixed: HTMLElement[] = Array.from(
@@ -2207,9 +2248,10 @@ export default defineComponent({
       });
     },
   },
+  beforeUpdate() {
+    this.itemRefs = [];
+  },
 });
-
-var switcher = false;
 </script>
 
 <style   lang="scss">
@@ -2550,12 +2592,12 @@ svg {
   pointer-events: all;
   padding: 0;
   margin: 0;
-} 
+}
 
 .resizer-bottom-right {
   @include theme;
   left: 100%;
-  top: 100%; 
+  top: 100%;
   transform-origin: center;
   cursor: se-resize;
   width: auto;

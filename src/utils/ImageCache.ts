@@ -104,6 +104,7 @@ export class Cache {
 
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + mediumURL + "')", e.data.type);
+                        // l.callback( mediumURL , e.data.type);
                     });
                 }
                 if (e.data.type == ImageSize.original) {
@@ -115,6 +116,7 @@ export class Cache {
 
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + origURL + "')", e.data.type);
+                        // l.callback(origURL, e.data.type);
                     });
                 }
 
@@ -134,16 +136,33 @@ export class Cache {
             return undefined;
         } else {
             let url: string | undefined = imageEntry.get(type);
-            return path != undefined ? "url('" + url + "')" : undefined;
+            return url != undefined ? "url('" + url + "')" : undefined;
         }
     }
+    
     getUrlRaw(path: string, type: ImageSize): string | undefined {
         let imageEntry: Map<ImageSize, string> | undefined = this.hash.get(path);
         if (imageEntry == undefined) {
             return undefined;
         } else {
-            let url: string | undefined = imageEntry.get(type);
-            return path != undefined ? url : undefined;
+            let url: string | undefined
+            switch (type) {
+                case ImageSize.original:
+                    url = imageEntry.get(type);
+                    if (url) break;
+                case ImageSize.medium:
+                    url = imageEntry.get(type);
+                    if (url) break;
+                case ImageSize.small:
+                    url = imageEntry.get(type);
+                    if (url) break;
+                case ImageSize.tiny:
+                    url = imageEntry.get(type);
+                    if (url) break;
+                default:
+                    break;
+            }
+            return url != undefined ? url : undefined;
         }
     }
 

@@ -123,40 +123,12 @@ $padding2: $padding * 2;
   &:hover {
     background: rgba(255, 0, 0, 1);
   }
-}
-
-.border-selection-top {
-  @include border;
-  width: calc(100% + #{$padding2});
-  height: $padding;
-  left: -$padding;
-  top: -$padding;
-}
-.border-selection-left {
-  @include border;
-  width: $padding;
-  height: 100%;
-  left: -$padding;
-  top: 0;
-}
-.border-selection-bottom {
-  @include border;
-  width: calc(100% + #{$padding2});
-  height: $padding;
-  left: -$padding;
-  bottom: -$padding;
-}
-.border-selection-right {
-  @include border;
-  width: $padding;
-  height: 100%;
-  right: -$padding;
-  top: 0;
-}
+} 
 
 .wsentry-displayname {
   transform-origin: left bottom;
   position: absolute;
+    pointer-events: all;
   left: 0px;
   margin-left: 1px;
   top: -44px;

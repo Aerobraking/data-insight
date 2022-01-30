@@ -6,47 +6,17 @@ import overviewview from "./OverviewView.vue";
 import { PlaylistStar } from "mdue";
 import { Tippy } from "vue-tippy";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
-import AbstractPlugin from "./plugins/AbstractPlugin";
+import { PluginAdapter } from "./plugins/AbstractPlugin";
 
-class DragPlugin extends AbstractPlugin {
+class DragPlugin extends PluginAdapter {
   constructor() {
     super();
   }
-  shortcut: string = "";
+
+  readonly description: string = "Dragging";
+  readonly name: string = "Dragging";
+  readonly shortcut: string = "";
   public init() {}
-  public isModal(): boolean {
-    return false;
-  }
-  public cancel(): boolean {
-    return true;
-  }
-  public finish(): boolean {
-    return true;
-  }
-  public keydown(e: KeyboardEvent): boolean {
-    return true;
-  }
-  public keyup(e: KeyboardEvent): boolean {
-    return true;
-  }
-  public mouseup(e: MouseEvent): boolean {
-    return true;
-  }
-  public mousedown(e: MouseEvent): boolean {
-    return true;
-  }
-  public mousedownPan(e: any): boolean {
-    return true;
-  }
-  public mousemove(e: MouseEvent): boolean {
-    return true;
-  }
-  public drop(e: any): boolean {
-    return true;
-  }
-  public wheel(e: any): boolean {
-    return true;
-  }
 }
 
 export default defineComponent({

@@ -43,6 +43,7 @@ export default defineComponent({
   position: absolute;
   left: 100%;
   top: 0;
+  pointer-events: all;
   width: auto;
   z-index: 2000;
   display: inline-block;

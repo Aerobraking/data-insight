@@ -1,23 +1,7 @@
 import pathNjs from "path";
 import { ipcRenderer } from "electron";
-
-
-interface FileWatcherUpdate {
-    id: "filewatcherupdate",
-    map: "default" | "recursive",
-    type: string,
-    path: string
-}
-interface FileWatcherSend {
-    type: "register" | "unregister",
-    path: string
-    recursive: boolean
-}
-
-
-console.log("start filder watcher window");
-
-
+import { FileWatcherSend, FileWatcherUpdate } from "@/filesystem/utils/FileWatcherInterfaces";
+ 
 interface WatcherListener {
     (type: string, path?: string): void;
 }

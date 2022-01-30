@@ -3,9 +3,11 @@
     <slot class="ws-entry-slot"></slot>
     <wsentrydisplayname :entry="entry" />
     <wsentryalert :entry="entry" />
-    <button @mousedown.stop class="ws-entry-resize-button ws-zoom-fixed">
-      <!-- <ResizeBottomRight /> -->
-    </button>
+    <button
+      @dblclick.capture.stop.prevent="dblclick"
+      @mousedown.stop
+      class="ws-entry-resize-button ws-zoom-fixed"
+    ></button>
   </div>
 </template>
 
@@ -18,6 +20,7 @@ import { setupEntry } from "./WorkspaceUtils";
 import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
 import { ResizeBottomRight } from "mdue";
 import { ResizerComplex } from "@/utils/resize";
+import WorkspaceEntryAspectRatio from "@/store/model/app/WorkspaceEntry";
 export default defineComponent({
   el: ".ws-entry",
   components: {
@@ -61,6 +64,22 @@ export default defineComponent({
         this.workspace.updateUI();
       }
     );
+  },
+  methods: {
+    dblclick(e: MouseEvent) {
+      console.log("dbclickt");
+
+      if (this.entry instanceof WorkspaceEntryAspectRatio) {
+        debugger;
+        if (this.entry.aspectratio) {
+          let w: number = Number(this.$el.offsetWidth);
+          this.$el.parentElement.style.width = w + "px";
+          this.$el.parentElement.style.height =
+            w * this.entry.aspectratio.ratio + "px";
+          this.workspace.updateUI();
+        }
+      }
+    },
   },
 });
 </script>

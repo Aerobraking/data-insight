@@ -38,10 +38,7 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
         }
         Events.registerCallback(listener);
 
-        console.log("onmounted");
-
         if (el != null && el.value != null) {
-            console.log("1");
 
             el.value.querySelectorAll("div.ws-entry .wsentry-displayname")
                 .forEach((e: any) => {
@@ -51,8 +48,6 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
             el.value.style.transform = `translate3d(${e.x}px, ${e.y}px,0px)`;
 
             if (true || e.isResizable) {
-                console.log("size");
-
                 el.value.style.width = e.width + "px";
                 el.value.style.height = e.height + "px";
             }

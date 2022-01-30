@@ -35,7 +35,7 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
     }
 }
 
-export class WorkspaceEntryImage extends WorkspaceEntry {
+export class WorkspaceEntryImage extends WorkspaceEntry implements WorkspaceEntryAspectRatio {
     constructor(path: string | undefined, clipboard: boolean = false) {
         super("wsentryimage", true);
 
@@ -66,6 +66,12 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
         return this.isClipboard ? this.path : "file://" + this.path;
     }
 
+    @Exclude()
+    imgOriginalLoaded: boolean = false;
+    @Exclude()
+    aspectratio: ImageDim | undefined
+    @Exclude()
+    imgOriginal: HTMLImageElement | undefined;
     previewBase64: string | undefined = undefined;
     blob: string | undefined = undefined;
     isClipboard: boolean;
@@ -73,10 +79,19 @@ export class WorkspaceEntryImage extends WorkspaceEntry {
     path: string;
     filename: string;
     imageCreated: boolean;
+
     readonly isInsideSelectable: boolean = true;
 }
 
-export class WorkspaceEntryVideo extends WorkspaceEntry {
+export class WorkspaceEntryVideo extends WorkspaceEntry implements WorkspaceEntryAspectRatio {
+
+    @Exclude()
+    aspectratio: ImageDim | undefined
+    path: string;
+    filename: string;
+    created: boolean;
+    readonly isInsideSelectable: boolean = true;
+
     constructor(path: string | undefined, clipboard: boolean = false) {
         super("wsentryvideo", true);
 
@@ -101,10 +116,6 @@ export class WorkspaceEntryVideo extends WorkspaceEntry {
         return found;
     }
 
-    path: string;
-    filename: string;
-    created: boolean;
-    readonly isInsideSelectable: boolean = true;
 }
 
 export class WorkspaceEntryYoutube extends WorkspaceEntry {
@@ -271,8 +282,11 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
     }
 
 }
-import * as f from "@/utils/format";
+import * as f from "@/filesystem/utils/FileStringFormatter";
 import WorkspaceEntry from "../../app/WorkspaceEntry";
+import { Exclude } from "class-transformer";
+import WorkspaceEntryAspectRatio from "../../app/WorkspaceEntry";
+import { ImageDim } from "@/utils/ImageCache";
 export class FolderWindowFile {
 
     constructor(path: string, isDirectory: boolean, size: number) {

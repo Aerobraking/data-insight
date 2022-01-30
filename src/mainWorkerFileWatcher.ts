@@ -4,23 +4,13 @@ import fs from "fs";
 import pathNjs from "path";
 import 'reflect-metadata';
 import { ipcRenderer } from "electron";
+import { FileWatcherUpdate, FileWatcherSend } from "./filesystem/utils/FileWatcherInterfaces";
 
 
 interface MapCallbacks extends Map<string, number> {
 
 }
-
-interface FileWatcherUpdate {
-    id: "filewatcherupdate",
-    map: "default" | "recursive",
-    type: string,
-    path: string
-}
-interface FileWatcherSend {
-    type: "register" | "unregister",
-    path: string
-    recursive: boolean
-}
+ 
 
 class Watcher2 {
 
@@ -167,9 +157,6 @@ class Watcher2 {
 
         listCallbacks++;
         mapToUse.set(path, listCallbacks);
-        console.log("register", path, recursive);
-
-
     }
 
     unregisterPath(path: string, recursive: boolean = false) {

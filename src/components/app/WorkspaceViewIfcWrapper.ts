@@ -33,6 +33,9 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     getSelectedEntries(): HTMLElement[] {
         return this.ws ? this.ws.getSelectedEntries() : [];
     }
+    getModelEntriesFromView(listViews: HTMLElement[]): WorkspaceEntry[] {
+        return this.ws ? this.ws.getModelEntriesFromView(listViews) : [];
+    }
     getModelEntries(): WorkspaceEntry[] {
         return this.ws ? this.ws.getModelEntries() : [];
     }

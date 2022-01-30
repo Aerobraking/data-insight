@@ -1,5 +1,10 @@
+import { ImageDim } from "@/utils/ImageCache";
 import { ElementDimension } from "@/utils/resize";
 import { Exclude } from "class-transformer";
+
+export default interface WorkspaceEntryAspectRatio {
+    aspectratio: ImageDim | undefined;
+}
 
 export default class WorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {

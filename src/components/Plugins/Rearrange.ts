@@ -1,12 +1,13 @@
 import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
-import { IframeOutline } from "mdue";
 import _ from "underscore";
-import Plugin, { PluginDecorator } from "../app/plugins/AbstractPlugin"
+import AbstractPlugin, { PluginDecorator } from "../app/plugins/AbstractPlugin"
 
 @PluginDecorator()
-export default class ReArrange extends Plugin {
+export default class ReArrange extends AbstractPlugin {
 
-    shortcut: string = "alt+r";
+    description: string = "<kbd>Alt</kbd> + <kbd>R</kbd>";
+    name: string = "Rearrange Selection";
+    shortcut: string = "ws alt+r";
     checkboxFit: HTMLInputElement;
     style: HTMLStyleElement;
     div: HTMLDivElement;
@@ -117,7 +118,7 @@ export default class ReArrange extends Plugin {
         this.slider.classList.add("slider-fit");
         this.slider.type = "range";
         this.slider.min = "0";
-        this.slider.max = "300";
+        this.slider.max = "1000";
         this.slider.value = "0";
         this.slider.step = "1";
         this.slider.tabIndex = -1;
@@ -195,6 +196,8 @@ export default class ReArrange extends Plugin {
         }
 
         this.sliderColumns.max = String(maxWidth);
+        this.sliderColumns.value = String(maxWidth / 2);
+        if (!this.useMouse) this.width = maxWidth / 2;
 
         this.mouseStart = this.useMouse ? this.workspace.getLastMousePosition() : startCoord;
         this.startPositionAverage = startCoord;
@@ -291,7 +294,7 @@ export default class ReArrange extends Plugin {
 
         if (this.onlyResizable && e.key == "f") {
             this.fitSize = !this.fitSize;
-            this.checkboxFit.checked=this.fitSize;
+            this.checkboxFit.checked = this.fitSize;
             this.fitElementSize();
         }
 
@@ -312,18 +315,14 @@ export default class ReArrange extends Plugin {
         return true;
     }
 
-    public mouseup(e: MouseEvent): boolean {
-        return true;
-    }
+    public mouseup(e: MouseEvent): boolean { return true; }
 
     public mousedown(e: MouseEvent): boolean {
         this.workspace.finishPlugin();
         return true;
     }
 
-    public mousedownPan(e: any): boolean {
-        return true;
-    }
+    public mousedownPan(e: any): boolean { return true; }
 
     public mousemove(e: MouseEvent): boolean {
 
@@ -442,9 +441,9 @@ export default class ReArrange extends Plugin {
         this.workspace.updateSelectionWrapper();
     }
 
-    public drop(e: any): boolean {
-        return true;
-    }
+    public drop(e: any): boolean { return true; }
+    public dragover(e: any): boolean { return true; }
+    public dragleave(e: any): boolean { return true; }
 
     public wheel(e: any): boolean {
         this.padding += e.deltaY / 10;

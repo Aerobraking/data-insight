@@ -1,4 +1,4 @@
-import { fileamountFormat, filesizeFormat, timeFormat } from "@/utils/format";
+import { fileamountFormat, filesizeFormat, timeFormat } from "@/filesystem/utils/FileStringFormatter";
 import { FeatureDataSum, Feature, FeatureDataMedian } from "../../app/overview/AbstractNodeFeature";
 import { AbstractNodeFeatureGradient, FeatureGradientSettings, FeatureViewDecorator } from "../../app/overview/AbstractNodeFeatureView";
 import { AbstractNodeShell } from "../../app/overview/AbstractNodeShell";

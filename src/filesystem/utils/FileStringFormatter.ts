@@ -25,8 +25,7 @@ function sformat(s: number) {
   return fm.map((v: number, i: number) => { return ((v < 10) ? '0' : '') + v; }).join(':');
 }
 export const timeFormat = (value: number) => {
-  value = Math.round(value);
-  // return sformat(value);
+  value = Math.round(value); 
   if (value < 0) {
     return "No Time";
 

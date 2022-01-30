@@ -1,6 +1,6 @@
 import WorkspaceViewIfc from "../WorkspaceViewIfc";
 import { Constructor } from "./Constructor";
-  
+
 export const RegisteredPlugins: Constructor<AbstractPlugin>[] = [];
 export function PluginDecorator() {
     return function <T extends Constructor<AbstractPlugin>>(target: T) {
@@ -10,20 +10,19 @@ export function PluginDecorator() {
 
 export default abstract class AbstractPlugin {
 
-    constructor() {
-    }
+    constructor() { }
 
-    // @ts-ignore: Unreachable code error
-    workspace: WorkspaceViewIfc;
+    workspace!: WorkspaceViewIfc;
 
     public setWorkspace(workspace: WorkspaceViewIfc): this {
         this.workspace = workspace;
         return this;
     }
 
-    abstract shortcut: string;
+    readonly abstract description: string;
+    readonly abstract name: string;
+    readonly abstract shortcut: string;
 
-    // 
     public abstract isModal(): boolean;
     public abstract init(): void;
     public abstract cancel(): boolean;
@@ -37,14 +36,59 @@ export default abstract class AbstractPlugin {
     public abstract mousemove(e: MouseEvent): boolean;
     public abstract wheel(e: any): boolean;
     public abstract drop(e: any): boolean;
+    public abstract dragover(e: any): boolean;
+    public abstract dragleave(e: any): boolean;
 
+}
+
+export abstract class PluginAdapter extends AbstractPlugin {
+
+    public cancel(): boolean {
+        return true;
+    }
+
+    public finish(): boolean {
+        return true;
+    }
+    public isModal(): boolean {
+        return true;
+    }
+
+    public keydown(e: KeyboardEvent): boolean {
+        return true;
+    }
+
+    public keyup(e: KeyboardEvent): boolean {
+        return true;
+    }
+
+    public mouseup(e: MouseEvent): boolean {
+        return true;
+    }
+
+    public mousedown(e: MouseEvent): boolean {
+        return true;
+    }
+
+    public mousedownPan(e: any): boolean {
+        return true;
+    }
+
+    public mousemove(e: MouseEvent): boolean {
+        return true;
+    }
+
+    public drop(e: any): boolean {
+        return true;
+    }
+
+    public wheel(e: any): boolean {
+        return true;
+    }
     public dragover(e: any): boolean {
         return true;
     };
     public dragleave(e: any): boolean {
         return true;
     };
-
-
-
 }

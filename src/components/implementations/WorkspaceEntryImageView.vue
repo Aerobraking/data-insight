@@ -1,16 +1,13 @@
 <template>
-  <div ref="el" class="ws-entry-image-wrapper">
-    <!-- <slot></slot> -->
-    <!-- <wsentryalert :entry="entry" /> -->
-    <div
-      @dblclick.capture.stop="doubleClick"
-      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-      @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="image-selector select-element"
-    >
-      <div class="image-canvas"></div>
-    </div>
+  <div
+    ref="el"
+    class="ws-entry-image-wrapper"
+    @dblclick.capture.stop="doubleClick"
+    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.stop.exact="entrySelectedLocal('single')"
+  >
+    <div class="image-canvas"></div>
   </div>
 </template>
 
@@ -19,8 +16,9 @@ import * as cache from "../../utils/ImageCache";
 import * as watcher from "../../utils/WatchSystemMain";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
-import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
+import WorkspaceViewIfcWrapper from "../app/WorkspaceViewIfcWrapper";
+import { WSZoomEvent } from "../app/WorkspaceViewEvents";
 export default defineComponent({
   name: "wsentryimage",
   components: {
@@ -32,12 +30,16 @@ export default defineComponent({
     return {
       cacheListener: undefined,
     };
-  }, 
+  },
   props: {
     entry: {
       type: WorkspaceEntryImage,
       required: true,
-    }
+    },
+    workspace: {
+      type: WorkspaceViewIfcWrapper,
+      required: true,
+    },
   },
   mounted() {
     let _this = this;
@@ -62,9 +64,7 @@ export default defineComponent({
         this.entry.path,
         this.watcherEvent
       );
-      // _this.$el.classList.toggle("gradient-border", true);
       cache.ImageCache.registerPath(path, this.cacheListener);
-      // }, 33);
     }
   },
   unmounted() {
@@ -74,10 +74,12 @@ export default defineComponent({
   methods: {
     cacheSizeEvent(dim: cache.ImageDim): void {
       if (!this.entry.imageCreated) {
-        let w: number = Number(this.$el.offsetWidth);
-        this.$el.style.width = w + "px";
-        this.$el.style.height = w * dim.ratio + "px";
+        let w: number = Number(this.$el.parentElement.offsetWidth);
+        this.$el.parentElement.style.width = w + "px";
+        this.$el.parentElement.style.height = w * dim.ratio + "px";
         this.entry.imageCreated = true;
+        this.entry.aspectratio = dim;
+        this.workspace.updateUI();
       }
     },
     cacheImageEvent(url: string, type: cache.ImageSize): void {
@@ -102,16 +104,57 @@ export default defineComponent({
       ) {
         this.$el.style.backgroundImage = url;
       }
-      if (type == cache.ImageSize.original) {
+      if (
+        // type == cache.ImageSize.small
+        // ||type==cache.ImageSize.medium ||
+        type == cache.ImageSize.original
+      ) {
+        // this.workspaceEvent({scale:this.workspace.getCurrentTransform().scale});
         div.style.backgroundImage = url;
+
+        const img = new Image();
+        img.onload = () => {
+          this.entry.imgOriginal = img;
+          this.entry.imgOriginalLoaded = true;
+          this.workspace.drawCanvas();
+        };
+
+        img.src = url;
+
         if (this.$el.style.backgroundImage != "") {
           setTimeout(() => {
             this.$el.style.backgroundImage = "";
           }, 500);
         }
-
-        this.$el.classList.toggle("gradient-border", false);
       }
+    },
+    workspaceEvent: function (e: WSZoomEvent) {
+      //   let url: string | undefined;
+      //  if (e.scale < 0.1) {
+      //     url = cache.ImageCache.getUrl(
+      //       this.entry.getURL(),
+      //       cache.ImageSize.tiny
+      //     );
+      //   } else  if (e.scale < 0.4) {
+      //     url = cache.ImageCache.getUrl(
+      //       this.entry.getURL(),
+      //       cache.ImageSize.small
+      //     );
+      //   } else if (e.scale < 10) {
+      //     url = cache.ImageCache.getUrl(
+      //       this.entry.getURL(),
+      //       cache.ImageSize.medium
+      //     );
+      //   } else {
+      //     url = cache.ImageCache.getUrl(
+      //       this.entry.getURL(),
+      //       cache.ImageSize.original
+      //     );
+      //   }
+      //   if (url) {
+      //     const div = this.$el.getElementsByClassName("image-canvas")[0];
+      //     if (div.style.backgroundImage != url) div.style.backgroundImage = url;
+      //   }
     },
     watcherEvent(type: string) {
       cache.ImageCache.registerPath(
@@ -134,16 +177,14 @@ export default defineComponent({
 });
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .image-selector {
   width: 100%;
   height: 100%;
 }
+
 .image-canvas {
   position: absolute;
-  left: 0;
-  top: 0;
   width: 100%;
   height: 100%;
   z-index: 10;
@@ -154,6 +195,7 @@ export default defineComponent({
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
   z-index: 50;
+  background: #000;
   background: transparent;
   color: #f1f1f1;
   padding: 0px;
@@ -161,50 +203,5 @@ export default defineComponent({
   box-sizing: border-box;
 }
 
-@keyframes rotate {
-  100% {
-    transform: rotate(1turn);
-  }
-}
 $color-Selection: rgba(57, 215, 255, 0.3);
-
-.gradient-border {
-  border-radius: 2px;
-  overflow: hidden;
-
-  &::before {
-    content: "";
-    position: absolute;
-    z-index: -2;
-    left: -50%;
-    top: -50%;
-    width: 200%;
-    height: 200%;
-    background-color: $color-Selection;
-    background-repeat: no-repeat;
-    background-size: 50% 50%, 50% 50%;
-    background-position: 0 0, 100% 0, 100% 100%, 0 100%;
-    background-image: //
-      linear-gradient($color-Selection, $color-Selection),
-      //
-      linear-gradient($color-Selection, $color-Selection),
-      //
-      linear-gradient(#377af5, #377af5),
-      //
-      linear-gradient(#377af5, #377af5);
-    animation: rotate 4s linear infinite;
-  }
-
-  &::after {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    left: 12px;
-    top: 12px;
-    width: calc(100% - 24px);
-    height: calc(100% - 24px);
-    background: white;
-    border-radius: 2px;
-  }
-}
 </style>

@@ -65,7 +65,6 @@ const validateType = (value: any, name: any, type: any) => {
 export function normalizeHotkey(hotkey: any): { [any: string]: boolean } {
     return hotkey.split(/ +/g).map(
         (part: any) => {
-            console.log("part", part);
 
             const arr = part.split('+').filter(Boolean);
             const result = arrayToObject(arr);
@@ -74,7 +73,6 @@ export function normalizeHotkey(hotkey: any): { [any: string]: boolean } {
                 Object.keys(result).length >= arr.length,
                 `Hotkey combination has duplicates "${hotkey}"`,
             );
-            console.log(result);
 
             validate(
                 isHotkeyValid(result),
@@ -153,6 +151,7 @@ const createKeyDownListener = (listeners: HotKey[], debounceTime: number) => {
     );
 
     return (context: "ws" | "ov" | "global", event: KeyboardEvent) => {
+
         if (event.repeat) {
             return;
         }
@@ -202,7 +201,13 @@ export interface HotKey {
     callback: (e: KeyboardEvent) => void
 }
 
-export const createKeyboardInputContext = (options: { debounceTime: number, autoEnable: boolean }) => {
+export interface PluginShortCutHandler {
+    keydown: (context: "ws" | "ov" | "global", event: KeyboardEvent) => void,
+    register: (hotkey: string, callback: () => void) => void,
+    unregister: (hotkey: string, callback: () => void) => void,
+}
+
+export const createKeyboardInputContext = (options: { debounceTime: number, autoEnable: boolean }): PluginShortCutHandler => {
     const { debounceTime, autoEnable } = validateContext(options);
 
     const listeners: HotKey[] = [];
@@ -228,7 +233,5 @@ export const createKeyboardInputContext = (options: { debounceTime: number, auto
         keydown: keyDownListener,
         register: createListenersFn(listeners, registerListener),
         unregister: createListenersFn(listeners, unregisterListener),
-        // enable,
-        // disable,
     };
 };

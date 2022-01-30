@@ -7,29 +7,17 @@
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
   >
-    <!-- <slot></slot> -->
-    <!-- <wsentryalert :entry="entry" /> -->
-
-    <!-- <div
-      @dblclick.capture.stop="doubleClick"
-      @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
-      @mousedown.left.stop.exact="entrySelectedLocal('single')"
-      class="video-selector select-element"
-    > -->
     <div class="video-canvas">
       <video @click.stop.prevent src=""></video>
     </div>
-    <!-- </div>  -->
   </div>
 </template>
 
 <script lang="ts">
-import * as watcher from "../../utils/WatchSystemMain";
 import { defineComponent } from "vue";
-import { setupEntry } from "../app/WorkspaceUtils";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
 import { WorkspaceEntryVideo } from "@/store/model/implementations/filesystem/FileSystemWorkspaceEntries";
+import WorkspaceViewIfcWrapper from "../app/WorkspaceViewIfcWrapper";
 export default defineComponent({
   name: "wsentryvideo",
   components: {
@@ -41,10 +29,14 @@ export default defineComponent({
     return {
       cacheListener: undefined,
     };
-  }, 
+  },
   props: {
     entry: {
       type: WorkspaceEntryVideo,
+      required: true,
+    },
+    workspace: {
+      type: WorkspaceViewIfcWrapper,
       required: true,
     },
   },
@@ -73,10 +65,12 @@ export default defineComponent({
   methods: {
     cacheSizeEvent(w: number, h: number): void {
       if (!this.entry.created) {
-        let wEntry: number = Number(this.$el.offsetWidth);
-        this.$el.style.width = wEntry + "px";
-        this.$el.style.height = wEntry * (h / w) + "px";
+        let wEntry: number = Number(this.$el.parentElement.offsetWidth);
+        this.$el.parentElement.style.width = wEntry + "px";
+        this.$el.parentElement.style.height = wEntry * (h / w) + "px";
         this.entry.created = true;
+        this.entry.aspectratio = { width: w, height: h, ratio: h / w };
+        this.workspace.updateUI();
       }
     },
 
@@ -91,7 +85,6 @@ export default defineComponent({
 });
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .video-canvas {
   position: absolute;
@@ -103,11 +96,8 @@ export default defineComponent({
 }
 
 .ws-entry-video-wrapper {
-  // images are behind the normal stuff to use them as a background
   z-index: 50;
   padding: 0px;
-  width: 220px;
-  height: 180px;
   background: black;
   cursor: pointer;
 }

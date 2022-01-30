@@ -141,13 +141,7 @@ import {
   FolderWindowFile,
   WorkspaceEntryFolderWindow,
 } from "../../store/model/implementations/filesystem/FileSystemWorkspaceEntries";
-import { setupEntry } from "../app/WorkspaceUtils";
-import WorkspaceViewIfc from "../app/WorkspaceViewIfc";
 import fse, { Dirent } from "fs-extra";
-import {
-  DriveListRoot,
-  DriveListSystemInstance,
-} from "../../utils/DriveListSystem";
 import { ipcRenderer } from "electron";
 import {
   DeleteEmptyOutline,
@@ -162,6 +156,8 @@ import {
   FolderPlusOutline,
 } from "mdue";
 import wsentryalert from "../app/WorkspaceEntryAlert.vue";
+import WorkspaceViewIfcWrapper from "../app/WorkspaceViewIfcWrapper";
+import { DriveListRoot, DriveListSystemInstance } from "@/filesystem/DriveListSystem";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,
@@ -206,16 +202,10 @@ export default defineComponent({
       selected: new Set(),
     };
   },
-  // setup(props) {
-  //   return setupEntry(props);
-  // },
   props: {
-    entry: {
-      type: WorkspaceEntryFolderWindow,
-      required: true,
-    },
+    entry: { type: WorkspaceEntryFolderWindow, required: true },
     searchstring: String,
-    workspace: { type: Object as () => WorkspaceViewIfc },
+    workspace: { type: WorkspaceViewIfcWrapper, required: true },
   },
   mounted() {
     const _this = this;

@@ -42,6 +42,19 @@
           <td></td>
         </tr>
 
+        <template v-for="p in plugins" :key="p.name">
+          <tr
+            v-if="
+              p.description &&
+              p.description.length > 0 &&
+              p.shortcut.startsWith('global')
+            "
+          >
+            <td>{{ p.name }}</td>
+            <td v-html="p.description"></td>
+          </tr>
+        </template>
+
         <tr>
           <td>Pan View</td>
           <td><kbd>MMB</kbd></td>
@@ -82,6 +95,23 @@
           <td>Add Frame</td>
           <td><kbd>F</kbd></td>
         </tr>
+
+        <tr>
+          <td><h4>Workspace</h4></td>
+          <td></td>
+        </tr>
+        <template v-for="p in plugins" :key="p.name">
+          <tr
+            v-if="
+              p.description &&
+              p.description.length > 0 &&
+              p.shortcut.startsWith('ws')
+            "
+          >
+            <td>{{ p.name }}</td>
+            <td v-html="p.description"></td>
+          </tr>
+        </template>
         <tr>
           <td><h4>Folder Window</h4></td>
           <td></td>
@@ -102,6 +132,23 @@
           <td></td>
           <td></td>
         </tr>
+
+        <tr>
+          <td><h4>Overview</h4></td>
+          <td></td>
+        </tr>
+        <template v-for="p in plugins" :key="p.name">
+          <tr
+            v-if="
+              p.description &&
+              p.description.length > 0 &&
+              p.shortcut.startsWith('ov')
+            "
+          >
+            <td>{{ p.name }}</td>
+            <td v-html="p.description"></td>
+          </tr>
+        </template>
       </table>
     </template>
   </ModalDialog>
@@ -117,6 +164,8 @@ import { MutationTypes } from "./store/mutations/mutation-types";
 import { InsightFile } from "./store/model/state";
 import ModalDialog from "./components/app/ModalDialog.vue";
 import View from "./store/model/app/AbstractView";
+import { getPlugins } from "./components/Plugins/PluginList";
+import AbstractPlugin from "./components/app/plugins/AbstractPlugin";
 
 const v = remote.app.getVersion();
 var fs = require("fs");
@@ -131,8 +180,20 @@ export default defineComponent({
     Tabs,
     ModalDialog,
   },
-  computed: {},
+  data(): {
+    plugins: AbstractPlugin[];
+    showAbout: boolean;
+    showHelp: boolean;
+    version: string;
+  } {
+    return { plugins: [], showAbout: false, showHelp: false, version: v };
+  },
   mounted() {
+    getPlugins().forEach((p) => {
+      const plugin = new p();
+      this.plugins.push(plugin);
+    });
+
     window.addEventListener("keydown", this.keydown, false);
     const _this = this;
 
@@ -191,9 +252,7 @@ export default defineComponent({
       }, 300);
     }
   },
-  data() {
-    return { showAbout: false, showHelp: false, version: v };
-  },
+
   provide() {
     return {
       loadInsightFileFromPath: this.loadInsightFileFromPath,
@@ -299,21 +358,17 @@ export default defineComponent({
             break;
         }
       }
+
       if (e.altKey) {
         switch (e.key) {
-          case "d":
-            // @ts-ignore: Unreachable code error
-            // let show = !this.$store.getters.getShowUI;
-            // this.$store.commit(MutationTypes.SHOW_UI, {
-            //   showUI: show,
-            // });
-            break;
-
           default:
             break;
         }
       } else {
         switch (e.key) {
+          case "Escape":
+            (this.showAbout = false), (this.showHelp = false);
+            break;
           case "Delete":
           case "delete":
             break;
