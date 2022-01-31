@@ -10,7 +10,7 @@ async function getDrives() {
     console.log(drives);
 
     if (os.platform() == "darwin") {
-        listDrives.push(new Drive("", 0, "Users"));
+        listDrives.push(new Drive("/Users", 0, "Users"));
     }
 
     for (let i = 0; i < drives.length; i++) {
