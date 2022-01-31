@@ -5,7 +5,7 @@
       <input
         class="workspace-search-input"
         type="search"
-        placeholder="Suche..."
+        placeholder="Search..."
         v-model="searchString"
         @keydown.delete="searchString = ''"
         @keydown.stop
