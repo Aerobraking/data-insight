@@ -226,9 +226,13 @@ export default defineComponent({
       }
     );
 
+    /**
+     * The app is closing, save the current file and report back to
+     * the background thread that closing can continue.
+     */
     ipcRenderer.on("app-close", (_) => {
-      _this.saveFile(true);
-      ipcRenderer.send("closed");
+      // _this.saveFile(true);
+      // ipcRenderer.send("closed");
     });
 
     ipcRenderer.on("show-about", function (event: any, file: string) {

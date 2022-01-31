@@ -35,15 +35,7 @@ let win!: BrowserWindow | null;
 let windowWorker!: BrowserWindow | null;
 let windowWorkerFile!: BrowserWindow | null;
 const FileEnding: string = ".ins";
-/**
- * Error launching app
- * 
- * Unable to find Electron app at /Users/krecker/Documents/code/ma-data-insight/dist_electron
 
-Cannot find module '/Users/krecker/Documents/code/ma-data-insight/dist_electron'
-Require stack:
-- /Users/krecker/Documents/code/ma-data-insight/node_modules/electron/dist/Electron.app/Contents/Resources/default_app.asar/main.js
- */
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const dragpng = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAABgAAAAYADwa0LPAAABEklEQVRo3u2ZsQ6CMBCG/zOsxuiss6O+qPE5NCbODs6uvoOuxlAf4HeQQREM0NKDeN/YpuW+HnBJDzA6CMkZyR1Jx5bxjTUpCh7AGcBE+yCrMCgYW/cleACQ/ABJB2AYLQAR8VpfIPDxXvo+oG0G/luYgAnUJlKdcCT3JOe/Yqn9ESvUiTuAhYhcQmUgdp0YA1iVTTbJQNQ6keFEZBRKIEqdqPqc//wLdQkT0MYEtDEBbUxAGxPQxgS0MQFtTECb3gt8Xa93/S40T+8zYALamIA2JqBN0mDNA2+XuyF6vRVIyyaaZOAYIeA8h7KJ2lU365ic8Lq3j8ENwFJErsF2zFpMW5Jpiy2mlOSG5DTSQRmNeAKIfX8Wvu/xQQAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMS0xMi0xOFQxMzozMTozNiswMDowMEVo2dcAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjEtMTItMThUMTM6MzE6MzYrMDA6MDA0NWFrAAAAAElFTkSuQmCC";
 export const DragIconPath = app.getPath('userData') + path.sep + "dragicon.png";
@@ -51,32 +43,19 @@ export const DragIconPath = app.getPath('userData') + path.sep + "dragicon.png";
 function createDragImage() {
   var base64Data: any = dragpng.replace(/^data:image\/png;base64,/, "");
   fs.writeFile(DragIconPath, base64Data, { encoding: 'base64' }, function (err: any) {
-   if(err) console.log(err);
+    if (err) console.log(err);
   });
 }
 
 function isDevMode() {
-  return true||!app.isPackaged;
+  return true || !app.isPackaged;
 }
 
 function sendToRender(id: string, ...args: any[]) {
-  // if (win) {
-  //   win.webContents.send("log", id + args.join(" # "));
-  //   if (windowWorker) {
-  //     win.webContents.send("log", "send to worker window");
-  //     windowWorker.webContents.send("log", id + args.join(" # "));
-  //   }
-  // }
   BrowserWindow.getAllWindows().forEach(w => {
     w.webContents.send(id, ...args);
     w.webContents.send("log", id + args.join(" # "));
   })
-  // webContents.getAllWebContents().forEach(wc => {
-  //   wc.send(id, ...args);
-  // })
-  // webContents.getAllWebContents().forEach(wc => {
-  //   wc.send("log", id + args.join(" # "));
-  // })
 }
 
 function getTempFilePath(): string {
@@ -225,10 +204,14 @@ ipcMain.on('save-insight-file', (event: any, arg:
 })
 
 ipcMain.on('closed', e => {
+  windowClosed();
+});
+
+function windowClosed() {
+
   usbDetect.stopMonitoring();
 
   if (win && windowWorker && windowWorkerFile) {
-    win.close();
     windowWorker.close();
     windowWorkerFile.close();
   }
@@ -237,16 +220,16 @@ ipcMain.on('closed', e => {
   windowWorker = null;
   windowWorkerFile = null;
 
-  if (switchFrameType) {
-    switchFrameType = false;
-    createWindow();
-    return;
-  }
+  // if (switchFrameType) {
+  //   switchFrameType = false;
+  //   createWindow();
+  //   return;
+  // }
 
   if (process.platform !== 'darwin') {
     app.quit();
   }
-});
+}
 
 app.on('open-file', (event, path) => {
   args = [path];
@@ -257,9 +240,9 @@ app.on('open-file', (event, path) => {
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  // if (process.platform !== 'darwin') {
+  //   app.quit()
+  // }
 })
 
 app.on('activate', () => {
@@ -271,17 +254,7 @@ app.on('activate', () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-  if (isDevelopment && !process.env.IS_TEST) {
-    // Install Vue Devtools
-    // try {
-    //   await installExtension(VUEJS3_DEVTOOLS)
-    // } catch (e) {
-    //   console.error('Vue Devtools failed to install:', e.toString())
-    // }
-  }
-  createWindow()
-})
+app.on('ready', async () => createWindow())
 
 function detectUSBEvents() {
 
@@ -392,11 +365,11 @@ function updateSettings() {
   }
 }
 
-async function createWindow() { 
+async function createWindow() {
 
   detectUSBEvents();
 
-  // Create the browser window.
+  // Create the browser window for the view.
   win = new BrowserWindow({
     title: "Data Insight",
     width: s.wWidth > 0 ? s.wWidth : 1400,
@@ -464,16 +437,17 @@ async function createWindow() {
   })
 
   win.on('close', (e) => {
-
+    console.log("win.on(close)");
+    
     if (win) {
+      console.log("  if (win) {.on(close)");
       updateSettings();
       settings.setSync('settings_main', s);
-    }
+      // e.preventDefault();
+      windowClosed();
 
-    usbDetect.stopMonitoring();
-    if (win) {
-      e.preventDefault();
-      win.webContents.send('app-close');
+      // win.webContents.send('app-close');
+
     }
   });
   // process.platform === 'darwin' 
@@ -592,7 +566,7 @@ async function createWindow() {
           label: 'Dev Tools',
           visible: isDevMode(),
           click() {
-            if (win && windowWorker&&windowWorkerFile) {
+            if (win && windowWorker && windowWorkerFile) {
               win.webContents.openDevTools();
               windowWorker.webContents.openDevTools();
               windowWorkerFile.webContents.openDevTools();
@@ -629,20 +603,19 @@ async function createWindow() {
   Menu.setApplicationMenu(menu);
 
   // load the last session
-  win.webContents.once('dom-ready', () => { /*openFile(getTempFilePath()); */});
+  win.webContents.once('dom-ready', () => { /*openFile(getTempFilePath()); */ });
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
-    windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage')
-    windowWorkerFile.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage2')
+    windowWorker.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage');
+    windowWorkerFile.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + 'subpage2');
     // Load the url of the dev server if in development mode
-    win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string)
-    if (!process.env.IS_TEST) win.webContents.openDevTools()
+    win.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string);
   } else {
-    createProtocol('app')
+    createProtocol('app');
     // Load the index.html when not in development 
-    windowWorker.loadURL(`app://./subpage.html`)
-    windowWorkerFile.loadURL(`app://./subpage2.html`)
-    win.loadURL('app://./index.html')
+    windowWorker.loadURL(`app://./subpage.html`);
+    windowWorkerFile.loadURL(`app://./subpage2.html`);
+    win.loadURL('app://./index.html');
   }
 
 }
