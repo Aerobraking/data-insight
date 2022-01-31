@@ -58,16 +58,7 @@
       class="workspace-menu-bar"
       :class="{ 'workspace-menu-bar-hide': !getShowUI }"
     >
-      <!--
-      <button>
-        <Qrcode @dblclick.capture.stop @click="toggleShadowCanvas" />
-      </button> -->
-      <!-- <button>
-        <Pause
-          @dblclick.capture.stop
-          @click="overviewEngine.engineActive = !overviewEngine.engineActive"
-        />
-      </button> -->
+      
       <tippy-singleton
         :moveTransition="'transform 0.2s ease-out'"
         :offset="[0, 40]"
@@ -636,12 +627,7 @@ export default defineComponent({
       } else {
         Instance.getEngine(this.id).setFilterList("search");
       }
-    },
-    toggleShadowCanvas() {
-      Instance.getEngine(this.id).showShadowCanvas(
-        !Instance.getEngine(this.id).showShadow
-      );
-    },
+    }, 
     loadCollection() {
       if (Instance.getEngine(this.id)) {
         let n: AbstractNode = Instance.getEngine(this.id).selection[0];

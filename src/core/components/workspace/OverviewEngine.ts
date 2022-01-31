@@ -4,7 +4,7 @@ import * as d3 from "d3";
 import {
     D3DragEvent,
     ZoomTransform,
-} from "d3"; 
+} from "d3";
 import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
@@ -16,40 +16,8 @@ import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
 import { Feature } from "@/core/model/overview/AbstractNodeFeature";
 import { AbstractNodeFeature } from "@/core/model/overview/AbstractNodeFeatureView";
 import { Layouter } from "@/core/model/overview/NodeLayout";
-import { IframeOutline } from "mdue";
 import { AbstractLink, AbstractNode } from "@/core/model/overview/AbstractNode";
 
-/**
- * Wir brauchen einen "Server" im Hintergrund die nach änderungen für alle Subtrees sucht.
- * Außerdem muss man einen neuen Subtree erstellen und hinzufügen können. 
- * Dieser wird dann gescannt und seine childnodes nach und nach hinzugefügt. 
- * (da könnte man vll erst alles einlesen, hinzufügen und dann erst zum syncen hinzufügen)
- * 
- * Im Vordergrund kümmert sich unsere Engine um das bewegen der nodes. Sie bekommt dann nur die 
- * entsprechenden Updates vom Server
- * 
- * Und als drittes brauchen wir code zum darstellen und interagieren. Der wäre für alle implementierungen 
- * eigentlich gleich. Es sind dann eher die Node Subklassen, die andere Eigenschaften nutzen könnten.
- * Da würde es wohl reichen einfach ein System zu erstellen, dass leicht neue Anzeigemöglichkeiten anhand eines
- * props zu erstellen (size, age, number of files, etc.)
- * 
- * 
- * Wir haben das "problem" dass wir einmal
- * -    die daten, die müssen speicherbar sein
- * -    der watcher der änderungen beobachtet und die daten anpassen muss, dabei sollten nodes nach und nach
- *      hinzugefügt werden, damit der thread nicht zu lange blockiert wird
- * -    die simulation, die simuliert und evtl. auf Änderungen in der daten reagieren muss (watch tiefe)
- * -    der render, der alle daten haben muss, das ist bisher glaub unproblematisch 
- * 
- */
-
-
-/**
-          * 1. Das attr des Stats den wir nutzen wollen
-          * 2. Ein min und max Wert der Stats (alles außerhalb davon wird ausgeblendet)
-          * 3. Eine funktion die diese 3 werte bekommt + den stats Wert von einem node, damit 
-          *    man den farbwert zurückgeben kann.
-          */
 export interface OverviewColorScale<N extends AbstractNode> {
     getColor(node: N, stat: number, min: number, max: number): void;
 }
@@ -62,11 +30,6 @@ export interface ColorStatsSettings<N> {
 }
 
 export class OverviewEngine implements NodeShellListener<AbstractNode>{
-
-
-    showShadowCanvas(show: boolean) {
-        this.showShadow = show;
-    }
 
     private static instances: OverviewEngine[] = [];
     private static started: boolean = false;
@@ -134,9 +97,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     }, 500);
 
     context: CanvasRenderingContext2D;
-    contextShadow: CanvasRenderingContext2D;
-    canvasShadow: HTMLCanvasElement;
-    public showShadow: boolean = false;
     private _rootNodes: AbstractNodeShell[] = [];
 
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
@@ -195,23 +155,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         let context = this.canvas.getContext("2d", { alpha: false });
         this.context = context ? context : new CanvasRenderingContext2D();
 
-        let cShadow = d3
-            .select(div)
-            .append("canvas")
-            .attr("width", div.clientWidth)
-            .attr("height", div.clientHeight)
-            .attr("class", "overview-canvas-shadow")
-            .style("display", "none")
-            .node();
-
-        if (cShadow) {
-            this.canvasShadow = cShadow;
-        } else {
-            this.canvasShadow = new HTMLCanvasElement();
-        }
-
-        context = this.canvasShadow.getContext("2d", { alpha: false });
-        this.contextShadow = context ? context : new CanvasRenderingContext2D();
         this.size = new ElementDimensionInstance(0, 0, 1, 1);
 
         /**
@@ -232,7 +175,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 }
 
                 this.canvas.width = w, this.canvas.height = h;
-                this.canvasShadow.width = w, this.canvasShadow.height = h;
+
 
                 this.size.w = w;
                 this.size.h = h;
@@ -584,7 +527,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     _this.nodeHovered = n;
                     _this.listnodesHovered = [];
                     _this.listnodesHovered.push(...n.descendants(), ...n.parents());
-                    // _this.setFilterList("hover", [...n.descendants(), ...n.parents()]);
                 }
             } else {
                 _this.nodeHovered = undefined;
@@ -749,7 +691,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         return n.shell ? { x: n.shell.x + this.getNodePosition(n).x + offsetX, y: n.shell.y + this.getNodePosition(n).y + offsetY } : { x: 0, y: 0 };
     }
 
-    private drawCanvas(ctx: CanvasRenderingContext2D, isShadow: boolean = false) {
+    private drawCanvas(ctx: CanvasRenderingContext2D) {
 
         this.clearCanvas(ctx, this.size.w, this.size.h);
 
@@ -767,13 +709,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             for (let i = 0; i < this.rootNodes.length; i++) {
                 const shell: AbstractNodeShell = this.rootNodes[i];
-
-                // if (this.selection.includes(entry.root)) {
-                //     ctx.strokeStyle =OverviewEngine.colorSelection;
-                //     ctx.lineWidth=this.getFixedSize(4);
-                //     const d = this.getNodesBoundingBox(1.3,[entry]);
-                //     ctx.strokeRect(d.x, d.y, d.w, d.h);
-                // }
 
                 ctx.save();
                 ctx.translate(shell.x, shell.y);
@@ -809,7 +744,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 this.drawLinks(ctx, links, widths, shell);
                 this.drawNodes(ctx, nodes, widths, shell);
                 this.drawText(ctx, nodes, widths, shell);
- 
+
                 ctx.restore();
             }
 
@@ -818,10 +753,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         ctx.restore();
 
-
-        if (!isShadow && this.showShadow) {
-            ctx.drawImage(this.canvasShadow, 0, 0);
-        }
 
     }
 
@@ -914,7 +845,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     private getNodePosition(n: AbstractNode): { x: number, y: number } {
         return Layouter.getNodePosition(n);
-        // return  { x: n.getX(), y: n.getY() };
     }
 
     private isNodeHiddenByFeature(n: AbstractNode, entry: AbstractNodeShell) {
@@ -960,7 +890,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         let weight = 0.7;
 
         let lineWidth = (4 * weight) + (4 / scale) * (1 - weight);
-        if (shell.isSyncing) lineWidth += Math.sin(OverviewEngine.elapsedTotal / 300) * 10;
+
         let op: number = scale >= 0.1 && scale <= 0.35 ? (scale - 0.1) * 4 : scale < 0.1 ? 0 : 1;
         op = 1 - op;
         op = Math.max(op, 0.075)
@@ -1068,7 +998,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 ctx.fillStyle = this.getColorForNode(node);
                 ctx.strokeStyle = ctx.fillStyle;
 
-                if (node.isRoot() && shell.isSyncing) r += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
+                if (node.isRoot() && shell.isSyncing) r += Math.sin(OverviewEngine.elapsedTotal / 300) * 40;
 
                 let xPos = widths[node.depth] ? widths[node.depth].x : 0;
 

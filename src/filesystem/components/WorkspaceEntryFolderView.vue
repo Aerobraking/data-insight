@@ -129,7 +129,7 @@ import {
 import {
   DriveListRoot,
   DriveListSystemInstance,
-} from "@/filesystem/DriveListSystem";
+} from "@/filesystem/utils/DriveListSystem";
 import WorkspaceViewIfcWrapper from "@/core/components/workspace/WorkspaceViewIfcWrapper";
 
 export default defineComponent({
@@ -397,7 +397,7 @@ export default defineComponent({
       if (this.entry.path == DriveListRoot) {
         for (let i = 0; i < DriveListSystemInstance.getDrives().length; i++) {
           const d = DriveListSystemInstance.getDrives()[i];
-          this.list.push(new FolderWindowFile(d.name, true, d.size));
+          this.list.push(new FolderWindowFile(d.path, true, d.size,d.name));
         }
         return;
       }

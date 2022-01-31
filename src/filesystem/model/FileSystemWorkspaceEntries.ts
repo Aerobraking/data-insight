@@ -289,10 +289,11 @@ export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
 }
 export class FolderWindowFile {
 
-    constructor(path: string, isDirectory: boolean, size: number) {
+    constructor(path: string, isDirectory: boolean, size: number, name: string | undefined = undefined) {
         this.path = path;
         path = path.endsWith("/") ? path.slice(0, -1) : path;
         this.filename = _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found";
+        if (name) this.filename = name;
         this.isDirectory = isDirectory;
         this.size = size;
         this.id = Math.floor(Math.random() * 1000000000000);
