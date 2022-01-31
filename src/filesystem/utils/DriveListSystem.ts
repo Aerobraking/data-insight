@@ -8,6 +8,11 @@ async function getDrives() {
     listDrives = [];
     const drives = await drivelist.list();
     console.log(drives);
+
+    if (os.platform() == "darwin") {
+        listDrives.push(new Drive("", 0, "Users"));
+    }
+
     for (let i = 0; i < drives.length; i++) {
         const d = drives[i];
         if (d.size && d.size > 0) {

@@ -264,7 +264,7 @@ function detectUSBEvents() {
   usbDetect.on('change', function (device: any) {
     setTimeout(() => {
       sendToRender("usb-update");
-    }, 500);
+    }, 1200);
   });
 
 }

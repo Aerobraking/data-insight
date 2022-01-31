@@ -109,8 +109,10 @@ export default defineComponent({
 </script>
 
 <style   lang="scss">
+@use 'sass:math';
+
 $padding: 10px;
-$padding0: $padding/2;
+$padding0: math.div($padding,2);
 
 $padding2: $padding * 2;
 
