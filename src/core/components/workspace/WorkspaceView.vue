@@ -268,7 +268,7 @@ import {
   getCoordinatesFromElement,
   ResizerComplex,
   set3DPosition,
-} from "@/utils/resize";
+} from "@/core/utils/resize";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";

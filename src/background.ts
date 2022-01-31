@@ -23,7 +23,7 @@ var s: {
   wX: 0,
   wY: 0,
   frame: -1,
-  maximized: -1,
+  maximized: 1,
   fullscreen: -1,
 };
 const sLoaded: any = settings.getSync('settings_main');

@@ -1,5 +1,5 @@
 import WorkspaceEntry from "@/core/model/WorkspaceEntry";
-import { ElementDimension } from "@/utils/resize";
+import { ElementDimension } from "@/core/utils/resize";
 
 export default interface WorkspaceViewIfc {
     getCoordinatesFromElement(e: any): ElementDimension;

@@ -18,7 +18,7 @@ import wsentryalert from "./WorkspaceEntryAlert.vue";
 import { setupEntry } from "./WorkspaceUtils";
 import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
 import { ResizeBottomRight } from "mdue";
-import { ResizerComplex } from "@/utils/resize";
+import { ResizerComplex } from "@/core/utils/resize";
 import WorkspaceEntry from "@/core/model/WorkspaceEntry"; 
 
 export default defineComponent({

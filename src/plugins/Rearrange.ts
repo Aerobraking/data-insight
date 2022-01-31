@@ -1,4 +1,4 @@
-import { ElementDimension, set3DPosition, setSize } from "@/utils/resize";
+import { ElementDimension, set3DPosition, setSize } from "@/core/utils/resize";
 import _ from "underscore";
 import AbstractPlugin, { PluginAdapter, PluginDecorator } from "@/core/plugin/AbstractPlugin"
 

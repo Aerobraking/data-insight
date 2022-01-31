@@ -4,7 +4,7 @@ import * as f from "@/filesystem/utils/FileStringFormatter";
 import WorkspaceEntry from "@/core/model/WorkspaceEntry";
 import { Exclude } from "class-transformer";
 import WorkspaceEntryAspectRatio from "@/core/model/WorkspaceEntryAspectRatio";
-import { ImageDim } from "@/utils/ImageCache";
+import { ImageDim } from "@/filesystem/utils/ImageCache";
 const fs = require("fs");
 const path = require("path");
 

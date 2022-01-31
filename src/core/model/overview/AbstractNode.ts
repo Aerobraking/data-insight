@@ -1,136 +1,14 @@
 import { OV_COLUMNWIDTH } from "@/core/components/workspace/OverviewEngineValues";
 import { Exclude, Expose } from "class-transformer";
-import * as d3 from "d3";
-import { SimulationNodeDatum, SimulationLinkDatum, Simulation, Quadtree, ForceCollide } from "d3";
 import { Feature, NodeFeatures, NodeFeaturesClass } from "./AbstractNodeFeature";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
-// import { Layouter } from "./NodeLayout";
 
-/**
- * collision nur pro spalte
- * dann die radien anhand der kinder berechnen
- * bei überschniedungen in richtung des eltern nodes verschieben
- */
-
-
-/**
- * Beinhaltet eine Liste von children eines Parent Nodes.
- */
-export class RectangleCollide<D extends AbstractNode> implements SimulationNodeDatum {
-
-    width: number = 100;
-    height: number = 100;
-    radius: number = 35;
-    node: D;
-
-    constructor(node: D) {
-        this.node = node;
-        this.updateRadius();
-    }
-
-    public get depth(): number {
-        return this.node.getDepth() + 1;
-    }
-
-    public updateRadius() {
-        if (this.node.getChildren().length > 1) {
-            this.radius = this.node.getChildren().map(d => d.getRadius()).reduce(function (prev, current) {
-                return prev + current;
-            })
-        } else if (this.node.getChildren().length == 1) {
-            this.radius = this.node.getChildren()[0].getRadius();
-        }
-
-        this.radius *= 2;
-
-        this.y = this.node.getChildren().reduce((total, next) => total + next.getY(), 0) / this.node.getChildren().length;
-    }
-    /**
-     * Node’s zero-based index into nodes array. 
-     * This property is set during the initialization process of a simulation.
-     */
-    index?: number | undefined;
-    /**
-     * Node’s current y-position
-     */
-    private _x?: number | undefined;
-    public get x(): number | undefined {
-        return 0;
-    }
-    public set x(value: number | undefined) {
-        this._x = value;
-    }
-    private _y?: number | undefined;
-    public get y(): number | undefined {
-        this.y = this.node.getChildren().reduce((total, next) => total + next.getY(), 0) / this.node.getChildren().length;
-        return this._y;
-    }
-    public set y(value: number | undefined) {
-        this._y = value;
-    }
-    /**
-     * Node’s current x-velocity
-     */
-    vx?: number | undefined;
-    /**
-     * Node’s current y-velocity
-     */
-    private _vy?: number | undefined;
-
-    public get vy(): number | undefined {
-        return this._vy;
-    }
-
-    public set vy(value: number | undefined) {
-        this._vy = value;
-        const diff = this._vy && this._vyOld ? this._vy - this._vyOld : 0;
-
-        /**
-         * Add velocity to nodes
-         */
-        for (let i = 0; i < this.node.getChildren().length; i++) {
-            const child = this.node.getChildren()[i];
-            if (child.vy) {
-                // child.vy += diff*0.05;
-            }
-        }
-        this._vyOld = this._vy;
-    }
-
-    _vyOld?: number | undefined;
-    /**
-     * Node’s fixed x-position (if position was fixed)
-     */
-    private _fx?: number | null | undefined;
-    public get fx(): number | null | undefined {
-        return 0;
-    }
-    public set fx(value: number | null | undefined) {
-        this._fx = value;
-    }
-    /**
-     * Node’s fixed y-position (if position was fixed)
-     */
-    fy?: number | null | undefined;
-}
-
-export abstract class AbstractNode implements SimulationNodeDatum {
+export abstract class AbstractNode {
 
     constructor(nodetype: string, name: string) {
         this.nodetype = nodetype;
         this._name = name;
 
-        this.simulation = d3
-            .forceSimulation([] as Array<this>)
-            .force("collide", d3.forceCollide<AbstractNode>().radius(d => {
-                var r = d.forceRadius;
-                return r;
-            }).iterations(8).strength(0.25))
-            .force("charge", d3.forceManyBody<AbstractNode>().strength(-1400))
-            .alphaDecay(1 - Math.pow(0.001, 1 / 4000000))
-            .alphaMin(0.003)
-            .alphaTarget(0.3)
-            .stop();
 
         this.updateForce();
     }
@@ -150,7 +28,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
         this.children.push(c);
         this.shell?.nodeAdded(c);
-        this.updateSimulation();
         this.updateForce();
     }
 
@@ -159,7 +36,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         if (index > -1) {
             this.children.splice(index, 1);
             this.shell?.nodeRemoved(c);
-            this.updateSimulation();
             this.updateForce();
         }
     }
@@ -211,10 +87,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         return 16;
     }
 
-    public updateSimulation() {
-        this.simulation.nodes(this.children);
-    }
-
     public canCreateCollection(): boolean {
         return !this.isCollection() && this.children.length > 0 && !this.isRoot();
     }
@@ -224,7 +96,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) };
         this.children = [];
         this.shell?.nodeChildrenRemoved(this);
-        this.updateSimulation();
         this.updateForce();
     }
 
@@ -237,23 +108,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         if (this.shell) {
             this.shell.nodeUpdate(this);
         }
-    }
-
-    public tick() {
-
-        let c = this.simulation.force<ForceCollide<this>>("collide");
-
-        if (c) {
-            let collide: ForceCollide<this> = c;
-            collide.radius((d: this, i: number, nodes: this[]) => {
-                // return d.getRadius() * 1.5;
-                return d.forceRadius;
-            }
-            );
-        }
-
-        this.simulation.alpha(1);
-        this.simulation.tick();
     }
 
     public getFeatureValue<K extends Feature>(key: K, recursive: boolean = true): NodeFeatures[K] | undefined {
@@ -413,6 +267,9 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 
     id?: string | number;
 
+    fx?: number | undefined;
+    fy?: number | undefined;
+
     /**
      * the name of this string, should be unique inside the parents node childrens list
      */
@@ -442,28 +299,8 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     * Node’s current y-position. Given by the d3 interface
     */
     y?: number | undefined;
-    /**
-     * Node’s current x-velocity. Given by the d3 interface
-     */
-    vx?: number | undefined;
-    /**
-     * Node’s current y-velocity. Given by the d3 interface
-     */
-    vy?: number | undefined;
-    /**
-     * Node’s fixed x-position (if position is fixed). Given by the d3 interface
-     */
-    fx?: number | null | undefined;
-    /**
-     * Node’s fixed y-position (if position is fixed). Given by the d3 interface
-     */
-    fy?: number | null | undefined;
 
     customData: { [any: string]: any } = {};
-
-    // the d3 simulation instance
-    @Exclude()
-    simulation: Simulation<this, AbstractLink<this>>;
 
     // the colorid for the overview engine, will be generated on the fly while rendering
     @Exclude()
@@ -479,7 +316,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
 /**
  * Defines the Link between two AbstractNode instances. Extend it to use it with your AbstractNode subclass.
  */
-export class AbstractLink<D extends AbstractNode = AbstractNode> implements SimulationLinkDatum<D>{
+export class AbstractLink<D extends AbstractNode = AbstractNode>  {
     constructor(source: D, target: D) {
         this.source = source;
         this.target = target;
@@ -487,27 +324,3 @@ export class AbstractLink<D extends AbstractNode = AbstractNode> implements Simu
     source: D;
     target: D;
 }
-
-
-// export class ColumnNodeContainer<D extends AbstractNode>{
-
-//     private listNodes: D[] = [];
-//     simulation: Simulation<D, undefined>;
-//     constructor() {
-//         this.simulation = d3
-//             .forceSimulation<D>([] as Array<D>)
-//             .force("collide", d3.forceCollide<D>().radius(d => {
-//                 var r = d.forceRadius * 1.1;
-//                 return r;
-//             }).iterations(2).strength(0.4))
-//             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-//             .alphaMin(0.003)
-//             .alphaTarget(0.004)
-//             .stop();
-//     }
-
-//     addNode(node: D) {
-//         this.listNodes.push(node);
-//         this.simulation.nodes(this.listNodes);
-//     }
-// }

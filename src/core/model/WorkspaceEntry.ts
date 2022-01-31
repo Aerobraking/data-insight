@@ -1,5 +1,5 @@
-import { ImageDim } from "@/utils/ImageCache";
-import { ElementDimension } from "@/utils/resize";
+import { ImageDim } from "@/filesystem/utils/ImageCache";
+import { ElementDimension } from "@/core/utils/resize";
 import { Exclude } from "class-transformer";
 
 export default class WorkspaceEntry {

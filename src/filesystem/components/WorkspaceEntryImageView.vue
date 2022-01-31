@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import * as cache from "../../utils/ImageCache";
+import * as cache from "../utils/ImageCache";
 import * as watcher from "../utils/WatchSystemMain";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../model/FileSystemWorkspaceEntries";

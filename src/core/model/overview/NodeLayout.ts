@@ -1,9 +1,6 @@
-import { AbstractLink, AbstractNode } from "./AbstractNode";
-import * as d3 from "d3";
-import { Simulation, ForceLink, Quadtree } from "d3";
-import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
-import { Numeric_0 } from "mdue";
-import { shell } from "electron";
+import { AbstractLink, AbstractNode } from "./AbstractNode"; 
+import { Simulation, ForceLink } from "d3";
+import AbstractNodeShellIfc from "./AbstractNodeShellIfc"; 
 import { Feature, FeatureDataType } from "./AbstractNodeFeature";
 import { Constructor } from "@/core/plugin/Constructor";
 
@@ -219,6 +216,7 @@ class NodeLayoutStatic extends AbstractNodeLayout {
 
 @LayoutDecorator()
 class NodeLayoutStaticDynamic extends AbstractNodeLayout {
+  
     public featuresUpdated(shell: AbstractNodeShellIfc): void {
     }
 
@@ -232,7 +230,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
         switch (type) {
             case "start":
                 this.frictionNormal = NodeLayoutStaticDynamic.friction;
-                NodeLayoutStaticDynamic.friction = 0.40;
+                NodeLayoutStaticDynamic.friction = 0.65;
 
                 node.fy = node.y; // Fix points
                 node.customData["initDrag"] = { x: node.x, y: node.y, fx: node.fx, fy: node.fy };
@@ -404,10 +402,10 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                         function explicitEuler() {
                             let dist = coord.y - n.y;
                             const abs = Math.abs(dist);
-                            dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
+
                             if (abs > 0 && abs < .01) n.y = coord.y;
                             else if (abs >= .01) {
-                                coord.vy += dist * delta * 0.0003;
+                                coord.vy += dist * delta * NodeLayoutStaticDynamic.gravity;
                                 if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamic.friction;
                                 alpha += Math.abs(coord.vy);
                             }
@@ -417,18 +415,18 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                             const delta2 = delta / 2;
                             let dist = coord.y - n.y;
                             let abs = Math.abs(dist);
-                            dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
+
                             if (abs > 0 && abs < .01) n.y = coord.y;
                             else if (abs >= .01) {
                                 // get acceleration at the half time step
                                 let vy2 = coord.vy + dist * delta2 * NodeLayoutStaticDynamic.gravity;
                                 let y2 = n.y + vy2 * NodeLayoutStaticDynamic.friction;
                                 dist = coord.y - y2;
-                                abs = Math.abs(dist);
-                                dist = Math.sign(dist) * Math.pow(abs, abs > 1 ? 1.25 : 1);
 
+                                const accel = dist * delta * NodeLayoutStaticDynamic.gravity;
                                 // use accerleration from halt time step for the full time step
-                                coord.vy += dist * delta * NodeLayoutStaticDynamic.gravity;
+                                coord.vy += accel * 0.65 + (accel * 0.35 * Math.random());
+
                                 if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamic.friction;
                                 alpha += Math.abs(coord.vy);
                             }
@@ -455,7 +453,6 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
     }
 
 }
-
 
 @LayoutDecorator()
 class NodeLayoutStaticDynamicExt extends NodeLayoutStaticDynamic {

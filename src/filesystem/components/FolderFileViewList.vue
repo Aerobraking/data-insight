@@ -13,7 +13,7 @@
 </template>
 
 <script lang="ts">
-import * as cache from "../../utils/ImageCache";
+import * as cache from "../utils/ImageCache";
 import { defineComponent } from "vue";
 import { FolderWindowFile } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import { Dispatcher } from "@/core/components/workspace/WorkspaceUtils";

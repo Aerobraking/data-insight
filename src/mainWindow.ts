@@ -2,7 +2,7 @@
 
 import 'reflect-metadata';
 import { createApp } from 'vue'
-import App from './App.vue'
+import App from './core/components/App.vue'
 import { initStore, Store } from './store/store'
 import panZoom from 'vue-panzoom';
 import VueTippy from 'vue-tippy';

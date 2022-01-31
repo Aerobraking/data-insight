@@ -1,9 +1,9 @@
 import { Type, Exclude } from "class-transformer";
 import * as d3 from "d3";
-import { Simulation, ForceLink, Quadtree } from "d3";
-import path from "path"; 
-import { AbstractLink, AbstractNode, RectangleCollide } from "./AbstractNode";
-import AbstractNodeShellIfc from "./AbstractNodeShellIfc"; 
+import { Quadtree } from "d3";
+import path from "path";
+import { AbstractLink, AbstractNode } from "./AbstractNode";
+import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { NodeFeatures, Feature, FeatureDataHandler } from "./AbstractNodeFeature";
 import { FeatureInstanceList } from "./AbstractNodeFeatureView";
 import { Layouter } from "./NodeLayout";
@@ -25,11 +25,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.root.shell = this;
 
         this.nodes = this.root.descendants();
-
-        this.root.fx = 0;
-        this.root.fy = 0;
-
-
 
     }
 
@@ -86,11 +81,9 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     public initAfterLoading(): void {
         this.updateSimulationData();
-        this.updateColumnForces();
         for (let i = 0; i < this.nodes.length; i++) {
             const n = this.nodes[i];
             n.shell = this;
-            n.updateSimulation();
             for (let j = 0; j < n.getChildren().length; j++) {
                 const c = n.getChildren()[j];
                 c.parent = n;
@@ -114,7 +107,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         }
 
     }
-
 
     public addFeatures(path: string, features: NodeFeatures) {
 
@@ -248,9 +240,9 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
             let childFound = currentFolder.getChildren().find(c => c.name == f);
             if (childFound) {
-                if(childFound.isCollection()) console.log("IS COLLECTIN");
-                
-                 if(childFound.isCollection()) return; // do not add nodes to a collection
+                if (childFound.isCollection()) console.log("IS COLLECTIN");
+
+                if (childFound.isCollection()) return; // do not add nodes to a collection
                 // Child was found, go to next subfolder
             } else {
                 // Create new sub folder
@@ -298,17 +290,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.y = c.y;
     }
 
-    /**
-     * One value contains a simulation with a list of RectangleCollide instances. each representing a nodes children list a
-     * one large circle.
-     * The depth starts at 2. 0 is the single root node. column one only contains nodes that belong to one childrens list,
-     * so they are already colliding with each other.
-     */
-    columnForceMap: Map<number, Simulation<RectangleCollide<N>, undefined>> = new Map();
-
-
-
-    public featuresUpdated() { 
+    public featuresUpdated() {
         this.engine?.nodesUpdated();
         Layouter.featuresUpdated(this);
     }
@@ -329,97 +311,17 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.updateSimulationData();
         this.engine?.nodesUpdated();
         Layouter.nodeRemoved(this, n.parent as AbstractNode, n);
-        // this.updateColumnForces();
     }
 
     public nodeChildrenRemoved(n: N) {
         this.updateSimulationData();
         this.engine?.nodesUpdated();
         Layouter.nodeChildrenRemoved(this, n.parent as AbstractNode, n);
-        // this.updateColumnForces();
     }
 
     public nodeAdded(c: N) {
         this.engine?.nodeAdded(c);
-        // this.updateColumnForces();
-
         Layouter.nodeAdded(this, c.parent as AbstractNode, c)
-
-        const depth = c.getDepth();
-        // if (depth > 1) {
-
-        //     let f = this.columnForceMap.get(depth);
-        //     if (!f) {
-        //         f = d3
-        //             .forceSimulation<RectangleCollide<D>>([] as Array<RectangleCollide<D>>)
-        //             .force("collide", d3.forceCollide<RectangleCollide<D>>().radius(d => {
-        //                 var r = d.radius * 1.1;
-        //                 return r;
-        //             }).iterations(2).strength(0.4))
-        //             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-        //             .alphaMin(0.003)
-        //             .alphaTarget(0.004)
-        //             .stop();
-        //         this.columnForceMap.set(depth, f);
-        //     }
-
-
-        // }
-    }
-
-    /**
-     * Updates the list of all nodes and links for this entry.
-     * Assign all nodes to the force simulation in case of new created nodes.
-     * @param reheat sets the alpha to one
-     */
-    protected updateColumnForces() {
-
-        this.nodes = this.root.descendants();
-
-        for (let i = 1, depth = i + 1; i < 0; i++, depth++) {
-            const listNodes = this.nodes.filter(n => n.depth == i);
-            if (listNodes) {
-                let f = this.columnForceMap.get(depth);
-                if (!f) {
-                    f = d3
-                        .forceSimulation<RectangleCollide<N>>([] as Array<RectangleCollide<N>>)
-                        .force("collide", d3.forceCollide<RectangleCollide<N>>().radius(d => {
-                            var r = d.radius * 1.1;
-                            return r;
-                        }).iterations(2).strength(1.0))
-                        .force("charge", d3.forceManyBody<RectangleCollide<N>>().strength(d => {
-                            var r = Math.max(1, Math.pow(d.radius, 1));
-                            return 0;
-                        }))
-                        .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-                        .alphaMin(0.003)
-                        .alphaTarget(0.004)
-                        .stop();
-                    this.columnForceMap.set(depth, f);
-                }
-
-                f.alpha(1);
-
-                const listRects = [];
-
-                for (let j = 0; j < listNodes.length; j++) {
-                    const n = listNodes[j];
-                    if (n.getChildren().length) {
-                        let r = new RectangleCollide(n);
-                        listRects.push(r);
-                    }
-
-                }
-
-                f.nodes(listRects);
-
-            } else {
-                // when no nodes are found, the maximum depth is reached.
-                break;
-            }
-
-        }
-
     }
 
     /**
@@ -429,9 +331,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      */
     protected updateSimulationData(reheat: boolean = true) {
 
-        // if (reheat) {
-        //     this.simulation.alpha(1);
-        // } 
         this.nodes = this.root.descendants();
         this.links = this.root.links();
 
@@ -439,42 +338,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     }
 
     tick() {
-
-        // let y: ForceY<N> | undefined = this.simulation.force(
-        //     "y"
-        // );
-
-        // if (y) {
-        //     y.y(function (d: N) {
-        //         return d.parent ? d.parent.getY() : d.getY();
-        //     }).strength(function (d: N, i: number, data: N[]) {
-        //         // return d.parent ? d.parent.isRoot() ? 0.0005 : 0.001 : 0;
-        //         return 1;
-        //     })
-        // }
-
-        // let vyMax = 0;
-
-        // for (let i = 0; i < this.nodes.length; i++) {
-        //     this.nodes[i].tick();
-        //     if (OverviewEngine.framecounter % 400 == 0) {
-        //         if (this.nodes[i].getChildren().length == 0) {
-        //             this.nodes[i].updateForce();
-        //         }
-        //     }
-        //     let vy: number = this.nodes[i].vy ? this.nodes[i].vy as number : 0;
-        //     vy = Math.abs(vy);
-        //     vyMax = vy > vyMax ? vy : vyMax;
-        // }
-
-
-
-        // const columnForces = Array.from(this.columnForceMap.values());
-
-        // for (let i = 0; i < columnForces.length; i++) {
-        //     const f = columnForces[i];
-        //     f.tick();
-        // } 
         this.quadtree = d3.quadtree<N>().x(n => n.getX()).y(n => n.getY()).addAll(this.nodes);
     }
 }

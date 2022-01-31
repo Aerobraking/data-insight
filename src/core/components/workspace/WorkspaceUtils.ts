@@ -1,6 +1,6 @@
 import { Feature } from "@/core/model/overview/AbstractNodeFeature"; 
 import WorkspaceEntry from "@/core/model/WorkspaceEntry";
-import { ElementDimension, getCoordinatesFromElement } from "@/utils/resize";
+import { ElementDimension, getCoordinatesFromElement } from "@/core/utils/resize";
 import {
     onBeforeUnmount,
     onMounted,

@@ -63,37 +63,33 @@
         :options="{ selectables: '.selectable' }"
         @mousedown.left.stop="toggleAll(false)"
       >
-        <keep-alive>
-          <wsfolderfile
-            v-show="entry.mode == 'tile'"
-            v-for="file in getFileList"
-            :entry="file"
-            class="tile selectable"
-            :class="{ 'item-selected': isSelected(file.id) }"
-            @dblclick="folderOpen(file)"
-            :key="file.id"
-            :searchstring="searchstring"
-            :name="file.id"
-            @itemClicked="itemClicked"
-          >
-          </wsfolderfile>
-        </keep-alive>
+        <wsfolderfile
+          v-show="entry.mode == 'tile'"
+          v-for="file in getFileList"
+          :entry="file"
+          class="tile selectable"
+          :class="{ 'item-selected': isSelected(file.id) }"
+          @dblclick="folderOpen(file)"
+          :key="file.id"
+          :searchstring="searchstring"
+          :name="file.id"
+          @itemClicked="itemClicked"
+        >
+        </wsfolderfile>
 
         <table v-show="entry.mode == 'list'">
           <tbody>
-            <keep-alive>
-              <wsfolderfilelist
-                v-for="file in getFileList"
-                :entry="file"
-                :class="{ 'item-selected': isSelected(file.id) }"
-                @dblclick="folderOpen(file)"
-                :key="file.id"
-                :searchstring="searchstring"
-                :name="file.id"
-                @itemClicked="itemClicked"
-              >
-              </wsfolderfilelist>
-            </keep-alive>
+            <wsfolderfilelist
+              v-for="file in getFileList"
+              :entry="file"
+              :class="{ 'item-selected': isSelected(file.id) }"
+              @dblclick="folderOpen(file)"
+              :key="file.id"
+              :searchstring="searchstring"
+              :name="file.id"
+              @itemClicked="itemClicked"
+            >
+            </wsfolderfilelist>
           </tbody>
         </table>
       </div>
@@ -107,10 +103,10 @@ const { shell } = require("electron");
 
 import * as WSUtils from "@/core/components/workspace/WorkspaceUtils";
 import * as watcher from "../utils/WatchSystemMain";
-import { add, remove, toggle } from "../../utils/ListUtils";
+import { add, remove, toggle } from "@/core/utils/ListUtils";
 import fs from "fs";
 import wsfolderfile from "./FolderFileViewGrid.vue";
-import wsfolderfilelist from "./FolderFileViewList.vue"; 
+import wsfolderfilelist from "./FolderFileViewList.vue";
 import { defineComponent } from "vue";
 import {
   FolderWindowFile,
@@ -129,7 +125,7 @@ import {
   ViewList,
   ViewGrid,
   FolderPlusOutline,
-} from "mdue"; 
+} from "mdue";
 import {
   DriveListRoot,
   DriveListSystemInstance,
@@ -899,7 +895,7 @@ $tile-size: 150px;
   align-content: flex-start;
   -webkit-box-orient: horizontal;
   -webkit-box-direction: normal;
-  .tile { 
+  .tile {
     .opaque {
       background: #a8a8a8;
     }

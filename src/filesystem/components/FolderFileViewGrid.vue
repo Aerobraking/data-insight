@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import * as cache from "../../utils/ImageCache";
+import * as cache from "../utils/ImageCache";
 import { defineComponent } from "vue";
 import { FolderWindowFile } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import * as icons from "../utils/IconHandler";
@@ -24,15 +24,10 @@ export default defineComponent({
       type: FolderWindowFile,
       required: true,
     },
-    searchstring: String, 
+    searchstring: String,
   },
-
-  data(): {
-    listener: any;
-  } {
-    return {
-      listener: undefined,
-    };
+  data(): { listener: any } {
+    return { listener: undefined };
   },
   unmounted() {
     Dispatcher.instance.unregisterCallback(this.listener);
@@ -62,20 +57,14 @@ export default defineComponent({
     const div: HTMLElement =
       this.$el.getElementsByClassName("folder-file-image")[0];
 
+    // prevents a bug that new instances of the components contain the style of previous instances
+    div.style.background = "";
+
     const isImage: boolean = cache.isImageTypeSupported(this.entry.path);
 
     div.classList.add(isImage ? "folder-file-preview" : "folder-file-icon");
 
-    if (isImage) {
-      // cache.ImageCache.registerPath(this.entry.path, {
-      //   callback: (url: string, type: cache.ImageSize) => {
-      //     if (type == cache.ImageSize.small) {
-      //       div.style.backgroundImage = url;
-      //     }
-      //   },
-      //   callbackSize: (dim: cache.ImageDim) => {},
-      // });
-    } else {
+    if (!isImage) { 
       icons.IconHandler.registerPath(this.entry.path, (url: string) => {
         var img = new Image();
         img.src = url;
@@ -95,7 +84,7 @@ export default defineComponent({
   methods: {
     loadImage() {
       console.log("loadImage");
-      
+
       const div: HTMLElement =
         this.$el.getElementsByClassName("folder-file-image")[0];
 

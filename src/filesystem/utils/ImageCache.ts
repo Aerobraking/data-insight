@@ -28,7 +28,7 @@ export interface ImageDim {
 
 // import os from "os";
 // const cpuCount = os.cpus().length 
-import { remove } from "./ListUtils";
+import { remove } from "../../core/utils/ListUtils";
 export class Cache {
 
     private hashDim: Map<string, ImageDim> = new Map();
@@ -44,7 +44,7 @@ export class Cache {
         const _this = this;
         // cpuCount
         for (let index = 0; index < 3; index++) {
-            let w = new Worker("@/utils/ImageCacheWorker", {
+            let w = new Worker("@/filesystem/utils/ImageCacheWorker", {
                 type: "module",
             });
             w.onmessage = (e: any) => {
@@ -182,6 +182,7 @@ export class Cache {
     private listQueue: string[] = [];
     private static delay = 33;
     private timeStack = 0;
+    
     public registerPath = (path: string, callback: ImageListener, recreate: boolean = false, eventsToFire: ImageSize[] = Object.values(ImageSize) as ImageSize[]) => {
 
         let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(path);

@@ -1,5 +1,5 @@
 
-import { ElementDimension, ElementDimensionInstance } from "@/utils/resize";
+import { ElementDimension, ElementDimensionInstance } from "@/core/utils/resize";
 import * as d3 from "d3";
 import {
     D3DragEvent,
@@ -809,28 +809,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 this.drawLinks(ctx, links, widths, shell);
                 this.drawNodes(ctx, nodes, widths, shell);
                 this.drawText(ctx, nodes, widths, shell);
-
-
-                if (shell && shell.columnForceMap) {
-
-                    // const columnForces = Array.from(entry.columnForceMap.values());
-
-                    // ctx.globalAlpha = 0.3;
-                    // ctx.fillStyle = "rgb(240,0,0)";
-
-                    // for (let i = 0; i < columnForces.length; i++) {
-                    //     // all node parents for one column
-                    //     const nodes = columnForces[i].nodes();
-
-                    //     for (let j = 0; nodes && j < nodes.length; j++) {
-                    //         const n = nodes[j];
-                    //         const x = this.getColumnXByDepth(entry, n.depth)
-
-                    //         // ctx. t(x, n.y ? n.y - n.radius : 0, 50, n.radius * 2);
-                    //     }
-                    // }
-                }
-
+ 
                 ctx.restore();
             }
 
