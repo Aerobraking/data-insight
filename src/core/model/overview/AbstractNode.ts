@@ -32,7 +32,7 @@ export abstract class AbstractNode {
 
 
     public getRadius() {
-        if (this.isRoot() ) {
+        if (this.isRoot()) {
             return 100;
         } else if (this.isCollection()) {
             return 80;
@@ -49,14 +49,34 @@ export abstract class AbstractNode {
     }
 
     public canCreateCollection(): boolean {
-        return !this.isCollection() && this.children.length > 0 && !this.isRoot();
+        return !this.isCollection() && this.children.length > 0;
     }
 
-    public createCollection() {
+    public createCollection(complete: boolean = false) {
         if (!this.canCreateCollection()) return;
-        this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) };
-        this.children = [];
-        this.shell?.nodeChildrenRemoved(this);
+
+        if (complete) {
+            if (this.isRoot()) {
+                this.children.forEach((c) => c.createCollection(complete));
+            } else {
+                this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) };
+                this.children = [];
+                this.shell?.nodeChildrenRemoved(this);
+            }
+        } else {
+
+            if (this.descendants(false).find(d => d.children.length > 0)) {
+                // more then one level of children, make all possible children (that have only one level of children for themself) to collections.
+                this.descendants(false).filter(d => d.children.length > 0 && d.descendants(false).find(d1 => d1.depth - d.depth > 1) == undefined).forEach(d => d.createCollection(true));
+            } else {
+                // only one level of children, make this node to a collection
+                this.createCollection(true);
+            }
+
+
+
+        }
+
     }
 
     public get name(): string {
@@ -93,31 +113,12 @@ export abstract class AbstractNode {
         return this.parent == undefined;
     }
 
-    /**
-     * The x position of the nodes are defined  by the OV_COLUMNWIDTH and depth value (OV_COLUMNWIDTH*depth), only the root node uses this as an actual node. 
-     */
-    public get x(): number | undefined {
-        // let x = this.parent ? this.entry ? this.entry?.getColumnX(this) : 200 * this.depth : this._x;
-        let x = this.parent ? OV_COLUMNWIDTH * this.depth : this._x;
-        x = this._x ? this._x : x;
-        return x;
-    }
-
-    public set x(value: number | undefined) {
-        this._x = value;
-    }
-
-    public getColumnData() {
-        return { x: this.depth * OV_COLUMNWIDTH, width: OV_COLUMNWIDTH };
-    }
-
     public getX() {
-        return OV_COLUMNWIDTH * this.depth;
-        // return this._x ? this._x : 0;
+        return this.x;
     }
 
     public getY() {
-        return this.y ? this.y : 0;
+        return this.y;
     }
 
     public getDepth(): number {
@@ -249,20 +250,20 @@ export abstract class AbstractNode {
     collectionData: { size: number, depth: number } | undefined;
 
     /**
-     * Node’s current x-position.
-     */
-    private _x?: number | undefined;
+    * Node’s current y-position. Given by the d3 interface
+    */
+    y: number = 0;
     /**
     * Node’s current y-position. Given by the d3 interface
     */
-    y?: number | undefined;
+    x: number = 0;
 
     customData: { [any: string]: any } = {};
-  
+
     // the parent node. will be set after loading from the json file.
     @Exclude()
     parent: this | undefined;
- 
+
 }
 
 /**

@@ -50,8 +50,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 const inst = OverviewEngine.instances[i];
                 inst.tick();
             }
-
-            OverviewEngine.delta = OverviewEngine.elapsed;
+            // prevent too large timesteps in case of slow performance
+            OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 500);
             OverviewEngine.elapsedTotal += OverviewEngine.delta;
 
             // Get ready for next frame by setting then=now, but also adjust for your
@@ -281,8 +281,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         listSelection.push(...n.descendants(), ...n.parents());
                     }
 
-                    this.fireSelectionUpdate();
-                    listSelection.length == 0 ? this.setFilterList("selection") : this.setFilterList("selection", listSelection);
+                    // this.fireSelectionUpdate();
+                    _this.updateSelection(false);
+                    // _this.overview.highlightSelection || listSelection.length == 0 ? this.setFilterList("selection") : this.setFilterList("selection", listSelection);
                 })
         );
 
@@ -347,7 +348,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             this.selectionBelongingNodes.push(...n.parents(), ...n.descendants());
         }
 
-        this.overview.highlightSelection || this.selectionBelongingNodes.length < 1 ? this.setFilterList("selection") : this.setFilterList("selection", [... this.selectionBelongingNodes]);
+        this.overview.highlightSelection && this.selectionBelongingNodes.length > 0 ? this.setFilterList("selection", [... this.selectionBelongingNodes]) : this.setFilterList("selection");
+
         this.fireSelectionUpdate();
 
         return this.selection.length > 0 ? this.selection[0] : undefined;
@@ -881,12 +883,12 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 ctx.fillStyle = OverviewEngine.colorSelection;
                 var r = this.getRadius(shell.root, 5);
 
-                if (this.selection.includes(shell.root))
-                    ctx.fillRect(
-                        r,
-                        0 - (shell.root.customData["b"] ? shell.root.customData["b"] / 2 : 0),
-                        this.getFixedSize(2),
-                        shell.root.customData["b"] ? shell.root.customData["b"] : 0);
+                // if (this.selection.includes(shell.root))
+                //     ctx.fillRect(
+                //         r,
+                //         0 - (shell.root.customData["b"] ? shell.root.customData["b"] / 2 : 0),
+                //         this.getFixedSize(2),
+                //         shell.root.customData["b"] ? shell.root.customData["b"] : 0);
 
 
                 this.drawLinks(ctx, nodes, links, widths, shell, renderData, renderDataLinks);
@@ -928,9 +930,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             var r = renderData[nodes.indexOf(end)].r;
             var rStart = renderData[nodes.indexOf(start)].r;
             if (start.isRoot() && shell.isSyncing) rStart += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
-            let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x + rStart : widths[start.depth].x + this.textMaxWidth) : 0;
-            let xEnd = widths[end.depth] ? widths[end.depth].x - 150 : 0;
-            let xEndLine = widths[end.depth] ? widths[end.depth].x - r + 1 : 0; // point on the next circle
+            // let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x + rStart : widths[start.depth].x + this.textMaxWidth) : 0;
+            let xStart = (start.isRoot() ? renderData[nodes.indexOf(start)].pos.x + rStart : renderData[nodes.indexOf(start)].pos.x + this.textMaxWidth);
+            let xEnd = renderData[nodes.indexOf(end)].pos.x - 150;
+            let xEndLine = xEnd + 150 - r + 1; // point on the next circle
 
             if (start.isRoot()) {
                 ctx.strokeStyle = "#555";
@@ -942,7 +945,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 const yStart = renderData[nodes.indexOf(start)].pos.y;
                 const yEnd = renderData[nodes.indexOf(end)].pos.y;
 
-                ctx.moveTo(widths[start.depth] ? widths[start.depth].x + rStart : 0, yStart);
+                ctx.moveTo(renderData[nodes.indexOf(start)].pos.x + rStart, yStart);
                 ctx.lineTo(xStart, yStart);
 
                 const midX = (xStart + xEnd) / 2;
@@ -1024,7 +1027,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 ctx.fillStyle = scale(Math.sin(t));
             }
 
-            let xPos = widths[node.depth] ? widths[node.depth].x : 0;
+            let xPos = renderData[i].pos.x;
 
             ctx.beginPath();
 
@@ -1091,7 +1094,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(node)) {
 
-                let xPos = widths[node.depth] ? widths[node.depth].x : 0;
+                let xPos = renderData[i].pos.x; widths[node.depth] ? widths[node.depth].x : 0;
 
                 if (!node.isRoot()) {
 

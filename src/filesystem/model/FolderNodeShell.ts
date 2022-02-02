@@ -87,7 +87,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     }
 
     getName() {
-        return this.path + " " + this.nodes.length + " - " + (this.customData["heat"] ? this.customData["heat"].v : "");
+        return this.path;//+ " " + this.nodes.length + " - " + (this.customData["heat"] ? this.customData["heat"].v : "");
     }
 
     getPath(): string {
@@ -98,9 +98,9 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         return this.id;
     }
 
-    loadCollection(node: FolderNode) {
+    loadCollection(node: FolderNode, useSavedDepth: boolean = false) {
         if (node.isCollection()) {
-            Instance.syncOpenedCollection(this, node.getPath(), Math.max(1, node.collectionData!.depth));
+            Instance.syncOpenedCollection(this, node.getPath(), Math.max(1, useSavedDepth ? node.collectionData!.depth : 1));
             node.collectionData = undefined;
         }
     }

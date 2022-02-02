@@ -86,13 +86,19 @@
 
         <tippy>
           <button :disabled="!nodeCollapsable">
-            <RecordCircle @click="createCollection()" />
+            <RecordCircle
+              @click.exact="createCollection()"
+              @click.ctrl.exact="createCollection(true)"
+            />
           </button>
           <template #content>Create Collection</template>
         </tippy>
         <tippy>
           <button :disabled="isContainer">
-            <FileTree @click="loadCollection()" />
+            <FileTree
+              @click.exact="loadCollection()"
+              @click.ctrl.exact="loadCollection(true)"
+            />
           </button>
           <template #content>Open Collection</template>
         </tippy>
@@ -472,6 +478,8 @@ export default defineComponent({
           ? Instance.getEngine(this.id).selection[0]
           : undefined;
 
+      const padding = 50,
+        dur = 200;
       /**
        * Arrow key navigation
        */
@@ -498,9 +506,13 @@ export default defineComponent({
               false,
               childrenSorted[next]
             );
- 
+
             if (e.ctrlKey)
-              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+              Instance.getEngine(this.id).zoomToFitSelection(
+                200,
+                false,
+                padding
+              );
             return;
           }
           break;
@@ -508,7 +520,11 @@ export default defineComponent({
           if (node && node.parent) {
             Instance.getEngine(this.id).updateSelection(false, node.parent);
             if (e.ctrlKey)
-              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+              Instance.getEngine(this.id).zoomToFitSelection(
+                200,
+                false,
+                padding
+              );
             return;
           }
           break;
@@ -535,7 +551,11 @@ export default defineComponent({
               childrenSorted[next]
             );
             if (e.ctrlKey)
-              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+              Instance.getEngine(this.id).zoomToFitSelection(
+                200,
+                false,
+                padding
+              );
             return;
           }
           break;
@@ -546,7 +566,11 @@ export default defineComponent({
               node.getChildren()[0]
             );
             if (e.ctrlKey)
-              Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
+              Instance.getEngine(this.id).zoomToFitSelection(
+                200,
+                false,
+                padding
+              );
             return;
           }
           break;
@@ -599,6 +623,12 @@ export default defineComponent({
           case "f":
             this.$emit("focusSearch");
           default:
+            break;
+          case "+":
+            this.loadCollection(true);
+            break;
+          case "-":
+            this.createCollection(true);
             break;
         }
       }
@@ -675,17 +705,17 @@ export default defineComponent({
         Instance.getEngine(this.id).setFilterList("search");
       }
     },
-    loadCollection() {
+    loadCollection(useSavedDepth: boolean = false) {
       if (Instance.getEngine(this.id)) {
         let n: AbstractNode = Instance.getEngine(this.id).selection[0];
 
         if (n && n.shell) {
           if (n.isCollection()) {
-            n.shell.loadCollection(n);
+            n.shell.loadCollection(n, useSavedDepth);
           } else {
             n.descendants()
               .filter((c) => c.isCollection())
-              .forEach((c) => n.shell?.loadCollection(c));
+              .forEach((c) => n.shell?.loadCollection(c, useSavedDepth));
           }
         }
 
@@ -699,15 +729,12 @@ export default defineComponent({
         // }, 100);
       }
     },
-    createCollection() {
+    createCollection(complete: boolean = false) {
       if (Instance.getEngine(this.id)) {
-        let n: FolderNode = Instance.getEngine(this.id)
-          .selection[0] as FolderNode;
-        if (n.children.length == 0) return;
+        let n: AbstractNode | undefined = Instance.getEngine(this.id)
+          .selection[0];
 
-        !n.isCollection() && n.parent ? n.createCollection() : 0;
-
-        if (n.isRoot()) n.children.forEach((c) => c.createCollection());
+        if (n) n.createCollection(complete);
 
         const t = this.selection;
         this.selection = undefined;

@@ -15,5 +15,5 @@ export default interface AbstractNodeShellIfc {
     customData: { [any: string]: any };
     isSimulationActive: boolean;
     nodeAdded(node: any): void;
-    loadCollection(node: any): void;
+    loadCollection(node: any, useSavedDepth: boolean  ): void;
 }
