@@ -43,9 +43,14 @@ export default defineComponent({
     let path = this.entry.getURL();
     const div = _this.$el.getElementsByClassName("image-canvas")[0];
 
-    if (this.entry.isClipboard) {
-      _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
-    } else {
+    // prevents a bug that new instances of the components contain the style of previous instances
+    div.style.background = "";
+    this.$el.style.background = "";
+    this.$el.parentElement.style.background = "";
+
+    // if (this.entry.isClipboard) {
+    //   _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
+    // } else {
       if (this.entry.previewBase64) {
         var img = new Image();
         img.src = this.entry.previewBase64;
@@ -62,7 +67,7 @@ export default defineComponent({
         this.watcherEvent
       );
       cache.ImageCache.registerPath(path, this.cacheListener);
-    }
+    // }
   },
   unmounted() {
     //  cache.ImageCache.unregisterPath(path) ;
@@ -109,19 +114,19 @@ export default defineComponent({
         // this.workspaceEvent({scale:this.workspace.getCurrentTransform().scale});
         div.style.backgroundImage = url;
 
-        const img = new Image();
-        img.onload = () => {
-          this.entry.imgOriginal = img;
-          this.entry.imgOriginalLoaded = true;
-          this.workspace.drawCanvas();
-        };
+        // const img = new Image();
+        // img.onload = () => {
+        //   this.entry.imgOriginal = img;
+        //   this.entry.imgOriginalLoaded = true;
+        //   this.workspace.drawCanvas();
+        // };
 
-        img.src = url;
+        // img.src = url;
 
         if (this.$el.style.backgroundImage != "") {
           setTimeout(() => {
             this.$el.style.backgroundImage = "";
-          }, 500);
+          }, 2500);
         }
       }
     },

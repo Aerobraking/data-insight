@@ -165,6 +165,9 @@ import { MutationTypes } from "../../store/mutations/mutation-types";
 import Tabs from "@/core/components/Tabs.vue";
 import ModalDialog from "@/core/components/ModalDialog.vue";
 import * as WSUtils from "@/core/components/workspace/WorkspaceUtils";
+import * as cache from "../../filesystem/utils/ImageCache";
+import * as watcher from "../../filesystem/utils/WatchSystemMain";
+import * as ovdata from "../model/overview/OverviewDataCache";
 
 const v = remote.app.getVersion();
 var fs = require("fs");
@@ -269,13 +272,20 @@ export default defineComponent({
     loadInsightFileFromPath(path: string) {
       let jsonString = fs.readFileSync(path, "utf8");
       let file: InsightFile = deserialize(InsightFile, jsonString);
-      file.initAfterLoading();
+     
       this.loadInsightFile(file);
     },
     loadInsightFile(file: InsightFile) {
       let tabs: HTMLElement[] = Array.from(
         document.querySelectorAll(".close-file-anim")
       ) as HTMLElement[];
+
+      // reset caches
+      cache.ImageCache.reset();
+      watcher.FileSystemWatcher.reset();
+      ovdata.Instance.reset();
+
+       file.initAfterLoading();
 
       tabs.forEach((t) => {
         t.classList.add("close-file");

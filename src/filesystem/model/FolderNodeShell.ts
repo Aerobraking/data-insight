@@ -36,6 +36,11 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         }
     };
 
+    public initAfterLoading(): void {
+        super.initAfterLoading();
+        this.startWatcher();
+    }
+ 
     handleEvents(): void {
 
         const newNodes = [];
@@ -119,101 +124,99 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         this.isSyncing = true;
         Instance.syncFolder(this);
 
-        // let _this = this;
-        // if ( !this.watcher) {
+        {
+            // let _this = this;
+            // if ( !this.watcher) { 
+            //     this.watcher
+            //         .on("add", (path: any) => { 
+            //         })
+            //         .on("change", (path: any) => { 
+            //         })
+            //         .on("unlink", (path: any) => { 
+            //         })
+            //         .on("addDir", (pathNew: any) => {
+
+            //             let paths: string[] = Array.from(this.renameMap.keys());
+            //             let renameCase = false;
+            //             let renamendPath: string = "";
+            //             s:
+            //             for (let i = 0; i < paths.length; i++) {
+            //                 const p: string = paths[i];
+            //                 const node = _this.getNodeByPath(p);
+            //                 let stat = 0;
+            //                 let filecount = 0;
+            //                 if (node) {
+            //                     // node found, test if it is the added Dir by comparing their children
+            //                     fs.readdirSync(pathNew).forEach(file => {
+            //                         filecount++;
+            //                         let name = pathNodejs.basename(file);
+            //                         stat += node.getChildren().find(c => c.name == name) ? 1 : 0;
+            //                     });
+            //                     let similiar = stat / filecount;
+
+            //                     /**
+            //                      * This folder was renamed, remove the timer for deleting
+            //                      */
+            //                     if (!isNaN(similiar) && similiar > 0.4) {
+            //                         renameCase = true;
+            //                         renamendPath = p;
+            //                         let timeout = this.renameMap.get(p)
+            //                         if (timeout) {
+            //                             clearTimeout(timeout);
+            //                             this.renameMap.delete(p);
+            //                         }
+            //                         break s;
+            //                     }
+            //                 }
+            //             }
+
+            //             if (renameCase) {
+            //                 /**
+            //                  * sub folders of the rename folders may also be in our renaming list. 
+            //                  * So test if they are and rename the folder in these paths. This way they will also be found when there addDir Event is fired and thus not be deleted.
+            //                  */
+            //                 for (let i = 0; i < paths.length; i++) {
+            //                     const p: string = paths[i];
+            //                     if (p != renamendPath) {
+            //                         let timer = this.renameMap.get(p);
+            //                         if (timer && p.includes(renamendPath)
+            //                             && p.replace(renamendPath, pathNew) != p) {
+            //                             this.renameMap.set(p.replace(renamendPath, pathNew), timer);
+            //                             this.renameMap.delete(p);
+            //                         }
+            //                     }
+            //                 }
+
+            //                 // rename the node
+            //                 _this.renameByPaths(renamendPath, pathNew);
+            //             } else {
+            //                 /**
+            //                  * Make sure the events happen at least with 30ms between them  
+            //                  */
+            //                 var timeDiff = performance.now() - this.endTime; //in ms 
+            //                 this.endTime = performance.now();
+            //                 this.eventStack.push({ path: pathNew, type: "add" });
+            //             }
 
 
+            //         })
+            //         .on("ready", (path: any) => { 
+            //         })
+            //         .on("unlinkDir", (path: any) => {
+            //             /**
+            //              * Dir will be deleted with delay so when an add event happens we can
+            //              * test for a rename situation
+            //              */
+            //             let timer = setTimeout((p) => {
+            //                 _this.removeEntryPath(p);
+            //                 _this.renameMap.delete(p);
+            //             }, 400, path);
+            //             this.renameMap.set(path, timer);
+            //             this.renameList.push(path);
 
-        //     this.watcher
-        //         .on("add", (path: any) => { 
-        //         })
-        //         .on("change", (path: any) => { 
-        //         })
-        //         .on("unlink", (path: any) => { 
-        //         })
-        //         .on("addDir", (pathNew: any) => {
-
-        //             let paths: string[] = Array.from(this.renameMap.keys());
-        //             let renameCase = false;
-        //             let renamendPath: string = "";
-        //             s:
-        //             for (let i = 0; i < paths.length; i++) {
-        //                 const p: string = paths[i];
-        //                 const node = _this.getNodeByPath(p);
-        //                 let stat = 0;
-        //                 let filecount = 0;
-        //                 if (node) {
-        //                     // node found, test if it is the added Dir by comparing their children
-        //                     fs.readdirSync(pathNew).forEach(file => {
-        //                         filecount++;
-        //                         let name = pathNodejs.basename(file);
-        //                         stat += node.getChildren().find(c => c.name == name) ? 1 : 0;
-        //                     });
-        //                     let similiar = stat / filecount;
-
-        //                     /**
-        //                      * This folder was renamed, remove the timer for deleting
-        //                      */
-        //                     if (!isNaN(similiar) && similiar > 0.4) {
-        //                         renameCase = true;
-        //                         renamendPath = p;
-        //                         let timeout = this.renameMap.get(p)
-        //                         if (timeout) {
-        //                             clearTimeout(timeout);
-        //                             this.renameMap.delete(p);
-        //                         }
-        //                         break s;
-        //                     }
-        //                 }
-        //             }
-
-        //             if (renameCase) {
-        //                 /**
-        //                  * sub folders of the rename folders may also be in our renaming list. 
-        //                  * So test if they are and rename the folder in these paths. This way they will also be found when there addDir Event is fired and thus not be deleted.
-        //                  */
-        //                 for (let i = 0; i < paths.length; i++) {
-        //                     const p: string = paths[i];
-        //                     if (p != renamendPath) {
-        //                         let timer = this.renameMap.get(p);
-        //                         if (timer && p.includes(renamendPath)
-        //                             && p.replace(renamendPath, pathNew) != p) {
-        //                             this.renameMap.set(p.replace(renamendPath, pathNew), timer);
-        //                             this.renameMap.delete(p);
-        //                         }
-        //                     }
-        //                 }
-
-        //                 // rename the node
-        //                 _this.renameByPaths(renamendPath, pathNew);
-        //             } else {
-        //                 /**
-        //                  * Make sure the events happen at least with 30ms between them  
-        //                  */
-        //                 var timeDiff = performance.now() - this.endTime; //in ms 
-        //                 this.endTime = performance.now();
-        //                 this.eventStack.push({ path: pathNew, type: "add" });
-        //             }
-
-
-        //         })
-        //         .on("ready", (path: any) => { 
-        //         })
-        //         .on("unlinkDir", (path: any) => {
-        //             /**
-        //              * Dir will be deleted with delay so when an add event happens we can
-        //              * test for a rename situation
-        //              */
-        //             let timer = setTimeout((p) => {
-        //                 _this.removeEntryPath(p);
-        //                 _this.renameMap.delete(p);
-        //             }, 400, path);
-        //             this.renameMap.set(path, timer);
-        //             this.renameList.push(path);
-
-        //         });
-        // }
-
+            //         });
+            // }
+        }
     }
 
     reactToDrop(e: DragEvent): void {

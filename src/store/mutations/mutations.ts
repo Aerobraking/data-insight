@@ -136,14 +136,7 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.SHOW_UI](state, payload) {
     state.loadedFile.settings.showUI = payload.showUI;
   },
-  [MutationTypes.CREATE_OVERVIEW](state) {
-    // state.loadedFile.views.push(new Overview());
-    // let lastIndex = state.loadedFile.views.length - 1;
-    // state.loadedFile.views.forEach(
-    //   (entry: View, index: Number) => {
-    //     entry.isActive = index === lastIndex;
-    //   }
-    // );
+  [MutationTypes.CREATE_OVERVIEW](state) { 
   },
 }
 

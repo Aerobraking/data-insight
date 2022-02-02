@@ -7,7 +7,7 @@ import { AbstractNodeShell } from "./AbstractNodeShell";
 export class OverviewTransferHandler {
 
     private mapEngines: Map<number, OverviewEngine> = new Map();
-    private hash: Map<number, AbstractNodeShell[]> = new Map();
+    private mapData: Map<number, AbstractNodeShell[]> = new Map();
     private static _instance = new OverviewTransferHandler();
 
     private constructor() {
@@ -18,31 +18,39 @@ export class OverviewTransferHandler {
         return this._instance;
     }
 
+    reset(){
+        // this.mapEngines.forEach((value: OverviewEngine, key: number) => {
+        //     value.dispose();
+        // });
+        this.mapData.clear();
+        this.mapEngines.clear();
+    }
+
     transferData(w: Workspace) {
-        let newArray: AbstractNodeShell[] | undefined = this.hash.get(w.id);
+        let newArray: AbstractNodeShell[] | undefined = this.mapData.get(w.id);
         if (newArray) {
             w.overview.rootNodes = newArray;
         }
     }
 
-    getData(id: number | { workspace: Workspace }): AbstractNodeShell[] {
-        let a = (typeof id == 'number') ? this.hash.get(id) : this.hash.get(id.workspace.id);
+    getData(obj: number | { workspace: Workspace }): AbstractNodeShell[] {
+        let a = (typeof obj == 'number') ? this.mapData.get(obj) : this.mapData.get(obj.workspace.id);
         if (!a) {
             a = [];
-            this.hash.set((typeof id == 'number') ? id : id.workspace.id, a);
+            this.mapData.set((typeof obj == 'number') ? obj : obj.workspace.id, a);
         }
         return a;
     }
     setData(id: number, list: AbstractNodeShell[]): void {
-        this.hash.set(id, list);
+        this.mapData.set(id, list);
     }
 
     storeData(w: Workspace) {
-        if (!this.hash.has(w.id)) {
+        if (!this.mapData.has(w.id)) {
             let newArray: AbstractNodeShell[] = [];
             newArray.push(...w.overview.rootNodes);
             w.overview.rootNodes = [];
-            this.hash.set(w.id, newArray);
+            this.mapData.set(w.id, newArray);
         }
     }
 

@@ -1,4 +1,4 @@
-import _ from "underscore"; 
+import _ from "underscore";
 
 export enum ImageSize {
     preview = "preview",
@@ -39,6 +39,19 @@ export class Cache {
     private listWorkerTraverser: number = 0;
 
     private listWorker: Worker[] = [];
+
+    public reset() { 
+
+        this.hash.forEach((value: Map<ImageSize, string>, key: string) => {
+            value.forEach((value: string, key: ImageSize) => {
+                URL.revokeObjectURL(value);
+            });
+        });
+
+        this.hash.clear();
+        this.hashCallbacks.clear();
+        this.hashDim.clear();
+    }
 
     private constructor() {
         const _this = this;
@@ -138,7 +151,7 @@ export class Cache {
             return url != undefined ? "url('" + url + "')" : undefined;
         }
     }
-    
+
     getUrlRaw(path: string, type: ImageSize): string | undefined {
         let imageEntry: Map<ImageSize, string> | undefined = this.hash.get(path);
         if (imageEntry == undefined) {
@@ -182,7 +195,7 @@ export class Cache {
     private listQueue: string[] = [];
     private static delay = 33;
     private timeStack = 0;
-    
+
     public registerPath = (path: string, callback: ImageListener, recreate: boolean = false, eventsToFire: ImageSize[] = Object.values(ImageSize) as ImageSize[]) => {
 
         let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(path);

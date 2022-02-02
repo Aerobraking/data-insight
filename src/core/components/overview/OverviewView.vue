@@ -69,7 +69,9 @@
               @click.left.exact="showAll(false)"
             />
           </button>
-          <template #content>Show All</template>
+          <template #content
+            >Show All <kbd>Ctrl</kbd>|<kbd>Space</kbd></template
+          >
         </tippy>
         <tippy>
           <button
@@ -77,7 +79,7 @@
           >
             <Flashlight @click.left.exact="toggleHighlight()" />
           </button>
-          <template #content>Show All</template>
+          <template #content>Highlight Selection <kbd>h</kbd></template>
         </tippy>
         <tippy>
           <button><FolderOutline @click="selectFolders()" /></button>
@@ -91,7 +93,9 @@
               @click.ctrl.exact="createCollection(true)"
             />
           </button>
-          <template #content>Create Collection</template>
+          <template #content
+            >Create Collection <kbd>Ctrl</kbd>|<kbd>-</kbd></template
+          >
         </tippy>
         <tippy>
           <button :disabled="isContainer">
@@ -100,19 +104,25 @@
               @click.ctrl.exact="loadCollection(true)"
             />
           </button>
-          <template #content>Open Collection</template>
+          <template #content
+            >Open Collection <kbd>Ctrl</kbd>|<kbd>+</kbd></template
+          >
         </tippy>
         <tippy>
           <button :disabled="!nodeSelected">
             <ContentCopy @click="createRootFromNode()" />
           </button>
-          <template #content>Create Entry from Selection</template>
+          <template #content
+            >Create Entry from Selection <kbd>Shift</kbd>+<kbd
+              >Drag Selection</kbd
+            ></template
+          >
         </tippy>
         <tippy>
           <button :disabled="!deleteAllowed">
             <DeleteEmptyOutline @click="deleteSelection()" />
           </button>
-          <template #content>Delete</template>
+          <template #content>Delete <kbd>Del</kbd></template>
         </tippy>
       </tippy-singleton>
     </div>
@@ -293,7 +303,7 @@ export default defineComponent({
   },
   mounted() {
     const _this = this;
-
+    debugger;
     /**
      * remove the node data from the vuex store
      */
@@ -305,6 +315,15 @@ export default defineComponent({
       this.$el.getElementsByClassName("overview-wrapper")[0],
       this.model
     );
+
+    /**
+     * Set engine for existing nodes
+     */
+    Instance.getData(this.id).forEach((e) => {
+      // debugger;
+      e.engine = Instance.getEngine(this.id);
+      console.log(e);
+    });
 
     /**
      * Get all Features and add them to the list so the views for them will be created.
@@ -370,7 +389,7 @@ export default defineComponent({
     WSUtils.Events.registerCallback(this.wsListener);
   },
   unmounted() {
-    Instance.getEngine(this.id).dispose();
+    if (Instance.getEngine(this.id)) Instance.getEngine(this.id).dispose();
     if (this.wsListener) {
       WSUtils.Events.unregisterCallback(this.wsListener);
     }

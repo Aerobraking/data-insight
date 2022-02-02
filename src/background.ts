@@ -48,7 +48,7 @@ function createDragImage() {
 }
 
 function isDevMode() {
-  return true || !app.isPackaged;
+  return !true || !app.isPackaged;
 }
 
 function sendToRender(id: string, ...args: any[]) {

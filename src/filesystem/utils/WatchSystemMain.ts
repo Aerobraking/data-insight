@@ -1,22 +1,23 @@
 import pathNjs from "path";
 import { ipcRenderer } from "electron";
 import { FileWatcherSend, FileWatcherUpdate } from "@/filesystem/utils/FileWatcherInterfaces";
- 
+
 interface WatcherListener {
     (type: string, path?: string): void;
 }
 
-
-interface MapCallbacks extends Map<string, WatcherListener[]> {
-
-}
-
-
+interface MapCallbacks extends Map<string, WatcherListener[]> {}
+ 
 export class Watcher {
 
     private hash: MapCallbacks = new Map();
     private hashRecursive: MapCallbacks = new Map();
     private static _instance = new Watcher();
+
+    public reset() {
+        this.hash.clear();
+        this.hashRecursive.clear();
+    }
 
     private constructor() {
         const _this = this;
@@ -27,7 +28,7 @@ export class Watcher {
             }
         );
     }
-  
+
     private isSubDir(parent: string, dir: string) {
         const relative = pathNjs.relative(parent, dir);
         return relative && !relative.startsWith('..') && !pathNjs.isAbsolute(relative);
