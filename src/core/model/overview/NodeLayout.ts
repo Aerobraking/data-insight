@@ -232,7 +232,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
     static coolDownTime: number = 256; // in frames
     static minAlpha: number = 0.0003; // cooldown starts when alpha in current tick is less then minAlpha
     static gravity: number = 0.00015; // gravity force vector strength to target position 
-    static friction = 0.97; 
+    static friction = 0.97;
 
     frictionNormal = NodeLayoutStaticDynamic.friction;
 
@@ -441,7 +441,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
 
                     } else {
-                        n.y = n.parent ? n.parent.getY() : n.getY();
+                        // n.y = n.parent ? n.parent.getY() : n.getY();
                     }
 
                 });
@@ -471,9 +471,9 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     static nodeBound: number = 200;
     static coolDownTime: number = 256; // in frames
     static minAlpha: number = 0.0003; // cooldown starts when alpha in current tick is less then minAlpha
-   
+
     static gravity: number = .00015; // gravity force vector strength to target position 
-    static friction = .97;    
+    static friction = .97;
 
     static gravityX: number = .00025; // gravity force vector strength to target position 
     static frictionX = .93;
@@ -520,7 +520,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                     if (node.parent) {
                         node.parent.children.forEach(c => {
                             c.customData["i"] = c.getY();
-                            c.customData["co"] = { y: c.getY(), vy: 0,yx: c.getX(), vx: 0 }
+                            c.customData["co"] = { y: c.getY(), vy: 0, yx: c.getX(), vx: 0 }
                         });
                         this.nodesUpdated(node.shell as any);
                     }
@@ -532,7 +532,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                 if (node.parent) {
                     node.parent.children.forEach(c => {
                         c.customData["i"] = c.getY();
-                        c.customData["co"] = { y: c.getY(), vy: 0,x: c.getX(), vx: 0 }
+                        c.customData["co"] = { y: c.getY(), vy: 0, x: c.getX(), vx: 0 }
                     });
                 }
 
@@ -696,7 +696,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                             let abs = Math.abs(dist);
 
                             if (abs > 0 && abs < .01) n.y = coord.y;
-                            else if (abs >= .01) {
+                            else if (abs >= .001) {
                                 // get acceleration at the half time step
                                 let vy2 = coord.vy + dist * delta2 * NodeLayoutStaticDynamicX.gravity;
                                 let y2 = n.y + vy2 * NodeLayoutStaticDynamicX.friction;
@@ -729,7 +729,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                                 const accel = dist * delta * NodeLayoutStaticDynamicX.gravityX;
                                 // use accerleration from half time step for the full time step
                                 // with some random force for a more "natural" movement
-                                coord.vx += accel * 0.65 + (accel * 0.35 * Math.random()); 
+                                coord.vx += accel * 0.65 + (accel * 0.35 * Math.random());
                                 if (n.fx == undefined) n.x += coord.vx *= NodeLayoutStaticDynamicX.frictionX;
                                 alpha += Math.abs(coord.vx);
 
@@ -738,13 +738,20 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
 
                     } else {
-                        n.y = n.parent ? n.parent.getY() : n.getY();
+                        // n.y = n.parent ? n.parent.getY() : n.getY();
                     }
 
                 });
 
+                const heatold = heat.v;
                 // cooldown when minAlpha is reached or heat up till the maximum cooldowntime is reached.
                 alpha < NodeLayoutStaticDynamic.minAlpha ? heat.v-- : heat.v += heat.v < NodeLayoutStaticDynamic.coolDownTime ? 1 : 0;
+
+                // set velocity to 0 if we hit zero movement
+                if (heat.v == 0 && heatold == 1) shell.nodes.forEach(n => {
+                    const coord = n.customData["co"];
+                    if (coord) coord.vx = 0, coord.vy = 0;
+                });
             }
 
         })

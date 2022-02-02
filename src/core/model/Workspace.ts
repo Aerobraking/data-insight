@@ -24,7 +24,7 @@ export class Overview {
     @Type(() => AbstractNodeShell, {
         keepDiscriminatorProperty: true,
         discriminator: {
-            property: 'nodetype',
+            property: 'nt',
             subTypes: [
                 { value: FolderNodeShell, name: 'folder' }
             ],

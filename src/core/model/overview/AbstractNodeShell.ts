@@ -19,8 +19,8 @@ export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
 
 export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> implements AbstractNodeShellIfc {
 
-    constructor(nodetype: string, path: string, root: N) {
-        this.nodetype = nodetype;
+    constructor(nt: string, path: string, root: N) {
+        this.nt = nt;
         this.path = path;
         this.root = root;
         this.id = Math.floor(Math.random() * 10000000);
@@ -35,7 +35,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     @Type(() => AbstractNode, {
         keepDiscriminatorProperty: true,
         discriminator: {
-            property: 'nodetype',
+            property: 'nt',
             subTypes: [
                 { value: FolderNode, name: 'folder' },
             ],
@@ -55,7 +55,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     public isSimulationActive: boolean = true;
 
     // identifier for json serializing
-    nodetype: string;
+    nt: string;
 
     // list of all nodes inside this entry. will be set everytime the amount of nodes changes
     @Exclude()
@@ -83,7 +83,10 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     abstract getName(): string;
 
     public initAfterLoading(): void {
-        this.updateNodeLists();
+
+        this.nodes = this.root.descendants();
+        this.links = this.root.links();
+
         for (let i = 0; i < this.nodes.length; i++) {
             const n = this.nodes[i];
             n.shell = this;
@@ -235,7 +238,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         const nodesAdded: N[] = [];
 
         paths.forEach(p => {
-            nodesAdded.push(...this.addEntryPath(p.path, p.isCollection, p.collectionSize,false));
+            nodesAdded.push(...this.addEntryPath(p.path, p.isCollection, p.collectionSize, false));
         });
 
         if (nodesAdded.length > 0 && fireUpdate) {
@@ -261,7 +264,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         let folders: string[] = nodePath.split("/");
 
         let foldersCreated = false;
- 
+
         let currentFolder = this.root;
         for (let i = 0; i < folders.length; i++) {
             const f = folders[i];
@@ -323,7 +326,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.engine?.featuresUpdated();
         Layouter.featuresUpdated(this);
     }
-  
+
     public nodeUpdate(n: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
@@ -349,7 +352,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     public nodesAdded(c: N[]) {
         this.engine?.nodesAdded(c);
-        
+
     }
 
     /**

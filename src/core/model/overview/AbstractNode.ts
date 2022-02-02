@@ -5,8 +5,8 @@ import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 
 export abstract class AbstractNode {
 
-    constructor(nodetype: string, name: string) {
-        this.nodetype = nodetype;
+    constructor(nt: string, name: string) {
+        this.nt = nt;
         this._name = name;
     }
 
@@ -221,7 +221,7 @@ export abstract class AbstractNode {
     depth: number = 0;
 
     // string for json that links to the javascript implemented class
-    nodetype: string;
+    nt: string;
 
     id?: string | number;
 
@@ -258,6 +258,7 @@ export abstract class AbstractNode {
     */
     x: number = 0;
 
+    @Expose({ name: 'cd' })
     customData: { [any: string]: any } = {};
 
     // the parent node. will be set after loading from the json file.

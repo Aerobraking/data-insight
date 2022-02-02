@@ -12,7 +12,7 @@ export default class FolderNode extends AbstractNode {
     @Type(() => AbstractNode, {
         keepDiscriminatorProperty: true,
         discriminator: {
-            property: 'nodetype',
+            property: 'nt',
             subTypes: [
                 { value: FolderNode, name: 'folder' },
             ],
