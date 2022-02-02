@@ -1,4 +1,4 @@
-import { OverviewEngine } from "@/core/components/workspace/OverviewEngine";
+import { OverviewEngine } from "@/core/components/overview/OverviewEngine";
 import { Workspace } from "../Workspace";
 import { AbstractNodeShell } from "./AbstractNodeShell";
 

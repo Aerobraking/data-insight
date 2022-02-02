@@ -1,7 +1,6 @@
 
 const drivelist = require("drivelist");
-import os from "os";
-// const os = require('os');
+import os from "os"; 
 import { ipcRenderer } from "electron";
 
 async function getDrives() {
@@ -78,11 +77,7 @@ export class Drive {
 }
 
 var listDrives: Drive[] = [];
-
-interface Hash {
-    [details: string]: { (): void; }[];
-}
-
+  
 export class DriveListSystem {
 
     private hash: Map<String, { (): void; }> = new Map();
@@ -119,7 +114,6 @@ export class DriveListSystem {
     }
 
 }
-
-
+ 
 export const DriveListSystemInstance = DriveListSystem.instance;
 

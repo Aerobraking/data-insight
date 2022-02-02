@@ -17,6 +17,8 @@ export class Overview {
     @Expose({ name: 'featureSettings' })
     featureSettings: FeatureSettingsList = {};
     showAll: boolean = false;
+    highlightSelection: boolean = false;
+
     featureActive: Feature | undefined = Feature.FolderSize;
 
     @Type(() => AbstractNodeShell, {

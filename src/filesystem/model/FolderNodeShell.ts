@@ -1,16 +1,10 @@
 import { Exclude } from "class-transformer";
-import { FSWatcher } from "chokidar";
 import pathNodejs from "path";
 import { AbstractNodeShell } from "@/core/model/overview/AbstractNodeShell";
 import { FileSystemListener, FolderSyncResult, FolderFeatureResult, FolderSyncFinished } from "../utils/FileSystemMessages";
 import { Instance } from "../utils/FileSystemWatcher";
 import FolderNode from "./FolderNode";
-import { AbstractLink } from "@/core/model/overview/AbstractNode";
 import * as watcher from "../utils/WatchSystemMain";
-
-
-export class FolderLink extends AbstractLink<FolderNode>{
-}
 
 export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements FileSystemListener {
 
@@ -25,15 +19,15 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     syncStructure(): void { }
 
-    private ignoredFolders: string[] = [];
-
     @Exclude()
     renameMap: Map<string, NodeJS.Timeout> = new Map();
 
     @Exclude()
-    interval: any = setInterval(this.handleEvents.bind(this), 3);
+    interval: any = setInterval(this.handleEvents.bind(this), 55);
     @Exclude()
-    eventStack: (FolderSyncResult | FolderFeatureResult | FolderSyncFinished)[] = [];
+    eventStack: (FolderSyncResult)[] = [];
+    @Exclude()
+    eventStackFeatures: (FolderFeatureResult | FolderSyncFinished)[] = [];
 
     watcherEvent = (type: string, path?: string) => {
         Instance.syncFolder(this);
@@ -43,27 +37,40 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     };
 
     handleEvents(): void {
-        s:
-        for (let i = 0; i < 2; i++) {
-            let event = this.eventStack.shift();
+
+        const newNodes = [];
+        nodes:
+        for (let i = 0; i < 6; i++) {
+            let e = this.eventStack.shift();
+            if (e) {
+                newNodes.push({ path: e.path, isCollection: e.collection, collectionSize: e.collection ? e.childCount : 0 });
+            }
+        }
+
+        if (newNodes.length > 0) this.addEntryPaths(newNodes, true);
+
+        const newFeatures = [];
+        features:
+        for (let i = 0; i < 5; i++) {
+            let event = this.eventStackFeatures.shift();
             if (event) {
                 switch (event.type) {
-                    case "foldersync":
-                        const result: FolderSyncResult = event as unknown as FolderSyncResult;
-                        this.addEntryPath(result.path, result.collection, result.collection ? result.childCount : 0);
-                        // return
-                        break;
                     case "folderfeatures":
-                        this.addFeatures(event.path, event.features);
+                        newFeatures.push({ path: event.path, features: event.features });
+                        // this.addFeatures(event.path, event.features);
                         break;
-                    case "folderdeepsyncfinished":
-                        this.isSyncing = false;
-                        break;
+                    // case "folderdeepsyncfinished":
+                    //     this.isSyncing = false;
+                    //     break;
                     default:
                         break;
                 }
             }
         }
+
+        if (newFeatures.length > 0) this.addFeaturesList(newFeatures);
+
+        if (this.eventStack.length == 0 && this.eventStackFeatures.length == 0) this.isSyncing = false;
 
     }
 
@@ -71,10 +78,16 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         switch (e.type) {
             case "folderfeatures":
             case "folderdeepsyncfinished":
+                this.eventStackFeatures.push(e);
+                break;
             case "foldersync":
                 this.eventStack.push(e);
                 break;
         }
+    }
+
+    getName() {
+        return this.path + " " + this.nodes.length + " - " + (this.customData["heat"] ? this.customData["heat"].v : "");
     }
 
     getPath(): string {
@@ -109,25 +122,14 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         // let _this = this;
         // if ( !this.watcher) {
 
-        //     this.watcher = chokidar.watch(this.path, {
-        //         ignored: this.ignoredFolders, // ignore dotfiles
-        //         persistent: true,
-        //         depth: this.depth,
-        //         usePolling: true,
-        //         interval: 1500,
-        //     });
-
 
 
         //     this.watcher
-        //         .on("add", (path: any) => {
-        //             //  console.log("add: " + path);
+        //         .on("add", (path: any) => { 
         //         })
-        //         .on("change", (path: any) => {
-        //             console.log("change: " + path);
+        //         .on("change", (path: any) => { 
         //         })
-        //         .on("unlink", (path: any) => {
-        //             console.log("unlink: " + path);
+        //         .on("unlink", (path: any) => { 
         //         })
         //         .on("addDir", (pathNew: any) => {
 
@@ -195,8 +197,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
 
         //         })
-        //         .on("ready", (path: any) => {
-        //             console.log("READY");
+        //         .on("ready", (path: any) => { 
         //         })
         //         .on("unlinkDir", (path: any) => {
         //             /**

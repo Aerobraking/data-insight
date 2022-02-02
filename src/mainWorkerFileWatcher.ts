@@ -101,10 +101,7 @@ class Watcher2 {
     }
 
     private callUpdate(path: string, type: string, map: "recursive" | "default"): void {
-
-
-        console.log("callUpdate", path, type, map);
-
+  
         const call = (p: string) => {
 
             let result: FileWatcherUpdate = {

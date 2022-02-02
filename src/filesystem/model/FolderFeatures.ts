@@ -34,7 +34,6 @@ export class NodeFeatureSize extends AbstractNodeFeatureGradient<FolderNode, Fea
         });
     }
 
-
     public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
         return 0;
     }
@@ -77,6 +76,8 @@ export class NodeFeatureLastModifiy extends AbstractNodeFeatureGradient<FolderNo
             80: 60 * 60 * 24 * 365, // 1 Jahr
             max: 60 * 60 * 24 * 365 * 10, // 10 Jahre
         });
+
+        this.gradients.forEach(g=>g.reverse=!g.reverse);
     }
 
     public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {

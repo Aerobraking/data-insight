@@ -1,9 +1,10 @@
-import Gradient from "@/core/components/workspace/Gradient";
+import Gradient from "@/core/components/overview/Gradient";
 import { AbstractNode } from "./AbstractNode";
 import { AbstractFeatureData, Feature, FeatureDataType } from "./AbstractNodeFeature";
 import { AbstractNodeShell } from "./AbstractNodeShell";
-import * as d3 from "d3"; 
+import * as d3 from "d3";
 import { Constructor } from "@/core/plugin/Constructor";
+import { IframeParenthesesOutline } from "mdue";
 
 export const FeatureConstructorList: Constructor<AbstractNodeFeature>[] = [];
 
@@ -42,23 +43,19 @@ export abstract class AbstractFeatureSettings {
 export abstract class AbstractNodeFeature<N extends AbstractNode = AbstractNode, D extends AbstractFeatureData = AbstractFeatureData, S extends AbstractFeatureSettings = AbstractFeatureSettings> {
 
     settings!: S;
-
-    constructor() {
-        this.settings = this.getNewSettingsInstance();
-    }
-
+ 
     /**
      * Identifies the Feature, has to be unique  and also links to the vue component name for the view.
      */
     public readonly abstract id: Feature;
     public readonly abstract readableName: string;
+ 
+    constructor() {
+        this.settings = this.getNewSettingsInstance();
+    }
 
     public abstract getNewDataInstance(): D;
     public abstract getNewSettingsInstance(): S;
-
-    // public abstract drawNode(
-    //     ctx: CanvasRenderingContext2D, nodes: N[], widths: { x: number, width: number }[], entry: AbstractNodeShell<N>
-    // ): void;
 
     public abstract getNodeRadius(
         nodes: N, entry: AbstractNodeShell<N>
@@ -91,7 +88,7 @@ export class FeatureGradientSettings extends AbstractFeatureSettings {
 
 // #################
 //
-// Following functions are extracted from NoUISlider Package (and modified for using with my code) for rectrieving the percentage value of the slider.
+// The Following functions are extracted from NoUISlider Package (and modified for using with my code) for rectrieving the percentage value of the slider.
 //
 // #################
 
@@ -136,9 +133,9 @@ function getJ(value: number, arr: number[]) {
 
 /**
  * (percentage) Input a value, find where, on a scale of 0-100, it applies.
- * @param {*} xVal Konkrete Werte, also 0 bytes bis 194523452345 bytes
- * @param {*} xPct Die Prozentwerte zu dem xVal, also 0, 20, 40, usw.
- * @param {*} value Der Wert in Bytes
+ * @param {*} xVal Actual values, like 0 bytes to 194523452345 bytes
+ * @param {*} xPct The percentage values that belong to the xVal, like 0, 20, 40, usw.
+ * @param {*} value The given value, in our example 923423 bytes
  * @returns 
  */
 function toStepping(xVal: number[], xPct: number[], value: number) {
@@ -192,35 +189,43 @@ export abstract class AbstractNodeFeatureGradient<N extends AbstractNode = Abstr
         [key: string]: number;
     };
 
-    private gradients: Gradient[] = [
+    public gradients: Gradient[] = [
         new Gradient((n: number) => {
-            let value = n * 255 * 0.3;
-            value = 180;
+            // let value = n * 255 * 0.3;
+            const value = 215;
             return `rgb(${value},${value},${value})`;
         }, "default"),
         new Gradient(d3.interpolateWarm, "interpolateWarm"),
-        new Gradient(d3.interpolatePuRd, "interpolatePuRd", !true),
         new Gradient(
-            d3.interpolateMagma,
-            "interpolateMagma",
+            d3.interpolateInferno,
+            "interpolateInferno",
             !true,
             d3.scaleLinear<number>().domain([0, 1]).clamp(true).range([0.3, 1]),
             [0.3, 1]
-        )
+        ),
+        new Gradient(d3.interpolateYlOrRd, "interpolateYlOrRd", true),
+        new Gradient(d3.interpolateViridis, "interpolateViridis",true),
+        new Gradient(d3.interpolateRdBu, "interpolateRdBu",!true),
+        // new Gradient(d3.interpolatePuRd, "interpolatePuRd", true),
+        new Gradient(d3.interpolateYlGn, "interpolateYlGn", true),
+      
     ];
 
     public abstract formatter: (value: number) => string;
     public abstract margin: number;
     public abstract id: Feature;
     public abstract readonly readableName: string;
+    private gradientIDInUse: string | undefined;
 
     public setGradienFunction(name: string): Gradient {
         let gradient: Gradient | undefined = this.gradients.find((g) => g.id == name);
         gradient = gradient ? gradient : this.gradients[0];
+        // 
         if (gradient) this.colorFunction = (n: number) => {
             return (gradient as Gradient).getColor(n);
         };;
         this.settings.gradientId = name;
+        this.gradientIDInUse = name;
         return gradient;
     }
 
@@ -233,6 +238,10 @@ export abstract class AbstractNodeFeatureGradient<N extends AbstractNode = Abstr
     public abstract getGradientValue(node: N): number | undefined;
 
     public getNodeColor(node: N, entry: AbstractNodeShell<N>): string {
+
+        if (this.settings.gradientId != this.gradientIDInUse) {
+            this.setGradienFunction(this.settings.gradientId)
+        }
 
         if (this.colorFunction) {
 

@@ -8,10 +8,13 @@ import { NodeFeatures, Feature, FeatureDataHandler } from "./AbstractNodeFeature
 import { FeatureInstanceList } from "./AbstractNodeFeatureView";
 import { Layouter } from "./NodeLayout";
 import FolderNode from "@/filesystem/model/FolderNode";
+import { ThermometerLines } from "mdue";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;
+    nodesAdded(node: D[]): void;
     nodesUpdated(): void;
+    featuresUpdated(): void;
 }
 
 export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> implements AbstractNodeShellIfc {
@@ -21,11 +24,8 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.path = path;
         this.root = root;
         this.id = Math.floor(Math.random() * 10000000);
-        // @ts-ignore: Unreachable code error
         this.root.shell = this;
-
         this.nodes = this.root.descendants();
-
     }
 
     x: number = 0;
@@ -76,11 +76,14 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     @Exclude()
     engine: NodeShellListener<AbstractNode> | undefined;
 
-
     public abstract loadCollection(node: any): void;
 
+    public abstract createNode(name: string): N;
+
+    abstract getName(): string;
+
     public initAfterLoading(): void {
-        this.updateSimulationData();
+        this.updateNodeLists();
         for (let i = 0; i < this.nodes.length; i++) {
             const n = this.nodes[i];
             n.shell = this;
@@ -90,8 +93,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
             }
         }
     }
-
-    public abstract createNode(name: string): N;
 
     public renameByPaths(oldPath: string, newPath: string) {
 
@@ -108,12 +109,16 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     }
 
-    public addFeatures(path: string, features: NodeFeatures) {
+    public addFeaturesList(list: { path: string, features: NodeFeatures }[]) {
+        list.forEach(f => this.addFeatures(f.path, f.features, false));
+        if (list.length > 0) this.featuresUpdated();
+    }
+
+    public addFeatures(path: string, features: NodeFeatures, fireUpdate = true) {
 
         let node = this.getNodeByPath(path);
         if (node) {
             node.features = features;
-            node.updateForce();
 
             let parent: N | undefined = node;
 
@@ -183,13 +188,12 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
                     }
                 })
 
-                parent.updateForce();
                 parent = parent.parent;
             }
 
         }
 
-        this.featuresUpdated();
+        if (fireUpdate) this.featuresUpdated();
     }
 
     /**
@@ -220,35 +224,58 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     }
 
     /**
+    * 
+    * @param nodePath Absolute path 
+    * @param isCollection 
+    * @param collectionSize 
+    * @returns 
+    */
+    public addEntryPaths(paths: { path: string, isCollection: boolean, collectionSize: number }[], fireUpdate: boolean = true) {
+
+        const nodesAdded: N[] = [];
+
+        paths.forEach(p => {
+            nodesAdded.push(...this.addEntryPath(p.path, p.isCollection, p.collectionSize,false));
+        });
+
+        if (nodesAdded.length > 0 && fireUpdate) {
+            this.updateNodeLists();
+            this.nodesAdded(nodesAdded);
+
+        }
+    }
+
+    /**
      * 
      * @param nodePath Absolute path 
      * @param isCollection 
      * @param collectionSize 
      * @returns 
      */
-    public addEntryPath(nodePath: string, isCollection: boolean = false, collectionSize: number = 0) {
+    public addEntryPath(nodePath: string, isCollection: boolean = false, collectionSize: number = 0, fireUpdate: boolean = true): N[] {
+
+        const nodesAdded: N[] = [];
 
         nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
-        if (nodePath == ".") return;
+        if (nodePath == ".") return nodesAdded;
         let folders: string[] = nodePath.split("/");
 
         let foldersCreated = false;
-
+ 
         let currentFolder = this.root;
         for (let i = 0; i < folders.length; i++) {
             const f = folders[i];
 
             let childFound = currentFolder.getChildren().find(c => c.name == f);
             if (childFound) {
-                if (childFound.isCollection()) console.log("IS COLLECTIN");
-
-                if (childFound.isCollection()) return; // do not add nodes to a collection
+                if (childFound.isCollection()) return nodesAdded; // do not add nodes to a collection
                 // Child was found, go to next subfolder
             } else {
                 // Create new sub folder
                 foldersCreated = true;
                 childFound = this.createNode(f);
                 currentFolder.addChild(childFound);
+                nodesAdded.push(childFound);
 
                 if (i == folders.length - 1) {
                     // the sumbmitted folder
@@ -258,9 +285,11 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
             currentFolder = childFound;
         }
 
-        if (foldersCreated) {
-            this.updateSimulationData();
+        if (foldersCreated && fireUpdate) {
+            this.updateNodeLists();
         }
+
+        return nodesAdded;
 
     }
 
@@ -281,7 +310,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         // remove folder if found
         if (currentFolder && currentFolder.parent) {
             currentFolder.parent.removeChild(currentFolder);
-            this.updateSimulationData();
+            this.updateNodeLists();
         }
     }
 
@@ -291,37 +320,36 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     }
 
     public featuresUpdated() {
-        this.engine?.nodesUpdated();
+        this.engine?.featuresUpdated();
         Layouter.featuresUpdated(this);
     }
-
-    public nodesUpdated() {
-        this.updateSimulationData();
-        this.engine?.nodesUpdated();
-        Layouter.nodesUpdated(this);
-    }
-
+  
     public nodeUpdate(n: N) {
-        this.updateSimulationData();
+        this.updateNodeLists();
         this.engine?.nodesUpdated();
         Layouter.nodeUpdated(this, n.parent as AbstractNode, n);
     }
 
     public nodeRemoved(n: N) {
-        this.updateSimulationData();
+        this.updateNodeLists();
         this.engine?.nodesUpdated();
         Layouter.nodeRemoved(this, n.parent as AbstractNode, n);
     }
 
     public nodeChildrenRemoved(n: N) {
-        this.updateSimulationData();
+        this.updateNodeLists();
         this.engine?.nodesUpdated();
         Layouter.nodeChildrenRemoved(this, n.parent as AbstractNode, n);
     }
 
     public nodeAdded(c: N) {
         this.engine?.nodeAdded(c);
-        Layouter.nodeAdded(this, c.parent as AbstractNode, c)
+        Layouter.nodeAdded(this, c.parent as AbstractNode, c);
+    }
+
+    public nodesAdded(c: N[]) {
+        this.engine?.nodesAdded(c);
+        
     }
 
     /**
@@ -329,7 +357,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      * Assign all nodes to the force simulation in case of new created nodes.
      * @param reheat sets the alpha to one
      */
-    protected updateSimulationData(reheat: boolean = true) {
+    protected updateNodeLists() {
 
         this.nodes = this.root.descendants();
         this.links = this.root.links();

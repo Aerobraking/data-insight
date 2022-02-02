@@ -44,14 +44,14 @@
 <script lang="ts">
 import { Tippy } from "vue-tippy";
 import { defineComponent } from "vue";
-import * as _ from "underscore";
-import noUiSlider, { API, PipsMode } from "nouislider";  
-import ColorGradient from "@/core/components/workspace/ColorGradient.vue";
-import { CogOutline, ArrowExpandVertical } from "mdue"; 
+import _ from "underscore";
+import noUiSlider, { API, PipsMode } from "nouislider";
+import ColorGradient from "@/core/components/overview/ColorGradient.vue";
+import { CogOutline, ArrowExpandVertical } from "mdue";
 import { AbstractNode } from "@/core/model/overview/AbstractNode";
 import { Feature } from "@/core/model/overview/AbstractNodeFeature";
 import { AbstractNodeFeatureGradient } from "@/core/model/overview/AbstractNodeFeatureView";
-import { Workspace } from "@/core/model/Workspace"; 
+import { Workspace } from "@/core/model/Workspace";
 import { Instance } from "@/core/model/overview/OverviewDataCache";
 
 export default defineComponent({
@@ -97,7 +97,6 @@ export default defineComponent({
       tempGradientId: undefined,
     };
   },
-  unmounted() {},
   mounted() {
     this.sliderDiv = this.$el.getElementsByClassName("slider")[0];
 
@@ -134,11 +133,12 @@ export default defineComponent({
         slider: API
       ) => {
         this.model.settings.sliderRange = values as [number, number];
+        this.sendSettingsToEngine();
         this.filterfunc(this);
       }
     );
 
-    this.updateGradient(this.model.settings.gradientId);
+    this.updateGradient(this.model.settings.gradientId, false);
 
     this.updateFeatureStatus();
   },
@@ -174,7 +174,6 @@ export default defineComponent({
         this.fitRange();
       }
     },
-
     fitRange() {
       let min = Infinity,
         max = -Infinity;
@@ -182,7 +181,8 @@ export default defineComponent({
 
       const checkValue = (n: AbstractNode) => {
         const v = this.model.getGradientValue(n, n.shell);
-        if (data.length > 1 || !n.isRoot()) { // ignore the root when we only have one shell 
+        if (data.length > 1 || !n.isRoot()) {
+          // ignore the root when we only have one shell
           v != undefined && v > 0 && v < min ? (min = v) : "";
           v != undefined && v > 0 && v > max ? (max = v) : "";
         }
@@ -217,10 +217,23 @@ export default defineComponent({
         this.updateGradient(this.tempGradientId);
       }
     },
-    updateGradient(name: string, temp: boolean = false) {
+    sendSettingsToEngine() {
+      if(this.model.id ==  this.workspace.overview.featureActive)
+      Instance.getEngine(this.workspace.id).render.settings = JSON.parse(
+        JSON.stringify(this.model.settings)
+      );
+    },
+    updateGradient(
+      name: string,
+      sendToRender: boolean = true,
+      temp: boolean = false
+    ) {
       if (temp) this.tempGradientId = this.model.settings.gradientId;
       if (!temp) this.tempGradientId = undefined;
+
+      // this updates the gradient id in the settings
       const gradient = this.model.setGradienFunction(name);
+      if (sendToRender) this.sendSettingsToEngine();
 
       let values: string[] = [];
       const steps = 5;

@@ -59,7 +59,7 @@ export class FileSystemWatcher {
             type: "folderdeepsync",
             collectionSize: 25,
             path: listener.getPath(),
-            depth: 7,
+            depth: 4,
             id: listener.getID()
         }
 

@@ -96,8 +96,7 @@ export class Watcher {
     }
 
     private callUpdatePrep(path: string, type: string, map: MapCallbacks) {
-        console.log("watcher", path, type);
-
+  
         path = path.replace(/\\/g, "/");
         path = path.endsWith("/") ? path.slice(0, -1) : path;
         this.callUpdate(path, type, map); // update for file / dir

@@ -1,7 +1,6 @@
 <script lang="ts"> 
 import { defineComponent } from "vue";
-import draggable from "vuedraggable";
-import overviewview from "./OverviewView.vue";
+import draggable from "vuedraggable"; 
 import { PlaylistStar } from "mdue";
 import { Tippy } from "vue-tippy";
 import WorkspaceViewIfc from "./WorkspaceViewIfc"; 
@@ -23,8 +22,7 @@ export default defineComponent({
   name: "wsentriesbookmarks",
   components: {
     draggable,
-    Tippy,
-    overviewview,
+    Tippy, 
     PlaylistStar,
   },
   props: {

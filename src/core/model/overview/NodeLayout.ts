@@ -1,6 +1,6 @@
-import { AbstractLink, AbstractNode } from "./AbstractNode"; 
+import { AbstractLink, AbstractNode } from "./AbstractNode";
 import { Simulation, ForceLink } from "d3";
-import AbstractNodeShellIfc from "./AbstractNodeShellIfc"; 
+import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { Feature, FeatureDataType } from "./AbstractNodeFeature";
 import { Constructor } from "@/core/plugin/Constructor";
 
@@ -216,21 +216,24 @@ class NodeLayoutStatic extends AbstractNodeLayout {
 
 @LayoutDecorator()
 class NodeLayoutStaticDynamic extends AbstractNodeLayout {
-  
-    public featuresUpdated(shell: AbstractNodeShellIfc): void {
-    }
+
+    public featuresUpdated(shell: AbstractNodeShellIfc): void { }
 
     public id: LayoutType = LayoutType.STATICDYNAMIC;
 
     static nodeBound: number = 200;
+    static coolDownTime: number = 256; // in frames
+    static minAlpha: number = 0.0003; // cooldown starts when alpha in current tick is less then minAlpha
+    static gravity: number = 0.00015; // gravity force vector strength to target position 
+    static friction = 0.97;
 
-    frictionNormal = 0.84;
+    frictionNormal = NodeLayoutStaticDynamic.friction;
 
     public nodeDragged(node: AbstractNode, type: "start" | "move" | "end", offset: { x: number, y: number } | undefined, t: { k: number }): void {
         switch (type) {
             case "start":
                 this.frictionNormal = NodeLayoutStaticDynamic.friction;
-                NodeLayoutStaticDynamic.friction = 0.65;
+                NodeLayoutStaticDynamic.friction = 0.945;
 
                 node.fy = node.y; // Fix points
                 node.customData["initDrag"] = { x: node.x, y: node.y, fx: node.fx, fy: node.fy };
@@ -295,32 +298,33 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
     public nodesUpdated(shell: AbstractNodeShellIfc): void {
         this.reheatShell(shell);
-        this.update(shell.root)
+        this.updateLayout(shell.root)
     }
 
     public nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
         this.reheatShell(shell);
-        this.update(shell.root)
+        this.updateLayout(shell.root)
     }
 
     public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void { }
 
     public nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
         this.reheatShell(shell);
-        this.update(shell.root)
+        this.updateLayout(shell.root)
     }
 
     public shellContentUpdate(shell: AbstractNodeShellIfc): void {
         this.reheatShell(shell);
+        this.updateLayout(shell.root);
     }
 
     public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+        node.y = parent.children.length > 1 && parent.children[parent.children.length - 2].y ? parent.children[parent.children.length -2].y : parent.y;
         this.reheatShell(shell);
-        node.y = parent.y;
-        this.update(shell.root)
+        // layout update will be called later
     }
 
-    private update(node: AbstractNode): void {
+    private updateLayout(node: AbstractNode): void {
         this.calculateBounds(node);
         this.positionNodes(node);
     }
@@ -341,11 +345,6 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
             n.customData["b"] = NodeLayoutStaticDynamic.nodeBound;
         }
     }
-
-    static coolDownTime: number = 500; // in frames
-    static minAlpha: number = 0.0003; // cooldown start when alpha in current tick is less then minAlpha
-    static gravity: number = 0.0002; // cooldown start when alpha in current tick is less then minAlpha
-    static friction = 0.94;
 
     positionNodes(n: AbstractNode): void {
 
@@ -424,7 +423,8 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                                 dist = coord.y - y2;
 
                                 const accel = dist * delta * NodeLayoutStaticDynamic.gravity;
-                                // use accerleration from halt time step for the full time step
+                                // use accerleration from half time step for the full time step
+                                // with some random force for a more "natural" movement
                                 coord.vy += accel * 0.65 + (accel * 0.35 * Math.random());
 
                                 if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamic.friction;
@@ -532,8 +532,7 @@ class NodeLayoutStaticDynamicExt extends NodeLayoutStaticDynamic {
 
 
             const newY = (n.getY() - (childBound / 2)) + yRel;
-            // c.featuresRecursive[Feature.FolderQuantity] = { s: c.children.length > 0 ? childBound : newY - n.getY(), t: FeatureDataType.SUM };
-            console.log(newY, n.getY(), childBound / 2, yRel, n.name);
+            // c.featuresRecursive[Feature.FolderQuantity] = { s: c.children.length > 0 ? childBound : newY - n.getY(), t: FeatureDataType.SUM }; 
 
             let coordChild = c.customData["co"] == undefined ? c.customData["co"] = { y: newY, vy: 0 } : c.customData["co"];
             coordChild.y = newY;

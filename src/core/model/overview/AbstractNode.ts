@@ -1,4 +1,4 @@
-import { OV_COLUMNWIDTH } from "@/core/components/workspace/OverviewEngineValues";
+import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
 import { Exclude, Expose } from "class-transformer";
 import { Feature, NodeFeatures, NodeFeaturesClass } from "./AbstractNodeFeature";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
@@ -8,27 +8,18 @@ export abstract class AbstractNode {
     constructor(nodetype: string, name: string) {
         this.nodetype = nodetype;
         this._name = name;
-
-
-        this.updateForce();
     }
 
     public getChildren() {
         return this.children;
     }
 
-    public addChild(c: this) {
+    public addChild(c: this, fireUpdate = true) {
         c.parent = this;
         c.shell = this.shell;
         c.depth = c.parents().length;
-
-
-
-        // Layouter.addNode(this.entry as any, this, c)
-
         this.children.push(c);
-        this.shell?.nodeAdded(c);
-        this.updateForce();
+        if (fireUpdate) this.shell?.nodeAdded(c);
     }
 
     public removeChild(c: any) {
@@ -36,45 +27,15 @@ export abstract class AbstractNode {
         if (index > -1) {
             this.children.splice(index, 1);
             this.shell?.nodeRemoved(c);
-            this.updateForce();
         }
     }
 
-    public updateForce() {
-
-        if (!this.children) return;
-
-        /**
-         * 1. Wir brauchen Kräfte, die die Children zum zentrum ihres parents ziehen.
-         * 2. Kräfte, die die Children Liste als einen zusammenhängenden Block darstellen, die pro spalte
-         * miteinander berechnet werden. Die Spalten müssen nach obne hin aktualisiert werden jedes mal
-         * wenn die Liste der Children einer Note aktualisiert werden.
-         * 
-         * Alpha is given to some forces, not all (manybody yes, collide no) the velocty of all are summed up and then
-         * applied to the x/y coordinates by a factor of 0.6, the decay of the simulation. can be changed via the 
-         * velocityDecay in the simulation. Higher means more friction, so slower movement 
-         */
-        if (this.children.length > 1) {
-            this.forceRadius = this.children.map(d => 100 * 1.0).reduce(function (p, c) { return p + c }) / this.children.length * this.children.length
-            this.forceRadius += 120;
-        } else if (this.children.length == 1) {
-            this.forceRadius = this.children[0].getRadius();
-            this.forceRadius = 100;
-        } else {
-            this.forceRadius = 140;
-        }
-
-        // make sure the radius is not smaller then the node itself
-
-        if (this.parent) {
-            this.parent.updateForce();
-        }
-
-    }
 
     public getRadius() {
-        if (this.isRoot() || this.isCollection()) {
+        if (this.isRoot() ) {
             return 100;
+        } else if (this.isCollection()) {
+            return 80;
         } else if (this.shell) {
             let abs = (this.shell.root as AbstractNode).getFeatureValue(Feature.FolderSize);
             let part = this.getFeatureValue(Feature.FolderSize);
@@ -96,7 +57,6 @@ export abstract class AbstractNode {
         this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) };
         this.children = [];
         this.shell?.nodeChildrenRemoved(this);
-        this.updateForce();
     }
 
     public get name(): string {
@@ -245,9 +205,6 @@ export abstract class AbstractNode {
     @Exclude()
     flag: number = 0;
 
-    @Expose({ name: 'fr' })
-    forceRadius: number = 16;
-
     /**
      * Our abstract AbstractNode class can't know the types of its children, as they are implemented classes of itself, which would lead to circular dependencies. So the childrens list is abstract and we have to Type() the list in the implemented classes.
      */
@@ -301,16 +258,11 @@ export abstract class AbstractNode {
     y?: number | undefined;
 
     customData: { [any: string]: any } = {};
-
-    // the colorid for the overview engine, will be generated on the fly while rendering
-    @Exclude()
-    colorID: string | null = null;
-
+  
     // the parent node. will be set after loading from the json file.
     @Exclude()
     parent: this | undefined;
-
-
+ 
 }
 
 /**

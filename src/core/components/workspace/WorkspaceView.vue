@@ -257,7 +257,7 @@ import {
 } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import * as WSUtils from "./WorkspaceUtils";
-import OverviewView from "./OverviewView.vue";
+import OverviewView from "../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
 import wsentryfolder from "@/filesystem/components/WorkspaceEntryFolderView.vue";
@@ -297,9 +297,8 @@ import {
 } from "mdue";
 import { Workspace } from "@/core/model/Workspace";
 import ReArrange from "@/plugins/Rearrange";
-import FitAspectRatio from "@/plugins/FitAspectRatio"; 
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
-import wsentry from "./WorkspaceEntry.vue";
+import wsentry from "./WorkspaceEntryView.vue";
 import WorkspaceEntryCollection from "@/core/model/WorkspaceEntryCollection";
 import WorkspaceEntry from "@/core/model/WorkspaceEntry";
 import { getPlugins } from "@/plugins/PluginList";
@@ -822,10 +821,14 @@ export default defineComponent({
         coordRect.w == 0 &&
         coordRect.h == 0
       ) {
-        this.getEntries().forEach((v, i) => {
-          const m = this.model.entries[i];
+        const models = [...this.model.entries];
+        const views = this.getEntries();
 
+        views.forEach((v, i) => {
+          const m = models[i];
           let c = this.getCoordinatesFromElement(v);
+
+          if (m == undefined || v == undefined) return;
 
           c.x = c.x * currentC.scale + currentC.x;
           c.x2 = c.x2 * currentC.scale + currentC.x;
@@ -2699,9 +2702,6 @@ visually highlights elements for selection with a hover effect
  */
 .select-element {
   cursor: pointer;
-  &:hover {
-    // animation: circle 0.5s linear forwards;
-  }
 }
 
 .close-file {

@@ -6,7 +6,7 @@ import { defineComponent } from "vue";
 import * as _ from "underscore";
 import { Feature } from "@/core/model/overview/AbstractNodeFeature";
 import { Workspace } from "@/core/model/Workspace";
-import ColorGradient from "@/core/components/workspace/ColorGradient.vue";
+import ColorGradient from "@/core/components/overview/ColorGradient.vue";
 import { CogOutline } from "mdue";
 import { NodeFeatureNone } from "@/core/model/overview/FeatureNone";
 

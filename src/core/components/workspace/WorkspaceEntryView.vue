@@ -19,7 +19,7 @@ import { setupEntry } from "./WorkspaceUtils";
 import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
 import { ResizeBottomRight } from "mdue";
 import { ResizerComplex } from "@/core/utils/resize";
-import WorkspaceEntry from "@/core/model/WorkspaceEntry"; 
+import WorkspaceEntry from "@/core/model/WorkspaceEntry";
 
 export default defineComponent({
   el: ".ws-entry",
@@ -43,7 +43,21 @@ export default defineComponent({
     },
   },
   mounted() {
-    this.$el.getElementsByTagName("div")[0].classList.add("ws-entry-slot");
+    const entrydiv = this.$el.getElementsByTagName("div")[0];
+
+    entrydiv.classList.add("ws-entry-slot");
+
+    function getStyle(el: HTMLElement, styleProp: string) {
+      if (document && document.defaultView) {
+        var y = document.defaultView
+          .getComputedStyle(el, null)
+          .getPropertyValue(styleProp);
+        return y;
+      }
+      return undefined;
+    }
+ 
+    this.$el.style.zIndex = getStyle(entrydiv, "z-index");
 
     new ResizerComplex(
       this.$el,
@@ -66,9 +80,7 @@ export default defineComponent({
     );
   },
   methods: {
-    dblclick(e: MouseEvent) {
-     
-    },
+    dblclick(e: MouseEvent) {},
   },
 });
 </script>

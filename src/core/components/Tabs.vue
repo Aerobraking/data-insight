@@ -95,8 +95,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import workspaceview from "./workspace/WorkspaceView.vue";
-import overviewview from "./workspace/OverviewView.vue";
+import workspaceview from "./workspace/WorkspaceView.vue"; 
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import draggable from "vuedraggable";
 import _ from "underscore";
@@ -119,8 +118,7 @@ export default defineComponent({
     ArrowCollapseUp,
     workspaceview,
     EyeOffOutline,
-    EyeOutline,
-    overviewview,
+    EyeOutline, 
   },
   data(): {} {
     return {

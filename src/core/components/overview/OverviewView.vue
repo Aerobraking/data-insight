@@ -58,7 +58,6 @@
       class="workspace-menu-bar"
       :class="{ 'workspace-menu-bar-hide': !getShowUI }"
     >
-      
       <tippy-singleton
         :moveTransition="'transform 0.2s ease-out'"
         :offset="[0, 40]"
@@ -69,6 +68,14 @@
               @click.ctrl.left.exact="showAll()"
               @click.left.exact="showAll(false)"
             />
+          </button>
+          <template #content>Show All</template>
+        </tippy>
+        <tippy>
+          <button
+            :class="{ 'button-active': model.overview.highlightSelection }"
+          >
+            <Flashlight @click.left.exact="toggleHighlight()" />
           </button>
           <template #content>Show All</template>
         </tippy>
@@ -156,7 +163,7 @@ import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
 import { Workspace } from "@/core/model/Workspace";
 import { defineComponent } from "vue";
-import * as WSUtils from "./WorkspaceUtils";
+import * as WSUtils from "./../workspace/WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
 import path from "path";
 import {
@@ -168,20 +175,21 @@ import {
   Download,
   TuneVerticalVariant,
   ContentCopy,
+  Flashlight,
   Overscan,
   FolderOutline,
   FormatHorizontalAlignCenter,
   CogOutline,
   FileTree,
   ArrowCollapseRight,
-} from "mdue"; 
+} from "mdue";
 import { AbstractNode } from "@/core/model/overview/AbstractNode";
 import { Feature } from "@/core/model/overview/AbstractNodeFeature";
 import { AbstractNodeFeature } from "@/core/model/overview/AbstractNodeFeatureView";
 import { AbstractNodeShell } from "@/core/model/overview/AbstractNodeShell";
 import { Instance } from "@/core/model/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
-import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell"; 
+import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
 import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
 
@@ -196,6 +204,7 @@ export default defineComponent({
     FileTree,
     ColorGradient,
     ContentCopy,
+    Flashlight,
     TuneVerticalVariant,
     EmoticonHappyOutline,
     Overscan,
@@ -383,14 +392,26 @@ export default defineComponent({
     },
   },
   methods: {
+    toggleHighlight() {
+      this.model.overview.highlightSelection =
+        !this.model.overview.highlightSelection;
+      Instance.getEngine(this.model.id).updateSelection(false);
+    },
     setRender() {
       if (Instance.getEngine(this.model.id)) {
+        const nonreactiveInstances = getFeatureList();
+
         for (let i = 0; i < this.listFeatures.length; i++) {
-          const f = this.listFeatures[i] as AbstractNodeFeature;
+          const f = this.listFeatures[i];
 
           if (f.id == this.model.overview.featureActive) {
+            nonreactiveInstances[i].settings = f.settings;
+            JSON.parse(JSON.stringify(f.settings));
+
             // set render engine
-            Instance.getEngine(this.model.id).setFeatureRender(f);
+            Instance.getEngine(this.model.id).setFeatureRender(
+              nonreactiveInstances[i]
+            );
             return;
           }
         }
@@ -457,15 +478,27 @@ export default defineComponent({
       switch (e.key) {
         case "ArrowUp":
           if (node && node.parent) {
-            const childrenSorted = node.parent
+            let childrenSorted = node.parent
               .getChildren()
               .sort((a, b) => a.getY() - b.getY());
-            const i = childrenSorted.indexOf(node);
+            let i = childrenSorted.indexOf(node);
+            if (i - 1 < 0) {
+              if (node.parent.parent) {
+                childrenSorted = [];
+
+                node.parent.parent.children.forEach((p) =>
+                  childrenSorted.push(...p.children)
+                );
+                childrenSorted.sort((a, b) => a.getY() - b.getY());
+                i = childrenSorted.indexOf(node);
+              }
+            }
             const next = i - 1 < 0 ? childrenSorted.length - 1 : i - 1;
             Instance.getEngine(this.id).updateSelection(
               false,
               childrenSorted[next]
             );
+ 
             if (e.ctrlKey)
               Instance.getEngine(this.id).zoomToFitSelection(100, false, 20);
             return;
@@ -481,10 +514,21 @@ export default defineComponent({
           break;
         case "ArrowDown":
           if (node && node.parent) {
-            const childrenSorted = node.parent
+            let childrenSorted = node.parent
               .getChildren()
               .sort((a, b) => a.getY() - b.getY());
-            const i = childrenSorted.indexOf(node);
+            let i = childrenSorted.indexOf(node);
+            if (i + 1 > childrenSorted.length - 1) {
+              if (node.parent.parent) {
+                childrenSorted = [];
+
+                node.parent.parent.children.forEach((p) =>
+                  childrenSorted.push(...p.children)
+                );
+                childrenSorted.sort((a, b) => a.getY() - b.getY());
+                i = childrenSorted.indexOf(node);
+              }
+            }
             const next = i + 1 > childrenSorted.length - 1 ? 0 : i + 1;
             Instance.getEngine(this.id).updateSelection(
               false,
@@ -531,6 +575,9 @@ export default defineComponent({
             break;
           case " ":
             this.showAll(false);
+            break;
+          case "h":
+            this.toggleHighlight();
             break;
           case "+":
             this.loadCollection();
@@ -627,7 +674,7 @@ export default defineComponent({
       } else {
         Instance.getEngine(this.id).setFilterList("search");
       }
-    }, 
+    },
     loadCollection() {
       if (Instance.getEngine(this.id)) {
         let n: AbstractNode = Instance.getEngine(this.id).selection[0];
@@ -715,11 +762,11 @@ export default defineComponent({
       }
       if (listEntries.length > 0) {
         this.addEntries(listEntries, pos);
-        setTimeout(() => {
-          Instance.getEngine(this.id).selection = [
-            listEntries[listEntries.length - 1].root,
-          ];
-        }, 33);
+        // setTimeout(() => {
+        //   Instance.getEngine(this.id).selection = [
+        //     listEntries[listEntries.length - 1].root,
+        //   ];
+        // }, 33);
       }
     },
     drop(e: DragEvent) {
@@ -782,7 +829,7 @@ export default defineComponent({
 }
 </style>
 
-<style   lang="scss">
+<style lang="scss">
 .filter-settings {
   position: absolute;
   top: 1px;
