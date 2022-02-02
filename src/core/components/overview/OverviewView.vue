@@ -302,8 +302,7 @@ export default defineComponent({
     };
   },
   mounted() {
-    const _this = this;
-    debugger;
+    const _this = this; 
     /**
      * remove the node data from the vuex store
      */
@@ -319,10 +318,8 @@ export default defineComponent({
     /**
      * Set engine for existing nodes
      */
-    Instance.getData(this.id).forEach((e) => {
-      // debugger;
-      e.engine = Instance.getEngine(this.id);
-      console.log(e);
+    Instance.getData(this.id).forEach((e) => { 
+      e.engine = Instance.getEngine(this.id); 
     });
 
     /**
