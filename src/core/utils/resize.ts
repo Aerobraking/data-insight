@@ -129,9 +129,9 @@ export function getCoordinatesFromElement(e: any): ElementDimensionInstance {
         .replaceAll("px", "")
         .replaceAll(" ", "");
     let values: number[] = results.split(",").map(Number);
-
-    let w: number = parseInt(e.offsetWidth),
-        h: number = parseInt(e.offsetHeight);
+ 
+    let w: number = parseInt(String(e.style.width).replaceAll("px","").trim()),
+        h: number = parseInt(String(e.style.height).replaceAll("px","").trim());
 
     w = w == NaN ? 0 : w;
     h = h == NaN ? 0 : h;
