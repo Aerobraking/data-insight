@@ -520,7 +520,8 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                     if (node.parent) {
                         node.parent.children.forEach(c => {
                             c.customData["i"] = c.getY();
-                            c.customData["co"] = { y: c.getY(), vy: 0, yx: c.getX(), vx: 0 }
+                            c.customData["co"].y = c.getY();
+                            c.customData["co"].x = c.getX();
                         });
                         this.nodesUpdated(node.shell as any);
                     }
@@ -532,11 +533,13 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                 if (node.parent) {
                     node.parent.children.forEach(c => {
                         c.customData["i"] = c.getY();
-                        c.customData["co"] = { y: c.getY(), vy: 0, x: c.getX(), vx: 0 }
+                        c.customData["co"].y = c.getY();
+                        c.customData["co"].x = c.getX();
+                        // c.customData["co"] = { y: c.getY(), vy: 0, x: c.getX(), vx: 0 }
                     });
                 }
-
-                node.descendants(false).forEach(c => c.customData["co"].vy = 0);
+                
+                node.descendants(true).forEach(c => {c.customData["co"].vy = 0,c.customData["co"].vx = 0});
                 if (node.shell) node.shell.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
 
                 this.nodesUpdated(node.shell as any);
