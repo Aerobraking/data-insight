@@ -208,6 +208,7 @@ import FolderNode from "@/filesystem/model/FolderNode";
 import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
 import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
+import { Layouter } from "@/core/model/overview/NodeLayout";
 
 export default defineComponent({
   name: "App",
@@ -302,7 +303,7 @@ export default defineComponent({
     };
   },
   mounted() {
-    const _this = this; 
+    const _this = this;
     /**
      * remove the node data from the vuex store
      */
@@ -318,8 +319,8 @@ export default defineComponent({
     /**
      * Set engine for existing nodes
      */
-    Instance.getData(this.id).forEach((e) => { 
-      e.engine = Instance.getEngine(this.id); 
+    Instance.getData(this.id).forEach((e) => {
+      e.engine = Instance.getEngine(this.id);
     });
 
     /**
@@ -612,6 +613,18 @@ export default defineComponent({
           case "Delete":
           case "delete":
             this.deleteSelection();
+            break;
+          case "l":
+            const t = performance.now();
+            for (let index = 0; index < 100; index++) {
+              Layouter.nodesUpdated(Instance.getEngine(this.id).rootNodes[0]);
+            }
+            console.log(
+              "Time for layounting: ",
+              (performance.now() - t) / 1000 / 100,
+              "Sec."
+            );
+
             break;
           case " ":
             this.showAll(false);

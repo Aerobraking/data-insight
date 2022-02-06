@@ -40,7 +40,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         super.initAfterLoading();
         this.startWatcher();
     }
- 
+
     handleEvents(): void {
 
         const newNodes = [];
@@ -89,6 +89,12 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
                 this.eventStack.push(e);
                 break;
         }
+        switch (e.type) {
+            case "folderdeepsyncfinished":
+                console.log("Time for Syncing: ", (performance.now() - this.timeForSinc) / 1000, "seconds");
+
+                break;
+        }
     }
 
     getName() {
@@ -114,8 +120,10 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         watcher.FileSystemWatcher.unregisterPath(this.path, this.watcherEvent, true);
     }
 
-    startWatcher(): void {
+    timeForSinc: number = 0;
 
+    startWatcher(): void {
+        this.timeForSinc = performance.now();
         watcher.FileSystemWatcher.registerPath(this.path, this.watcherEvent, true);
 
         /**
@@ -217,10 +225,6 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
             //         });
             // }
         }
-    }
-
-    reactToDrop(e: DragEvent): void {
-
     }
 
 }

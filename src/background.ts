@@ -48,7 +48,7 @@ function createDragImage() {
 }
 
 function isDevMode() {
-  return true || !app.isPackaged;
+  return !app.isPackaged;
 }
 
 function sendToRender(id: string, ...args: any[]) {
@@ -438,7 +438,7 @@ async function createWindow() {
 
   win.on('close', (e) => {
     console.log("win.on(close)");
-    
+
     if (win) {
       console.log("  if (win) {.on(close)");
       updateSettings();
@@ -471,6 +471,8 @@ async function createWindow() {
         },
         {
           label: "Open Recent",
+          // does not work in windows, needs a manual implementation
+          visible: process.platform != 'darwin',
           role: "recentDocuments",
           submenu: [{
             label: "Clear Recent",

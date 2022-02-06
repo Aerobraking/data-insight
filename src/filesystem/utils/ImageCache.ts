@@ -1,3 +1,4 @@
+import { IframeParenthesesOutline } from "mdue";
 import _ from "underscore";
 
 export enum ImageSize {
@@ -40,7 +41,7 @@ export class Cache {
 
     private listWorker: Worker[] = [];
 
-    public reset() { 
+    public reset() {
 
         this.hash.forEach((value: Map<ImageSize, string>, key: string) => {
             value.forEach((value: string, key: ImageSize) => {
@@ -65,6 +66,9 @@ export class Cache {
 
                 if (e.data.type == ImageSize.finish || e.data.type == ImageSize.error) {
                     remove(this.listQueue, e.data.path);
+
+                    if (this.listQueue.length == 0) console.log("Time for Image loading: ", (performance.now() - this.timeForSinc) / 1000, "seconds");
+
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("", e.data.type);
                     });
@@ -190,6 +194,24 @@ export class Cache {
         }
     }
 
+    createPreview(p: string) {
+
+        if (this.listQueue.length == 0) this.timeForSinc = performance.now();
+        this.hash.set(p, new Map());
+        this.listQueue.push(p);
+        this.timeNow = performance.now();
+        const diff = this.timeNow - this.timeLast;
+        this.timeStack += Cache.delay;
+        // setTimeout(() => {
+        this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: p });
+        this.listWorkerTraverser++;
+        this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
+        //}, Math.max(1, this.timeStack));
+    };
+
+
+    timeForSinc: number = 0;
+    private queueSize = 0;
     private timeLast = performance.now();
     private timeNow = performance.now();
     private listQueue: string[] = [];
@@ -200,24 +222,12 @@ export class Cache {
 
         let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(path);
 
-        const createPreview = (p: string) => {
-            this.hash.set(p, new Map());
-            this.listQueue.push(path);
-            this.timeNow = performance.now();
-            const diff = this.timeNow - this.timeLast;
-            this.timeStack += Cache.delay;
-            // setTimeout(() => {
-            this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: p });
-            this.listWorkerTraverser++;
-            this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
-            //}, Math.max(1, this.timeStack));
-        };
 
         if (imageEntry == undefined || recreate) {
             /**
              * Start webworker
              */
-            createPreview(path);
+            this.createPreview(path);
 
         } else {
 

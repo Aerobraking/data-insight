@@ -27,6 +27,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private static elapsed: number = 0;
     private static elapsedTotal: number = 0;
     public static framecounter: number = 0;
+    public static fpsaverage: number = 100;
     // milliseconds till last frame
     private static delta: number = 0;
     private static startClock(): void {
@@ -44,21 +45,27 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         OverviewEngine.elapsed = OverviewEngine.now - OverviewEngine.then;
 
         // if enough time has elapsed, draw the next frame
-        if (OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
+        if (true || OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
 
             for (let i = 0; i < OverviewEngine.instances.length; i++) {
                 const inst = OverviewEngine.instances[i];
                 inst.tick();
             }
             // prevent too large timesteps in case of slow performance
-            OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 100);
+            OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 10000);
             OverviewEngine.elapsedTotal += OverviewEngine.delta;
 
             // Get ready for next frame by setting then=now, but also adjust for your
             // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
-            OverviewEngine.then = OverviewEngine.now - (OverviewEngine.elapsed % OverviewEngine.fpsInterval);
+            OverviewEngine.then = OverviewEngine.now;//- (OverviewEngine.elapsed % OverviewEngine.fpsInterval);
             OverviewEngine.framecounter++;
             TWEEN.update();
+            this.fpsaverage += 1 / (this.delta / 1000);
+
+            if (this.framecounter % 25 == 0) {
+                console.log("Avg. FPS: ", Math.floor(this.fpsaverage / 25));
+                this.fpsaverage = 0;
+            }
         }
 
     }

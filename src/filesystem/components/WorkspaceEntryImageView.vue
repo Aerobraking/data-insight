@@ -123,11 +123,11 @@ export default defineComponent({
 
         // img.src = url;
 
-        if (this.$el.style.backgroundImage != "") {
-          setTimeout(() => {
-            this.$el.style.backgroundImage = "";
-          }, 2500);
-        }
+        // if (this.$el.style.backgroundImage != "") {
+        //   setTimeout(() => {
+        //     this.$el.style.backgroundImage = "";
+        //   }, 2500);
+        // }
       }
     },
     workspaceEvent: function (e: WSZoomEvent) {

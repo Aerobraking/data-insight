@@ -145,8 +145,7 @@ export function getCoordinatesFromElement(e: any): ElementDimensionInstance {
         Math.round(values[1] + h),
     );
 }
-
-
+ 
 export function set3DPosition(e: any, x: number, y: number): void {
     e.style.transform = `translate3d(${x}px, ${y}px,0px)`;
 }
