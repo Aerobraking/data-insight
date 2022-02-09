@@ -9,7 +9,7 @@ var ctxOrig: OffscreenCanvasRenderingContext2D | null = null;
 
 const preview = 64;
 const small = 128;
-const medium = 1024;
+const medium = 1024+512;
 /**
  * Conserve aspect ratio of the original region. Useful when shrinking/enlarging
  * images to fit into a certain area.
@@ -117,17 +117,17 @@ addEventListener('message', async function (e: MessageEvent) {
                     });
                 });
 
-                canvasOrig = new OffscreenCanvas(bitmap.width, bitmap.height);
-                ctxOrig = canvasOrig.getContext("2d");
-                ctxOrig?.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
-                canvasOrig.convertToBlob().then((blob: any) => {
-                    // @ts-ignore: Unreachable code error
-                    postMessage({
-                        path: e.data.path,
-                        type: "original",
-                        blob: blob
-                    });
-                });
+                // canvasOrig = new OffscreenCanvas(bitmap.width, bitmap.height);
+                // ctxOrig = canvasOrig.getContext("2d");
+                // ctxOrig?.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height);
+                // canvasOrig.convertToBlob().then((blob: any) => {
+                //     // @ts-ignore: Unreachable code error
+                //     postMessage({
+                //         path: e.data.path,
+                //         type: "original",
+                //         blob: blob
+                //     });
+                // });
 
             });
             // @ts-ignore: Unreachable code error

@@ -51,22 +51,19 @@ export default defineComponent({
     // if (this.entry.isClipboard) {
     //   _this.$el.style.backgroundImage = "url( " + this.entry.path + ")";
     // } else {
-      if (this.entry.previewBase64) {
-        var img = new Image();
-        img.src = this.entry.previewBase64;
-        _this.$el.style.backgroundImage = "url('" + img.src + "')";
-      }
+    if (this.entry.previewBase64) {
+      var img = new Image();
+      img.src = this.entry.previewBase64;
+      _this.$el.style.backgroundImage = "url('" + img.src + "')";
+    }
 
-      this.cacheListener = {
-        callback: this.cacheImageEvent,
-        callbackSize: this.cacheSizeEvent,
-      };
+    this.cacheListener = {
+      callback: this.cacheImageEvent,
+      callbackSize: this.cacheSizeEvent,
+    };
 
-      watcher.FileSystemWatcher.registerPath(
-        this.entry.path,
-        this.watcherEvent
-      );
-      cache.ImageCache.registerPath(path, this.cacheListener);
+    watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
+    cache.ImageCache.registerPath(path, this.cacheListener);
     // }
   },
   unmounted() {
@@ -108,8 +105,10 @@ export default defineComponent({
       }
       if (
         // type == cache.ImageSize.small
-        // ||type==cache.ImageSize.medium ||
-        type == cache.ImageSize.original
+        // ||
+        type==cache.ImageSize.medium 
+        // ||
+        // type == cache.ImageSize.original
       ) {
         // this.workspaceEvent({scale:this.workspace.getCurrentTransform().scale});
         div.style.backgroundImage = url;
@@ -123,40 +122,41 @@ export default defineComponent({
 
         // img.src = url;
 
-        // if (this.$el.style.backgroundImage != "") {
-        //   setTimeout(() => {
-        //     this.$el.style.backgroundImage = "";
-        //   }, 2500);
-        // }
+        if (this.$el.style.backgroundImage != "") {
+          setTimeout(() => {
+            this.$el.style.backgroundImage = "";
+          }, 2500);
+        }
       }
     },
     workspaceEvent: function (e: WSZoomEvent) {
-      //   let url: string | undefined;
-      //  if (e.scale < 0.1) {
-      //     url = cache.ImageCache.getUrl(
-      //       this.entry.getURL(),
-      //       cache.ImageSize.tiny
-      //     );
-      //   } else  if (e.scale < 0.4) {
-      //     url = cache.ImageCache.getUrl(
-      //       this.entry.getURL(),
-      //       cache.ImageSize.small
-      //     );
-      //   } else if (e.scale < 10) {
-      //     url = cache.ImageCache.getUrl(
-      //       this.entry.getURL(),
-      //       cache.ImageSize.medium
-      //     );
-      //   } else {
-      //     url = cache.ImageCache.getUrl(
-      //       this.entry.getURL(),
-      //       cache.ImageSize.original
-      //     );
-      //   }
+      // let url: string | undefined;
+      // const div = this.$el.getElementsByClassName("image-canvas")[0];
+      // if (e.scale < 0.3) {
+      //   // url = cache.ImageCache.getUrl(
+      //   //   this.entry.getURL(),
+      //   //   cache.ImageSize.tiny
+      //   // );
+      //   // } else  if (e.scale < 0.4) {
+      //   //   url = cache.ImageCache.getUrl(
+      //   //     this.entry.getURL(),
+      //   //     cache.ImageSize.small
+      //   //   );
+      //   // } else if (e.scale < 10) {
+      //   //   url = cache.ImageCache.getUrl(
+      //   //     this.entry.getURL(),
+      //   //     cache.ImageSize.medium
+      //   //   );
+      //   div.style.backgroundImage = "";
+      // } else {
+      //   url = cache.ImageCache.getUrl(
+      //     this.entry.getURL(),
+      //     cache.ImageSize.original
+      //   );
       //   if (url) {
-      //     const div = this.$el.getElementsByClassName("image-canvas")[0];
       //     if (div.style.backgroundImage != url) div.style.backgroundImage = url;
       //   }
+      // }
     },
     watcherEvent(type: string) {
       cache.ImageCache.registerPath(
@@ -190,19 +190,15 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   z-index: 10;
-  background-size: cover;
-  box-sizing: border-box;
+  background-size: cover; 
 }
 
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
-  z-index: 50;
-  background: #000;
-  background: transparent;
-  color: #f1f1f1;
+  z-index: 50; 
+  background: #000; 
   padding: 0px;
-  background-size: cover;
-  box-sizing: border-box;
+  background-size: cover; 
 }
 
 $color-Selection: rgba(57, 215, 255, 0.3);

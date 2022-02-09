@@ -270,9 +270,16 @@ export default defineComponent({
       shell.openExternal(url);
     },
     loadInsightFileFromPath(path: string) {
+      const timeForSinc = performance.now();
       let jsonString = fs.readFileSync(path, "utf8");
       let file: InsightFile = deserialize(InsightFile, jsonString);
-     
+
+      console.log(
+        "Time for .ins File loading: ",
+        (performance.now() - timeForSinc) / 1000,
+        "seconds"
+      );
+
       this.loadInsightFile(file);
     },
     loadInsightFile(file: InsightFile) {
@@ -285,7 +292,7 @@ export default defineComponent({
       watcher.FileSystemWatcher.reset();
       ovdata.Instance.reset();
 
-       file.initAfterLoading();
+      file.initAfterLoading();
 
       tabs.forEach((t) => {
         t.classList.add("close-file");

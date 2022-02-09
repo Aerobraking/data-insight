@@ -624,7 +624,18 @@ export default defineComponent({
               (performance.now() - t) / 1000 / 100,
               "Sec."
             );
+            let nodes = 0;
 
+            for (
+              let i = 0;
+              i < Instance.getEngine(this.id).rootNodes.length;
+              i++
+            ) {
+              const l = Instance.getEngine(this.id).rootNodes[i].nodes.length;
+              nodes += l;
+              console.log(i,l);
+            }
+            console.log("Nodes: ", nodes);
             break;
           case " ":
             this.showAll(false);

@@ -115,11 +115,19 @@ export const mutations: MutationTree<State> & Mutations = {
     insightFile: InsightFile
   }) {
     setTimeout(function () {
+      const timeForSinc = performance.now();
       let empty = new InsightFile();
       empty.views = [];
       state.loadedFile = empty;
       setTimeout(function () {
         state.loadedFile = payload.insightFile;
+
+        console.log(
+          "Time for commiting ins File to Vue: ",
+          (performance.now() - timeForSinc) / 1000,
+          "seconds"
+        );
+  
       }, 10);
     }, 250);
   },

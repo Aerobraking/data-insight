@@ -482,7 +482,7 @@ export default defineComponent({
           const e = entries[index];
           e.target; // div element
           let w = Math.max(10, e.contentRect.width);
-          let h = Math.max(10, e.contentRect.height);
+          let h = Math.max(10, e.contentRect.height); 
 
           if (this.skipInitialResize++ > 0) {
             let diffX = _this.getCanvas().width - w,
@@ -604,6 +604,9 @@ export default defineComponent({
   },
   inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
   methods: {
+    getViewportOffset() {    
+      return { left: 0, top: this.$store.getters.getShowUI ? 32 : 0 };
+    },
     dispatchEvent(e: Event) {
       const d: HTMLElement =
         this.$el.getElementsByClassName("vue-pan-zoom-scene")[0];
@@ -771,7 +774,7 @@ export default defineComponent({
 
         for (let e of this.getSelectedEntries().length > 1
           ? [...this.getSelectedEntries(), this.getSelectionWrapper()]
-          : this.getSelectedEntries()) {
+          : [...this.getSelectedEntries()]) {
           let c = this.getCoordinatesFromElement(e);
 
           convert(c);
@@ -795,10 +798,9 @@ export default defineComponent({
         return Math.sqrt(dx * dx + dy * dy);
       }
 
-      var rect = this.$el
-        .getElementsByClassName("vue-pan-zoom-scene")[0]
-        .getBoundingClientRect();
-
+ 
+      const rect = this.getViewportOffset();
+  
       const mouse = {
         x: this.mousePositionLastRaw.x - rect.left,
         y: this.mousePositionLastRaw.y - rect.top,
@@ -1337,7 +1339,11 @@ export default defineComponent({
       if (this.spacePressed) {
         this.spacePressed = false;
         this.preventInput(false);
-        let rect: DOMRect = this.getWorkspaceWrapper().getBoundingClientRect();
+        // let rect: DOMRect = this.getWorkspaceWrapper().getBoundingClientRect();
+        let rect = {
+          width: this.getCanvas().width,
+          height: this.getCanvas().height,
+        };
         let bound = this.getPanzoomRect({
           x: this.mousePositionLast.x - rect.width / 2,
           y: this.mousePositionLast.y - rect.height / 2,
@@ -1695,10 +1701,13 @@ export default defineComponent({
     getViewport(): ElementDimension {
       let currenTransform = this.getCurrentTransform();
 
-      let rect: DOMRect = this.$el
-        .getElementsByClassName("vue-pan-zoom-item")[0]
-        .getBoundingClientRect();
-
+      // let rect: DOMRect = this.$el
+      //   .getElementsByClassName("vue-pan-zoom-item")[0]
+      //   .getBoundingClientRect();
+      let rect = {
+        width: this.getCanvas().width,
+        height: this.getCanvas().height,
+      };
       let oldView: ElementDimension = {
         x: -currenTransform.x / this.getCurrentTransform().scale,
         y: -currenTransform.y / this.getCurrentTransform().scale,
@@ -2024,8 +2033,8 @@ export default defineComponent({
       };
     },
     getPositionInWorkspace(e: { clientX: number; clientY: number }) {
-      var rect = this.getWorkspaceWrapper().getBoundingClientRect();
-
+      // var rect = this.getWorkspaceWrapper().getBoundingClientRect();
+      const rect = this.getViewportOffset();
       // correct coordinates by using the scaling factor of the zooming.
       var x =
         (e.clientX - rect.left - this.panZoomInstance.getTransform().x) /
@@ -2204,22 +2213,23 @@ export default defineComponent({
     }, 16),
 
     onPanStart(e: any) {
-      this.drawCanvas();
+      // this.drawCanvas(); // is handled by mousemove event
 
       if (this.model != undefined) {
         this.model.viewportTransform = this.getCurrentTransform();
       }
-
-      WSUtils.Events.zoom(this);
     },
     onZoom(e: any) {
       this.updateFixedZoomElements();
       this.onPanStart(e);
+      this.drawCanvas();
 
       this.itemRefs.forEach((e: any) => {
         if (e.workspaceEvent)
           e.workspaceEvent({ scale: this.model.viewportTransform.scale });
       });
+
+      WSUtils.Events.zoom(this);
     },
     setItemRef(el: any) {
       if (el) {

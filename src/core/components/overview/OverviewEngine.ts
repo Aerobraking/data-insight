@@ -31,7 +31,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     // milliseconds till last frame
     private static delta: number = 0;
     private static startClock(): void {
-        OverviewEngine.fpsInterval = 1000 / 144;
+        OverviewEngine.fpsInterval = 1000 / 60;
         OverviewEngine.then = performance.now();
         OverviewEngine.tickClock();
     }
@@ -45,7 +45,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         OverviewEngine.elapsed = OverviewEngine.now - OverviewEngine.then;
 
         // if enough time has elapsed, draw the next frame
-        if (true || OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
+        if ( OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
 
             for (let i = 0; i < OverviewEngine.instances.length; i++) {
                 const inst = OverviewEngine.instances[i];
@@ -62,8 +62,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             TWEEN.update();
             this.fpsaverage += 1 / (this.delta / 1000);
 
-            if (this.framecounter % 25 == 0) {
-                console.log("Avg. FPS: ", Math.floor(this.fpsaverage / 25));
+            if (this.framecounter % 3 == 0) {
+                if(this.framecounter % 100 == 0)console.log("Avg. FPS: ", Math.floor(this.fpsaverage / 3));
                 this.fpsaverage = 0;
             }
         }

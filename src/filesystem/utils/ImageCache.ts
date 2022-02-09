@@ -250,11 +250,14 @@ export class Cache {
                 if (url && eventsToFire.includes(ImageSize.small)) {
                     callback.callback("url('" + url + "')", ImageSize.small);
                 }
-                let urlM: string | undefined = imageEntry.get(ImageSize.medium);
-                if (urlM && eventsToFire.includes(ImageSize.medium)) {
-                    callback.callback("url('" + urlM + "')", ImageSize.medium);
+                url = imageEntry.get(ImageSize.medium);
+                if (url && eventsToFire.includes(ImageSize.medium)) {
+                    callback.callback("url('" + url + "')", ImageSize.medium);
                 }
-
+                url = imageEntry.get(ImageSize.original);
+                if (url && eventsToFire.includes(ImageSize.original)) {
+                    callback.callback("url('" + url + "')", ImageSize.original);
+                }
             }
 
         }
