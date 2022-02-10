@@ -1,4 +1,4 @@
-import WorkspaceEntry from "@/core/model/WorkspaceEntry";
+import AbstractWorkspaceEntry from "@/core/model/WorkspaceEntry";
 import { ElementDimension } from "@/core/utils/resize";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 
@@ -32,10 +32,10 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     getSelectedEntries(): HTMLElement[] {
         return this.ws ? this.ws.getSelectedEntries() : [];
     }
-    getModelEntriesFromView(listViews: HTMLElement[]): WorkspaceEntry[] {
+    getModelEntriesFromView(listViews: HTMLElement[]): AbstractWorkspaceEntry[] {
         return this.ws ? this.ws.getModelEntriesFromView(listViews) : [];
     }
-    getModelEntries(): WorkspaceEntry[] {
+    getModelEntries(): AbstractWorkspaceEntry[] {
         return this.ws ? this.ws.getModelEntries() : [];
     }
     getUnselectedEntries(): HTMLElement[] {

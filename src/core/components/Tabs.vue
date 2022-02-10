@@ -95,7 +95,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import workspaceview from "./workspace/WorkspaceView.vue"; 
+import workspaceview from "./workspace/WorkspaceView.vue";
 import { MutationTypes } from "@/store/mutations/mutation-types";
 import draggable from "vuedraggable";
 import _ from "underscore";
@@ -118,7 +118,7 @@ export default defineComponent({
     ArrowCollapseUp,
     workspaceview,
     EyeOffOutline,
-    EyeOutline, 
+    EyeOutline,
   },
   data(): {} {
     return {
@@ -194,9 +194,12 @@ export default defineComponent({
       e.preventDefault();
     },
     editFinish(e: KeyboardEvent) {
-       let input: HTMLInputElement= (e.target instanceof HTMLInputElement) ?e.target : ( e.target as HTMLElement).getElementsByTagName(
-        "input"
-      )[0] as HTMLInputElement;
+      let input: HTMLInputElement =
+        e.target instanceof HTMLInputElement
+          ? e.target
+          : ((e.target as HTMLElement).getElementsByTagName(
+              "input"
+            )[0] as HTMLInputElement);
       input.style.pointerEvents = "none";
       input.readOnly = true;
       e.preventDefault();
@@ -239,7 +242,8 @@ $base-color: rgb(100, 100, 100);
   height: 32px;
   margin: 0;
   background-color: $base-color;
-  transition: all 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out;
+  transition-property: width, height, color;
   position: absolute;
   right: 0px;
   top: 0px;
@@ -276,7 +280,7 @@ $base-color: rgb(100, 100, 100);
   padding: 0;
   line-height: 34px;
   font-weight: bold;
-  transition: all 0.3s;
+  transition: background-color 0.3s;
 }
 
 .copy {
@@ -296,7 +300,7 @@ $base-color: rgb(100, 100, 100);
   padding: 0;
   line-height: 34px;
   font-weight: bold;
-  transition: all 0.3s;
+  transition: background-color  0.3s;
 }
 
 .delete:hover {
@@ -331,7 +335,7 @@ $base-color: rgb(100, 100, 100);
 .close-file {
   opacity: 0;
   transform: translateX(-250px);
-  transition: all 0.25s;
+  transition: transform 0.25s;
 }
 
 .tab-create {

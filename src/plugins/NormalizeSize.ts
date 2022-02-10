@@ -10,12 +10,10 @@ export default class PluginNormalizeSize extends PluginAdapter {
     readonly name: string = "Normalize Size";
     readonly shortcut: string = "ws n";
 
-    constructor() {
-        super();
-    }
+    constructor() { super(); }
 
     public init(): void {
-        
+
         const views = this.workspace.getSelectedEntries();
         /**
           *   set size from the average width of all elements.
@@ -38,7 +36,5 @@ export default class PluginNormalizeSize extends PluginAdapter {
         this.workspace.updateUI();
         this.workspace.finishPlugin();
     }
-
-
 
 }

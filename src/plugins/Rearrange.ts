@@ -1,14 +1,13 @@
 import { ElementDimension, set3DPosition, setSize } from "@/core/utils/resize";
 import _ from "underscore";
-import AbstractPlugin, { PluginAdapter, PluginDecorator } from "@/core/plugin/AbstractPlugin"
-
+import AbstractPlugin, { PluginDecorator } from "@/core/plugin/AbstractPlugin"
 
 @PluginDecorator()
 export default class ReArrange extends AbstractPlugin {
 
     description: string = "<kbd>Alt</kbd> + <kbd>R</kbd>";
     name: string = "Rearrange Selection";
-    shortcut: string = "ws alt+r";
+    shortcut: string = "ws r";
     checkboxFit: HTMLInputElement;
     style: HTMLStyleElement;
     div: HTMLDivElement;
@@ -28,8 +27,7 @@ export default class ReArrange extends AbstractPlugin {
     averageWidth: number = 0;
     ctrlDown: boolean = false;
 
-
-    getClassName(a: HTMLElement): string {
+    private getClassName(a: HTMLElement): string {
         let classNameA = "";
         search:
         for (let index = 0; index < a.classList.length; index++) {
@@ -242,8 +240,6 @@ export default class ReArrange extends AbstractPlugin {
         }
     }
 
-    public isModal(): boolean { return true; }
-
     public cancel(): boolean {
 
         for (let index = 0; index < this.selection.length; index++) {
@@ -316,14 +312,10 @@ export default class ReArrange extends AbstractPlugin {
         return true;
     }
 
-    public mouseup(e: MouseEvent): boolean { return true; }
-
     public mousedown(e: MouseEvent): boolean {
         this.workspace.finishPlugin();
         return true;
     }
-
-    public mousedownPan(e: any): boolean { return true; }
 
     public mousemove(e: MouseEvent): boolean {
 
@@ -442,10 +434,6 @@ export default class ReArrange extends AbstractPlugin {
         this.workspace.updateSelectionWrapper();
     }
 
-    public drop(e: any): boolean { return true; }
-    public dragover(e: any): boolean { return true; }
-    public dragleave(e: any): boolean { return true; }
-
     public wheel(e: any): boolean {
         this.padding += e.deltaY / 10;
         this.padding = this.padding < 0 ? 0 : this.padding;
@@ -453,5 +441,12 @@ export default class ReArrange extends AbstractPlugin {
         this.updateview();
         return true;
     }
+
+    public drop(e: any): boolean { return true; }
+    public dragover(e: any): boolean { return true; }
+    public dragleave(e: any): boolean { return true; }
+    public isModal(): boolean { return true; }
+    public mouseup(e: MouseEvent): boolean { return true; }
+    public mousedownPan(e: any): boolean { return true; }
 
 }

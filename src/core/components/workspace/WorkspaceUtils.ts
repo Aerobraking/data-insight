@@ -1,5 +1,5 @@
 import { Feature } from "@/core/model/overview/AbstractNodeFeature"; 
-import WorkspaceEntry from "@/core/model/WorkspaceEntry";
+import AbstractWorkspaceEntry from "@/core/model/WorkspaceEntry";
 import { ElementDimension, getCoordinatesFromElement } from "@/core/utils/resize";
 import {
     onBeforeUnmount,
@@ -17,7 +17,7 @@ export function doChangeFocus(): boolean {
 
 export function setupEntry(props: any, wsListener: Listener | undefined = undefined) {
 
-    const e: WorkspaceEntry = props.entry as WorkspaceEntry;
+    const e: AbstractWorkspaceEntry = props.entry as AbstractWorkspaceEntry;
 
     // reference to the $el element
     const el: any = ref(null);

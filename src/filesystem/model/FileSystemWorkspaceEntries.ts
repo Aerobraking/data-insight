@@ -1,14 +1,14 @@
 import _ from "underscore";
 
 import * as f from "@/filesystem/utils/FileStringFormatter";
-import WorkspaceEntry from "@/core/model/WorkspaceEntry";
+import AbstractWorkspaceEntry from "@/core/model/WorkspaceEntry";
 import { Exclude } from "class-transformer";
 import WorkspaceEntryAspectRatio from "@/core/model/WorkspaceEntryAspectRatio";
 import { ImageDim } from "@/filesystem/utils/ImageCache";
 const fs = require("fs");
 const path = require("path");
 
-export class WorkspaceEntryFile extends WorkspaceEntry {
+export class WorkspaceEntryFile extends AbstractWorkspaceEntry {
     constructor(path: string) {
         super("wsentryfile", false);
         this.path = path != undefined ? path : "";
@@ -40,7 +40,7 @@ export class WorkspaceEntryFile extends WorkspaceEntry {
     }
 }
 
-export class WorkspaceEntryImage extends WorkspaceEntry implements WorkspaceEntryAspectRatio {
+export class WorkspaceEntryImage extends AbstractWorkspaceEntry implements WorkspaceEntryAspectRatio {
     constructor(path: string | undefined, clipboard: boolean = false) {
         super("wsentryimage", true);
 
@@ -88,7 +88,7 @@ export class WorkspaceEntryImage extends WorkspaceEntry implements WorkspaceEntr
     readonly isInsideSelectable: boolean = true;
 }
 
-export class WorkspaceEntryVideo extends WorkspaceEntry implements WorkspaceEntryAspectRatio {
+export class WorkspaceEntryVideo extends AbstractWorkspaceEntry implements WorkspaceEntryAspectRatio {
 
     @Exclude()
     aspectratio: ImageDim | undefined
@@ -123,7 +123,7 @@ export class WorkspaceEntryVideo extends WorkspaceEntry implements WorkspaceEntr
 
 }
 
-export class WorkspaceEntryYoutube extends WorkspaceEntry {
+export class WorkspaceEntryYoutube extends AbstractWorkspaceEntry {
     constructor(url: string = "") {
         super("wsentryyoutube", true);
 
@@ -187,7 +187,7 @@ export class WorkspaceEntryYoutube extends WorkspaceEntry {
     readonly isInsideSelectable: boolean = true;
 }
 
-export class WorkspaceEntryTextArea extends WorkspaceEntry {
+export class WorkspaceEntryTextArea extends AbstractWorkspaceEntry {
 
     text: string;
     readonly isInsideSelectable: boolean = true;
@@ -210,7 +210,7 @@ export class WorkspaceEntryTextArea extends WorkspaceEntry {
     }
 }
 
-export class WorkspaceEntryFolderWindow extends WorkspaceEntry {
+export class WorkspaceEntryFolderWindow extends AbstractWorkspaceEntry {
 
     public static viewid: string = "wsentryfolder";
     mode: "tile" | "list" = "tile";

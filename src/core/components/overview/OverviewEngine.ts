@@ -45,7 +45,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         OverviewEngine.elapsed = OverviewEngine.now - OverviewEngine.then;
 
         // if enough time has elapsed, draw the next frame
-        if ( OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
+        if (OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
 
             for (let i = 0; i < OverviewEngine.instances.length; i++) {
                 const inst = OverviewEngine.instances[i];
@@ -63,7 +63,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             this.fpsaverage += 1 / (this.delta / 1000);
 
             if (this.framecounter % 3 == 0) {
-                if(this.framecounter % 100 == 0)console.log("Avg. FPS: ", Math.floor(this.fpsaverage / 3));
+                if (this.framecounter % 100 == 0) console.log("Avg. FPS: ", Math.floor(this.fpsaverage / 3));
                 this.fpsaverage = 0;
             }
         }
@@ -97,7 +97,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
     private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
-
+    private enableCulling: boolean = true;
     transform!: ZoomTransform;
     enablePainting: boolean = true;
 
@@ -625,6 +625,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.updateSelection(false);
     }
 
+    toggleCulling() {
+        this.enableCulling = !this.enableCulling;
+    }
+
     public get rootNodes(): any[] {
         return this._rootNodes;
     }
@@ -694,6 +698,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     }
 
     nodeCulling(n: AbstractNode): boolean {
+        if (!this.enableCulling) return false;
         const viewportWidth: number = this.size.w;
         const viewportHeight: number = this.size.h;
 
@@ -708,6 +713,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     }
 
     linkCulling(l: AbstractLink): boolean {
+        if (!this.enableCulling) return false;
+
         const viewportWidth: number = this.size.w + 100;
         const viewportHeight: number = this.size.h + 100;
 
@@ -866,10 +873,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 var renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
                 var renderDataLinks: { culling: boolean }[] = new Array(links.length);
                 nodes.forEach((n, i) => {
-                    renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getRadius(n, 0, 0.99), culling: this.nodeCulling(n) };
+                    renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getRadius(n, 0, 0.99), culling: this.enableCulling ? this.nodeCulling(n) : false };
                 });
                 links.forEach((l, i) => {
-                    renderDataLinks[i] = { culling: this.linkCulling(l) };
+                    renderDataLinks[i] = { culling: this.enableCulling ? this.linkCulling(l) : false };
                 });
 
                 /**

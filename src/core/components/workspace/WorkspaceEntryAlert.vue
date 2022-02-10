@@ -65,7 +65,7 @@ export default defineComponent({
     /* Position the tooltip text - see examples below! */
     position: absolute;
     z-index: 1;
-    transition: all 0.2s ease-out;
+    transition: opacity 0.2s ease-out;
   }
   .tooltiptext::after {
     content: "";

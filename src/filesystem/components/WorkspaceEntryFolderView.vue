@@ -397,7 +397,7 @@ export default defineComponent({
       if (this.entry.path == DriveListRoot) {
         for (let i = 0; i < DriveListSystemInstance.getDrives().length; i++) {
           const d = DriveListSystemInstance.getDrives()[i];
-          this.list.push(new FolderWindowFile(d.path, true, d.size,d.name));
+          this.list.push(new FolderWindowFile(d.path, true, d.size, d.name));
         }
         return;
       }
@@ -843,7 +843,8 @@ $colorFG: rgb(234, 234, 234);
   position: relative;
   color: $colorFG;
   top: -2px;
-  transition: all 0.2s ease-out;
+  transition: color 0.2s ease-out;
+  transition-property: background-color, color;
 }
 
 .hightlight-fg {

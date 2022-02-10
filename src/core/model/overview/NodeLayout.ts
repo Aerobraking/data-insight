@@ -464,10 +464,29 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 @LayoutDecorator()
 class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
+    constructor() {
+        super();
+
+        window.addEventListener("keydown", (e) => {
+            switch (e.key) {
+                case "h":
+
+                    this.randomMovement = true;
+
+                    break;
+
+                default:
+                    break;
+            }
+        })
+    }
+
     public featuresUpdated(shell: AbstractNodeShellIfc): void { }
+
 
     public id: LayoutType = LayoutType.STATICDYNAMICX;
 
+    randomMovement = false;
     static nodeBound: number = 200;
     static coolDownTime: number = 256; // in frames
     static minAlpha: number = 0.0003; // cooldown starts when alpha in current tick is less then minAlpha
@@ -538,8 +557,8 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                         // c.customData["co"] = { y: c.getY(), vy: 0, x: c.getX(), vx: 0 }
                     });
                 }
-                
-                node.descendants(true).forEach(c => {c.customData["co"].vy = 0,c.customData["co"].vx = 0});
+
+                node.descendants(true).forEach(c => { c.customData["co"].vy = 0, c.customData["co"].vx = 0 });
                 if (node.shell) node.shell.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
 
                 this.nodesUpdated(node.shell as any);
@@ -665,8 +684,20 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
      */
     public tick(shells: AbstractNodeShellIfc[], delta: number): void {
 
-        shells.forEach(shell => {
 
+        if (this.randomMovement) {
+            shells.forEach(shell => {
+                this.reheatShell(shell);
+                shell.nodes.forEach(n => {
+                    const coord = n.customData["co"];
+                    if (coord != undefined) coord.vy = Math.random() * 4000 - 2000,coord.vx = Math.random() * 200 - 100;
+                });
+            });
+            this.randomMovement = false;
+        }
+
+        shells.forEach(shell => {
+ 
             let heat: { v: number } = shell.customData["heat"];
             if (heat == undefined) heat = shell.customData["heat"] = { v: NodeLayoutStaticDynamicX.coolDownTime };
 

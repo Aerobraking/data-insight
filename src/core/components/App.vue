@@ -154,7 +154,8 @@
 </template>
 
 <script lang="ts">
-import { deserialize, plainToClass, serialize } from "class-transformer";
+import * as benchmark from "@/core/utils/Benchmark";
+import { deserialize, serialize } from "class-transformer";
 import { ipcRenderer, shell, remote } from "electron";
 import { defineComponent } from "vue";
 import { getPlugins } from "../../plugins/PluginList";
@@ -270,15 +271,13 @@ export default defineComponent({
       shell.openExternal(url);
     },
     loadInsightFileFromPath(path: string) {
-      const timeForSinc = performance.now();
+      if (benchmark.doBenchmark)
+        benchmark.start("vue"), benchmark.start("json");
+
       let jsonString = fs.readFileSync(path, "utf8");
       let file: InsightFile = deserialize(InsightFile, jsonString);
 
-      console.log(
-        "Time for .ins File loading: ",
-        (performance.now() - timeForSinc) / 1000,
-        "seconds"
-      );
+      if (benchmark.doBenchmark) benchmark.stop("json", "json file loaded");
 
       this.loadInsightFile(file);
     },
@@ -486,7 +485,7 @@ button {
     padding: 5px;
     font-size: 32px;
     opacity: 1;
-    transition: all 0.2s ease-in-out;
+    transition: color 0.2s ease-in-out;
     transition-property: opacity, transform;
   }
 }

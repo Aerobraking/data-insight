@@ -269,6 +269,7 @@ import {
   ResizerComplex,
   set3DPosition,
 } from "@/core/utils/resize";
+import * as benchmark from "@/core/utils/Benchmark";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
@@ -306,7 +307,6 @@ import {
   createKeyboardInputContext,
   PluginShortCutHandler,
 } from "@/core/plugin/KeyboardShortcut";
-// import { WorkspaceEntryFrame } from "@/core/components/workspace/WorkspaceEntryFrame";
 import AbstractPlugin from "@/core/plugin/AbstractPlugin";
 import { WorkspaceEntryFrame } from "@/core/model/WorkspaceEntryFrame";
 
@@ -482,7 +482,7 @@ export default defineComponent({
           const e = entries[index];
           e.target; // div element
           let w = Math.max(10, e.contentRect.width);
-          let h = Math.max(10, e.contentRect.height); 
+          let h = Math.max(10, e.contentRect.height);
 
           if (this.skipInitialResize++ > 0) {
             let diffX = _this.getCanvas().width - w,
@@ -581,6 +581,10 @@ export default defineComponent({
         }
       },
     });
+
+    this.$nextTick(function () {
+      if (benchmark.doBenchmark) benchmark.stop("vue", "Workpsace ready:");
+    });
   },
   unmounted() {
     if (this.divObserver) {
@@ -604,7 +608,11 @@ export default defineComponent({
   },
   inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
   methods: {
-    getViewportOffset() {    
+    /**
+     * getBoundingClientRect fires an recalculate Layout event which takes a lot of time,
+     * so we hardcode the offsets for the workspace view here.
+     */
+    getViewportOffset() {
       return { left: 0, top: this.$store.getters.getShowUI ? 32 : 0 };
     },
     dispatchEvent(e: Event) {
@@ -798,9 +806,8 @@ export default defineComponent({
         return Math.sqrt(dx * dx + dy * dy);
       }
 
- 
       const rect = this.getViewportOffset();
-  
+
       const mouse = {
         x: this.mousePositionLastRaw.x - rect.left,
         y: this.mousePositionLastRaw.y - rect.top,
@@ -1103,9 +1110,6 @@ export default defineComponent({
             }
             this.showAll();
             break;
-          case "r":
-            this.rearrange(false);
-            break;
           case "a":
             this.selectAll();
             break;
@@ -1282,10 +1286,6 @@ export default defineComponent({
             this.preventInput(true);
             this.spacePressed = true;
             this.showAll();
-            break;
-
-          case "r":
-            this.rearrange();
             break;
           case "t":
             this.createEntry("text", true);
@@ -1659,8 +1659,8 @@ export default defineComponent({
       }
 
       this.$store.commit(MutationTypes.ADD_FILES, {
-        model: <Workspace>this.model,
-        listFiles,
+        model: this.model,
+        entries: listFiles,
       });
 
       setTimeout(() => {
@@ -2213,7 +2213,7 @@ export default defineComponent({
     }, 16),
 
     onPanStart(e: any) {
-      // this.drawCanvas(); // is handled by mousemove event
+      this.drawCanvas(); // Todo: is also called handled by mousemove event, but that results in a delay. try to do not make a draw when the mouse move and the user is panning
 
       if (this.model != undefined) {
         this.model.viewportTransform = this.getCurrentTransform();
@@ -2299,7 +2299,7 @@ $color-Selection: rgba(57, 215, 255, 0.3);
   text-align: center;
   width: 100%;
   white-space: nowrap;
-  transition: all 0.3s ease-out;
+  transition: height 0.3s ease-out;
   background: transparent;
 
   button {
@@ -2431,7 +2431,7 @@ svg {
   padding: 5px;
   font-size: 32px;
   opacity: 1;
-  transition: all 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out;
   transition-property: opacity, transform;
   &:hover {
     color: #fff;
@@ -2716,12 +2716,13 @@ visually highlights elements for selection with a hover effect
 
 .close-file {
   opacity: 0;
-  transition: all 0.25s;
+  transition: color 0.25s;
 }
 
 .blend-out {
   opacity: 0;
-  transition: all 0.25s;
+  transition: color 0.25s;
+  transition-property: color,opacity;
 }
 
 .wrapper {
@@ -2736,7 +2737,7 @@ visually highlights elements for selection with a hover effect
   background-color: rgba(53, 53, 53, 0);
   outline: none;
 
-  .zoomable {
+  .zoomable { 
     animation: fade-in 0.25s ease;
   }
 

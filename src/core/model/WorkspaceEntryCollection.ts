@@ -1,13 +1,13 @@
 import * as _ from "underscore";
 import { Type } from "class-transformer"; 
-import WorkspaceEntry from "./WorkspaceEntry";
+import AbstractWorkspaceEntry from "./WorkspaceEntry";
 import { WorkspaceEntryFrame } from "./WorkspaceEntryFrame";
 import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow } from "@/filesystem/model/FileSystemWorkspaceEntries";
 
 
 export default class WorkspaceEntryCollection {
 
-    @Type(() => WorkspaceEntry, {
+    @Type(() => AbstractWorkspaceEntry, {
         keepDiscriminatorProperty: true,
         discriminator: {
             property: 'componentname',
@@ -22,6 +22,6 @@ export default class WorkspaceEntryCollection {
             ],
         },
     })
-    entries: Array<WorkspaceEntry> = [];
+    entries: Array<AbstractWorkspaceEntry> = [];
 
 }

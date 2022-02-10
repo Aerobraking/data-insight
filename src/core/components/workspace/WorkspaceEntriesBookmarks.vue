@@ -160,7 +160,7 @@ export default defineComponent({
   left: -13px;
   top: -7px;
   z-index: 8000;
-  transition: all 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out;
   opacity: 1;
   button {
     outline: none;

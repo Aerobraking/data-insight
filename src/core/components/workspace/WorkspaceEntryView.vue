@@ -95,7 +95,7 @@ export default defineComponent({
   background: transparent;
   pointer-events: all;
   cursor: se-resize !important;
-  transition: all 0.3s ease-out;
+  // transition: transform 0.3s ease-out;
   transform-origin: left top;
 }
 
@@ -106,7 +106,7 @@ export default defineComponent({
 .ws-entry {
   transition: opacity 0.3s ease-in-out;
   position: absolute;
-  pointer-events: none;
+  pointer-events: none; 
 }
 
 .ws-entry-slot {

@@ -6,7 +6,7 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-import WorkspaceViewIfc from "@/core/components/workspace/WorkspaceViewIfc";
+import WorkspaceViewIfcWrapper from "@/core/components/workspace/WorkspaceViewIfcWrapper";
 import * as _ from "underscore";
 import WorkspaceEntry from "@/core/model/WorkspaceEntry";
 
@@ -18,7 +18,7 @@ export default defineComponent({
   },
   props: {
     entry: { type: WorkspaceEntry, required: true },
-    workspace: { type: Object as () => WorkspaceViewIfc, required: true },
+    workspace: { type: WorkspaceViewIfcWrapper, required: true },
   },
   mounted() {},
   inject: ["entrySelected"],
@@ -28,8 +28,6 @@ export default defineComponent({
       this.entrySelected(this.entry.id, type);
     },
   },
-  computed: {},
-  created() {},
 });
 </script>
 

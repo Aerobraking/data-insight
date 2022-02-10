@@ -60,6 +60,8 @@ ipcRenderer.on("send-args", (event: any, args: string[]) => {
     startApp(store);
 });
 
+window.onanimationiteration = console.log;
+
 ipcRenderer.send("get-args", {});
 
 function startApp(store: Store) {

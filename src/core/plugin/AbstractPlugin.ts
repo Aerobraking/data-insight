@@ -10,8 +10,6 @@ export function PluginDecorator() {
 
 export default abstract class AbstractPlugin {
 
-    constructor() { }
-
     workspace!: WorkspaceViewIfc;
 
     public setWorkspace(workspace: WorkspaceViewIfc): this {
@@ -41,6 +39,11 @@ export default abstract class AbstractPlugin {
 
 }
 
+/**
+ * A abstract class that implements the AbstractPlugin 
+ * and most of its methods which you can use when you only 
+ * want to implement some specific methods. Keeps stuff more simple.
+ */
 export abstract class PluginAdapter extends AbstractPlugin {
 
     public cancel(): boolean {

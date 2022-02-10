@@ -1,3 +1,4 @@
+import { doBenchmark, start } from "@/core/utils/Benchmark";
 import { IframeParenthesesOutline } from "mdue";
 import _ from "underscore";
 
@@ -67,7 +68,7 @@ export class Cache {
                 if (e.data.type == ImageSize.finish || e.data.type == ImageSize.error) {
                     remove(this.listQueue, e.data.path);
 
-                    if (this.listQueue.length == 0) console.log("Time for Image loading: ", (performance.now() - this.timeForSinc) / 1000, "seconds");
+                    if (doBenchmark && this.listQueue.length == 0) console.log("Time for Image loading: ", start("images", "loading images: "));
 
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("", e.data.type);
@@ -90,7 +91,12 @@ export class Cache {
                         _this.doCallback(e.data.path, (l: ImageListener) => {
                             l.callback(base64data as string, ImageSize.preview);
                         });
+
+                        setTimeout(() => {
+                            _this.listWorker[e.data.index].postMessage({ msg: "create", path: e.data.path, type: "step1" });
+                        }, _this.listQueue.length > 10 ? 1450 : 100);
                     }
+
                 }
 
                 if (e.data.type == ImageSize.preview) {
@@ -113,23 +119,18 @@ export class Cache {
 
                 if (e.data.type == ImageSize.medium) {
                     const mediumURL = URL.createObjectURL(e.data.blob);
-
                     let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(e.data.path);
                     imageEntry?.set(ImageSize.medium, mediumURL);
-
-
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + mediumURL + "')", e.data.type);
                         // l.callback( mediumURL , e.data.type);
                     });
                 }
+
                 if (e.data.type == ImageSize.original) {
                     const origURL = URL.createObjectURL(e.data.blob);
-
                     let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(e.data.path);
                     imageEntry?.set(ImageSize.original, origURL);
-
-
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + origURL + "')", e.data.type);
                         // l.callback(origURL, e.data.type);
@@ -196,22 +197,22 @@ export class Cache {
 
     createPreview(p: string) {
 
-        if (this.listQueue.length == 0) this.timeForSinc = performance.now();
+        if (doBenchmark && this.listQueue.length == 0)  start("images");
         this.hash.set(p, new Map());
         this.listQueue.push(p);
         this.timeNow = performance.now();
         const diff = this.timeNow - this.timeLast;
         this.timeStack += Cache.delay;
-        // setTimeout(() => {
-        this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: p });
+        // setTimeout(() => { 
+        this.listWorker[this.listWorkerTraverser].postMessage({ msg: "create", path: p, type: "step0", index: this.listWorkerTraverser });
+
         this.listWorkerTraverser++;
         this.listWorkerTraverser = this.listWorkerTraverser > this.listWorker.length - 1 ? 0 : this.listWorkerTraverser;
         //}, Math.max(1, this.timeStack));
     };
 
 
-    timeForSinc: number = 0;
-    private queueSize = 0;
+    timeForSinc: number = 0; 
     private timeLast = performance.now();
     private timeNow = performance.now();
     private listQueue: string[] = [];

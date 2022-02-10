@@ -144,7 +144,7 @@ $padding2: $padding * 2;
     font-size: 25pt;
     overflow: visible;
     outline: none;
-    transition: all 350ms linear;
+    transition: transform 350ms linear;
     min-width: 300px;
     white-space: nowrap;
     transform-origin: left bottom;
@@ -163,7 +163,7 @@ workspace-is-selected-single .wsentry-displayname {
 }
 
 .anim {
-  transition: all 0.3s ease-out;
+  transition: transform 0.3s ease-out;
 }
 
 .wsentry-displayname-pin {

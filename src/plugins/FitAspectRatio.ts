@@ -1,18 +1,14 @@
 
-import WorkspaceEntryAspectRatio from "@/core/model/WorkspaceEntryAspectRatio";
 import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
 
 @PluginDecorator()
 export default class FitAspectRatio extends PluginAdapter {
 
-
     readonly description: string = "<kbd>A</kbd>";
     readonly name: string = "Fit Aspect Ratio";
     readonly shortcut: string = "ws a";
 
-    constructor() {
-        super();
-    }
+    constructor() { super(); }
 
     public init(): void {
         const views = this.workspace.getSelectedEntries();
@@ -34,7 +30,5 @@ export default class FitAspectRatio extends PluginAdapter {
         this.workspace.updateUI();
         this.workspace.finishPlugin();
     }
-
-
 
 }

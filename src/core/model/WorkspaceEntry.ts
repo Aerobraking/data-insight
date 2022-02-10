@@ -1,8 +1,7 @@
-import { ImageDim } from "@/filesystem/utils/ImageCache";
 import { ElementDimension } from "@/core/utils/resize";
 import { Exclude } from "class-transformer";
 
-export default class WorkspaceEntry {
+export default class AbstractWorkspaceEntry {
     constructor(componentname: string, isResizable: boolean) {
         this.id = Math.floor(Math.random() * 1000000000000);
         this.isResizable = isResizable;

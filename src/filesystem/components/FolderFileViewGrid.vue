@@ -82,8 +82,7 @@ export default defineComponent({
     },
   },
   methods: {
-    loadImage() {
-      console.log("loadImage");
+    loadImage() { 
 
       const div: HTMLElement =
         this.$el.getElementsByClassName("folder-file-image")[0];

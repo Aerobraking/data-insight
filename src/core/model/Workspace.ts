@@ -8,7 +8,7 @@ import { Feature } from "./overview/AbstractNodeFeature";
 import { WorkspaceEntryFrame } from "./WorkspaceEntryFrame";
 import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
-import WorkspaceEntry from "./WorkspaceEntry";
+import AbstractWorkspaceEntry from "./WorkspaceEntry";
 
 export class Overview {
 
@@ -60,7 +60,7 @@ export class Workspace extends View {
     overviewOpen: boolean;
     folderSelectionPath: string | undefined = undefined;
 
-    @Type(() => WorkspaceEntry, {
+    @Type(() => AbstractWorkspaceEntry, {
         keepDiscriminatorProperty: true,
         discriminator: {
             property: 'componentname',
@@ -75,7 +75,7 @@ export class Workspace extends View {
             ],
         },
     })
-    entries: Array<WorkspaceEntry> = [];
+    entries: Array<AbstractWorkspaceEntry> = [];
 
     public initAfterLoading() {
         this.overview.initAfterLoading();

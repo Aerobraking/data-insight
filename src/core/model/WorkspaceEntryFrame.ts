@@ -1,6 +1,6 @@
-import WorkspaceEntry from "./WorkspaceEntry";
+import AbstractWorkspaceEntry from "./WorkspaceEntry";
 
-export class WorkspaceEntryFrame extends WorkspaceEntry {
+export class WorkspaceEntryFrame extends AbstractWorkspaceEntry {
 
     public static viewid: string = "wsentryframe";
     color: string = "rgb(10,10,10)";

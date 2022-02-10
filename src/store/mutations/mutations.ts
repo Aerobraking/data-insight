@@ -3,7 +3,7 @@ import { MutationTypes } from './mutation-types'
 import { InsightFile, State } from '../model/state'  
 import View from '@/core/model/AbstractView';
 import { Workspace } from '@/core/model/Workspace';
-import WorkspaceEntry from '@/core/model/WorkspaceEntry';
+import AbstractWorkspaceEntry from '@/core/model/WorkspaceEntry';
 
 var entrycounter = 0;
 
@@ -15,7 +15,7 @@ export type Mutations<S = State> = {
   [MutationTypes.CREATE_OVERVIEW](state: S): void
   [MutationTypes.ADD_FILES](state: S, payload: {
     model: Workspace,
-    listFiles: Array<WorkspaceEntry>,
+    entries: Array<AbstractWorkspaceEntry>,
   }): void
   [MutationTypes.SORT_WORKSPACES](state: S, payload: {
     listWorkspaces: Array<Workspace>,
@@ -49,15 +49,15 @@ export const mutations: MutationTree<State> & Mutations = {
 
   [MutationTypes.ADD_FILES](state, payload: {
     model: Workspace,
-    listFiles: Array<WorkspaceEntry>,
+    entries: Array<AbstractWorkspaceEntry>,
   }) {
-    for (let index = 0; index < payload.listFiles.length; index++) {
-      const element = payload.listFiles[index];
+    for (let index = 0; index < payload.entries.length; index++) {
+      const element = payload.entries[index];
       element.order = entrycounter++;
       // make id's unique in case of a copy/paste situation
       element.id = Math.floor(Math.random() * 1000000000000);
     }
-    payload.model.entries.push(...payload.listFiles);
+    payload.model.entries.push(...payload.entries);
   },
   [MutationTypes.REMOVE_ENTRIES](state, payload: {
     model: Workspace,

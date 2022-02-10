@@ -130,7 +130,7 @@ export default defineComponent({
   position: fixed;
   width: 100%;
   border-bottom: 2px solid transparent;
-  transition: all 0.4s ease-in-out;
+  transition: color 0.4s ease-in-out;
 }
 
 .pell-content {
@@ -145,7 +145,7 @@ export default defineComponent({
   background: transparent;
   // transform: scale(3);
   transform-origin: top left;
-  transition: all 0.4s ease-in-out;
+  transition: color 0.4s ease-in-out;
   // font-size: 100px;
 }
 
@@ -170,7 +170,7 @@ export default defineComponent({
   outline: 0;
   width: 30px;
   vertical-align: bottom;
-  transition: all 0.4s ease-in-out;
+  transition: color 0.4s ease-in-out;
 }
 
 .workspace-is-selected .pell-button {

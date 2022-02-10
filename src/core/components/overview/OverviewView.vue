@@ -209,6 +209,7 @@ import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
 import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
 import { Layouter } from "@/core/model/overview/NodeLayout";
+import { doBenchmark, start } from "@/core/utils/Benchmark";
 
 export default defineComponent({
   name: "App",
@@ -614,16 +615,19 @@ export default defineComponent({
           case "delete":
             this.deleteSelection();
             break;
+          case "h":
+            if (doBenchmark) Instance.getEngine(this.id).toggleCulling();
+            break;
+          case "c":
+            if (doBenchmark) Instance.getEngine(this.id).toggleCulling();
+            break;
           case "l":
-            const t = performance.now();
+            if (doBenchmark) start("layout");
             for (let index = 0; index < 100; index++) {
               Layouter.nodesUpdated(Instance.getEngine(this.id).rootNodes[0]);
             }
-            console.log(
-              "Time for layounting: ",
-              (performance.now() - t) / 1000 / 100,
-              "Sec."
-            );
+            if (doBenchmark) start("layout", "time for layouting");
+
             let nodes = 0;
 
             for (
@@ -633,7 +637,7 @@ export default defineComponent({
             ) {
               const l = Instance.getEngine(this.id).rootNodes[i].nodes.length;
               nodes += l;
-              console.log(i,l);
+              console.log(i, l);
             }
             console.log("Nodes: ", nodes);
             break;
@@ -904,7 +908,7 @@ export default defineComponent({
   width: 20px;
   height: 70%;
   z-index: 9900;
-  transition: all 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out;
 
   .options {
     h3 {
