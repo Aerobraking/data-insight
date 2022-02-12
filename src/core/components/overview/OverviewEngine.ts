@@ -13,7 +13,7 @@ import { Overview, Workspace } from "@/core/model/Workspace";
 import { AbstractNodeShell, NodeShellListener } from "@/core/model/overview/AbstractNodeShell";
 import { ipcRenderer } from "electron";
 import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
-import { AbstractNodeFeature } from "@/core/model/overview/AbstractNodeFeatureView";
+import { AbstractFeature } from "@/core/model/overview/AbstractFeature";
 import { Layouter } from "@/core/model/overview/NodeLayout";
 import { AbstractLink, AbstractNode } from "@/core/model/overview/AbstractNode";
 
@@ -49,7 +49,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             for (let i = 0; i < OverviewEngine.instances.length; i++) {
                 const inst = OverviewEngine.instances[i];
-                inst.tick();
+                inst.tickEngine();
             }
             // prevent too large timesteps in case of slow performance
             OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 10000);
@@ -106,7 +106,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     setWidthsTween: Map<AbstractNodeShell, Map<number, Tween<any>>> = new Map();
 
     colorChangeDuration: number = 200;
-    render!: AbstractNodeFeature;
+    render!: AbstractFeature;
 
     private static opacityMin = 0.04;
     static hiddenColor: string = "rgb(17,18,19)";
@@ -178,7 +178,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 this.size.h = h;
 
             }
-            this.tick();
+            this.tickEngine();
         }, 33));
         this.divObserver.observe(div);
 
@@ -648,12 +648,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.clearSelection();
     }
 
-    public tick(): void {
+    public tickEngine(): void {
 
-
-        Layouter.tick(this._rootNodes, OverviewEngine.delta);
-        this._rootNodes.forEach(s => s.tick());
-
+        Layouter.tickLayout(this._rootNodes, OverviewEngine.delta);
+        this._rootNodes.forEach(s => s.tickShell());
 
         if (this.colorTransitionElapsed != undefined) {
             this.colorTransitionElapsed += OverviewEngine.delta;
@@ -801,7 +799,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
-    public setFeatureRender(render: AbstractNodeFeature) {
+    public setFeatureRender(render: AbstractFeature) {
         this.render = render;
         this.updateNodeColors();
     }
@@ -868,56 +866,34 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                 ctx.save();
                 ctx.translate(shell.x, shell.y);
+                
                 let nodes: AbstractNode[] = shell.nodes;
                 let links: AbstractLink[] = shell.links;
                 var renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
                 var renderDataLinks: { culling: boolean }[] = new Array(links.length);
-                nodes.forEach((n, i) => {
-                    renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getRadius(n, 0, 0.99), culling: this.enableCulling ? this.nodeCulling(n) : false };
-                });
-                links.forEach((l, i) => {
-                    renderDataLinks[i] = { culling: this.enableCulling ? this.linkCulling(l) : false };
-                });
-
-                /**
-                 * Caching the x position and width of any column for performance reasons. Otherwise
-                 * we would have to calculate this for each node
-                 */
-                let widths: { x: number }[] = [];
-                for (let i = 0, e = true; i < 40; i++) {
-                    let w = { x: i * OV_COLUMNWIDTH };
-                    if (w) {
-                        widths[i] = w;
-                    }
-                    e = w != undefined;
-                }
-
-                ctx.fillStyle = "rgb(170,170,170)";
-
-                ctx.fillStyle = OverviewEngine.colorSelection;
-                var r = this.getRadius(shell.root, 5);
-
-                // if (this.selection.includes(shell.root))
-                //     ctx.fillRect(
-                //         r,
-                //         0 - (shell.root.customData["b"] ? shell.root.customData["b"] / 2 : 0),
-                //         this.getFixedSize(2),
-                //         shell.root.customData["b"] ? shell.root.customData["b"] : 0);
-
-
-                this.drawLinks(ctx, nodes, links, widths, shell, renderData, renderDataLinks);
-                this.drawNodes(ctx, nodes, widths, shell, renderData);
-                this.drawText(ctx, nodes, widths, shell, renderData);
+        
+                this.prepareRenderData(nodes, links, renderData, renderDataLinks);
+                this.drawLinks(ctx, nodes, links, shell, renderData, renderDataLinks);
+                this.drawNodes(ctx, nodes, shell, renderData);
+                this.drawText(ctx, nodes, shell, renderData);
 
                 ctx.restore();
             }
         }
 
         ctx.restore();
-
     }
 
-    drawLinks(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], links: AbstractLink[], widths: { x: number }[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[], renderDataLinks: { culling: boolean }[] = new Array(links.length)) {
+    prepareRenderData(nodes: AbstractNode[], links: AbstractLink[], renderData: { color: any; pos: { x: number; y: number; }; r: number; culling: boolean; }[], renderDataLinks: { culling: boolean; }[]) {
+        nodes.forEach((n, i) => {
+            renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getRadius(n, 0, 0.99), culling: this.enableCulling ? this.nodeCulling(n) : false };
+        });
+        links.forEach((l, i) => {
+            renderDataLinks[i] = { culling: this.enableCulling ? this.linkCulling(l) : false };
+        });
+    }
+
+    drawLinks(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], links: AbstractLink[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[], renderDataLinks: { culling: boolean }[] = new Array(links.length)) {
 
         let scale = this.transform ? this.transform.k : 1;
         let weight = 0.7;
@@ -1008,7 +984,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
-    drawNodes(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], widths: { x: number }[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
+    drawNodes(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
 
         const ts = this.transform ? this.transform.k : 1;
         ctx.lineWidth = this.getFixedSize(12, 10, 40);
@@ -1080,7 +1056,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
-    drawText(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], widths: { x: number }[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
+    drawText(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
 
         ctx.fillStyle = "#fff";
 
@@ -1104,11 +1080,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             let isNodeHovered = this.isHoveredNode(node);
 
-
-
             if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(node)) {
 
-                let xPos = renderData[i].pos.x; widths[node.depth] ? widths[node.depth].x : 0;
+                let xPos = renderData[i].pos.x;
 
                 if (!node.isRoot()) {
 

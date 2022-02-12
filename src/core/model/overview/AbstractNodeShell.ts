@@ -4,11 +4,12 @@ import { Quadtree } from "d3";
 import path from "path";
 import { AbstractLink, AbstractNode } from "./AbstractNode";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
-import { NodeFeatures, Feature, FeatureDataHandler } from "./AbstractNodeFeature";
-import { FeatureInstanceList } from "./AbstractNodeFeatureView";
+import {   FeatureDataHandler } from "./FeatureData";
+import { FeatureInstanceList } from "./AbstractFeature";
 import { Layouter } from "./NodeLayout";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { ThermometerLines } from "mdue";
+import { NodeFeatures, FeatureType } from "./FeatureType";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;
@@ -78,7 +79,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     public abstract loadCollection(node: any): void;
 
-    public abstract createNode(name: string): N;
+    public abstract createNodeInstance(name: string): N;
 
     abstract getName(): string;
 
@@ -97,7 +98,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         }
     }
 
-    public renameByPaths(oldPath: string, newPath: string) {
+    public renameByPath(oldPath: string, newPath: string) {
 
         let node = this.getNodeByPath(oldPath);
 
@@ -135,7 +136,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
                  * We recalculate the features for the parent node and then for all coming parent nodes.
                  * For that we combine the Features of all child nodes + the Features of the node itself.
                  */
-                const childData = new Map<Feature, any[]>();
+                const childData = new Map<FeatureType, any[]>();
 
                 for (let i = 0; i < parent.getChildren().length; i++) {
                     const c = parent.getChildren()[i];
@@ -146,7 +147,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
                          * Iterate over all Features/Feature Data of the child node. When the parent is missing one of the Features, create a new instance for it. Collect all Data instances of the children in a list.
                          */
                         Object.keys(childFeatures).forEach((key: string) => {
-                            let f: Feature = key as Feature;
+                            let f: FeatureType = key as FeatureType;
 
                             if (childFeatures[f]) {
 
@@ -174,8 +175,8 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
                 /**
                  * Use the FeatureDataHandler instances to combine the children data for the parent
                  */
-                childData.forEach((value: any[], key: Feature) => {
-                    let f: Feature = key as Feature;
+                childData.forEach((value: any[], key: FeatureType) => {
+                    let f: FeatureType = key as FeatureType;
 
                     const dataParent = featuresParentRecurisve[f];
                     if (dataParent) {
@@ -233,18 +234,17 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     * @param collectionSize 
     * @returns 
     */
-    public addEntryPaths(paths: { path: string, isCollection: boolean, collectionSize: number }[], fireUpdate: boolean = true) {
+    public addNodesByPaths(paths: { path: string, isCollection: boolean, collectionSize: number }[], fireUpdate: boolean = true) {
 
         const nodesAdded: N[] = [];
 
         paths.forEach(p => {
-            nodesAdded.push(...this.addEntryPath(p.path, p.isCollection, p.collectionSize, false));
+            nodesAdded.push(...this.addNodeByPath(p.path, p.isCollection, p.collectionSize, false));
         });
 
         if (nodesAdded.length > 0 && fireUpdate) {
             this.updateNodeLists();
-            this.nodesAdded(nodesAdded);
-
+            this.nodesAdded(nodesAdded); 
         }
     }
 
@@ -255,7 +255,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      * @param collectionSize 
      * @returns 
      */
-    public addEntryPath(nodePath: string, isCollection: boolean = false, collectionSize: number = 0, fireUpdate: boolean = true): N[] {
+    public addNodeByPath(nodePath: string, isCollection: boolean = false, collectionSize: number = 0, fireUpdate: boolean = true): N[] {
 
         const nodesAdded: N[] = [];
 
@@ -276,7 +276,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
             } else {
                 // Create new sub folder
                 foldersCreated = true;
-                childFound = this.createNode(f);
+                childFound = this.createNodeInstance(f);
                 currentFolder.addChild(childFound);
                 nodesAdded.push(childFound);
 
@@ -296,7 +296,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     }
 
-    public removeEntryPath(relativePath: string) {
+    public removeNodeByPath(relativePath: string) {
 
         relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
         let folders: string[] = relativePath.split("/");
@@ -322,35 +322,35 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         this.y = c.y;
     }
 
-    public featuresUpdated() {
+    featuresUpdated() {
         this.engine?.featuresUpdated();
         Layouter.featuresUpdated(this);
     }
 
-    public nodeUpdate(n: N) {
+    nodeUpdate(n: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
         Layouter.nodeUpdated(this, n.parent as AbstractNode, n);
     }
 
-    public nodeRemoved(n: N) {
+    nodeRemoved(n: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
         Layouter.nodeRemoved(this, n.parent as AbstractNode, n);
     }
 
-    public nodeChildrenRemoved(n: N) {
+    nodeChildrenRemoved(n: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
         Layouter.nodeChildrenRemoved(this, n.parent as AbstractNode, n);
     }
 
-    public nodeAdded(c: N) {
+    nodeAdded(c: N) {
         this.engine?.nodeAdded(c);
         Layouter.nodeAdded(this, c.parent as AbstractNode, c);
     }
 
-    public nodesAdded(c: N[]) {
+    nodesAdded(c: N[]) {
         this.engine?.nodesAdded(c);
 
     }
@@ -360,15 +360,13 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      * Assign all nodes to the force simulation in case of new created nodes.
      * @param reheat sets the alpha to one
      */
-    protected updateNodeLists() {
-
+    private updateNodeLists() {
         this.nodes = this.root.descendants();
         this.links = this.root.links();
-
         Layouter.shellContentUpdate(this);
     }
 
-    tick() {
+    tickShell() {
         this.quadtree = d3.quadtree<N>().x(n => n.getX()).y(n => n.getY()).addAll(this.nodes);
     }
 }

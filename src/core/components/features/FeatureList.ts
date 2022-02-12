@@ -1,4 +1,4 @@
-import { AbstractNodeFeature, internalCreateNewFeatureList } from '../../model/overview/AbstractNodeFeatureView';
+import { AbstractFeature, internalCreateNewFeatureList } from '../../model/overview/AbstractFeature';
 
 /**
  * All Features have to be imported here so.
@@ -7,6 +7,6 @@ import { AbstractNodeFeature, internalCreateNewFeatureList } from '../../model/o
 export * from '../../../filesystem/model/FolderFeatures'
 import * as FN from '../../model/overview/FeatureNone'
  
-export function getFeatureList(): AbstractNodeFeature[] { 
+export function getFeatureList(): AbstractFeature[] { 
     return internalCreateNewFeatureList();
 }

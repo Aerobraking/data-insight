@@ -1,18 +1,18 @@
 import { AbstractNode } from "./AbstractNode";
-import { AbstractFeatureData, FeatureDataType, Feature } from "./AbstractNodeFeature";
-import { AbstractFeatureSettings, AbstractNodeFeature, FeatureViewDecorator } from "./AbstractNodeFeatureView";
+import { AbstractFeatureData, FeatureDataType } from "./FeatureData";
+import { AbstractFeatureSettings, AbstractFeature, FeatureViewDecorator } from "./AbstractFeature";
 import { AbstractNodeShell } from "./AbstractNodeShell";
+import { FeatureType } from "./FeatureType";
 
-export class FeatureNoneSettings extends AbstractFeatureSettings {
+export class FeatureNoneSettings extends AbstractFeatureSettings {}
 
-}
 export class FeatureNoneData extends AbstractFeatureData {
     t: FeatureDataType = FeatureDataType.SUM;
 }
 
 @FeatureViewDecorator()
-export class NodeFeatureNone extends AbstractNodeFeature<AbstractNode, FeatureNoneData, FeatureNoneSettings> {
-    public id = Feature.None;
+export class NodeFeatureNone extends AbstractFeature<AbstractNode, FeatureNoneData, FeatureNoneSettings> {
+    public id = FeatureType.None;
     public readableName = "None";
 
     constructor() { 

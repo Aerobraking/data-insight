@@ -49,13 +49,13 @@ import noUiSlider, { API, PipsMode } from "nouislider";
 import ColorGradient from "@/core/components/overview/ColorGradient.vue";
 import { CogOutline, ArrowExpandVertical } from "mdue";
 import { AbstractNode } from "@/core/model/overview/AbstractNode";
-import { Feature } from "@/core/model/overview/AbstractNodeFeature";
-import { AbstractNodeFeatureGradient } from "@/core/model/overview/AbstractNodeFeatureView";
+import { FeatureType } from "@/core/model/overview/FeatureType";
+import { AbstractFeatureGradient } from "@/core/model/overview/AbstractFeature";
 import { Workspace } from "@/core/model/Workspace";
 import { Instance } from "@/core/model/overview/OverviewDataCache";
 
 export default defineComponent({
-  name: Feature.FolderSize,
+  name: FeatureType.FolderSize,
   components: {
     ColorGradient,
     ArrowExpandVertical,
@@ -72,14 +72,14 @@ export default defineComponent({
       required: false,
     },
     model: {
-      type: AbstractNodeFeatureGradient as any,
+      type: AbstractFeatureGradient as any,
       required: true,
     },
   },
   watch: {
     "workspace.overview.featureActive": function (
-      newValue: Feature | undefined,
-      oldValue: Feature | undefined
+      newValue: FeatureType | undefined,
+      oldValue: FeatureType | undefined
     ) {
       this.updateFeatureStatus();
     },
@@ -144,13 +144,13 @@ export default defineComponent({
   },
   methods: {
     updateFeatureStatus() {
-      const f: Feature | undefined = this.workspace.overview.featureActive;
+      const f: FeatureType | undefined = this.workspace.overview.featureActive;
 
       if (this.fitRangeTimer) clearTimeout(this.fitRangeTimer);
 
       if (
         f == this.model.id &&
-        (this.model as AbstractNodeFeatureGradient).settings.autoSetRange
+        (this.model as AbstractFeatureGradient).settings.autoSetRange
       ) {
         this.sliderDiv?.setAttribute("disabled", "true");
         this.fitRangeTimer = setInterval(() => {
@@ -164,13 +164,13 @@ export default defineComponent({
     fitRangeClicked(toggle: boolean | undefined = undefined) {
       toggle == undefined ? (toggle = false) : 0;
 
-      (this.model as AbstractNodeFeatureGradient).settings.autoSetRange = toggle
-        ? !(this.model as AbstractNodeFeatureGradient).settings.autoSetRange
+      (this.model as AbstractFeatureGradient).settings.autoSetRange = toggle
+        ? !(this.model as AbstractFeatureGradient).settings.autoSetRange
         : false;
 
       this.updateFeatureStatus();
 
-      if (!(this.model as AbstractNodeFeatureGradient).settings.autoSetRange) {
+      if (!(this.model as AbstractFeatureGradient).settings.autoSetRange) {
         this.fitRange();
       }
     },

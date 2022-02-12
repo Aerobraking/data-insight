@@ -199,9 +199,8 @@ import {
   FileTree,
   ArrowCollapseRight,
 } from "mdue";
-import { AbstractNode } from "@/core/model/overview/AbstractNode";
-import { Feature } from "@/core/model/overview/AbstractNodeFeature";
-import { AbstractNodeFeature } from "@/core/model/overview/AbstractNodeFeatureView";
+import { AbstractNode } from "@/core/model/overview/AbstractNode"; 
+import { AbstractFeature } from "@/core/model/overview/AbstractFeature";
 import { AbstractNodeShell } from "@/core/model/overview/AbstractNodeShell";
 import { Instance } from "@/core/model/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
@@ -210,6 +209,7 @@ import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
 import { Layouter } from "@/core/model/overview/NodeLayout";
 import { doBenchmark, start } from "@/core/utils/Benchmark";
+import { FeatureType } from "@/core/model/overview/FeatureType";
 
 export default defineComponent({
   name: "App",
@@ -257,8 +257,8 @@ export default defineComponent({
       // funktioniert nicht
     },
     "model.overview.featureActive": function (
-      newValue: Feature | undefined,
-      oldValue: Feature | undefined
+      newValue: FeatureType | undefined,
+      oldValue: FeatureType | undefined
     ) {
       this.setRender();
     },
@@ -291,7 +291,7 @@ export default defineComponent({
     id: number;
     panZoomInstance: any;
     selection: AbstractNode | undefined;
-    listFeatures: AbstractNodeFeature[];
+    listFeatures: AbstractFeature[];
   } {
     return {
       listFeatures: [],
@@ -616,9 +616,9 @@ export default defineComponent({
             this.deleteSelection();
             break;
           case "h":
-            if (doBenchmark) Instance.getEngine(this.id).toggleCulling();
+            this.toggleHighlight();
             break;
-          case "c":
+          case "F1":
             if (doBenchmark) Instance.getEngine(this.id).toggleCulling();
             break;
           case "l":
@@ -627,25 +627,18 @@ export default defineComponent({
               Layouter.nodesUpdated(Instance.getEngine(this.id).rootNodes[0]);
             }
             if (doBenchmark) start("layout", "time for layouting");
-
-            let nodes = 0;
-
+ 
             for (
               let i = 0;
               i < Instance.getEngine(this.id).rootNodes.length;
               i++
             ) {
-              const l = Instance.getEngine(this.id).rootNodes[i].nodes.length;
-              nodes += l;
+              const l = Instance.getEngine(this.id).rootNodes[i].nodes.length; 
               console.log(i, l);
             }
-            console.log("Nodes: ", nodes);
             break;
           case " ":
             this.showAll(false);
-            break;
-          case "h":
-            this.toggleHighlight();
             break;
           case "+":
             this.loadCollection();

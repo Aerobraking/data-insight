@@ -1,23 +1,12 @@
 import { Expose } from "class-transformer";
-
+ 
 /**
- * The Data type the Feature is using
+ * A unique type that identifies each class that implements AbstractFeatureData.
  */
 export enum FeatureDataType {
     MEDIAN = "M",
     SUM = "S",
     LIST = "L"
-}
-
-/**
- * Unique identifier for each Feature
- */
-export enum Feature {
-    None = "N",
-    FolderLastModify = "FLM", // last modifiy
-    FolderSize = "FS",
-    FolderQuantity = "FQ",
-    FolderFileTypes = "FFA"
 }
 
 export abstract class AbstractFeatureData {
@@ -46,44 +35,17 @@ export class FeatureDataList extends AbstractFeatureData {
     t = FeatureDataType.LIST;
 }
 
-/**
- * An Object that can contain any type of FeatureData
- */
-export type FolderNodeFeatures = {
-    [Feature.FolderLastModify]: FeatureDataMedian,
-    [Feature.FolderSize]: FeatureDataSum,
-    [Feature.FolderQuantity]: FeatureDataSum,
-    [Feature.FolderFileTypes]: FeatureDataList,
-}
-
-export type NodeFeatures = {
-    [Feature.FolderLastModify]?: FeatureDataMedian,
-    [Feature.FolderSize]?: FeatureDataSum,
-    [Feature.FolderQuantity]?: FeatureDataSum,
-    [Feature.FolderFileTypes]?: FeatureDataList,
-    [Feature.None]?: FeatureDataSum;
-}
-
-export class NodeFeaturesClass implements NodeFeatures {
-    [Feature.FolderLastModify]?: FeatureDataMedian;
-    [Feature.FolderSize]?: FeatureDataSum;
-    [Feature.FolderQuantity]?: FeatureDataSum;
-    [Feature.FolderFileTypes]?: FeatureDataList;
-    [Feature.None]?: FeatureDataSum;
-}
-
-export type AbstractNodeFeaturesTypes = {
+export type AbstractFeaturesDataHandlerTypes = {
     [K in FeatureDataType]: (data: any, dataToAdd: any[]) => void
 }
 
-export interface FeatureDataHandlerIfc extends AbstractNodeFeaturesTypes {
+export interface FeatureDataHandlerIfc extends AbstractFeaturesDataHandlerTypes {
     [FeatureDataType.MEDIAN]: (data: FeatureDataMedian, dataToAdd: FeatureDataMedian[]) => void
     [FeatureDataType.SUM]: (data: FeatureDataSum, dataToAdd: FeatureDataSum[]) => void
     [FeatureDataType.LIST]: (data: FeatureDataList, dataToAdd: FeatureDataList[]) => void
 }
 
-export const FeatureDataHandler: FeatureDataHandlerIfc
-    = {
+export const FeatureDataHandler: FeatureDataHandlerIfc = {
     [FeatureDataType.MEDIAN]: (data: FeatureDataMedian, dataToAdd: FeatureDataMedian[]) => {
         //  debugger
         if (data.m == undefined) data.m = 0, data.c = 0; // init value if not present
@@ -101,9 +63,7 @@ export const FeatureDataHandler: FeatureDataHandlerIfc
 
     },
     [FeatureDataType.SUM]: (data: FeatureDataSum, dataToAdd: FeatureDataSum[]) => {
-        for (const d of dataToAdd) {
-            data.s += d.s;
-        }
+        dataToAdd.forEach(d=>data.s+=d.s);
     },
     [FeatureDataType.LIST]: (data: FeatureDataList, dataToAdd: FeatureDataList[]) => {
         for (const d of dataToAdd) {

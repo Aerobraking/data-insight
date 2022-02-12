@@ -1,7 +1,7 @@
 import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
 import { Exclude, Expose } from "class-transformer";
-import { Feature, NodeFeatures, NodeFeaturesClass } from "./AbstractNodeFeature";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
+import { FeatureType, NodeFeatures } from "./FeatureType";
 
 export abstract class AbstractNode {
 
@@ -37,8 +37,8 @@ export abstract class AbstractNode {
         } else if (this.isCollection()) {
             return 80;
         } else if (this.shell) {
-            let abs = (this.shell.root as AbstractNode).getFeatureValue(Feature.FolderSize);
-            let part = this.getFeatureValue(Feature.FolderSize);
+            let abs = (this.shell.root as AbstractNode).getFeatureValue(FeatureType.FolderSize);
+            let part = this.getFeatureValue(FeatureType.FolderSize);
             if (abs != undefined && part != undefined) {
                 let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
                 r = 100 * 0.1 + r * 0.9;
@@ -90,7 +90,7 @@ export abstract class AbstractNode {
         }
     }
 
-    public getFeatureValue<K extends Feature>(key: K, recursive: boolean = true): NodeFeatures[K] | undefined {
+    public getFeatureValue<K extends FeatureType>(key: K, recursive: boolean = true): NodeFeatures[K] | undefined {
         if (recursive) {
             if (this.featuresRecursive) {
                 let e = this.featuresRecursive[key];
@@ -197,10 +197,10 @@ export abstract class AbstractNode {
     }
 
     @Expose({ name: 'f' })
-    features: NodeFeaturesClass = {};
+    features: NodeFeatures = {};
 
     @Expose({ name: 'fs' })
-    featuresRecursive: NodeFeaturesClass = {};
+    featuresRecursive: NodeFeatures = {};
 
     // used for debug informations
     @Exclude()

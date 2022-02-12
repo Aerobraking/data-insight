@@ -3,8 +3,8 @@ import { Expose, Type } from "class-transformer";
 import View from "./AbstractView";
 import { AbstractNodeShell } from "./overview/AbstractNodeShell";
 import { Instance } from "./overview/OverviewDataCache";
-import { FeatureSettingsList } from "./overview/AbstractNodeFeatureView";
-import { Feature } from "./overview/AbstractNodeFeature";
+import { FeatureSettingsList } from "./overview/AbstractFeature";
+import { FeatureType } from "./overview/FeatureType";
 import { WorkspaceEntryFrame } from "./WorkspaceEntryFrame";
 import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
@@ -19,7 +19,7 @@ export class Overview {
     showAll: boolean = false;
     highlightSelection: boolean = false;
 
-    featureActive: Feature | undefined = Feature.FolderSize;
+    featureActive: FeatureType | undefined = FeatureType.FolderSize;
 
     @Type(() => AbstractNodeShell, {
         keepDiscriminatorProperty: true,

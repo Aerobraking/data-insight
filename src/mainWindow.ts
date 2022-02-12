@@ -10,7 +10,7 @@ import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
 import { InsightFile } from './store/model/state';
-import { Feature } from './core/model/overview/AbstractNodeFeature';
+import { FeatureType } from './core/model/overview/FeatureType';
 
 /**
  * Workspace Entries
@@ -96,9 +96,9 @@ function startApp(store: Store) {
     app.component('wsentryyoutube', wsentryyoutube);
 
     // features
-    app.component(Feature.None, featurenone);
-    app.component(Feature.FolderLastModify, featuresize);
-    app.component(Feature.FolderSize, featuresize);
-    app.component(Feature.FolderQuantity, featuresize);
+    app.component(FeatureType.None, featurenone);
+    app.component(FeatureType.FolderLastModify, featuresize);
+    app.component(FeatureType.FolderSize, featuresize);
+    app.component(FeatureType.FolderQuantity, featuresize);
 
 }

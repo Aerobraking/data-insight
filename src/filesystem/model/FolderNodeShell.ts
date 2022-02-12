@@ -13,7 +13,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
         this.root.shell = this;
     }
 
-    public createNode(name: string) {
+    public createNodeInstance(name: string) {
         return new FolderNode(name);
     }
 
@@ -32,7 +32,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     watcherEvent = (type: string, path?: string) => {
         Instance.syncFolder(this);
         if (type == "unlinkdir" && path) {
-            this.removeEntryPath(path);
+            this.removeNodeByPath(path);
         }
     };
 
@@ -52,7 +52,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
             }
         }
 
-        if (newNodes.length > 0) this.addEntryPaths(newNodes, true);
+        if (newNodes.length > 0) this.addNodesByPaths(newNodes, true);
 
         const newFeatures = [];
         features:
