@@ -471,7 +471,7 @@ export default defineComponent({
         });
     });
 
-    _this.workspaceInterface.ws = _this.getWorkspaceIfc();
+    this.workspaceInterface.ws = this.getWorkspaceIfc();
 
     /**
      * Listen for resizing of the canvas parent element
@@ -583,7 +583,7 @@ export default defineComponent({
     });
 
     this.$nextTick(function () {
-      if (benchmark.doBenchmark) benchmark.stop("vue", "Workpsace ready:");
+      if (benchmark.doBenchmark) benchmark.logTime("vue", true);
     });
   },
   unmounted() {
@@ -604,10 +604,14 @@ export default defineComponent({
       entrySelected: this.entrySelected,
       setFocusToWorkspace: this.setFocusToWorkspace,
       mouseupWorkspace: this.mouseup,
+      getWorkspaceIfc:  this.getWorkspaceIfc,
     };
   },
-  inject: ["loadInsightFileFromPath", "loadInsightFileFromPath"],
+  inject: ["loadInsightFileFromPath"],
   methods: {
+    getModel(): Workspace | undefined {
+      return this.model;
+    },
     /**
      * getBoundingClientRect fires an recalculate Layout event which takes a lot of time,
      * so we hardcode the offsets for the workspace view here.
@@ -2722,7 +2726,7 @@ visually highlights elements for selection with a hover effect
 .blend-out {
   opacity: 0;
   transition: color 0.25s;
-  transition-property: color,opacity;
+  transition-property: color, opacity;
 }
 
 .wrapper {
@@ -2737,7 +2741,7 @@ visually highlights elements for selection with a hover effect
   background-color: rgba(53, 53, 53, 0);
   outline: none;
 
-  .zoomable { 
+  .zoomable {
     animation: fade-in 0.25s ease;
   }
 

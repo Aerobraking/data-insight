@@ -272,12 +272,12 @@ export default defineComponent({
     },
     loadInsightFileFromPath(path: string) {
       if (benchmark.doBenchmark)
-        benchmark.start("vue"), benchmark.start("json");
+        benchmark.logTime("vue"), benchmark.logTime("json");
 
       let jsonString = fs.readFileSync(path, "utf8");
       let file: InsightFile = deserialize(InsightFile, jsonString);
 
-      if (benchmark.doBenchmark) benchmark.stop("json", "json file loaded");
+      if (benchmark.doBenchmark) benchmark.logTime("json");
 
       this.loadInsightFile(file);
     },

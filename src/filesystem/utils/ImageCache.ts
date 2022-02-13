@@ -1,4 +1,4 @@
-import { doBenchmark, start } from "@/core/utils/Benchmark";
+import { doBenchmark, logTime } from "@/core/utils/Benchmark";
 import { IframeParenthesesOutline } from "mdue";
 import _ from "underscore";
 
@@ -68,7 +68,7 @@ export class Cache {
                 if (e.data.type == ImageSize.finish || e.data.type == ImageSize.error) {
                     remove(this.listQueue, e.data.path);
 
-                    if (doBenchmark && this.listQueue.length == 0) console.log("Time for Image loading: ", start("images", "loading images: "));
+                    if (doBenchmark && this.listQueue.length == 0) console.log("Time for Image loading: "), logTime("images", true);
 
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("", e.data.type);
@@ -197,7 +197,7 @@ export class Cache {
 
     createPreview(p: string) {
 
-        if (doBenchmark && this.listQueue.length == 0)  start("images");
+        if (doBenchmark && this.listQueue.length == 0)  logTime("images");
         this.hash.set(p, new Map());
         this.listQueue.push(p);
         this.timeNow = performance.now();

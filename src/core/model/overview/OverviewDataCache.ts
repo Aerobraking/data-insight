@@ -29,7 +29,7 @@ export class OverviewTransferHandler {
     transferData(w: Workspace) {
         let newArray: AbstractNodeShell[] | undefined = this.mapData.get(w.id);
         if (newArray) {
-            w.overview.rootNodes = newArray;
+            w.overview.shells = newArray;
         }
     }
 
@@ -48,8 +48,8 @@ export class OverviewTransferHandler {
     storeData(w: Workspace) {
         if (!this.mapData.has(w.id)) {
             let newArray: AbstractNodeShell[] = [];
-            newArray.push(...w.overview.rootNodes);
-            w.overview.rootNodes = [];
+            newArray.push(...w.overview.shells);
+            w.overview.shells = [];
             this.mapData.set(w.id, newArray);
         }
     }

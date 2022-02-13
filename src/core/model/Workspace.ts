@@ -30,11 +30,11 @@ export class Overview {
             ],
         },
     })
-    rootNodes: AbstractNodeShell[] = [];
+    shells: AbstractNodeShell[] = [];
 
     public initAfterLoading() {
-        for (let i = 0; i < this.rootNodes.length; i++) {
-            const v = this.rootNodes[i];
+        for (let i = 0; i < this.shells.length; i++) {
+            const v = this.shells[i];
             v.initAfterLoading();
         }
     }

@@ -4,7 +4,7 @@ import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import {  FeatureDataType } from "./FeatureData";
 import { Constructor } from "@/core/plugin/Constructor";
 import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
-import { doBenchmark, start } from "@/core/utils/Benchmark";
+import { doBenchmark, logTime } from "@/core/utils/Benchmark";
 
 export const Layouts: AbstractNodeLayout[] = [];
 export function LayoutDecorator() {
@@ -468,20 +468,19 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     constructor() {
         super();
 
-        if (doBenchmark) {
-            window.addEventListener("keydown", (e) => {
-                switch (e.key) {
-                    case "F2":
-                        this.randomMovement = true;
-                        break;
-                }
-            })
-        }
+        // if (doBenchmark) {
+        //     window.addEventListener("keydown", (e) => {
+        //         switch (e.key) {
+        //             case "F2":
+        //                 this.randomMovement = true;
+        //                 break;
+        //         }
+        //     })
+        // }
     }
 
     public featuresUpdated(shell: AbstractNodeShellIfc): void { }
-
-
+ 
     public id: LayoutType = LayoutType.STATICDYNAMICX;
 
     randomMovement = false;
@@ -677,21 +676,21 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
 
 
-        if (this.randomMovement) {
-            shells.forEach(shell => {
-                this.reheatShell(shell);
-                shell.nodes.forEach(n => {
-                    const coord = n.customData["co"];
-                    if (!n.isRoot() && coord != undefined) {
-                        n.x += 1, n.y += 1;
-                        coord.vy = Math.random() * 4000 - 2000, coord.vx = Math.random() * 200 - 100;
-                    }
-                });
-            });
-            this.randomMovement = false;
-        }
+        // if (this.randomMovement) {
+        //     shells.forEach(shell => {
+        //         this.reheatShell(shell);
+        //         shell.nodes.forEach(n => {
+        //             const coord = n.customData["co"];
+        //             if (!n.isRoot() && coord != undefined) {
+        //                 n.x += 1, n.y += 1;
+        //                 coord.vy = Math.random() * 4000 - 2000, coord.vx = Math.random() * 200 - 100;
+        //             }
+        //         });
+        //     });
+        //     this.randomMovement = false;
+        // }
 
-        if (doBenchmark && shells.length > 0) start("sim");
+        if (doBenchmark && shells.length > 0) logTime("sim");
 
         shells.forEach(shell => {
 
@@ -785,7 +784,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
         });
 
-        if (doBenchmark && shells.length > 0) start("sim", "Time for simulation", "ms", 30);
+        if (doBenchmark && shells.length > 0) logTime("sim"); 
 
     }
 

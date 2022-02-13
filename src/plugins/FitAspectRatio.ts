@@ -1,4 +1,3 @@
-
 import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
 
 @PluginDecorator()

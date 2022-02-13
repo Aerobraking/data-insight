@@ -1,5 +1,3 @@
-
-import WorkspaceEntryAspectRatio from "@/core/model/WorkspaceEntry";
 import { ElementDimension, setSize } from "@/core/utils/resize";
 import { PluginAdapter, PluginDecorator } from "@/core/plugin/AbstractPlugin"
 

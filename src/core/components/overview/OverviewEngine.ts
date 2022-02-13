@@ -16,41 +16,51 @@ import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
 import { AbstractFeature } from "@/core/model/overview/AbstractFeature";
 import { Layouter } from "@/core/model/overview/NodeLayout";
 import { AbstractLink, AbstractNode } from "@/core/model/overview/AbstractNode";
+import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
 
 export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     private static instances: OverviewEngine[] = [];
     private static started: boolean = false;
+    private static printlog: boolean = false;
     private static fpsInterval: number = 0;
     private static now: number = 0;
     private static then: number = 0;
     private static elapsed: number = 0;
     private static elapsedTotal: number = 0;
     public static framecounter: number = 0;
-    public static fpsaverage: number = 100;
     // milliseconds till last frame
     private static delta: number = 0;
+
     private static startClock(): void {
-        OverviewEngine.fpsInterval = 1000 / 60;
+        OverviewEngine.fpsInterval = 1000 / 144;
         OverviewEngine.then = performance.now();
         OverviewEngine.tickClock();
     }
 
-    private static tickClock(): void {
+    public static printLog() {
+        OverviewEngine.printlog = true;
+    }
 
-        requestAnimationFrame(OverviewEngine.tickClock.bind(this));
+    private static tickClock(): void {
 
         // calc elapsed time since last loop, ideally ~33
         OverviewEngine.now = performance.now();
         OverviewEngine.elapsed = OverviewEngine.now - OverviewEngine.then;
 
+        requestAnimationFrame(OverviewEngine.tickClock.bind(this));
+
         // if enough time has elapsed, draw the next frame
         if (OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
 
+            tickStart();
+
+            if (doBenchmark) logTime("tick");
             for (let i = 0; i < OverviewEngine.instances.length; i++) {
                 const inst = OverviewEngine.instances[i];
                 inst.tickEngine();
             }
+
             // prevent too large timesteps in case of slow performance
             OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 10000);
             OverviewEngine.elapsedTotal += OverviewEngine.delta;
@@ -60,12 +70,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             OverviewEngine.then = OverviewEngine.now;//- (OverviewEngine.elapsed % OverviewEngine.fpsInterval);
             OverviewEngine.framecounter++;
             TWEEN.update();
-            this.fpsaverage += 1 / (this.delta / 1000);
 
-            if (this.framecounter % 3 == 0) {
-                if (this.framecounter % 100 == 0) console.log("Avg. FPS: ", Math.floor(this.fpsaverage / 3));
-                this.fpsaverage = 0;
-            }
+            tickEnd(OverviewEngine.printlog);
+            if (OverviewEngine.printlog) OverviewEngine.printlog = false;
         }
 
     }
@@ -92,7 +99,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     }, 500);
 
     context: CanvasRenderingContext2D;
-    private _rootNodes: AbstractNodeShell[] = [];
+    private _shells: AbstractNodeShell[] = [];
 
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
@@ -308,7 +315,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
-        this.zoom.scaleExtent([0.0033, 2]);
+        this.zoom.scaleExtent([0.001, 2]);
         this.zoom.on("zoom", (event: any, d: HTMLCanvasElement) => {
             let t = d3.zoomTransform(this.canvas);
             this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
@@ -385,8 +392,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         let mGraph = this.screenToGraphCoords(this.mousePosition);
         let scale = this.transform ? Math.max(40 / this.transform.k, 100) : 200;
         let n = undefined;
-        for (let i = 0; this.transform && i < this.rootNodes.length; i++) {
-            const e = this.rootNodes[i];
+        for (let i = 0; this.transform && i < this.shells.length; i++) {
+            const e = this.shells[i];
             if (e.quadtree) {
                 let nFound: AbstractNode | undefined = e.quadtree.find(mGraph.x - e.x, mGraph.y - e.y, scale);
                 if (nFound && (this.transform.k > 0.005 || nFound.isRoot())) {
@@ -425,7 +432,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         if (this.showAllTimer) clearTimeout(this.showAllTimer);
     }
 
-    public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeShell[] | undefined = this._rootNodes): ElementDimension {
+    public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeShell[] | undefined = this._shells): ElementDimension {
 
         const _this = this;
         let nodesThere = false;
@@ -553,8 +560,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         if (this.nodeFiltered.length > 0) {
             // search for new nodes that will be blending out or in
-            for (let index = 0; index < this.rootNodes.length; index++) {
-                const entry = this.rootNodes[index] as AbstractNodeShell;
+            for (let index = 0; index < this.shells.length; index++) {
+                const entry = this.shells[index] as AbstractNodeShell;
 
                 for (let j = 0; j < entry.nodes.length; j++) {
                     const n = entry.nodes[j];
@@ -629,16 +636,16 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.enableCulling = !this.enableCulling;
     }
 
-    public get rootNodes(): any[] {
-        return this._rootNodes;
+    public get shells(): any[] {
+        return this._shells;
     }
 
-    public set rootNodes(value: any[]) {
-        this._rootNodes = value;
+    public set shells(value: any[]) {
+        this._shells = value;
 
         // register the root nodes for color ids
-        for (let j = 0; j < this.rootNodes.length; j++) {
-            const entry: AbstractNodeShell = this.rootNodes[j];
+        for (let j = 0; j < this.shells.length; j++) {
+            const entry: AbstractNodeShell = this.shells[j];
             for (let i = 0; i < entry.nodes.length; i++) {
                 const n = entry.nodes[i];
             }
@@ -650,8 +657,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     public tickEngine(): void {
 
-        Layouter.tickLayout(this._rootNodes, OverviewEngine.delta);
-        this._rootNodes.forEach(s => s.tickShell());
+        Layouter.tickLayout(this._shells, OverviewEngine.delta);
+        if (doBenchmark) logTime("PrepareRender");
+        this._shells.forEach(s => s.tickShell());
 
         if (this.colorTransitionElapsed != undefined) {
             this.colorTransitionElapsed += OverviewEngine.delta;
@@ -758,8 +766,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             if (transition) {
 
-                for (let i = 0; i < this.rootNodes.length; i++) {
-                    const entry: AbstractNodeShell = this.rootNodes[i];
+                for (let i = 0; i < this.shells.length; i++) {
+                    const entry: AbstractNodeShell = this.shells[i];
                     let nodes: AbstractNode[] = entry.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
@@ -782,8 +790,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             } else {
 
-                for (let index = 0; index < this.rootNodes.length; index++) {
-                    const entry: AbstractNodeShell = this.rootNodes[index];
+                for (let index = 0; index < this.shells.length; index++) {
+                    const entry: AbstractNodeShell = this.shells[index];
                     let nodes: AbstractNode[] = entry.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
@@ -859,24 +867,34 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         ctx.translate(this.transform.x, this.transform.y);
         ctx.scale(this.transform.k, this.transform.k);
 
-        if (this.rootNodes) {
+        if (this.shells) {
 
-            for (let i = 0; i < this.rootNodes.length; i++) {
-                const shell: AbstractNodeShell = this.rootNodes[i];
+            for (let i = 0; i < this.shells.length; i++) {
+                const shell: AbstractNodeShell = this.shells[i];
 
                 ctx.save();
                 ctx.translate(shell.x, shell.y);
-                
+
                 let nodes: AbstractNode[] = shell.nodes;
                 let links: AbstractLink[] = shell.links;
                 var renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
                 var renderDataLinks: { culling: boolean }[] = new Array(links.length);
-        
-                this.prepareRenderData(nodes, links, renderData, renderDataLinks);
-                this.drawLinks(ctx, nodes, links, shell, renderData, renderDataLinks);
-                this.drawNodes(ctx, nodes, shell, renderData);
-                this.drawText(ctx, nodes, shell, renderData);
 
+
+                this.prepareRenderData(nodes, links, renderData, renderDataLinks);
+                if (doBenchmark) logTime("PrepareRender");
+
+                if (doBenchmark) logTime("Render");
+                if (doBenchmark) logTime("rlinks");
+                this.drawLinks(ctx, nodes, links, shell, renderData, renderDataLinks);
+                if (doBenchmark) logTime("rlinks");
+                if (doBenchmark) logTime("rnodes");
+                this.drawNodes(ctx, nodes, shell, renderData);
+                if (doBenchmark) logTime("rnodes");
+                if (doBenchmark) logTime("rtext");
+                this.drawText(ctx, nodes, shell, renderData);
+                if (doBenchmark) logTime("rtext");
+                if (doBenchmark) logTime("Render");
                 ctx.restore();
             }
         }

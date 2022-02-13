@@ -103,7 +103,7 @@ const createListenersFn = (listeners: any, fn: any) => (hotkey: string, callback
     fn(listeners, context, hotkey, callback);
 };
 
-const registerListener = (listeners: HotKey[], context: string, hotkey: string, callback: (e: KeyboardEvent) => void) => {
+const registerListener = (listeners: HotKey[], context: "ws" | "ov" | "global", hotkey: string, callback: (e: KeyboardEvent) => void) => {
     listeners.push({ rawHotkey: context + " " + hotkey, hotkey: normalizeHotkey(hotkey), context: context, callback: callback });
 };
 
@@ -177,7 +177,7 @@ const createKeyDownListener = (listeners: HotKey[], debounceTime: number) => {
         buffer.push(description);
 
         listeners.forEach((listener: HotKey) => {
-            if (matchHotkey(buffer, listener.hotkey) && listener.context == context) {
+            if (matchHotkey(buffer, listener.hotkey) && (listener.context == context || listener.context == "global")) {
                 listener.callback(event);
             }
         });
@@ -197,7 +197,7 @@ const validateContext = (options: { debounceTime: number, autoEnable: boolean })
 export interface HotKey {
     rawHotkey: string,
     hotkey: { [any: string]: boolean },
-    context: string,
+    context: "ws" | "ov" | "global",
     callback: (e: KeyboardEvent) => void
 }
 

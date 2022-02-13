@@ -1,9 +1,12 @@
+import { Workspace } from "@/core/model/Workspace";
 import AbstractWorkspaceEntry from "@/core/model/WorkspaceEntry";
 import { ElementDimension } from "@/core/utils/resize";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 
 export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
+    
     ws: (WorkspaceViewIfc | undefined) = undefined;
+
     getCoordinatesFromElement(e: any): ElementDimension {
         return this.ws ? this.ws.getCoordinatesFromElement(e) :
             "" as unknown as ElementDimension;
@@ -46,6 +49,9 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     }
     drawCanvas(): void {
         this.ws ? this.ws.drawCanvas() : "";
+    }
+    getModel(): Workspace | undefined {
+        return this.ws ? this.ws.getModel() : undefined;
     }
     finishPlugin(): void {
         this.ws ? this.ws.finishPlugin() : [];

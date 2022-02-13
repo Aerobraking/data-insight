@@ -1,7 +1,9 @@
+import { Workspace } from "@/core/model/Workspace";
 import AbstractWorkspaceEntry from "@/core/model/WorkspaceEntry";
 import { ElementDimension } from "@/core/utils/resize";
 
 export default interface WorkspaceViewIfc {
+    getModel(): Workspace | undefined;
     getCoordinatesFromElement(e: any): ElementDimension;
     getPositionInDocument(e: { clientX: number; clientY: number }): { x: number, y: number };
     getPositionInWorkspace(e: { clientX: number; clientY: number }): { x: number, y: number };

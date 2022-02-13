@@ -199,7 +199,7 @@ import {
   FileTree,
   ArrowCollapseRight,
 } from "mdue";
-import { AbstractNode } from "@/core/model/overview/AbstractNode"; 
+import { AbstractNode } from "@/core/model/overview/AbstractNode";
 import { AbstractFeature } from "@/core/model/overview/AbstractFeature";
 import { AbstractNodeShell } from "@/core/model/overview/AbstractNodeShell";
 import { Instance } from "@/core/model/overview/OverviewDataCache";
@@ -208,8 +208,15 @@ import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
 import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
 import { Layouter } from "@/core/model/overview/NodeLayout";
-import { doBenchmark, start } from "@/core/utils/Benchmark";
+import { doBenchmark, logTime } from "@/core/utils/Benchmark";
 import { FeatureType } from "@/core/model/overview/FeatureType";
+import { OverviewEngine } from "./OverviewEngine";
+import {
+  createKeyboardInputContext,
+  PluginShortCutHandler,
+} from "@/core/plugin/KeyboardShortcut";
+import { getPlugins } from "@/plugins/PluginList";
+import AbstractPlugin from "@/core/plugin/AbstractPlugin";
 
 export default defineComponent({
   name: "App",
@@ -292,6 +299,7 @@ export default defineComponent({
     panZoomInstance: any;
     selection: AbstractNode | undefined;
     listFeatures: AbstractFeature[];
+    c: PluginShortCutHandler | undefined;
   } {
     return {
       listFeatures: [],
@@ -301,10 +309,25 @@ export default defineComponent({
       id: 0,
       panZoomInstance: null,
       wsListener: undefined,
+      c: undefined,
     };
   },
   mounted() {
     const _this = this;
+
+    this.c = createKeyboardInputContext({
+      debounceTime: 100,
+      autoEnable: true,
+    });
+
+    getPlugins().forEach((p) => {
+      const plugin = new p();
+      if (this.c)
+        this.c.register(plugin.shortcut, () => {
+          this.startPlugin(plugin);
+        });
+    });
+
     /**
      * remove the node data from the vuex store
      */
@@ -347,7 +370,7 @@ export default defineComponent({
     /**
      * Set the data after the render is set.
      */
-    Instance.getEngine(this.id).rootNodes = Instance.getData(this.id);
+    Instance.getEngine(this.id).shells = Instance.getData(this.id);
 
     /**
      * Update the model coordinates with the current ones from the html view.
@@ -415,7 +438,15 @@ export default defineComponent({
       return this.$store.getters.getShowUI;
     },
   },
+  inject: ["getWorkspaceIfc"],
   methods: {
+    startPlugin(p: AbstractPlugin): void {
+      // this.activePlugin = p;
+      // @ts-ignore: Unreachable code error
+      p.setWorkspace(this.getWorkspaceIfc());
+      p.init();
+      WSUtils.Events.pluginStarted(p.isModal());
+    },
     toggleHighlight() {
       this.model.overview.highlightSelection =
         !this.model.overview.highlightSelection;
@@ -480,7 +511,7 @@ export default defineComponent({
         // update the data
         Instance.setData(this.id, l);
         // tell the engine that we removed entries and clear selection
-        Instance.getEngine(this.id).rootNodes = l;
+        Instance.getEngine(this.id).shells = l;
         Instance.getEngine(this.id).clearSelection();
       }
     },
@@ -491,13 +522,14 @@ export default defineComponent({
       }
     },
     keydown(e: KeyboardEvent) {
+      if (this.c) this.c.keydown("ov", e);
+
       let node: AbstractNode | undefined =
         Instance.getEngine(this.id).selection.length > 0
           ? Instance.getEngine(this.id).selection[0]
           : undefined;
 
-      const padding = 50,
-        dur = 200;
+      const padding = 50;
       /**
        * Arrow key navigation
        */
@@ -618,22 +650,19 @@ export default defineComponent({
           case "h":
             this.toggleHighlight();
             break;
-          case "F1":
-            if (doBenchmark) Instance.getEngine(this.id).toggleCulling();
-            break;
           case "l":
-            if (doBenchmark) start("layout");
+            if (doBenchmark) logTime("layout");
             for (let index = 0; index < 100; index++) {
-              Layouter.nodesUpdated(Instance.getEngine(this.id).rootNodes[0]);
+              Layouter.nodesUpdated(Instance.getEngine(this.id).shells[0]);
             }
-            if (doBenchmark) start("layout", "time for layouting");
- 
+            if (doBenchmark) logTime("layout");
+
             for (
               let i = 0;
-              i < Instance.getEngine(this.id).rootNodes.length;
+              i < Instance.getEngine(this.id).shells.length;
               i++
             ) {
-              const l = Instance.getEngine(this.id).rootNodes[i].nodes.length; 
+              const l = Instance.getEngine(this.id).shells[i].nodes.length;
               console.log(i, l);
             }
             break;
@@ -719,13 +748,10 @@ export default defineComponent({
 
       if (lowercase.length > 0) {
         if (Instance.getEngine(this.id)) {
-          for (
-            let i = 0;
-            i < Instance.getEngine(this.id).rootNodes.length;
-            i++
-          ) {
-            const entry: AbstractNodeShell = Instance.getEngine(this.id)
-              .rootNodes[i];
+          for (let i = 0; i < Instance.getEngine(this.id).shells.length; i++) {
+            const entry: AbstractNodeShell = Instance.getEngine(this.id).shells[
+              i
+            ];
 
             for (let j = 0; j < entry.nodes.length; j++) {
               const n = entry.nodes[j];
@@ -798,7 +824,7 @@ export default defineComponent({
        * register the entries to the engine
        */
       if (Instance.getEngine(this.id)) {
-        Instance.getEngine(this.id).rootNodes = listEntries;
+        Instance.getEngine(this.id).shells = listEntries;
       }
 
       /**
