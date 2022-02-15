@@ -17,6 +17,14 @@ export class Watcher {
     public reset() {
         this.hash.clear();
         this.hashRecursive.clear();
+
+        let msg: FileWatcherSend = {
+            type: "reset",
+            path:"",
+            recursive:false
+        };
+        ipcRenderer.send('msg-main-to-file', msg);
+
     }
 
     private constructor() {

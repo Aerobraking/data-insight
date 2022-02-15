@@ -35,7 +35,7 @@
   <ModalDialog v-show="showHelp" @close="showHelp = false">
     <template v-slot:header>Keyboard Layout</template>
     <template v-slot:body>
-      <table>
+      <table style="margin-bottom: 80%;">
         <tr>
           <td><h4>General</h4></td>
           <td></td>

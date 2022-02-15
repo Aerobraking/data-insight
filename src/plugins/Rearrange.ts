@@ -2,7 +2,7 @@ import { ElementDimension, set3DPosition, setSize } from "@/core/utils/resize";
 import _ from "underscore";
 import AbstractPlugin, { PluginDecorator } from "@/core/plugin/AbstractPlugin"
 
-@PluginDecorator()
+@PluginDecorator(true)
 export default class ReArrange extends AbstractPlugin {
 
     description: string = "<kbd>Alt</kbd> + <kbd>R</kbd>";

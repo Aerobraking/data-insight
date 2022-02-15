@@ -84,9 +84,15 @@
               @paste="paste"
               @input.stop.prevent
             >
-              <div class="rectangle-selection"></div>
+              <div
+                class="rectangle-selection"
+                style="width: 1px; height: 1px"
+              ></div>
 
-              <div class="rectangle-selection-wrapper">
+              <div
+                class="rectangle-selection-wrapper"
+                style="width: 1px; height: 1px"
+              >
                 <button class="ws-zoom-fixed resizer-bottom-right">
                   <ResizeBottomRight />
                 </button>
@@ -604,7 +610,7 @@ export default defineComponent({
       entrySelected: this.entrySelected,
       setFocusToWorkspace: this.setFocusToWorkspace,
       mouseupWorkspace: this.mouseup,
-      getWorkspaceIfc:  this.getWorkspaceIfc,
+      getWorkspaceIfc: this.getWorkspaceIfc,
     };
   },
   inject: ["loadInsightFileFromPath"],
@@ -1750,6 +1756,8 @@ export default defineComponent({
         ),
         0.25
       );
+      console.log(bound);
+
       this.panZoomInstance.smoothShowRectangle(bound);
     },
     getPanzoomRect(

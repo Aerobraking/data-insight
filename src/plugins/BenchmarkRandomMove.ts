@@ -3,18 +3,20 @@ import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
 import { Instance as DataCache } from "@/core/model/overview/OverviewDataCache";
 import { AbstractNode } from "@/core/model/overview/AbstractNode";
 
-@PluginDecorator()
-export default class FitAspectRatio extends PluginAdapter {
+@PluginDecorator(doBenchmark)
+export default class RandomNodeMovement extends PluginAdapter {
 
     readonly description: string = "<kbd>F2</kbd>";
     readonly name: string = "BENCH Random Node movement";
     readonly shortcut: string = "ov f2";
 
     constructor() { super(); }
-
+    public isModal(): boolean {
+        return false;
+    }
     public init(): void {
-        const model = this.workspace.getModel(); 
-        if (model && doBenchmark) { 
+        const model = this.workspace.getModel();
+        if (model && doBenchmark) {
             DataCache.getEngine(model.id).shells.forEach(shell => {
                 shell.customData["heat"] = { v: 100 };
                 shell.nodes.forEach((n: AbstractNode) => {
@@ -26,6 +28,7 @@ export default class FitAspectRatio extends PluginAdapter {
                 });
             });
         }
+        this.workspace.finishPlugin();
     }
 
 }

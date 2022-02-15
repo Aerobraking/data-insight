@@ -1,6 +1,6 @@
 import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
 
-@PluginDecorator()
+@PluginDecorator(true)
 export default class FitAspectRatio extends PluginAdapter {
 
     readonly description: string = "<kbd>A</kbd>";

@@ -6,7 +6,7 @@ export interface FileWatcherUpdate {
 }
 
 export interface FileWatcherSend {
-    type: "register" | "unregister",
-    path: string
-    recursive: boolean
+    type: "register" | "unregister" | "reset",
+    path: string ,
+    recursive: boolean ,
 }

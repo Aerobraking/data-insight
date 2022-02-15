@@ -2,9 +2,10 @@ import WorkspaceViewIfc from "@/core/components/workspace/WorkspaceViewIfc";
 import { Constructor } from "./Constructor";
 
 export const RegisteredPlugins: Constructor<AbstractPlugin>[] = [];
-export function PluginDecorator() {
+
+export function PluginDecorator(active: boolean) {
     return function <T extends Constructor<AbstractPlugin>>(target: T) {
-        RegisteredPlugins.push(target);
+        if (active) RegisteredPlugins.push(target);
     };
 }
 

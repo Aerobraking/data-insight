@@ -1,7 +1,7 @@
 import { ElementDimension, setSize } from "@/core/utils/resize";
 import { PluginAdapter, PluginDecorator } from "@/core/plugin/AbstractPlugin"
 
-@PluginDecorator()
+@PluginDecorator(true)
 export default class PluginNormalizeSize extends PluginAdapter {
 
     readonly description: string = "<kbd>N</kbd>";

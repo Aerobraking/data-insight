@@ -10,7 +10,7 @@ import { FileWatcherUpdate, FileWatcherSend } from "./filesystem/utils/FileWatch
 interface MapCallbacks extends Map<string, number> {
 
 }
- 
+
 
 class Watcher2 {
 
@@ -20,6 +20,9 @@ class Watcher2 {
 
     private watcher: FSWatcher;
     private watcherRecursive: FSWatcher;
+
+    private isReady: boolean = true;
+
     private constructor() {
 
         this.watcherRecursive = chokidar.watch([], {
@@ -88,6 +91,13 @@ class Watcher2 {
             });
     }
 
+    public async reset() {
+        this.isReady = false;
+        await this.watcher.close();
+        await this.watcherRecursive.close();
+        this.isReady = true;
+    }
+
     private callUpdatePrep(path: string, type: string, map: "recursive" | "default") {
         path = path.replace(/\\/g, "/");
         path = path.endsWith("/") ? path.slice(0, -1) : path;
@@ -101,7 +111,7 @@ class Watcher2 {
     }
 
     private callUpdate(path: string, type: string, map: "recursive" | "default"): void {
-  
+
         const call = (p: string) => {
 
             let result: FileWatcherUpdate = {
@@ -130,6 +140,8 @@ class Watcher2 {
     }
 
     registerPath(path: string, recursive: boolean = false) {
+
+        if (!this.isReady) return;
 
         path = path.replace(/\\/g, "/");
         path = path.endsWith("/") ? path.slice(0, -1) : path;
@@ -186,6 +198,9 @@ const FileSystemWatcher = Watcher2.instance;
 
 ipcRenderer.on("msg-main-to-file", (event, payload: FileWatcherSend) => {
     switch (payload.type) {
+        case "reset":
+            FileSystemWatcher.reset();
+            break;
         case "register":
             FileSystemWatcher.registerPath(payload.path, payload.recursive)
             break;

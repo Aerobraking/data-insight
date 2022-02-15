@@ -1,3 +1,6 @@
+var os = require('os');
+var osu = require('node-os-utils')
+var cpu = osu.cpu
 
 interface entry {
     time: number, isMeasured: 0 | 1 | 2, fpsStep: number, fpsMean: number[]
@@ -10,10 +13,35 @@ export const doBenchmark = true;
 let keysUsedInTick: string[] = [];
 let log: string[] = [];
 
+var startTime: [number, number] | undefined, startUsage: { user: number; system: number; } | undefined;
+var elapTime: [number, number], elapUsage: { user: number; system: number; };
+
+function secNSec2ms(secNSec: Array<number> | number) {
+    if (Array.isArray(secNSec)) {
+        return secNSec[0] * 1000 + secNSec[1] / 1000000;
+    }
+    return secNSec / 1000;
+}
+
 export function tickStart() {
     mapTimes.forEach((value: entry, key: string) => {
         value.isMeasured = 0;
     });
+
+    // if (startTime && startUsage) {
+    //     elapTime = process.hrtime(startTime);
+    //     elapUsage = process.cpuUsage(startUsage);
+
+    //     var elapTimeMS = secNSec2ms(elapTime);
+    //     var elapUserMS = secNSec2ms(elapUsage.user);
+    //     var elapSystMS = secNSec2ms(elapUsage.system);
+    //     cpuUsage = Math.round(100 * (elapUserMS + elapSystMS) / elapTimeMS);
+    //     console.log(cpuUsage);
+        
+    // }
+
+    // startTime = process.hrtime()
+    // startUsage = process.cpuUsage()
 
     keysUsedInTick = [];
 }
@@ -70,6 +98,18 @@ function addPrintText(columns: string[], key: string) {
 export function tickEnd(print: boolean = false) {
 
     keysUsedInTick.forEach(key => { addPrintText(log, key); });
+
+    // cpu.usage()
+    //     .then((cpuPercentage: number) => {
+    //         // cpuUsage = cpuPercentage;
+    //     });
+
+    // log.push(String(cpuUsage));
+    // log.push("cpu");
+    log.push(String((process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)));
+    log.push("heap");
+    log.push(String((process.memoryUsage().rss / 1024 / 1024).toFixed(2)));
+    log.push("total");
     log.push("\n");
 
     if (print) {
@@ -78,3 +118,6 @@ export function tickEnd(print: boolean = false) {
     }
 
 }
+
+let cpuUsage = 0;
+
