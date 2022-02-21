@@ -3,7 +3,14 @@ var osu = require('node-os-utils')
 var cpu = osu.cpu
 
 interface entry {
-    time: number, isMeasured: 0 | 1 | 2, fpsStep: number, fpsMean: number[]
+    time: number,
+    index: number,
+    /**
+     * 0: set current time
+     * 1: calculate time since last call
+     * 2: take the time value in this object directly
+     */
+    isMeasured: 0 | 1 | 2 | 3, fpsStep: number, fpsMean: number[]
 }
 
 const mapTimes: Map<string, entry> = new Map();
@@ -12,44 +19,34 @@ export const doBenchmark = true;
 
 let keysUsedInTick: string[] = [];
 let log: string[] = [];
-
-var startTime: [number, number] | undefined, startUsage: { user: number; system: number; } | undefined;
-var elapTime: [number, number], elapUsage: { user: number; system: number; };
-
-function secNSec2ms(secNSec: Array<number> | number) {
-    if (Array.isArray(secNSec)) {
-        return secNSec[0] * 1000 + secNSec[1] / 1000000;
-    }
-    return secNSec / 1000;
-}
+let indexCounter = 0;
+let lastFrameTime = 0;
+let lastFrame = 0;
 
 export function tickStart() {
+
+    const t = performance.now();
+    lastFrame = (t - lastFrameTime);
+    lastFrameTime = t;
+
+
+    logTime("chrome");
+
     mapTimes.forEach((value: entry, key: string) => {
         value.isMeasured = 0;
     });
 
-    // if (startTime && startUsage) {
-    //     elapTime = process.hrtime(startTime);
-    //     elapUsage = process.cpuUsage(startUsage);
-
-    //     var elapTimeMS = secNSec2ms(elapTime);
-    //     var elapUserMS = secNSec2ms(elapUsage.user);
-    //     var elapSystMS = secNSec2ms(elapUsage.system);
-    //     cpuUsage = Math.round(100 * (elapUserMS + elapSystMS) / elapTimeMS);
-    //     console.log(cpuUsage);
-        
-    // }
-
-    // startTime = process.hrtime()
-    // startUsage = process.cpuUsage()
+    // set to 2 so it get printed
+    const n = mapTimes.get("chrome"); if (n) n.isMeasured = 2;
 
     keysUsedInTick = [];
+    keysUsedInTick.push("chrome");
 }
 
 export function logTime(key: string, log: boolean = false, scale: "s" | "ms" = "s") {
     if (!keysUsedInTick.includes(key)) keysUsedInTick.push(key);
 
-    if (!mapTimes.has(key)) { mapTimes.set(key, { time: performance.now(), isMeasured: 0, fpsStep: 0, fpsMean: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }); } else {
+    if (!mapTimes.has(key)) { mapTimes.set(key, { index: indexCounter++, time: performance.now(), isMeasured: 0, fpsStep: 0, fpsMean: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }); } else {
         const n = mapTimes.get(key);
         if (n) {
             if (n.isMeasured == 0) { n.time = performance.now(); n.isMeasured = 1; }
@@ -78,45 +75,64 @@ function print(key: string, scale: "s" | "ms" = "s", log: boolean = false) {
 function addPrintText(columns: string[], key: string) {
     const entry = mapTimes.get(key);
     if (entry) {
-        const time = entry.isMeasured == 2 ? entry.time : (performance.now() - entry.time);
+        const time = entry.isMeasured >= 2 ? entry.time : (performance.now() - entry.time);
         entry.fpsMean[(entry.fpsStep++) % entry.fpsMean.length] = time;
-        const MEAN = (t: number, f: number) => t += f;
-        const meanFPS = entry.fpsMean.reduce(MEAN, 0) / entry.fpsMean.length;
-        columns.push(key);
         columns.push(time.toFixed(2));
-        columns.push("ms");
-        if (entry.isMeasured != 2) {
-            columns.push(Math.round(1000 / meanFPS) + "");
-            columns.push("~fps");
-            columns.push(Math.round(1000 / time) + "");
-            columns.push("fps");
-        }
-
+        columns.push(key + (entry.isMeasured != 3 ? " (ms)" : ""));
     }
+
 }
 
 export function tickEnd(print: boolean = false) {
 
-    keysUsedInTick.forEach(key => { addPrintText(log, key); });
+    logTime("Frame");
+    let f = mapTimes.get("Frame"); if (f) f.isMeasured = 2, f.time = lastFrame;
 
-    // cpu.usage()
-    //     .then((cpuPercentage: number) => {
-    //         // cpuUsage = cpuPercentage;
-    //     });
+    logTime("CPU (%)"); f = mapTimes.get("CPU (%)"); if (f) f.isMeasured = 3, f.time = cpuUsage;
+    logTime("heap (MB)"); f = mapTimes.get("heap (MB)"); if (f) f.isMeasured = 3, f.time = (process.memoryUsage().heapUsed / 1024 / 1024);
+    logTime("total (MB)"); f = mapTimes.get("total (MB)"); if (f) f.isMeasured = 3, f.time = (process.memoryUsage().rss / 1024 / 1024);
 
-    // log.push(String(cpuUsage));
-    // log.push("cpu");
-    log.push(String((process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)));
-    log.push("heap");
-    log.push(String((process.memoryUsage().rss / 1024 / 1024).toFixed(2)));
-    log.push("total");
-    log.push("\n");
-
-    if (print) {
-        log.forEach((s, i) => log[i] = s.replace(".", ","));
-        console.log(log.join(";"));
+    const c = mapTimes.get("Frame");
+    if (c) {
+        const MEAN = (t: number, f: number) => t += f;
+        const meanFPS = c.fpsMean.reduce(MEAN, 0) / c.fpsMean.length;
+        logTime("~fps"); f = mapTimes.get("~fps"); if (f) f.isMeasured = 3, f.time = Math.round(1000 / meanFPS);
+        logTime("fps"); f = mapTimes.get("fps"); if (f) f.isMeasured = 3, f.time = Math.round(1000 / c.time);
     }
 
+    let newLine: string[] = new Array(indexCounter).fill(" ");
+    let header: string[] = new Array(indexCounter).fill(" ");
+
+    keysUsedInTick.forEach(key => {
+        const e = mapTimes.get(key);
+        if (e) {
+            header[e.index] = key + (e.isMeasured != 3 ? " (ms)" : "");
+            const time = e.isMeasured >= 2 ? e.time : (performance.now() - e.time);
+            e.fpsMean[(e.fpsStep++) % e.fpsMean.length] = time;
+            newLine[e.index] = time.toFixed(2);
+        }
+    });
+  
+    cpu.usage().then((v: number) => cpuUsage = v);
+
+    newLine.push("\n");
+    log.push(...newLine); 
+
+    if (print) {
+        console.log(keysUsedInTick);
+        console.log(header);
+        console.log(newLine);
+        console.log(mapTimes);
+        
+        header.unshift("\n"); 
+        header.push("\n"); 
+        log = [...header , ...log]; 
+        log.forEach((s, i) => log[i] = s.replace(".", ","));
+        console.log(log.join(";"));
+        log = [];
+    }
+
+    const n = mapTimes.get("chrome"); if (n) n.isMeasured = 0; logTime("chrome");
 }
 
 let cpuUsage = 0;
