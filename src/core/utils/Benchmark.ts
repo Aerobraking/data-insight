@@ -21,15 +21,15 @@ let keysUsedInTick: string[] = [];
 let log: string[] = [];
 let indexCounter = 0;
 let lastFrameTime = 0;
+let timeTotal = 0;
 let lastFrame = 0;
 
 export function tickStart() {
 
     const t = performance.now();
     lastFrame = (t - lastFrameTime);
-    lastFrameTime = t;
-
-
+    lastFrameTime = t; 
+ 
     logTime("chrome");
 
     mapTimes.forEach((value: entry, key: string) => {
@@ -87,6 +87,7 @@ export function tickEnd(print: boolean = false) {
 
     logTime("Frame");
     let f = mapTimes.get("Frame"); if (f) f.isMeasured = 2, f.time = lastFrame;
+    logTime("Time (s)"); f = mapTimes.get("Time (s)"); if (f) f.isMeasured = 3, f.time = timeTotal += lastFrame / 1000;
     logTime("CPU (%)"); f = mapTimes.get("CPU (%)"); if (f) f.isMeasured = 3, f.time = cpuUsage;
     logTime("heap (MB)"); f = mapTimes.get("heap (MB)"); if (f) f.isMeasured = 3, f.time = (process.memoryUsage().heapUsed / 1024 / 1024);
     logTime("total (MB)"); f = mapTimes.get("total (MB)"); if (f) f.isMeasured = 3, f.time = (process.memoryUsage().rss / 1024 / 1024);
@@ -118,13 +119,14 @@ export function tickEnd(print: boolean = false) {
     newLine.push("\n");
     log.push(...newLine);
 
-    if (print) { 
+    if (print) {
         header.unshift("\n");
         header.push("\n");
         log = [...header, ...log];
         log.forEach((s, i) => log[i] = s.replace(".", ","));
         console.log(log.join(";"));
         log = [];
+        timeTotal = 0;
     }
 
     const n = mapTimes.get("chrome"); if (n) n.isMeasured = 0; logTime("chrome");
