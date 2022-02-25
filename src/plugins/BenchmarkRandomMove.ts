@@ -1,7 +1,7 @@
 import { doBenchmark } from "@/core/utils/Benchmark";
 import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
-import { Instance as DataCache } from "@/core/model/overview/OverviewDataCache";
-import { AbstractNode } from "@/core/model/overview/AbstractNode";
+import { Instance as DataCache } from "@/core/model/workspace/overview/OverviewDataCache";
+import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 
 @PluginDecorator(doBenchmark)
 export default class RandomNodeMovement extends PluginAdapter {
@@ -22,8 +22,14 @@ export default class RandomNodeMovement extends PluginAdapter {
                 shell.nodes.forEach((n: AbstractNode) => {
                     const coord = n.customData["co"];
                     if (!n.isRoot() && coord != undefined) {
-                        n.x += 1, n.y += 1;
-                        coord.vy = Math.random() * 4000 - 2000, coord.vx = Math.random() * 200 - 100;
+                        // n.x += 1, n.y += 1;
+                        n.x += 1, n.y = 0;
+                        // coord.vy = Math.random() * 4000 - 2000, coord.vx = Math.random() * 200 - 100;
+                        n.x = Math.random() * 10000 - 5000 
+                        n.y = Math.random() * 10000 - 5000, 
+                        coord.vy =0;
+                        coord.vx =0;
+                        
                     }
                 });
             });

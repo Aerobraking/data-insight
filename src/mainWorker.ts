@@ -3,10 +3,10 @@ import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
 import { FolderSync, FolderSyncResult, FolderFeatureResult } from './filesystem/utils/FileSystemMessages';
-import { FeatureDataList, FeatureDataSum, FeatureDataMedian } from './core/model/overview/FeatureData';
+import { FeatureDataList, FeatureDataSum, FeatureDataMedian } from './core/model/workspace/overview/FeatureData';
 import path from "path";
 import { Dirent } from 'fs-extra';
-import { FeatureType } from './core/model/overview/FeatureType';
+import { FeatureType } from './core/model/workspace/overview/FeatureType';
 
 /**
  * An Object that can contain any type of FeatureData

@@ -1,5 +1,5 @@
 
-import { ElementDimension, ElementDimensionInstance } from "@/core/utils/resize";
+import { ElementDimension, ElementDimensionInstance } from "@/core/utils/ResizeUtils";
 import * as d3 from "d3";
 import {
     D3DragEvent,
@@ -9,13 +9,13 @@ import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
-import { Overview, Workspace } from "@/core/model/Workspace";
-import { AbstractNodeShell, NodeShellListener } from "@/core/model/overview/AbstractNodeShell";
+import { Overview, Workspace } from "@/core/model/workspace/Workspace";
+import { AbstractNodeShell, NodeShellListener } from "@/core/model/workspace/overview/AbstractNodeShell";
 import { ipcRenderer } from "electron";
 import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
-import { AbstractFeature } from "@/core/model/overview/AbstractFeature";
-import { Layouter } from "@/core/model/overview/NodeLayout";
-import { AbstractLink, AbstractNode } from "@/core/model/overview/AbstractNode";
+import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature";
+import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
+import { AbstractLink, AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
 
 export class OverviewEngine implements NodeShellListener<AbstractNode>{

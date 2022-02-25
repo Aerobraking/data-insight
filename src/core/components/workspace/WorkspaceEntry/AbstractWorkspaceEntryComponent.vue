@@ -8,7 +8,7 @@
 import { defineComponent } from "vue";
 import WorkspaceViewIfcWrapper from "@/core/components/workspace/WorkspaceViewIfcWrapper";
 import * as _ from "underscore";
-import WorkspaceEntry from "@/core/model/WorkspaceEntry";
+import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 
 export default defineComponent({
   name: "wsentryabstract",

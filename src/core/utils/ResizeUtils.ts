@@ -101,6 +101,7 @@ export class ElementDimensionInstance implements ElementDimension {
     }
 
     public scaleFromCenter(s: number = 1) {
+        if (s == 1) return;
         const oldW = this.w;
         const oldH = this.h;
         this.w *= s;
@@ -109,6 +110,16 @@ export class ElementDimensionInstance implements ElementDimension {
         this.y -= ((this.h - oldH) / 2);
         this.x2 += ((this.w - oldW) / 2);
         this.y2 += ((this.h - oldH) / 2);
+    }
+    public addPadding(p: number = 1): this {
+        if (p == 1) return this;
+        this.w += p * 2;
+        this.h += p * 2;
+        this.x -= p;
+        this.y -= p;
+        this.x2 += p;
+        this.y2 += p;
+        return this;
     }
 }
 

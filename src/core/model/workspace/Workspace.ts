@@ -1,6 +1,6 @@
 import * as _ from "underscore";
 import { Expose, Type } from "class-transformer"; 
-import View from "./AbstractView";
+import View from "../AbstractView";
 import { AbstractNodeShell } from "./overview/AbstractNodeShell";
 import { Instance } from "./overview/OverviewDataCache";
 import { FeatureSettingsList } from "./overview/AbstractFeature";

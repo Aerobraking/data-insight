@@ -2,9 +2,9 @@
 
 <script lang="ts"> 
 import { defineComponent } from "vue"; 
-import { FeatureType } from "@/core/model/overview/FeatureType";
-import { Workspace } from "@/core/model/Workspace"; 
-import { NodeFeatureNone } from "@/core/model/overview/FeatureNone";
+import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
+import { Workspace } from "@/core/model/workspace/Workspace"; 
+import { NodeFeatureNone } from "@/core/model/workspace/overview/FeatureNone";
 
 export default defineComponent({
   name: FeatureType.None,

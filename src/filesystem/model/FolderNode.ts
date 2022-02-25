@@ -1,4 +1,4 @@
-import { AbstractNode } from "@/core/model/overview/AbstractNode";
+import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { Type } from "class-transformer"; 
 
 export default class FolderNode extends AbstractNode {

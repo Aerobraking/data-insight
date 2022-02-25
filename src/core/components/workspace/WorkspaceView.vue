@@ -261,8 +261,8 @@ import {
   WorkspaceEntryVideo,
   WorkspaceEntryYoutube,
 } from "@/filesystem/model/FileSystemWorkspaceEntries";
-import { MutationTypes } from "@/store/mutations/mutation-types";
-import * as WSUtils from "./WorkspaceUtils";
+import { MutationTypes } from "@/core/store/mutation-types";
+import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import OverviewView from "../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
@@ -274,12 +274,12 @@ import {
   getCoordinatesFromElement,
   ResizerComplex,
   set3DPosition,
-} from "@/core/utils/resize";
+} from "@/core/utils/ResizeUtils";
 import * as benchmark from "@/core/utils/Benchmark";
 import { deserialize, serialize } from "class-transformer";
 import _ from "underscore";
-import WorkspaceViewIfc from "./WorkspaceViewIfc";
-import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
+import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc";
+import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
 import {
   FormTextbox,
   Resize,
@@ -302,19 +302,19 @@ import {
   DeleteVariant,
   Grid,
 } from "mdue";
-import { Workspace } from "@/core/model/Workspace";
+import { Workspace } from "@/core/model/workspace/Workspace";
 import ReArrange from "@/plugins/Rearrange";
-import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
-import wsentry from "./WorkspaceEntryView.vue";
-import WorkspaceEntryCollection from "@/core/model/WorkspaceEntryCollection";
-import WorkspaceEntry from "@/core/model/WorkspaceEntry";
+import wsentrydisplayname from "./WorkspaceEntry/WorkspaceEntryDisplayName.vue";
+import wsentry from "./WorkspaceEntry/WorkspaceEntryView.vue";
+import WorkspaceEntryCollection from "@/core/model/workspace/WorkspaceEntryCollection";
+import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 import { getPlugins } from "@/plugins/PluginList";
 import {
   createKeyboardInputContext,
   PluginShortCutHandler,
 } from "@/core/plugin/KeyboardShortcut";
 import AbstractPlugin from "@/core/plugin/AbstractPlugin";
-import { WorkspaceEntryFrame } from "@/core/model/WorkspaceEntryFrame";
+import { WorkspaceEntryFrame } from "@/core/model/workspace/WorkspaceEntryFrame";
 
 export default defineComponent({
   el: ".wrapper",
@@ -372,7 +372,7 @@ export default defineComponent({
     dragSelection: HTMLElement[];
     selectionWrapperResizer: ResizerComplex | null;
     useCanvas: boolean;
-    oldViewRect: ElementDimension | undefined;
+    oldViewRect: ElementDimensionInstance | undefined;
     spacePressed: boolean;
     showSelectionHighlighting: boolean;
     showNearbySelection: boolean;
@@ -1354,14 +1354,16 @@ export default defineComponent({
           width: this.getCanvas().width,
           height: this.getCanvas().height,
         };
-        let bound = this.getPanzoomRect({
-          x: this.mousePositionLast.x - rect.width / 2,
-          y: this.mousePositionLast.y - rect.height / 2,
-          x2: this.mousePositionLast.x + rect.width / 2,
-          y2: this.mousePositionLast.y + rect.height / 2,
-          w: rect.width,
-          h: rect.height,
-        });
+        let bound = this.getPanzoomRect(
+          new ElementDimensionInstance(
+            this.mousePositionLast.x - rect.width / 2,
+            this.mousePositionLast.y - rect.height / 2,
+            this.mousePositionLast.x + rect.width / 2,
+            this.mousePositionLast.y + rect.height / 2,
+            rect.width,
+            rect.height
+          )
+        );
         this.panZoomInstance.smoothShowRectangle(bound);
 
         return;
@@ -1679,7 +1681,7 @@ export default defineComponent({
         this.updateFixedZoomElements();
       }, 33);
     },
-    getBounds(entries: HTMLElement[] | HTMLElement): ElementDimension {
+    getBounds(entries: HTMLElement[] | HTMLElement): ElementDimensionInstance {
       let x = Infinity,
         y = Infinity,
         x2 = -Infinity,
@@ -1699,89 +1701,63 @@ export default defineComponent({
         y2 = y2 < coord.y2 ? coord.y2 : y2;
       });
 
-      return {
-        x: x,
-        y: y,
-        w: x2 - x,
-        h: y2 - y,
-        x2: x2,
-        y2: y2,
-      };
+      return new ElementDimensionInstance(x, y, x2 - x, y2 - y, x2, y2);
     },
-    getViewport(): ElementDimension {
+    getViewport(): ElementDimensionInstance {
       let currenTransform = this.getCurrentTransform();
 
-      // let rect: DOMRect = this.$el
-      //   .getElementsByClassName("vue-pan-zoom-item")[0]
-      //   .getBoundingClientRect();
       let rect = {
         width: this.getCanvas().width,
         height: this.getCanvas().height,
       };
-      let oldView: ElementDimension = {
-        x: -currenTransform.x / this.getCurrentTransform().scale,
-        y: -currenTransform.y / this.getCurrentTransform().scale,
-        w: rect.width * (1 / currenTransform.scale),
-        h: rect.height * (1 / currenTransform.scale),
-        x2: 0,
-        y2: 0,
-      };
+      let oldView: ElementDimensionInstance = new ElementDimensionInstance(
+        -currenTransform.x / this.getCurrentTransform().scale,
+        -currenTransform.y / this.getCurrentTransform().scale,
+        rect.width * (1 / currenTransform.scale),
+        rect.height * (1 / currenTransform.scale),
+        0,
+        0
+      );
 
       oldView.x2 = oldView.x + oldView.w;
       oldView.y2 = oldView.y + oldView.h;
       return oldView;
     },
-    showSelection(padding: number = 0.02) {
-      let bound = this.getPanzoomRect(
-        this.getBounds(
-          this.getSelectedEntries().length > 0
-            ? this.getSelectedEntries()
-            : this.getEntries().length > 0
-            ? this.getEntries()
-            : this.$el.getElementsByClassName("welcome-message")[0]
-        ),
-        padding
+    showSelection(padding: number = 20) {
+      let bounds = this.getBounds(
+        this.getSelectedEntries().length > 0
+          ? this.getSelectedEntries()
+          : this.getEntries().length > 0
+          ? this.getEntries()
+          : this.$el.getElementsByClassName("welcome-message")[0]
       );
-      this.panZoomInstance.smoothShowRectangle(bound);
-    },
 
+      bounds.addPadding(padding / this.convertRectToTransform(bounds).scale);
+      this.panZoomInstance.smoothShowRectangle(this.getPanzoomRect(bounds));
+    },
     showAll() {
       this.oldViewRect = this.getViewport();
-
-      let bound = this.getPanzoomRect(
-        this.getBounds(
-          this.getEntries().length > 0
-            ? this.getEntries()
-            : this.$el.getElementsByClassName("welcome-message")[0]
-        ),
-        0.25
+      let bounds = this.getBounds(
+        this.getEntries().length > 0
+          ? this.getEntries()
+          : this.$el.getElementsByClassName("welcome-message")[0]
       );
-      console.log(bound);
+      bounds.addPadding(20 / this.convertRectToTransform(bounds).scale);
 
-      this.panZoomInstance.smoothShowRectangle(bound);
+      this.panZoomInstance.smoothShowRectangle(this.getPanzoomRect(bounds));
     },
-    getPanzoomRect(
-      coordinates: ElementDimension,
-      scaler: number = 0
-    ): {
+    getPanzoomRect(coordinates: ElementDimensionInstance): {
       bottom: number;
       left: number;
       right: number;
       top: number;
     } {
-      let rect: {
-        bottom: number;
-        left: number;
-        right: number;
-        top: number;
-      } = {
-        left: coordinates.x - scaler * coordinates.w,
-        right: coordinates.x2 + scaler * coordinates.w,
-        top: coordinates.y - scaler * coordinates.h,
-        bottom: coordinates.y2 + scaler * coordinates.h,
+      return {
+        left: coordinates.x,
+        right: coordinates.x2,
+        top: coordinates.y,
+        bottom: coordinates.y2,
       };
-
-      return rect;
     },
     moveToEntry(
       payload:
@@ -1800,9 +1776,47 @@ export default defineComponent({
         entry = this.getViewByID(Number(p.id));
       }
 
-      if (entry != null) {
-        this.moveToHTMLElement(entry, payload.zoom);
+      if (entry != null) this.moveToHTMLElement(entry, payload.zoom, true, 16);
+    },
+    /**
+     * The basic code of this method is taken from the PanZoom package. It calulates and returns the target
+     * translation and scaling for the given viewport dimension.
+     */
+    convertRectToTransform(
+      rect:
+        | {
+            bottom: number;
+            left: number;
+            right: number;
+            top: number;
+          }
+        | ElementDimensionInstance
+    ) {
+      if (rect instanceof ElementDimensionInstance) {
+        rect = this.getPanzoomRect(rect);
       }
+
+      var size = { x: this.getCanvas().width, y: this.getCanvas().height };
+
+      var rectWidth = rect.right - rect.left;
+      var rectHeight = rect.bottom - rect.top;
+      if (!Number.isFinite(rectWidth) || !Number.isFinite(rectHeight)) {
+        (rectWidth = 1), (rectHeight = 1);
+      }
+
+      var scale = Math.min(size.x / rectWidth, size.y / rectHeight);
+
+      var newTransform: {
+        scale: number;
+        x: number;
+        y: number;
+      } = {
+        x: -(rect.left + rectWidth / 2) * scale + size.x / 2,
+        y: -(rect.top + rectHeight / 2) * scale + size.y / 2,
+        scale: scale,
+      };
+
+      return newTransform;
     },
     moveToHTMLElement(
       entry: HTMLElement,
@@ -1813,25 +1827,11 @@ export default defineComponent({
       if (entry != null) {
         let coordinates = this.getCoordinatesFromElement(entry);
 
-        coordinates.scaleFromCenter(
-          padding
-            ? padding
-            : Math.max(1, 400 / Math.max(coordinates.w, coordinates.h))
+        padding = padding != undefined ? padding : 1;
+        coordinates.addPadding(
+          padding / this.convertRectToTransform(coordinates).scale
         );
-
-        let scaler = 1;
-
-        let rect: {
-          bottom: number;
-          left: number;
-          right: number;
-          top: number;
-        } = {
-          left: coordinates.x - scaler * coordinates.w,
-          right: coordinates.x2 + scaler * coordinates.w,
-          top: coordinates.y - scaler * coordinates.h,
-          bottom: coordinates.y2 + scaler * coordinates.h,
-        };
+        let rect = this.getPanzoomRect(coordinates);
 
         let x =
           (-coordinates.x - coordinates.w / 2) *

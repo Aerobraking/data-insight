@@ -1,6 +1,6 @@
-import { Workspace } from "@/core/model/Workspace";
-import AbstractWorkspaceEntry from "@/core/model/WorkspaceEntry";
-import { ElementDimension } from "@/core/utils/resize";
+import { Workspace } from "@/core/model/workspace/Workspace";
+import AbstractWorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import { ElementDimension } from "@/core/utils/ResizeUtils";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 
 export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {

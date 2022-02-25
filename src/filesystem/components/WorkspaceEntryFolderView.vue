@@ -101,7 +101,7 @@
 const path = require("path");
 const { shell } = require("electron");
 
-import * as WSUtils from "@/core/components/workspace/WorkspaceUtils";
+import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import * as watcher from "../utils/WatchSystemMain";
 import { add, remove, toggle } from "@/core/utils/ListUtils";
 import fs from "fs";
@@ -130,7 +130,7 @@ import {
   DriveListRoot,
   DriveListSystemInstance,
 } from "@/filesystem/utils/DriveListSystem";
-import WorkspaceViewIfcWrapper from "@/core/components/workspace/WorkspaceViewIfcWrapper";
+import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
 
 export default defineComponent({
   name: WorkspaceEntryFolderWindow.viewid,

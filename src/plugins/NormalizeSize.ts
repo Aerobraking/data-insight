@@ -1,4 +1,4 @@
-import { ElementDimension, setSize } from "@/core/utils/resize";
+import { ElementDimension, setSize } from "@/core/utils/ResizeUtils";
 import { PluginAdapter, PluginDecorator } from "@/core/plugin/AbstractPlugin"
 
 @PluginDecorator(true)

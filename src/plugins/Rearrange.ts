@@ -1,4 +1,4 @@
-import { ElementDimension, set3DPosition, setSize } from "@/core/utils/resize";
+import { ElementDimension, set3DPosition, setSize } from "@/core/utils/ResizeUtils";
 import _ from "underscore";
 import AbstractPlugin, { PluginDecorator } from "@/core/plugin/AbstractPlugin"
 
@@ -13,7 +13,7 @@ export default class ReArrange extends AbstractPlugin {
     div: HTMLDivElement;
     slider: HTMLInputElement;
     sliderColumns: HTMLInputElement;
-    useMouse: boolean = false;
+    useMouse: boolean = true;
 
     private hash: Map<String, ElementDimension> = new Map();
     width: number = 10;
@@ -214,7 +214,7 @@ export default class ReArrange extends AbstractPlugin {
 
         if (!this.useMouse) {
             setTimeout(() => {
-                this.workspace.showSelection(2.5);
+                this.workspace.showSelection(600);
                 setTimeout(() => {
                     const pos = this.workspace.getPositionInDocument({ clientX: startCoord.x, clientY: startCoord.y });
                     this.slider.style.left = `${pos.x - 50}px`;

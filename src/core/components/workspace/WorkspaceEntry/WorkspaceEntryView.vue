@@ -15,11 +15,11 @@
 import { defineComponent } from "vue";
 import wsentrydisplayname from "./WorkspaceEntryDisplayName.vue";
 import wsentryalert from "./WorkspaceEntryAlert.vue";
-import { setupEntry } from "./WorkspaceUtils";
-import WorkspaceViewIfcWrapper from "./WorkspaceViewIfcWrapper";
+import { setupEntry } from "@/core/utils/WorkspaceUtils";
+import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
 import { ResizeBottomRight } from "mdue";
-import { ResizerComplex } from "@/core/utils/resize";
-import WorkspaceEntry from "@/core/model/WorkspaceEntry";
+import { ResizerComplex } from "@/core/utils/ResizeUtils";
+import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 
 export default defineComponent({
   el: ".ws-entry",

@@ -4,10 +4,11 @@ import {
   CommitOptions,
   DispatchOptions,
 } from 'vuex'
-import { InsightFile, State } from './model/state'
+import {  State } from './state'
 import { Getters, getters } from './getters'
-import { Mutations, mutations } from './mutations/mutations'
-import { Actions, actions } from './actions/actions'
+import { Mutations, mutations } from './mutations'
+import { Actions, actions } from './actions'
+import { InsightFile } from '../model/InsightFile'
 
 export function initStore(file: InsightFile) {
   return createStore({

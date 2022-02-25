@@ -16,7 +16,7 @@ import * as cache from "../utils/ImageCache";
 import { defineComponent } from "vue";
 import { FolderWindowFile } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import * as icons from "../utils/IconHandler";
-import { Dispatcher } from "@/core/components/workspace/WorkspaceUtils";
+import { Dispatcher } from "@/core/utils/WorkspaceUtils";
 export default defineComponent({
   name: "wsfolderfile",
   props: {

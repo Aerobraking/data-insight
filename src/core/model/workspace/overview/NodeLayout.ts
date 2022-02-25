@@ -674,22 +674,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
      * @param delta ms since last frame, about 5-40 (ms)
      */
     public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
-
-
-        // if (this.randomMovement) {
-        //     shells.forEach(shell => {
-        //         this.reheatShell(shell);
-        //         shell.nodes.forEach(n => {
-        //             const coord = n.customData["co"];
-        //             if (!n.isRoot() && coord != undefined) {
-        //                 n.x += 1, n.y += 1;
-        //                 coord.vy = Math.random() * 4000 - 2000, coord.vx = Math.random() * 200 - 100;
-        //             }
-        //         });
-        //     });
-        //     this.randomMovement = false;
-        // }
-
+ 
         if (doBenchmark && shells.length > 0) logTime("sim");
 
         shells.forEach(shell => {

@@ -3,19 +3,19 @@
 import 'reflect-metadata';
 import { createApp } from 'vue'
 import App from './core/components/App.vue'
-import { initStore, Store } from './store/store'
+import { initStore, Store } from './core/store/store'
 import panZoom from 'vue-panzoom';
 import VueTippy from 'vue-tippy';
 import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
-import { InsightFile } from './store/model/state';
-import { FeatureType } from './core/model/overview/FeatureType';
+import { InsightFile } from './core/model/InsightFile';
+import { FeatureType } from './core/model/workspace/overview/FeatureType';
 
 /**
  * Workspace Entries
  */
-import wsentryframe from "./core/components/workspace/WorkspaceEntryFrame.vue";
+import wsentryframe from "./core/components/workspace/WorkspaceEntry/WorkspaceEntryFrame.vue";
 
 /**
  * Workspace Folder Entries

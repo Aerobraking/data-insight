@@ -3,9 +3,9 @@ import { defineComponent } from "vue";
 import draggable from "vuedraggable"; 
 import { PlaylistStar } from "mdue";
 import { Tippy } from "vue-tippy";
-import WorkspaceViewIfc from "./WorkspaceViewIfc"; 
+import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc"; 
 import { PluginAdapter } from "@/core/plugin/AbstractPlugin";
-import { Workspace } from "@/core/model/Workspace";
+import { Workspace } from "@/core/model/workspace/Workspace";
 
 class DragPlugin extends PluginAdapter {
   constructor() {

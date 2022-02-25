@@ -1,6 +1,11 @@
-import View from '@/core/model/AbstractView';
-import { Workspace } from '@/core/model/Workspace';
-import { Type } from 'class-transformer'; 
+import { Type } from "class-transformer";
+import View from "./AbstractView";
+import { Workspace } from "./workspace/Workspace";
+
+export class InsightFileSettings {
+    showUI: boolean = true;
+    filePath: string = "";
+}
 
 export class InsightFile {
     @Type(() => View, {
@@ -22,13 +27,3 @@ export class InsightFile {
         }
     }
 }
-
-export class InsightFileSettings {
-    showUI: boolean = true;
-    filePath: string = "";
-}
-
-export type State = {
-    loadedFile: InsightFile
-}
-

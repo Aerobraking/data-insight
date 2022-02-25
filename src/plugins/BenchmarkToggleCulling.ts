@@ -1,4 +1,4 @@
-import { Instance as DataCache } from "@/core/model/overview/OverviewDataCache";
+import { Instance as DataCache } from "@/core/model/workspace/overview/OverviewDataCache";
 import { doBenchmark } from "@/core/utils/Benchmark";
 import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
 

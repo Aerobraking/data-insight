@@ -1,4 +1,4 @@
-import { ElementDimension } from "@/core/utils/resize";
+import { ElementDimension } from "@/core/utils/ResizeUtils";
 import { Exclude } from "class-transformer";
 
 export default class AbstractWorkspaceEntry {

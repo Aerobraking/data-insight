@@ -4,10 +4,10 @@
 
 <script lang="ts"> 
 import { defineComponent } from "vue";
-import * as WSUtils from "./WorkspaceUtils";
-import WorkspaceViewIfc from "./WorkspaceViewIfc";
+import * as WSUtils from "@/core/utils/WorkspaceUtils";
+import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc";
 import * as _ from "underscore";
-import { WorkspaceEntryFrame } from "@/core/model/WorkspaceEntryFrame";
+import { WorkspaceEntryFrame } from "@/core/model/workspace/WorkspaceEntryFrame";
 
 _.once(() => {
   WSUtils.Events.registerCallback({

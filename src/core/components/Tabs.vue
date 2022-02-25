@@ -96,10 +96,10 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import workspaceview from "./workspace/WorkspaceView.vue";
-import { MutationTypes } from "@/store/mutations/mutation-types";
+import { MutationTypes } from "@/core/store/mutation-types";
 import draggable from "vuedraggable";
 import _ from "underscore";
-import * as WSUtils from "./workspace/WorkspaceUtils";
+import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import { ArrowCollapseUp, EyeOutline, EyeOffOutline } from "mdue";
 import { ipcRenderer } from "electron";
 _.once(() => {

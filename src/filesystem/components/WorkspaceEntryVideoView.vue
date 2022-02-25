@@ -14,7 +14,7 @@
 </template>
 
 <script lang="ts">
-import WorkspaceViewIfcWrapper from "@/core/components/workspace/WorkspaceViewIfcWrapper";
+import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
 import { defineComponent } from "vue";
 import { WorkspaceEntryVideo } from "../model/FileSystemWorkspaceEntries";
 export default defineComponent({

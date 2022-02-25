@@ -1,4 +1,4 @@
-import { AbstractLink } from "@/core/model/overview/AbstractNode";
+import { AbstractLink } from "@/core/model/workspace/overview/AbstractNode";
 import FolderNode from "./FolderNode";
 
  

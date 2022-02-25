@@ -1,9 +1,9 @@
 <script lang="ts">
-import { AbstractNode } from "@/core/model/overview/AbstractNode";
-import { AbstractNodeShell } from "@/core/model/overview/AbstractNodeShell";
-import { Instance } from "@/core/model/overview/OverviewDataCache";
-import { Workspace } from "@/core/model/Workspace";
-import WorkspaceEntry from "@/core/model/WorkspaceEntry";
+import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
+import { AbstractNodeShell } from "@/core/model/workspace/overview/AbstractNodeShell";
+import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
+import { Workspace } from "@/core/model/workspace/Workspace";
+import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 import { defineComponent } from "vue";
 
 

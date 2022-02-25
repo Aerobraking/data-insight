@@ -1,6 +1,6 @@
 import { ActionTree, ActionContext } from 'vuex'
-import { State } from '../model/state'
-import { Mutations } from './../mutations/mutations'  
+import { State } from './state'
+import { Mutations } from './mutations'  
 
 type AugmentedActionContext = {
   commit<K extends keyof Mutations>(

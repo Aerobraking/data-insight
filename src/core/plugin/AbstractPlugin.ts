@@ -1,4 +1,4 @@
-import WorkspaceViewIfc from "@/core/components/workspace/WorkspaceViewIfc";
+import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc";
 import { Constructor } from "./Constructor";
 
 export const RegisteredPlugins: Constructor<AbstractPlugin>[] = [];

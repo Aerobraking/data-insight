@@ -1,6 +1,6 @@
-import { Workspace } from '@/core/model/Workspace';
+import { Workspace } from '@/core/model/workspace/Workspace';
 import { GetterTree } from 'vuex'
-import { State } from './model/state'
+import { State } from './state'
 
 export type Getters = {
 

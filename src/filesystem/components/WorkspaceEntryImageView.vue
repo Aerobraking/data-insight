@@ -16,8 +16,8 @@ import * as cache from "../utils/ImageCache";
 import * as watcher from "../utils/WatchSystemMain";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../model/FileSystemWorkspaceEntries";
-import WorkspaceViewIfcWrapper from "@/core/components/workspace/WorkspaceViewIfcWrapper";
-import { WSZoomEvent } from "@/core/components/workspace/WorkspaceViewEvents";
+import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
+import { WSZoomEvent } from "@/core/utils/WorkspaceViewEvents";
 export default defineComponent({
   name: "wsentryimage",
 

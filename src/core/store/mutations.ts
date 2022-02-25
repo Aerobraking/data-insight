@@ -1,9 +1,10 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
-import { InsightFile, State } from '../model/state'  
+import { State } from './state'
 import View from '@/core/model/AbstractView';
-import { Workspace } from '@/core/model/Workspace';
-import AbstractWorkspaceEntry from '@/core/model/WorkspaceEntry';
+import { Workspace } from '@/core/model/workspace/Workspace';
+import AbstractWorkspaceEntry from '@/core/model/workspace/WorkspaceEntry';
+import { InsightFile } from '../model/InsightFile';
 
 var entrycounter = 0;
 
@@ -38,10 +39,10 @@ export type Mutations<S = State> = {
   }): void
   [MutationTypes.SHOW_UI](state: S, payload: {
     showUI: boolean
-  }): void  
+  }): void
 
 }
-  
+
 /**
  * Implementiert unser type (interface), hier haben wir dann also den code für jede methode die wir definiert haben im type.
  */
@@ -127,7 +128,7 @@ export const mutations: MutationTree<State> & Mutations = {
           (performance.now() - timeForSinc) / 1000,
           "seconds"
         );
-  
+
       }, 10);
     }, 250);
   },
@@ -144,7 +145,7 @@ export const mutations: MutationTree<State> & Mutations = {
   [MutationTypes.SHOW_UI](state, payload) {
     state.loadedFile.settings.showUI = payload.showUI;
   },
-  [MutationTypes.CREATE_OVERVIEW](state) { 
+  [MutationTypes.CREATE_OVERVIEW](state) {
   },
 }
 

@@ -177,9 +177,9 @@
 import fs from "fs";
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
-import { Workspace } from "@/core/model/Workspace";
+import { Workspace } from "@/core/model/workspace/Workspace";
 import { defineComponent } from "vue";
-import * as WSUtils from "./../workspace/WorkspaceUtils";
+import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
 import path from "path";
 import {
@@ -199,17 +199,17 @@ import {
   FileTree,
   ArrowCollapseRight,
 } from "mdue";
-import { AbstractNode } from "@/core/model/overview/AbstractNode";
-import { AbstractFeature } from "@/core/model/overview/AbstractFeature";
-import { AbstractNodeShell } from "@/core/model/overview/AbstractNodeShell";
-import { Instance } from "@/core/model/overview/OverviewDataCache";
+import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
+import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature";
+import { AbstractNodeShell } from "@/core/model/workspace/overview/AbstractNodeShell";
+import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
 import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
-import { Layouter } from "@/core/model/overview/NodeLayout";
+import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
 import { doBenchmark, logTime } from "@/core/utils/Benchmark";
-import { FeatureType } from "@/core/model/overview/FeatureType";
+import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
 import { OverviewEngine } from "./OverviewEngine";
 import {
   createKeyboardInputContext,

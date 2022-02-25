@@ -87,7 +87,6 @@ export function tickEnd(print: boolean = false) {
 
     logTime("Frame");
     let f = mapTimes.get("Frame"); if (f) f.isMeasured = 2, f.time = lastFrame;
-
     logTime("CPU (%)"); f = mapTimes.get("CPU (%)"); if (f) f.isMeasured = 3, f.time = cpuUsage;
     logTime("heap (MB)"); f = mapTimes.get("heap (MB)"); if (f) f.isMeasured = 3, f.time = (process.memoryUsage().heapUsed / 1024 / 1024);
     logTime("total (MB)"); f = mapTimes.get("total (MB)"); if (f) f.isMeasured = 3, f.time = (process.memoryUsage().rss / 1024 / 1024);
@@ -112,21 +111,17 @@ export function tickEnd(print: boolean = false) {
             newLine[e.index] = time.toFixed(2);
         }
     });
-  
+
+    // get the cpu usage
     cpu.usage().then((v: number) => cpuUsage = v);
 
     newLine.push("\n");
-    log.push(...newLine); 
+    log.push(...newLine);
 
-    if (print) {
-        console.log(keysUsedInTick);
-        console.log(header);
-        console.log(newLine);
-        console.log(mapTimes);
-        
-        header.unshift("\n"); 
-        header.push("\n"); 
-        log = [...header , ...log]; 
+    if (print) { 
+        header.unshift("\n");
+        header.push("\n");
+        log = [...header, ...log];
         log.forEach((s, i) => log[i] = s.replace(".", ","));
         console.log(log.join(";"));
         log = [];
