@@ -33,7 +33,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private static delta: number = 0;
 
     private static startClock(): void {
-        OverviewEngine.fpsInterval = 1000 / 144;
+        OverviewEngine.fpsInterval = 1000 / 30;
         OverviewEngine.then = performance.now();
         OverviewEngine.tickClock();
     }
@@ -55,23 +55,23 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             tickStart();
 
-            if (doBenchmark) logTime("tick");
-            for (let i = 0; i < OverviewEngine.instances.length; i++) {
-                const inst = OverviewEngine.instances[i];
-                inst.tickEngine();
-            }
-
             // prevent too large timesteps in case of slow performance
             OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 10000);
             OverviewEngine.elapsedTotal += OverviewEngine.delta;
 
             // Get ready for next frame by setting then=now, but also adjust for your
             // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
-            OverviewEngine.then = OverviewEngine.now;//- (OverviewEngine.elapsed % OverviewEngine.fpsInterval);
-            OverviewEngine.framecounter++;
-            TWEEN.update();
+            OverviewEngine.then = OverviewEngine.now - (OverviewEngine.elapsed % OverviewEngine.fpsInterval);
+ 
+            if (doBenchmark) logTime("tick");
+            for (let i = 0; i < OverviewEngine.instances.length; i++) {
+                const inst = OverviewEngine.instances[i];
+                inst.tickEngine();
+            } 
 
+            TWEEN.update();
             tickEnd(OverviewEngine.printlog);
+            OverviewEngine.framecounter++;
             if (OverviewEngine.printlog) OverviewEngine.printlog = false;
         }
 

@@ -63,7 +63,7 @@ export class Workspace extends View {
     @Type(() => AbstractWorkspaceEntry, {
         keepDiscriminatorProperty: true,
         discriminator: {
-            property: 'componentname',
+            property: 'et',
             subTypes: [
                 { value: WorkspaceEntryFile, name: 'wsentryfile' },
                 { value: WorkspaceEntryImage, name: 'wsentryimage' },

@@ -6,7 +6,7 @@ import { FeatureType, NodeFeatures } from "./FeatureType";
 export abstract class AbstractNode {
 
     constructor(nt: string, name: string) {
-        this.nt = nt;
+        this.nodeType = nt;
         this._name = name;
     }
 
@@ -195,33 +195,32 @@ export abstract class AbstractNode {
             this.collectLinks(c, a);
         }
     }
+ 
+    public isCollection(): boolean {
+        return this.collectionData != undefined;
+    }
 
     @Expose({ name: 'f' })
     features: NodeFeatures = {};
 
     @Expose({ name: 'fs' })
     featuresRecursive: NodeFeatures = {};
-
-    // used for debug informations
-    @Exclude()
-    flag: number = 0;
-
+  
     /**
      * Our abstract AbstractNode class can't know the types of its children, as they are implemented classes of itself, which would lead to circular dependencies. So the childrens list is abstract and we have to Type() the list in the implemented classes.
      */
     @Expose({ name: 'c' })
     public abstract children: Array<this>;
 
-    // the OverviewEntry this nodes belongs to. will be set after loading from the json
-    @Exclude()
-    shell: AbstractNodeShellIfc | undefined;
+
 
     // the depth inside the tree structure, relative to the root node
     @Expose({ name: 'd' })
     depth: number = 0;
 
     // string for json that links to the javascript implemented class
-    nt: string;
+    @Expose({ name: 'nt' })
+    nodeType: string;
 
     id?: string | number;
 
@@ -241,25 +240,25 @@ export abstract class AbstractNode {
     @Expose({ name: 'i' })
     index?: number | undefined;
 
-
-    public isCollection(): boolean {
-        return this.collectionData != undefined;
-    }
-
     @Expose({ name: 'id' })
     collectionData: { size: number, depth: number } | undefined;
 
+    @Expose({ name: 'cd' })
+    customData: { [any: string]: any } = {};
+    
     /**
     * Node’s current y-position. Given by the d3 interface
     */
     y: number = 0;
+
     /**
     * Node’s current y-position. Given by the d3 interface
     */
     x: number = 0;
 
-    @Expose({ name: 'cd' })
-    customData: { [any: string]: any } = {};
+    // the OverviewEntry this nodes belongs to. will be set after loading from the json
+    @Exclude()
+    shell: AbstractNodeShellIfc | undefined;
 
     // the parent node. will be set after loading from the json file.
     @Exclude()

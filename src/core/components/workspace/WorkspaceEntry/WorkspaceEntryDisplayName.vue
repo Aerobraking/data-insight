@@ -109,10 +109,10 @@ export default defineComponent({
 </script>
 
 <style   lang="scss">
-@use 'sass:math';
+@use "sass:math";
 
 $padding: 10px;
-$padding0: math.div($padding,2);
+$padding0: math.div($padding, 2);
 
 $padding2: $padding * 2;
 
@@ -125,12 +125,12 @@ $padding2: $padding * 2;
   &:hover {
     background: rgba(255, 0, 0, 1);
   }
-} 
+}
 
 .wsentry-displayname {
   transform-origin: left bottom;
   position: absolute;
-    pointer-events: all;
+  pointer-events: all;
   left: 0px;
   margin-left: 1px;
   top: -44px;
@@ -149,6 +149,7 @@ $padding2: $padding * 2;
     white-space: nowrap;
     transform-origin: left bottom;
     bottom: 0;
+    cursor: text;
   }
 }
 

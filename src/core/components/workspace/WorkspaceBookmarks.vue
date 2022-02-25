@@ -1,9 +1,9 @@
-<script lang="ts"> 
+<script lang="ts">
 import { defineComponent } from "vue";
-import draggable from "vuedraggable"; 
+import draggable from "vuedraggable";
 import { PlaylistStar } from "mdue";
 import { Tippy } from "vue-tippy";
-import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc"; 
+import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc";
 import { PluginAdapter } from "@/core/plugin/AbstractPlugin";
 import { Workspace } from "@/core/model/workspace/Workspace";
 
@@ -22,7 +22,7 @@ export default defineComponent({
   name: "wsentriesbookmarks",
   components: {
     draggable,
-    Tippy, 
+    Tippy,
     PlaylistStar,
   },
   props: {
@@ -55,7 +55,6 @@ export default defineComponent({
     },
     dragUpdate(isDragging: boolean) {
       this.drag = isDragging;
-
       isDragging
         ? this.workspace?.startPlugin(new DragPlugin())
         : this.workspace?.finishPlugin();
@@ -100,16 +99,7 @@ export default defineComponent({
   },
 });
 </script>
-
- <!-- 
- Wir können ein component machen so: 
-  <component v-bind:is="currentTabComponent"></component>
-  Und der "currentTabComponent" ist der name der compomente, wie "wsentry" zum beispiel. dann müssen wir die componenten nur hier rein laden und
-  vorher in vue definiert haben. 
-  Dadurch können wir den component namen einfach im model definieren und er wird hier automatisch gebindet.
-  Am besten per enum machen, damit es eindeutig ist!
  
- -->
 <template>
   <div
     @mousewheel="mousewheel"
@@ -162,6 +152,7 @@ export default defineComponent({
   z-index: 8000;
   transition: transform 0.2s ease-in-out;
   opacity: 1;
+
   button {
     outline: none;
     color: white;
@@ -181,6 +172,7 @@ export default defineComponent({
   }
 
   a {
+    pointer-events: all;
     user-select: none;
   }
   a:before {

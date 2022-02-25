@@ -104,13 +104,13 @@ export default defineComponent({
         list.sort((a, b) => {
           const s1 =
             a instanceof WorkspaceEntry
-              ? a.typename + a.searchResultString()
+              ? a.typeNameReadable + a.searchResultString()
               : a instanceof AbstractNode
               ? "node" + a.getPath(false)
               : "";
           const s2 =
             b instanceof WorkspaceEntry
-              ? b.typename + b.searchResultString()
+              ? b.typeNameReadable + b.searchResultString()
               : b instanceof AbstractNode
               ? "node" + b.getPath(false)
               : "";

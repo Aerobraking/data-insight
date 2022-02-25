@@ -10,7 +10,7 @@ export default class WorkspaceEntryCollection {
     @Type(() => AbstractWorkspaceEntry, {
         keepDiscriminatorProperty: true,
         discriminator: {
-            property: 'componentname',
+            property: 'et',
             subTypes: [
                 { value: WorkspaceEntryFile, name: 'wsentryfile' },
                 { value: WorkspaceEntryImage, name: 'wsentryimage' },

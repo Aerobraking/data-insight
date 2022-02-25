@@ -121,7 +121,7 @@
                     @keydown="keydown"
                     @zoomed="moveToEntry({ id: e.id, zoom: true })"
                     :searchstring="searchString"
-                    :is="e.componentname"
+                    :is="e.entryType"
                   >
                   </component>
                 </wsentry>
@@ -264,7 +264,7 @@ import {
 import { MutationTypes } from "@/core/store/mutation-types";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import OverviewView from "../overview/OverviewView.vue";
-import wsentriesbookmarks from "./WorkspaceEntriesBookmarks.vue";
+import wsentriesbookmarks from "./WorkspaceBookmarks.vue";
 import wssearchlist from "./WorkspaceSeachList.vue";
 import wsentryfolder from "@/filesystem/components/WorkspaceEntryFolderView.vue";
 import { defineComponent } from "vue";
@@ -1763,7 +1763,8 @@ export default defineComponent({
       payload:
         | { index: any; zoom: boolean }
         | { id: any; zoom: boolean }
-        | { entry: HTMLElement; zoom: boolean }
+        | { entry: HTMLElement; zoom: boolean },
+      padding: number = 16
     ) {
       let p: any = payload;
 
@@ -1776,7 +1777,8 @@ export default defineComponent({
         entry = this.getViewByID(Number(p.id));
       }
 
-      if (entry != null) this.moveToHTMLElement(entry, payload.zoom, true, 16);
+      if (entry != null)
+        this.moveToHTMLElement(entry, payload.zoom, true, padding);
     },
     /**
      * The basic code of this method is taken from the PanZoom package. It calulates and returns the target
@@ -1819,13 +1821,13 @@ export default defineComponent({
       return newTransform;
     },
     moveToHTMLElement(
-      entry: HTMLElement,
+      element: HTMLElement,
       zoom: boolean,
       smooth: boolean = true,
       padding: number | undefined = undefined
     ) {
-      if (entry != null) {
-        let coordinates = this.getCoordinatesFromElement(entry);
+      if (element != null) {
+        let coordinates = this.getCoordinatesFromElement(element);
 
         padding = padding != undefined ? padding : 1;
         coordinates.addPadding(
@@ -1970,6 +1972,7 @@ export default defineComponent({
     setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
       if (!entry) return;
+
       let input: HTMLElement = entry.getElementsByClassName(
         "wsentry-displayname-input"
       )[0] as HTMLElement;
@@ -1985,8 +1988,7 @@ export default defineComponent({
 
       if (input != undefined) {
         input.focus();
-        //  input.select();
-        this.moveToEntry({ zoom: true, entry: entry });
+        this.moveToEntry({ zoom: true, entry: entry }, 256);
       }
     },
     toggleNameResizing(entry: HTMLElement | undefined = undefined) {
