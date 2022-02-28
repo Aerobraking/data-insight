@@ -13,7 +13,7 @@
       spellcheck="false"
       contenteditable="true"
       @input="handleInput"
-      :class="{ 'hide-name': !entry.showDisplayname }"
+      :class="{ 'hide-name': !entry.displaynameShow }"
       placeholder="Title..."
       oninput="if(this.innerHTML.trim()==='<br>')this.innerHTML=''"
     />
@@ -30,9 +30,9 @@
 
     <button
       class="wsentry-displayname-show"
-      @click="entry.showDisplayname = !entry.showDisplayname"
+      @click="entry.displaynameShow = !entry.displaynameShow"
     >
-      <EyeOutline v-if="entry.showDisplayname" />
+      <EyeOutline v-if="entry.displaynameShow" />
       <EyeOffOutline v-else />
     </button>
   </div>

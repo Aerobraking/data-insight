@@ -6,7 +6,6 @@ import { Workspace } from "@/core/model/workspace/Workspace";
 import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 import { defineComponent } from "vue";
 
-
 export default defineComponent({
   name: "wssearchlist",
   components: {},
@@ -142,7 +141,7 @@ export default defineComponent({
         :viewId="e.id"
       >
         <template v-if="e.width != undefined">
-          <td>{{ e.typename }}</td>
+          <td>{{ e.typeNameReadable }}</td>
           <td>{{ e.searchResultString() }}</td>
           <td>{{ e.displayname }}</td>
         </template>
@@ -166,7 +165,8 @@ table {
     text-align: left;
     width: 10%;
     font-size: 12px;
-    vertical-align: center;
+    margin-top: 1px;
+    vertical-align: bottom;
   }
   td:nth-child(2) {
     text-align: left;

@@ -27,9 +27,7 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
          * Update the model coordinates with the current ones from the html view.
          */
         prepareFileSaving(): void { 
-            
             let coords: ElementDimension = getCoordinatesFromElement(el.value); 
-            
             e.setDimensions(coords);
         }
     };
