@@ -7,9 +7,7 @@ export default abstract class View {
     name: string = "";
     type: string = "";
 
-    constructor() {
-        this.id = Math.floor(Math.random() * 1000000000000);
-    }
+    constructor() { }
 
     public setActive(a: boolean): this {
         this.isActive = a;

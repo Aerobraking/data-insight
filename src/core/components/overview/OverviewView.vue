@@ -217,6 +217,7 @@ import {
 } from "@/core/plugin/KeyboardShortcut";
 import { getPlugins } from "@/plugins/PluginList";
 import AbstractPlugin from "@/core/plugin/AbstractPlugin";
+import { remove } from "@/core/utils/ListUtils";
 
 export default defineComponent({
   name: "App",
@@ -501,25 +502,20 @@ export default defineComponent({
     },
     deleteSelection(): void {
       let l: AbstractNodeShell[] = Instance.getData(this.id);
-
-      if (Instance.getEngine(this.id)) {
-        const o = Instance.getEngine(this.id);
-        l = l.filter(
-          (e) =>
-            o.selection.filter((s) => s.shell && s.shell.id == e.id).length == 0
-        );
-        // update the data
-        Instance.setData(this.id, l);
-        // tell the engine that we removed entries and clear selection
-        Instance.getEngine(this.id).shells = l;
-        Instance.getEngine(this.id).clearSelection();
+      const e = Instance.getEngine(this.id);
+      if (e) {
+        if (e.selection.length > 0 && e.selection[0].isRoot()) {
+          // update the data 
+          remove(l, e.selection[0].shell);
+          Instance.setData(this.id, l);
+          // tell the engine that we removed entries and clear selection
+          e.clearSelection();
+          e.shells = l;
+        }
       }
     },
     mousedown(e: MouseEvent): void {
       const node = Instance.getEngine(this.id).getNodeAtMousePosition();
-
-      if (node) {
-      }
     },
     keydown(e: KeyboardEvent) {
       if (this.c) this.c.keydown("ov", e);
@@ -847,16 +843,14 @@ export default defineComponent({
         const fileStat = fs.lstatSync(p);
         if (fileStat.isDirectory()) {
           let root: FolderNodeShell = new FolderNodeShell(p);
+          let id = 0;
+          while (listEntries.find((e) => e.id == id)) id++;
+          root.id = id;
           listEntries.push(root);
         }
       }
       if (listEntries.length > 0) {
         this.addEntries(listEntries, pos);
-        // setTimeout(() => {
-        //   Instance.getEngine(this.id).selection = [
-        //     listEntries[listEntries.length - 1].root,
-        //   ];
-        // }, 33);
       }
     },
     drop(e: DragEvent) {

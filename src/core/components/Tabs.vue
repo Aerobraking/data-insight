@@ -206,10 +206,7 @@ export default defineComponent({
     },
     createWorkspaceTab() {
       this.$store.commit(MutationTypes.CREATE_WORKSPACE);
-    },
-    createOverviewTab() {
-      this.$store.commit(MutationTypes.CREATE_OVERVIEW);
-    },
+    }, 
     selectTab(i: number) {
       this.$store.commit(MutationTypes.SELECT_WORKSPACE, { index: i });
     },
@@ -226,10 +223,7 @@ export default defineComponent({
   },
 });
 </script>
-
-
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+  
 <style scoped lang="scss">
 $background: #1d1d1d;
 $base-color: rgb(100, 100, 100);

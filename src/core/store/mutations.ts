@@ -6,15 +6,12 @@ import { Workspace } from '@/core/model/workspace/Workspace';
 import AbstractWorkspaceEntry from '@/core/model/workspace/WorkspaceEntry';
 import { InsightFile } from '../model/InsightFile';
 
-var entrycounter = 0;
-
 export type Mutations<S = State> = {
   // als key für die methode nehmen wir die einzelnen enum types. und da wir die method eh nicht direkt aurufen ala setCounter() sondern per commit("setCounter", parameter ...)
   // haben wir dann einfach das enum anstelle des strings commit(MutationTypes.SET_COUNTER,parameter ...) 
 
   [MutationTypes.CREATE_WORKSPACE](state: S): void
-  [MutationTypes.CREATE_OVERVIEW](state: S): void
-  [MutationTypes.ADD_FILES](state: S, payload: {
+  [MutationTypes.ADD_ENTRIES](state: S, payload: {
     model: Workspace,
     entries: Array<AbstractWorkspaceEntry>,
   }): void
@@ -40,7 +37,6 @@ export type Mutations<S = State> = {
   [MutationTypes.SHOW_UI](state: S, payload: {
     showUI: boolean
   }): void
-
 }
 
 /**
@@ -48,15 +44,17 @@ export type Mutations<S = State> = {
  */
 export const mutations: MutationTree<State> & Mutations = {
 
-  [MutationTypes.ADD_FILES](state, payload: {
+  [MutationTypes.ADD_ENTRIES](state, payload: {
     model: Workspace,
     entries: Array<AbstractWorkspaceEntry>,
   }) {
-    for (let index = 0; index < payload.entries.length; index++) {
-      const element = payload.entries[index];
-      element.order = entrycounter++;
-      // make id's unique in case of a copy/paste situation
-      element.id = Math.floor(Math.random() * 1000000000000);
+    for (let i = 0; i < payload.entries.length; i++) {
+      const entry = payload.entries[i];
+      let id = 0;
+      while (payload.model.entries.find(e => e.id == id) || payload.entries.find(e => e.id == id)) { id++ };
+      entry.id = id;
+      entry.order = payload.model.entries.length + i;
+      // make id's unique in case of a copy/paste situation 
     }
     payload.model.entries.push(...payload.entries);
   },
@@ -94,7 +92,10 @@ export const mutations: MutationTree<State> & Mutations = {
 
     let wCopy = new Workspace();
     Object.assign(wCopy, w);
-    wCopy.id = Math.random() * 10000000;
+
+    let id = 0;
+    while (state.loadedFile.views.find(e => e.id == id)) { id++ };
+    wCopy.id = id;
 
     state.loadedFile.views.push(wCopy);
     let lastIndex = state.loadedFile.views.length - 1;
@@ -132,10 +133,15 @@ export const mutations: MutationTree<State> & Mutations = {
       }, 10);
     }, 250);
   },
-
   [MutationTypes.CREATE_WORKSPACE](state) {
-    state.loadedFile.views.push(new Workspace());
+    const w = new Workspace();
+    let id = 0;
+    while (state.loadedFile.views.find(e => e.id == id)) { id++ };
+    w.id = id;
+
+    state.loadedFile.views.push(w);
     let lastIndex = state.loadedFile.views.length - 1;
+
     state.loadedFile.views.forEach(
       (entry: View, index: Number) => {
         entry.isActive = index === lastIndex;
@@ -144,8 +150,6 @@ export const mutations: MutationTree<State> & Mutations = {
   },
   [MutationTypes.SHOW_UI](state, payload) {
     state.loadedFile.settings.showUI = payload.showUI;
-  },
-  [MutationTypes.CREATE_OVERVIEW](state) {
   },
 }
 

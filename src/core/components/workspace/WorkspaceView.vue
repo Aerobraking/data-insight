@@ -1670,7 +1670,7 @@ export default defineComponent({
         }
       }
 
-      this.$store.commit(MutationTypes.ADD_FILES, {
+      this.$store.commit(MutationTypes.ADD_ENTRIES, {
         model: this.model,
         entries: listFiles,
       });

@@ -252,40 +252,7 @@ export class WorkspaceEntryFolderWindow extends AbstractWorkspaceEntry {
         found = found || this.foldername.toLocaleLowerCase().includes(input);
         return true || found;
     }
-
-    private updateFileList(): void {
-        this.fileList = [];
-
-        let c = this;
-
-        const dir = this.path;
-
-        try {
-            if (fs.existsSync(this.path)) {
-                fs.readdirSync(this.path).forEach((file: any) => {
-                    const filePath = path.join(dir, file);
-                    const fileStat = fs.lstatSync(filePath);
-                    this.fileList.push(
-                        new FolderWindowFile(
-                            filePath,
-                            fileStat.isDirectory(),
-                            fileStat.isFile ? fileStat.size : 0
-                        )
-                    );
-                });
-            }
-        } catch (err) {
-            console.error(err);
-            this.fileList = [];
-        }
-
-    }
-
-    public getFileList(): Array<FolderWindowFile> {
-        this.updateFileList();
-        return this.fileList;
-    }
-
+ 
 }
 export class FolderWindowFile {
 
@@ -295,15 +262,14 @@ export class FolderWindowFile {
         this.filename = _.last(path.split("/")) != undefined ? <string>_.last(path.split("/")) : "not found";
         if (name) this.filename = name;
         this.isDirectory = isDirectory;
-        this.size = size;
-        this.id = Math.floor(Math.random() * 1000000000000);
+        this.size = size; 
     }
 
     getSizeFormatted() {
         return f.filesizeFormat(this.size);
     }
 
-    id: number;
+    id!: number;
     path: string;
     filename: string;
     size: number;

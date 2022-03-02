@@ -429,9 +429,15 @@ export default defineComponent({
                   size = fileStat.size;
                 }
 
-                this.list.push(
-                  new FolderWindowFile(filePath, file.isDirectory(), size)
+                const f = new FolderWindowFile(
+                  filePath,
+                  file.isDirectory(),
+                  size
                 );
+                let id = 0;
+                while (this.list.find((e) => e.id == id)) id++;
+                f.id = id;
+                this.list.push(f);
               } catch (err) {
                 console.error("no access! " + filePath);
               }
@@ -598,6 +604,8 @@ export default defineComponent({
             this.folderBack();
             e.stopImmediatePropagation();
             return;
+          case "h":
+            this.openDefault();
           case "f":
           case "y":
           case "t":

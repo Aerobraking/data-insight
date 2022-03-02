@@ -3,8 +3,7 @@ import { Exclude, Expose } from "class-transformer";
 
 export default class AbstractWorkspaceEntry {
 
-    constructor(entryType: `wsentry${string}`, isResizable: boolean) {
-        this.id = Math.floor(Math.random() * 1000000000000);
+    constructor(entryType: `wsentry${string}`, isResizable: boolean) { 
         this.isResizable = isResizable; 
         this.entryType = entryType;
         this.typeNameReadable = entryType.replaceAll("wsentry", ""); this.typeNameReadable = this.typeNameReadable.charAt(0).toUpperCase() + this.typeNameReadable.slice(1);

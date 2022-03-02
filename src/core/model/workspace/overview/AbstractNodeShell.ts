@@ -7,8 +7,7 @@ import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import {   FeatureDataHandler } from "./FeatureData";
 import { FeatureInstanceList } from "./AbstractFeature";
 import { Layouter } from "./NodeLayout";
-import FolderNode from "@/filesystem/model/FolderNode";
-import { ThermometerLines } from "mdue";
+import FolderNode from "@/filesystem/model/FolderNode"; 
 import { NodeFeatures, FeatureType } from "./FeatureType";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
@@ -23,8 +22,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     constructor(nt: string, path: string, root: N) {
         this.nt = nt;
         this.path = path;
-        this.root = root;
-        this.id = Math.floor(Math.random() * 10000000);
+        this.root = root; 
         this.root.shell = this;
         this.nodes = this.root.descendants();
     }
@@ -45,7 +43,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     root: N;
 
     // unique id for this entry
-    id: number;
+   id!: number;
 
     // The absolute path to the root folder
     path: string;

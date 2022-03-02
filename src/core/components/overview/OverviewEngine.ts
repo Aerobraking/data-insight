@@ -62,12 +62,12 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             // Get ready for next frame by setting then=now, but also adjust for your
             // specified fpsInterval not being a multiple of RAF's interval (16.7ms)
             OverviewEngine.then = OverviewEngine.now - (OverviewEngine.elapsed % OverviewEngine.fpsInterval);
- 
+
             if (doBenchmark) logTime("tick");
             for (let i = 0; i < OverviewEngine.instances.length; i++) {
                 const inst = OverviewEngine.instances[i];
                 inst.tickEngine();
-            } 
+            }
 
             TWEEN.update();
             tickEnd(OverviewEngine.printlog);
@@ -92,11 +92,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     nodeHovered: AbstractNode | undefined;
     listnodesHovered: AbstractNode[] = [];
     nodeShift: AbstractNode | undefined;
-    showAllTimer: NodeJS.Timeout | undefined = setInterval(() => {
-        if (this.overview && this.overview.showAll && this.workspace.isActive) {
-            this.setViewBox(this.getNodesBoundingBox(1.3), 500, TWEEN.Easing.Linear.None);
-        }
-    }, 500);
 
     context: CanvasRenderingContext2D;
     private _shells: AbstractNodeShell[] = [];
@@ -429,7 +424,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     public dispose() {
         this.divObserver.disconnect();
-        if (this.showAllTimer) clearTimeout(this.showAllTimer);
     }
 
     public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeShell[] | undefined = this._shells): ElementDimension {
@@ -683,6 +677,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 n.o = Math.min(1, Math.max(OverviewEngine.minOpacity, n.o));
                 if (n.o >= 1) this.notFound.delete(listOpacity[i]);
             }
+        }
+
+        if (this.overview && this.overview.showAll && this.workspace.isActive) {
+            this.setViewBox(this.getNodesBoundingBox(1.3), 0, TWEEN.Easing.Linear.None);
         }
 
         if (this.enablePainting) {
