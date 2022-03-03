@@ -4,10 +4,10 @@ import { Quadtree } from "d3";
 import path from "path";
 import { AbstractLink, AbstractNode } from "./AbstractNode";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
-import {   FeatureDataHandler } from "./FeatureData";
+import { FeatureDataHandler } from "./FeatureData";
 import { FeatureInstanceList } from "./AbstractFeature";
 import { Layouter } from "./NodeLayout";
-import FolderNode from "@/filesystem/model/FolderNode"; 
+import FolderNode from "@/filesystem/model/FolderNode";
 import { NodeFeatures, FeatureType } from "./FeatureType";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
@@ -22,13 +22,10 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     constructor(nt: string, path: string, root: N) {
         this.nt = nt;
         this.path = path;
-        this.root = root; 
+        this.root = root;
         this.root.shell = this;
         this.nodes = this.root.descendants();
     }
-
-    x: number = 0;
-    y: number = 0;
 
     // the root node 
     @Type(() => AbstractNode, {
@@ -42,8 +39,11 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     })
     root: N;
 
+    x: number = 0;
+    y: number = 0;
+ 
     // unique id for this entry
-   id!: number;
+    id!: number;
 
     // The absolute path to the root folder
     path: string;
@@ -242,7 +242,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
         if (nodesAdded.length > 0 && fireUpdate) {
             this.updateNodeLists();
-            this.nodesAdded(nodesAdded); 
+            this.nodesAdded(nodesAdded);
         }
     }
 
@@ -364,6 +364,9 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         Layouter.shellContentUpdate(this);
     }
 
+    /**
+     * Updates the quadtree.
+     */
     tickShell() {
         this.quadtree = d3.quadtree<N>().x(n => n.getX()).y(n => n.getY()).addAll(this.nodes);
     }

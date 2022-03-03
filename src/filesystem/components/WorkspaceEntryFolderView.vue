@@ -155,6 +155,7 @@ export default defineComponent({
     dragActive: boolean;
     list: Array<FolderWindowFile>;
     selected: Set<any>;
+    idCounter: number;
     lastItemSelected: number | undefined;
     observer: IntersectionObserver | undefined;
     eventOnMouseup:
@@ -169,6 +170,7 @@ export default defineComponent({
       dragActive: false,
       opaque: true,
       observer: undefined,
+      idCounter: 0,
       list: [],
       selected: new Set(),
     };
@@ -397,7 +399,9 @@ export default defineComponent({
       if (this.entry.path == DriveListRoot) {
         for (let i = 0; i < DriveListSystemInstance.getDrives().length; i++) {
           const d = DriveListSystemInstance.getDrives()[i];
-          this.list.push(new FolderWindowFile(d.path, true, d.size, d.name));
+          const f = new FolderWindowFile(d.path, true, d.size, d.name);
+          f.id = this.idCounter++;
+          this.list.push(f);
         }
         return;
       }
@@ -434,9 +438,7 @@ export default defineComponent({
                   file.isDirectory(),
                   size
                 );
-                let id = 0;
-                while (this.list.find((e) => e.id == id)) id++;
-                f.id = id;
+                f.id = this.idCounter++;
                 this.list.push(f);
               } catch (err) {
                 console.error("no access! " + filePath);
