@@ -44,11 +44,11 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     handleEvents(): void {
 
-        const newNodes = []; 
+        const newNodes = [];
         for (let i = 0; i < 8; i++) {
             let e = this.eventStack.shift();
             if (e) {
-                newNodes.push({ path: e.path, isCollection: e.collection, collectionSize: e.collection ? e.childCount : 0 });
+                newNodes.push({ path: e.path, collection: e.collection ? { size: e.childCount, depth: 0 } : undefined });
             }
         }
 

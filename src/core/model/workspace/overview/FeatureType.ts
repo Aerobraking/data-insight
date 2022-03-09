@@ -11,7 +11,7 @@ export enum FeatureType {
     FolderFileTypes = "FFA"
 }
 
-export type NodeFeatures = {
+export type Features = {
     [FeatureType.FolderLastModify]?: FeatureDataMedian,
     [FeatureType.FolderSize]?: FeatureDataSum,
     [FeatureType.FolderQuantity]?: FeatureDataSum,

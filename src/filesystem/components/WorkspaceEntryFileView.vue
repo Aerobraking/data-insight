@@ -5,7 +5,7 @@
     @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip', $event)"
     @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"
     ref="el"
-    class="ws-entry-file-wrapper select-element sizefixed"
+    class="ws-entry-file-wrapper select-element"
   >
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>

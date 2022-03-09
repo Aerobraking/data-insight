@@ -8,7 +8,7 @@ import { FeatureDataHandler } from "./FeatureData";
 import { FeatureInstanceList } from "./AbstractFeature";
 import { Layouter } from "./NodeLayout";
 import FolderNode from "@/filesystem/model/FolderNode";
-import { NodeFeatures, FeatureType } from "./FeatureType";
+import { Features, FeatureType } from "./FeatureType";
 
 export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;
@@ -41,7 +41,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     x: number = 0;
     y: number = 0;
- 
+
     // unique id for this entry
     id!: number;
 
@@ -75,8 +75,6 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     @Exclude()
     engine: NodeShellListener<AbstractNode> | undefined;
 
-    public abstract loadCollection(node: any): void;
-
     public abstract createNodeInstance(name: string): N;
 
     abstract getName(): string;
@@ -96,6 +94,8 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         }
     }
 
+    public abstract loadCollection(node: any): void;
+
     public renameByPath(oldPath: string, newPath: string) {
 
         let node = this.getNodeByPath(oldPath);
@@ -111,12 +111,12 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
     }
 
-    public addFeaturesList(list: { path: string, features: NodeFeatures }[]) {
+    public addFeaturesList(list: { path: string, features: Features }[]) {
         list.forEach(f => this.addFeatures(f.path, f.features, false));
         if (list.length > 0) this.featuresUpdated();
     }
 
-    public addFeatures(path: string, features: NodeFeatures, fireUpdate = true) {
+    public addFeatures(path: string, features: Features, fireUpdate = true) {
 
         let node = this.getNodeByPath(path);
         if (node) {
@@ -199,45 +199,18 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     }
 
     /**
-     * 
-     * @param nodePath  Absolute path 
-     * @returns 
-     */
-    public getNodeByPath(nodePath: string): N | undefined {
-        nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
-        if (nodePath == ".") return this.root;
-        let folders: string[] = nodePath.split("/");
-
-        let currentFolder: N | undefined = this.root;
-        s:
-        for (let i = 0; i < folders.length; i++) {
-            const f = folders[i];
-
-            let childFound: N | undefined = currentFolder.getChildren().find(c => c.name == f);
-            if (childFound) {
-                currentFolder = childFound;
-            } else {
-                currentFolder = undefined;
-                break s;
-            }
-        }
-        return currentFolder;
-
-    }
-
-    /**
     * 
     * @param nodePath Absolute path 
     * @param isCollection 
     * @param collectionSize 
     * @returns 
     */
-    public addNodesByPaths(paths: { path: string, isCollection: boolean, collectionSize: number }[], fireUpdate: boolean = true) {
+    public addNodesByPaths(paths: { path: string, collection: { size: number, depth: number } | undefined }[], fireUpdate: boolean = true) {
 
         const nodesAdded: N[] = [];
 
         paths.forEach(p => {
-            nodesAdded.push(...this.addNodeByPath(p.path, p.isCollection, p.collectionSize, false));
+            nodesAdded.push(...this.addNodeByPath(p.path, p.collection, false));
         });
 
         if (nodesAdded.length > 0 && fireUpdate) {
@@ -253,7 +226,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
      * @param collectionSize 
      * @returns 
      */
-    public addNodeByPath(nodePath: string, isCollection: boolean = false, collectionSize: number = 0, fireUpdate: boolean = true): N[] {
+    public addNodeByPath(nodePath: string, collection: { size: number, depth: number } | undefined, fireUpdate: boolean = true): N[] {
 
         const nodesAdded: N[] = [];
 
@@ -280,7 +253,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
                 if (i == folders.length - 1) {
                     // the sumbmitted folder
-                    if (isCollection && collectionSize > 0) childFound.collectionData = { depth: 1, size: collectionSize };
+                    if (collection && collection.size > 0) childFound.collectionData = collection;
                 }
             }
             currentFolder = childFound;
@@ -315,6 +288,33 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         }
     }
 
+    /**
+     * 
+     * @param nodePath  Absolute path 
+     * @returns 
+     */
+    public getNodeByPath(nodePath: string): N | undefined {
+        nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
+        if (nodePath == ".") return this.root;
+        let folders: string[] = nodePath.split("/");
+
+        let currentFolder: N | undefined = this.root;
+        s:
+        for (let i = 0; i < folders.length; i++) {
+            const f = folders[i];
+
+            let childFound: N | undefined = currentFolder.getChildren().find(c => c.name == f);
+            if (childFound) {
+                currentFolder = childFound;
+            } else {
+                currentFolder = undefined;
+                break s;
+            }
+        }
+        return currentFolder;
+
+    }
+
     public setCoordinates(c: { x: number, y: number }) {
         this.x = c.x;
         this.y = c.y;
@@ -337,10 +337,10 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
         Layouter.nodeRemoved(this, n.parent as AbstractNode, n);
     }
 
-    nodeChildrenRemoved(n: N) {
+    nodesRemoved(n: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
-        Layouter.nodeChildrenRemoved(this, n.parent as AbstractNode, n);
+        Layouter.nodesRemoved(this, n.parent as AbstractNode, n);
     }
 
     nodeAdded(c: N) {
@@ -361,7 +361,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     private updateNodeLists() {
         this.nodes = this.root.descendants();
         this.links = this.root.links();
-        Layouter.shellContentUpdate(this);
+        Layouter.shellUpdated(this);
     }
 
     /**

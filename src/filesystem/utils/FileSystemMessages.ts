@@ -1,4 +1,4 @@
-import { NodeFeatures } from "../../core/model/workspace/overview/FeatureType";
+import { Features } from "../../core/model/workspace/overview/FeatureType";
 
 export interface FileSystemListener {
     event(e: FolderFeatureResult | FolderSyncResult | FolderSyncFinished): void;
@@ -28,7 +28,7 @@ export interface FolderSyncResult extends MessageType {
 export interface FolderFeatureResult extends MessageType {
     type: "folderfeatures",
     path: string,
-    features: NodeFeatures,
+    features: Features,
 }
 export interface FolderSyncFinished extends MessageType {
     type: "folderdeepsyncfinished",

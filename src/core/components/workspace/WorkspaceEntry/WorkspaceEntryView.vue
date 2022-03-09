@@ -1,9 +1,10 @@
 <template >
-  <div ref="el" class="ws-entry">
+  <div ref="el" class="ws-entry" :class="{ sizefixed: !entry.isResizable }">
     <slot class="ws-entry-slot"></slot>
     <wsentrydisplayname :entry="entry" />
     <wsentryalert :entry="entry" />
     <button
+      v-if="entry.isResizable"
       @dblclick.capture.stop.prevent="dblclick"
       @mousedown.stop
       class="ws-entry-resize-button ws-zoom-fixed"
@@ -56,7 +57,7 @@ export default defineComponent({
       }
       return undefined;
     }
- 
+
     this.$el.style.zIndex = getStyle(entrydiv, "z-index");
 
     new ResizerComplex(
@@ -106,7 +107,7 @@ export default defineComponent({
 .ws-entry {
   transition: opacity 0.3s ease-in-out;
   position: absolute;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .ws-entry-slot {

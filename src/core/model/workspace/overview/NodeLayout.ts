@@ -1,7 +1,6 @@
 import { AbstractLink, AbstractNode } from "./AbstractNode";
-import { Simulation, ForceLink, tickStep } from "d3";
+import { Simulation, ForceLink } from "d3";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
-import {  FeatureDataType } from "./FeatureData";
 import { Constructor } from "@/core/plugin/Constructor";
 import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
 import { doBenchmark, logTime } from "@/core/utils/Benchmark";
@@ -29,22 +28,22 @@ export abstract class AbstractNodeLayout {
 
     public abstract nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
 
+    public abstract nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
+
     public abstract nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
 
-    public abstract featuresUpdated(shell: AbstractNodeShellIfc): void;
     public abstract nodesUpdated(shell: AbstractNodeShellIfc): void;
+
     public abstract nodeDragged(node: AbstractNode, type: "start" | "move" | "end", offset: { x: number, y: number } | undefined, transform: { k: number }): void;
 
-    public abstract nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
+    public abstract featuresUpdated(shell: AbstractNodeShellIfc): void;
 
-    // public abstract shellAdded(shell:AbstractNodeShell):void;
-    // public abstract shellRemoved(shell:AbstractNodeShell):void;
+    public abstract shellUpdated(shell: AbstractNodeShellIfc): void;
+
+    public abstract getNodePosition(n: AbstractNode): { x: number, y: number };
 
     public abstract tickLayout(shells: AbstractNodeShellIfc[], delta: number): void;
 
-    public abstract shellContentUpdate(shell: AbstractNodeShellIfc): void;
-
-    public abstract getNodePosition(n: AbstractNode): { x: number, y: number };
 }
 
 @LayoutDecorator()
@@ -63,7 +62,7 @@ class NodeLayoutDefault extends AbstractNodeLayout {
 
     mapSimulation: Map<AbstractNodeShellIfc, Simulation<AbstractNode, AbstractLink<AbstractNode>>> = new Map();
 
-    public shellContentUpdate(shell: AbstractNodeShellIfc): void {
+    public shellUpdated(shell: AbstractNodeShellIfc): void {
         let simulation = this.mapSimulation.get(shell);
         if (simulation) {
 
@@ -80,7 +79,7 @@ class NodeLayoutDefault extends AbstractNodeLayout {
     public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
-    public nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
 
@@ -130,7 +129,7 @@ class NodeLayoutStatic extends AbstractNodeLayout {
     public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
-    public nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
 
@@ -138,7 +137,7 @@ class NodeLayoutStatic extends AbstractNodeLayout {
 
     mapSimulation: Map<AbstractNodeShellIfc, Simulation<AbstractNode, AbstractLink<AbstractNode>>> = new Map();
 
-    public shellContentUpdate(shell: AbstractNodeShellIfc): void {
+    public shellUpdated(shell: AbstractNodeShellIfc): void {
         this.calculateBounds(shell.root);
         this.positionNodes(shell.root);
 
@@ -316,12 +315,12 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
     public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void { }
 
-    public nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
         this.reheatShell(shell);
         this.updateLayout(shell.root)
     }
 
-    public shellContentUpdate(shell: AbstractNodeShellIfc): void {
+    public shellUpdated(shell: AbstractNodeShellIfc): void {
         this.reheatShell(shell);
         this.updateLayout(shell.root);
     }
@@ -467,20 +466,10 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
     constructor() {
         super();
-
-        // if (doBenchmark) {
-        //     window.addEventListener("keydown", (e) => {
-        //         switch (e.key) {
-        //             case "F2":
-        //                 this.randomMovement = true;
-        //                 break;
-        //         }
-        //     })
-        // }
     }
 
     public featuresUpdated(shell: AbstractNodeShellIfc): void { }
- 
+
     public id: LayoutType = LayoutType.STATICDYNAMICX;
 
     randomMovement = false;
@@ -575,18 +564,18 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
     public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void { }
 
-    public nodeChildrenRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
         this.reheatShell(shell);
         this.updateLayout(shell.root)
     }
 
-    public shellContentUpdate(shell: AbstractNodeShellIfc): void {
+    public shellUpdated(shell: AbstractNodeShellIfc): void {
         this.reheatShell(shell);
         this.updateLayout(shell.root);
     }
 
     public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
-        node.y = parent.y; 
+        node.y = parent.y;
         node.x = parent.x;
         this.reheatShell(shell);
         // layout update will be called later
@@ -601,6 +590,10 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         this.mapBounds.clear();
         this.calculateBounds(node);
         this.mapColumnBounds = new Map([...this.mapColumnBounds.entries()].sort());
+
+        /**
+         * Based on the largest bound in each column, calculate the width of the column
+         */
         let sum = 0;
         for (const [key, value] of this.mapColumnBounds.entries()) {
             const v = Math.min(Math.max(1, value / 30000), 10);
@@ -608,8 +601,6 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
             this.mapBounds.set(key, sum);
             sum += x;
         }
-
-
         this.positionNodes(node);
     }
 
@@ -633,7 +624,6 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         const maxBound = this.mapColumnBounds.get(n.depth);
         if (!maxBound || maxBound < n.customData["b"]) this.mapColumnBounds.set(n.depth, n.customData["b"]);
 
-
     }
 
     positionNodes(n: AbstractNode): void {
@@ -644,7 +634,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
         let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.getY(), vy: 0, x: n.getX(), vx: 0 } : n.customData["co"];
 
-        let yStart = (coord ? coord.y : n.getY()) - ((childBound) / 2) /*+ (childBound / (this.padding * 10))*/;
+        let yStart = (coord ? coord.y : n.getY()) - ((childBound) / 2);
 
         n.children.forEach((c, i) => c.customData["i"] == undefined ? c.customData["i"] = i : "");
         n.children.sort((a, b) => (a.customData["i"] == undefined ? 0 : a.customData["i"]) - (b.customData["i"] == undefined ? 0 : b.customData["i"]))
@@ -674,7 +664,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
      * @param delta ms since last frame, about 5-40 (ms)
      */
     public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
- 
+
         if (doBenchmark && shells.length > 0) logTime("sim");
 
         shells.forEach(shell => {
@@ -769,7 +759,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
         });
 
-        if (doBenchmark && shells.length > 0) logTime("sim"); 
+        if (doBenchmark && shells.length > 0) logTime("sim");
 
     }
 
@@ -778,7 +768,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     }
 
 }
-  
+
 class LayouterClass {
 
     static instance: LayouterClass = new LayouterClass();

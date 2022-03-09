@@ -1,7 +1,7 @@
 import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
 import { Exclude, Expose } from "class-transformer";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
-import { FeatureType, NodeFeatures } from "./FeatureType";
+import { FeatureType, Features } from "./FeatureType";
 
 export abstract class AbstractNode {
 
@@ -61,7 +61,7 @@ export abstract class AbstractNode {
             } else {
                 this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) };
                 this.children = [];
-                this.shell?.nodeChildrenRemoved(this);
+                this.shell?.nodesRemoved(this);
             }
         } else {
 
@@ -90,7 +90,7 @@ export abstract class AbstractNode {
         }
     }
 
-    public getFeatureValue<K extends FeatureType>(key: K, recursive: boolean = true): NodeFeatures[K] | undefined {
+    public getFeatureValue<K extends FeatureType>(key: K, recursive: boolean = true): Features[K] | undefined {
         if (recursive) {
             if (this.featuresRecursive) {
                 let e = this.featuresRecursive[key];
@@ -201,10 +201,10 @@ export abstract class AbstractNode {
     }
 
     @Expose({ name: 'f' })
-    features: NodeFeatures = {};
+    features: Features = {};
 
     @Expose({ name: 'fs' })
-    featuresRecursive: NodeFeatures = {};
+    featuresRecursive: Features = {};
   
     /**
      * Our abstract AbstractNode class can't know the types of its children, as they are implemented classes of itself, which would lead to circular dependencies. So the childrens list is abstract and we have to Type() the list in the implemented classes.
