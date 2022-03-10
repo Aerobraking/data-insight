@@ -33,7 +33,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private static delta: number = 0;
 
     private static startClock(): void {
-        OverviewEngine.fpsInterval = 1000 / 30;
+        OverviewEngine.fpsInterval = 1000 / 100;
         OverviewEngine.then = performance.now();
         OverviewEngine.tickClock();
     }
@@ -56,7 +56,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             tickStart();
 
             // prevent too large timesteps in case of slow performance
-            OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 10000);
+            OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 1000);
             OverviewEngine.elapsedTotal += OverviewEngine.delta;
 
             // Get ready for next frame by setting then=now, but also adjust for your
