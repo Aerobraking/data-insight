@@ -18,130 +18,12 @@ import CollideExtend from "@/utils/CollideExtend";
  * bei überschniedungen in richtung des eltern nodes verschieben
  */
 
-
-/**
- * Beinhaltet eine Liste von children eines Parent Nodes.
- */
-export class RectangleCollide<D extends AbstractNode> implements SimulationNodeDatum {
-
-    width: number = 100;
-    height: number = 100;
-    radius: number = 35;
-    node: D;
-
-    constructor(node: D) {
-        this.node = node;
-        this.updateRadius();
-    }
-
-    public get depth(): number {
-        return this.node.getDepth() + 1;
-    }
-
-    public updateRadius() {
-        if (this.node.getChildren().length > 1) {
-            this.radius = this.node.getChildren().map(d => d.getRadius()).reduce(function (prev, current) {
-                return prev + current;
-            })
-        } else if (this.node.getChildren().length == 1) {
-            this.radius = this.node.getChildren()[0].getRadius();
-        }
-
-        this.radius *= 2;
-
-        this.y = this.node.getChildren().reduce((total, next) => total + next.getY(), 0) / this.node.getChildren().length;
-    }
-    /**
-     * Node’s zero-based index into nodes array. 
-     * This property is set during the initialization process of a simulation.
-     */
-    index?: number | undefined;
-    /**
-     * Node’s current y-position
-     */
-    private _x?: number | undefined;
-    public get x(): number | undefined {
-        return 0;
-    }
-    public set x(value: number | undefined) {
-        this._x = value;
-    }
-    private _y?: number | undefined;
-    public get y(): number | undefined {
-        this.y = this.node.getChildren().reduce((total, next) => total + next.getY(), 0) / this.node.getChildren().length;
-        return this._y;
-    }
-    public set y(value: number | undefined) {
-        this._y = value;
-    }
-    /**
-     * Node’s current x-velocity
-     */
-    vx?: number | undefined;
-    /**
-     * Node’s current y-velocity
-     */
-    private _vy?: number | undefined;
-
-    public get vy(): number | undefined {
-        return this._vy;
-    }
-
-    public set vy(value: number | undefined) {
-        this._vy = value;
-        const diff = this._vy && this._vyOld ? this._vy - this._vyOld : 0;
-        if (OverviewEngine.framecounter % 400 == 0) {
-            console.log("diff: " + diff);
-        }
-        /**
-         * Add velocity to nodes
-         */
-        for (let i = 0; i < this.node.getChildren().length; i++) {
-            const child = this.node.getChildren()[i];
-            if (child.vy) {
-                // child.vy += diff*0.05;
-            }
-        }
-        this._vyOld = this._vy;
-    }
-
-    _vyOld?: number | undefined;
-    /**
-     * Node’s fixed x-position (if position was fixed)
-     */
-    private _fx?: number | null | undefined;
-    public get fx(): number | null | undefined {
-        return 0;
-    }
-    public set fx(value: number | null | undefined) {
-        this._fx = value;
-    }
-    /**
-     * Node’s fixed y-position (if position was fixed)
-     */
-    fy?: number | null | undefined;
-}
-
-
-
+ 
 export abstract class AbstractNode implements SimulationNodeDatum {
 
     constructor(nodetype: string, name: string) {
         this.nodetype = nodetype;
-        this._name = name;
-
-        this.simulation = d3
-            .forceSimulation([] as Array<this>)
-            .force("collide", d3.forceCollide<AbstractNode>().radius(d => {
-                var r = d.forceRadius;
-                return r;
-            }).iterations(8).strength(0.25))
-            .force("charge", d3.forceManyBody<AbstractNode>().strength(-1400))
-            .alphaDecay(1 - Math.pow(0.001, 1 / 4000000))
-            .alphaMin(0.003)
-            .alphaTarget(0.3)
-            .stop();
-
+        this._name = name; 
         this.updateForce();
     }
 
@@ -232,12 +114,10 @@ export abstract class AbstractNode implements SimulationNodeDatum {
     }
 
     public updateSimulation() {
-        this.simulation.nodes(this.children);
+    
     }
 
-    // the d3 simulation instance
-    @Exclude()
-    simulation: Simulation<this, AbstractLink<this>>;
+ 
     // list of child node for this node
     @Type(() => FolderNode)
     private children: Array<this> = [];
@@ -272,8 +152,6 @@ export abstract class AbstractNode implements SimulationNodeDatum {
      */
     private _x?: number | undefined;
 
-
-
     public get name(): string {
         return this._name;
     }
@@ -285,22 +163,7 @@ export abstract class AbstractNode implements SimulationNodeDatum {
         }
     }
 
-    public tick() {
-
-        let c = this.simulation.force<ForceCollide<this>>("collide");
-
-        if (c) {
-            let collide: ForceCollide<this> = c;
-            collide.radius((d: this, i: number, nodes: this[]) => {
-                // return d.getRadius() * 1.5;
-                return d.forceRadius;
-            }
-            );
-        }
-
-        this.simulation.alpha(1);
-        this.simulation.tick();
-    }
+    public tick() { }
 
     public getStatsValue(key: string): number | undefined {
         if (this.statsRec) {
@@ -445,51 +308,7 @@ export interface ColumnTextWidth {
 
 
 export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNode> {
-
-    constructor(nodetype: string, path: string, root: D) {
-        this.nodetype = nodetype;
-        this.path = path;
-        this.root = root;
-        this.id = Math.floor(Math.random() * 10000000);
-
-        this.root.fx = 0;
-        this.root.fy = 0;
-
-        this.simulation = d3
-            .forceSimulation([] as Array<D>)
-            .force('link', d3.forceLink<AbstractNode, AbstractLink>()
-                .strength(function (d: AbstractLink, i: number, data: AbstractLink[]) {
-                    // return d.source.isRoot() ? 0.0002 : 0.01;
-                    return 100;
-                }).distance(1).iterations(2)
-            )
-            // .force("collide", d3.forceCollide<D>().radius(d => {
-            //     var r = d.getRadius() * 1.1;
-            //     return r;
-            // }).iterations(2).strength(0.3))
-            .force(
-                "y",
-                d3.forceY()
-                    .y(function (d: any) {
-                        return 0;
-                    })
-                    .strength(0.0)
-            )
-            .force(
-                "collideExt",
-                CollideExtend()
-                    .radius(function (d: any) {
-                        return d.forceRadius;
-                    })
-                    .strength(0)
-            )
-            .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-            .alphaMin(0.003)
-            .alphaTarget(0.004)
-            .stop();
-
-    }
-
+ 
     x: number = 0;
     y: number = 0;
 
@@ -542,8 +361,7 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
 
     }
-
-
+ 
     public addStats(stats: Stats) {
         let node = this.getNodeByPath(stats.path);
         if (node) {
@@ -676,15 +494,14 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         this.x = c.x;
         this.y = c.y;
     }
-
-
+ 
     /**
      * One value contains a simulation with a list of RectangleCollide instances. each representing a nodes children list a
      * one large circle.
      * The depth starts at 2. 0 is the single root node. column one only contains nodes that belong to one childrens list,
      * so they are already colliding with each other.
      */
-    columnForceMap: Map<number, Simulation<RectangleCollide<D>, undefined>> = new Map();
+    columnForceMap: Map<number, Simulation<D, undefined>> = new Map();
 
     public nodeUpdate() {
         this.engine?.nodeUpdate();
@@ -696,92 +513,13 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         this.engine?.nodeUpdate();
     }
 
-    public nodeAdded(c: D) {
-
+    public nodeAdded(c: D) { 
         this.updateSimulationData();
         this.updateColumnForces();
-        this.engine?.nodeAdded(c);
-
-        const depth = c.getDepth();
-        // if (depth > 1) {
-
-        //     let f = this.columnForceMap.get(depth);
-        //     if (!f) {
-        //         f = d3
-        //             .forceSimulation<RectangleCollide<D>>([] as Array<RectangleCollide<D>>)
-        //             .force("collide", d3.forceCollide<RectangleCollide<D>>().radius(d => {
-        //                 var r = d.radius * 1.1;
-        //                 return r;
-        //             }).iterations(2).strength(0.4))
-        //             .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-        //             .alphaMin(0.003)
-        //             .alphaTarget(0.004)
-        //             .stop();
-        //         this.columnForceMap.set(depth, f);
-        //     }
-
-
-        // }
+        this.engine?.nodeAdded(c); 
+        const depth = c.getDepth(); 
     }
-
-
-
-    /**
-     * Updates the list of all nodes and links for this entry.
-     * Assign all nodes to the force simulation in case of new created nodes.
-     * @param reheat sets the alpha to one
-     */
-    protected updateColumnForces() {
-
-        this.nodes = this.root.descendants();
-
-        for (let i = 1, depth = i + 1; i < 0; i++, depth++) {
-            const listNodes = this.nodes.filter(n => n.depth == i);
-            if (listNodes) {
-                let f = this.columnForceMap.get(depth);
-                if (!f) {
-                    f = d3
-                        .forceSimulation<RectangleCollide<D>>([] as Array<RectangleCollide<D>>)
-                        .force("collide", d3.forceCollide<RectangleCollide<D>>().radius(d => {
-                            var r = d.radius * 1.1;
-                            return r;
-                        }).iterations(2).strength(1.0))
-                        .force("charge", d3.forceManyBody<RectangleCollide<D>>().strength(d => {
-                            var r = Math.max(1, Math.pow(d.radius, 1));
-                            return 0;
-                        }))
-                        .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-                        .alphaMin(0.003)
-                        .alphaTarget(0.004)
-                        .stop();
-                    this.columnForceMap.set(depth, f);
-                }
-
-                f.alpha(1);
-
-                const listRects = [];
-
-                for (let j = 0; j < listNodes.length; j++) {
-                    const n = listNodes[j];
-                    if (n.getChildren().length) {
-                        let r = new RectangleCollide(n);
-                        listRects.push(r);
-                    }
-
-                }
-
-                f.nodes(listRects);
-
-            } else {
-                // when no nodes are found, the maximum depth is reached.
-                break;
-            }
-
-        }
-
-    }
-
-
+ 
     /**
      * Updates the list of all nodes and links for this entry.
      * Assign all nodes to the force simulation in case of new created nodes.
@@ -802,20 +540,79 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         }
         this.simulation.nodes(this.nodes);
 
+        this.updateColumnForces();
+
+    }
+
+
+    constructor(nodetype: string, path: string, root: D) {
+        this.nodetype = nodetype;
+        this.path = path;
+        this.root = root;
+        this.id = Math.floor(Math.random() * 10000000);
+
+        this.root.fx = 0;
+        this.root.fy = 0;
+
+        this.simulation = d3
+            .forceSimulation([] as Array<D>)
+             .force(
+                "y",
+                d3.forceY()
+                    .y(function (d: any) {
+                        return 0;
+                    })
+                    .strength(0.2)
+            )
+            .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
+            .alphaMin(0.003)
+            .alphaTarget(0.004)
+            .stop();
+
+    }
+
+
+
+    /**
+     * Updates the list of all nodes and links for this entry.
+     * Assign all nodes to the force simulation in case of new created nodes.
+     * @param reheat sets the alpha to one
+     */
+    protected updateColumnForces() {
+
+        this.nodes = this.root.descendants();
+
+        for (let i = 1; i < 30; i++) {
+            const listNodes: D[] = this.nodes.filter(n => n.depth == i);
+            if (listNodes) {
+                let f = this.columnForceMap.get(i);
+                if (!f) {
+                    f = d3
+                        .forceSimulation<D>([] as Array<D>)
+                        .force("collide", d3.forceCollide<D>().radius(d => {
+                            return Math.max(120, d.forceRadius);
+                        }).iterations(2).strength(0.3)) 
+                        .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
+                        .alphaMin(0.003)
+                        .alphaTarget(0.004)
+                        .stop();
+                    this.columnForceMap.set(i, f);
+                }
+
+                f.alpha(1); 
+                f.nodes(listNodes);
+
+            } else {
+                // when no nodes are found, the maximum depth is reached.
+                break;
+            }
+
+        }
+
     }
 
     tick() {
-
-
-        // let c: any = this.simulation.force("collide");
-
-        // if (c) {
-        //     c.radius(function (d: any) {
-        //         // return Math.max(120,d.forceRadius);
-        //         return 120;
-        //     }).strength(0.3)
-        // }
-
+  
         let y: ForceY<D> | undefined = this.simulation.force(
             "y"
         );
@@ -823,34 +620,14 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
         if (y) {
             y.y(function (d: D) {
                 return d.parent ? d.parent.getY() : d.getY();
-            }).strength(function (d: D, i: number, data: D[]) {
-                // return d.parent ? d.parent.isRoot() ? 0.0005 : 0.001 : 0;
-                return 1;
+            }).strength(function (d: D, i: number, data: D[]) { 
+                return 0.2;
             })
         }
-
-        let vyMax = 0;
-
+  
         for (let i = 0; i < this.nodes.length; i++) {
-            this.nodes[i].tick();
-            if (OverviewEngine.framecounter % 400 == 0) {
-                if (this.nodes[i].getChildren().length == 0) {
-                    this.nodes[i].updateForce();
-                }
-            }
-            let vy: number = this.nodes[i].vy ? this.nodes[i].vy as number : 0;
-            vy = Math.abs(vy);
-            vyMax = vy > vyMax ? vy : vyMax;
-
-
-
+            this.nodes[i].tick();  
         }
-
-        if (OverviewEngine.framecounter % 60 == 0) {
-            console.log("vyMax: ");
-            console.log(vyMax);
-        }
-
 
         this.simulation.alpha(1);
         this.simulation.tick();
@@ -859,7 +636,8 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
 
         for (let i = 0; i < columnForces.length; i++) {
             const f = columnForces[i];
-            f.tick();
+            f.alpha(1);
+            f.tick(); 
         }
 
         this.quadtree = d3.quadtree<D>()
@@ -871,25 +649,3 @@ export abstract class AbstractOverviewEntry<D extends AbstractNode = AbstractNod
     }
 }
 
-export class ColumnNodeContainer<D extends AbstractNode>{
-
-    private listNodes: D[] = [];
-    simulation: Simulation<D, undefined>;
-    constructor() {
-        this.simulation = d3
-            .forceSimulation<D>([] as Array<D>)
-            .force("collide", d3.forceCollide<D>().radius(d => {
-                var r = d.forceRadius * 1.1;
-                return r;
-            }).iterations(2).strength(0.4))
-            .alphaDecay(1 - Math.pow(0.001, 1 / 40000))
-            .alphaMin(0.003)
-            .alphaTarget(0.004)
-            .stop();
-    }
-
-    addNode(node: D) {
-        this.listNodes.push(node);
-        this.simulation.nodes(this.listNodes);
-    }
-}
