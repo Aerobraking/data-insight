@@ -33,7 +33,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private static delta: number = 0;
 
     private static startClock(): void {
-        OverviewEngine.fpsInterval = 1000 / 100;
+        OverviewEngine.fpsInterval = 1000 / 60;
         OverviewEngine.then = performance.now();
         OverviewEngine.tickClock();
     }
@@ -56,7 +56,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             tickStart();
 
             // prevent too large timesteps in case of slow performance
-            OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 1000);
+            OverviewEngine.delta = Math.min(OverviewEngine.elapsed, 2000);
             OverviewEngine.elapsedTotal += OverviewEngine.delta;
 
             // Get ready for next frame by setting then=now, but also adjust for your
@@ -441,7 +441,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 d.y2 = y > d.y2 ? y : d.y2;
             }
 
-            const p = _this.getNodePosition(n);
+            const p = n.customData["co"];
+            // const p = _this.getNodePosition(n);
             const x = p.x + n.shell!.x;
             const y = p.y + n.shell!.y;
             calc(x + 50, y + 50);

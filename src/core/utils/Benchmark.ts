@@ -39,8 +39,12 @@ export function tickStart() {
     // set to 2 so it get printed
     const n = mapTimes.get("chrome"); if (n) n.isMeasured = 2;
 
-    keysUsedInTick = [];
+ 
     keysUsedInTick.push("chrome");
+}
+
+export function logTimeGivenValue(key: string, value:number) {
+    logTime(key); let f = mapTimes.get(key); if (f) f.isMeasured = 3, f.time = value; 
 }
 
 export function logTime(key: string, log: boolean = false, scale: "s" | "ms" = "s") {
@@ -126,6 +130,7 @@ export function tickEnd(print: boolean = false) {
         log.forEach((s, i) => log[i] = s.replace(".", ","));
         console.log(log.join(";"));
         log = [];
+        keysUsedInTick = [];
         timeTotal = 0;
     }
 

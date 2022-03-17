@@ -3,7 +3,7 @@ import { Simulation, ForceLink } from "d3";
 import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
 import { Constructor } from "@/core/plugin/Constructor";
 import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
-import { doBenchmark, logTime } from "@/core/utils/Benchmark";
+import { doBenchmark, logTime, logTimeGivenValue } from "@/core/utils/Benchmark";
 
 export const Layouts: AbstractNodeLayout[] = [];
 export function LayoutDecorator() {
@@ -230,7 +230,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
     static nodeBound: number = 200;
     static coolDownTime: number = 64; // in frames
-    static minAlpha: number = 0.0003; // cooldown starts when alpha in current tick is less then minAlpha
+    static minAlpha: number = 0.001; // cooldown starts when alpha in current tick is less then minAlpha
     static gravity: number = 0.00015; // gravity force vector strength to target position 
     static friction = 0.97;
 
@@ -440,6 +440,53 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                         }
 
 
+                        function midpointY() {
+                            const delta2 = delta / 2;
+                            let dist = coord.y - n.y;
+                            let abs = Math.abs(dist);
+
+                            if (abs > 0 && abs < .01) n.y = coord.y;
+                            else {
+                                // get acceleration at the half time step
+                                let vy2 = coord.vy - dist * delta2 * NodeLayoutStaticDynamicX.stiffnessY;
+                                let y2 = n.y + vy2 * NodeLayoutStaticDynamicX.dampingY;
+                                dist = coord.y - y2;
+
+                                const accel = dist * delta * NodeLayoutStaticDynamic.gravity;
+                                // use accerleration from half time step for the full time step
+                                // with some random force for a more "natural" movement
+                                coord.vy -= accel * 0.65 + (accel * 0.35 * Math.random());
+
+                                if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamicX.dampingY;
+                                alpha += Math.abs(coord.vy);
+                            }
+                        }
+
+                        function midpointX() {
+
+                            const delta2 = delta / 2;
+                            let dist = coord.x - n.x;
+                            let abs = Math.abs(dist);
+
+                            if (abs > 0 && abs < .01) {
+                                n.x = coord.x;
+                            } else {
+                                // get acceleration at the half time step
+                                let vx2 = coord.vx + dist * delta2 * NodeLayoutStaticDynamicX.stiffnessX;
+                                let x2 = n.x + vx2 * NodeLayoutStaticDynamicX.dampingX;
+                                dist = coord.x - x2;
+
+                                const accel = dist * delta * NodeLayoutStaticDynamicX.stiffnessX;
+                                // use accerleration from half time step for the full time step
+                                // with some random force for a more "natural" movement
+                                coord.vx += accel * 0.65 + (accel * 0.35 * Math.random());
+                                if (n.fx == undefined) n.x += coord.vx *= NodeLayoutStaticDynamicX.dampingX;
+                                alpha += Math.abs(coord.vx);
+
+                            }
+                        }
+
+
                     } else {
                         // n.y = n.parent ? n.parent.getY() : n.getY();
                     }
@@ -581,13 +628,13 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         this.mapColumnBounds = new Map([...this.mapColumnBounds.entries()].sort());
 
         /**
-         * Based on the largest bound in each column, calculate the width of the column
+         * Based on the largest bound in each column, calculate the width of the column 
+         * by making sure the maximum angle is not exceeded
          */
         let sum = 0;
-        for (const [key, h] of this.mapColumnBounds.entries()) { 
-
-            const w = h / (2 * Math.tan(75 * (Math.PI / 180)));
-            const x = Math.max(w, NodeLayoutStaticDynamicX.ColumnWidthMin); 
+        for (const [key, h] of this.mapColumnBounds.entries()) {
+            const w = h / (2 * NodeLayoutStaticDynamicX.maxAngleTan);
+            const x = Math.max(w, NodeLayoutStaticDynamicX.ColumnWidthMin);
             this.mapBounds.set(key, sum);
             sum += x;
         }
@@ -648,30 +695,28 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
     public reheatShell(shell: AbstractNodeShellIfc) { shell.customData["heat"] = { v: NodeLayoutStaticDynamicX.coolDownTime }; };
 
-
+    static maxAngle = 60;
+    static maxAngleTan = Math.tan(NodeLayoutStaticDynamicX.maxAngle * (Math.PI / 180));
     static nodeBound: number = 200;
     static coolDownTime: number = 256; // in frames
     static minAlpha: number = 0.0003; // cooldown starts when alpha in current tick is less then minAlpha
 
-
-
     static ColumnWidthMin = 2100;
 
-
-
-
     static stiffnessX: number = .0005; // gravity force vector strength to target position 
-    static dampingX = .0015;
+    static dampingX = .003;
 
-    static stiffness: number = .0005; // gravity force vector strength to target position 
-    static damping = .0010;
+    static stiffnessY: number = .0003; // gravity force vector strength to target position 
+    static dampingY = .0025;
+
+    static randomness = 0.4;
 
     /**
      * 
      * @param shells 
-     * @param time ms since last frame, about 5-40 (ms)
+     * @param delta ms since last frame, about 5-40 (ms)
      */
-    public tickLayout(shells: AbstractNodeShellIfc[], time: number): void {
+    public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
 
         if (doBenchmark && shells.length > 0) logTime("sim");
 
@@ -686,132 +731,42 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                     const coord = n.customData["co"];
 
                     if (coord != undefined) {
-
-                        explicitEuler();
-                        explicitEulerX();
-                        //  midpointY2();
-                        //  midpointX2();
-
-                        function explicitEuler() {
-                            let dist = coord.y - n.y;
-                            const abs = Math.abs(dist);
-
-                            if (abs > 0 && abs < .01) n.y = coord.y;
-                            else {
-                                coord.vy += (dist * NodeLayoutStaticDynamicX.stiffness - coord.vy * NodeLayoutStaticDynamicX.damping) * time;
-
-                                n.y += coord.vy;
-                                alpha = Math.max(alpha, Math.abs(coord.vy));
-                            }
+ 
+                        if (true) {
+                            explicitEuler("x", NodeLayoutStaticDynamicX.stiffnessX, NodeLayoutStaticDynamicX.dampingX);
+                            explicitEuler("y", NodeLayoutStaticDynamicX.stiffnessY, NodeLayoutStaticDynamicX.dampingY);
+                        } else {
+                            midpoint("x", NodeLayoutStaticDynamicX.stiffnessX, NodeLayoutStaticDynamicX.dampingX)
+                            midpoint("y", NodeLayoutStaticDynamicX.stiffnessY, NodeLayoutStaticDynamicX.dampingY)
                         }
 
-                        function explicitEulerX() {
-                            let dist = coord.x - n.x;
-                            const abs = Math.abs(dist);
-
-                            if (abs > 0 && abs < .01) n.x = coord.x;
-                            else {
-                                coord.vx += (dist * NodeLayoutStaticDynamicX.stiffnessX - coord.vx * NodeLayoutStaticDynamicX.dampingX) * time;
-
-                                n.x += coord.vx;
-                                alpha = Math.max(alpha, Math.abs(coord.vx));
-                            }
+                        function random(acc: number) {
+                            return acc * (1 - NodeLayoutStaticDynamicX.randomness) + (acc * NodeLayoutStaticDynamicX.randomness * Math.random());
                         }
 
-                        function midpointY2() {
-                            const timeHalf = time / 2;
-                            let dist = coord.y - n.y;
-                            let abs = Math.abs(dist);
-
-                            if (abs > 0 && abs < .01) n.y = coord.y;
-                            else {
-                                // get acceleration at the half time step
-                                let vy2 = (dist * NodeLayoutStaticDynamicX.stiffness - coord.vy * NodeLayoutStaticDynamicX.damping) * timeHalf;
-
-                                let y2 = n.y + vy2;
-
-                                dist = coord.y - y2;
-
-                                coord.vy += (dist * NodeLayoutStaticDynamicX.stiffness - coord.vy * NodeLayoutStaticDynamicX.damping) * time;
-
-                                // use accerleration from half time step for the full time step
-                                // with some random force for a more "natural" movement
-                                // coord.vy -= accel * 0.65 + (accel * 0.35 * Math.random());
-
-                                if (n.fy == undefined) n.y += coord.vy;
-                                alpha = Math.max(alpha, Math.abs(coord.vy));
-                            }
+                        function explicitEuler(pos: "x" | "y", stiffness = NodeLayoutStaticDynamicX.stiffnessY, damping = NodeLayoutStaticDynamicX.dampingY, vel = "v" + pos) {
+                            let dist = coord[pos] - n[pos];
+                            const acc = (stiffness * dist - damping * coord[vel]) * delta;
+                            // add random force for a more "natural" movement
+                            coord[vel] += random(acc);
+                            if (n.fy == undefined) n[pos] += coord[vel];
+                            alpha = Math.max(alpha, Math.abs(coord[vel]));
                         }
 
-                        function midpointX2() {
-                            const timeHalf = time / 2;
-                            let dist = coord.x - n.x;
-                            let abs = Math.abs(dist);
+                        function midpoint(pos: "x" | "y", stiffness = NodeLayoutStaticDynamicX.stiffnessY, damping = NodeLayoutStaticDynamicX.dampingY, vel = "v" + pos) {
+                            const timeHalf = delta / 2;
+                            let dist = coord[pos] - n[pos];
+                            // get acceleration at the half time step
+                            let velHalf = (stiffness * dist - damping * coord[vel]) * timeHalf;
+                            let yHalf = n[pos] + velHalf;
+                            dist = coord[pos] - yHalf;
+                            // use accerleration from half time step for the full time step
+                            const acc = (stiffness * dist - damping * coord[vel]) * delta;
+                            // add random force for a more "natural" movement
+                            coord[vel] += random(acc);
+                            if (n.fy == undefined) n[pos] += coord[vel];
+                            alpha = Math.max(alpha, Math.abs(coord[vel]));
 
-                            if (abs > 0 && abs < .01) n.x = coord.x;
-                            else {
-                                // get acceleration at the half time step
-                                let vx2 = (dist * NodeLayoutStaticDynamicX.stiffness - coord.vx * NodeLayoutStaticDynamicX.damping) * timeHalf;
-
-                                let x2 = n.x + vx2;
-                                dist = coord.x - x2;
-
-                                coord.vx += (dist * NodeLayoutStaticDynamicX.stiffness - coord.vx * NodeLayoutStaticDynamicX.damping) * time;
-
-                                // use accerleration from half time step for the full time step
-                                // with some random force for a more "natural" movement
-                                // coord.vy -= accel * 0.65 + (accel * 0.35 * Math.random());
-
-                                if (n.fx == undefined) n.x += coord.vx;
-                                alpha = Math.max(alpha, Math.abs(coord.vx));
-                            }
-                        }
-
-
-                        function midpointY() {
-                            const delta2 = time / 2;
-                            let dist = coord.y - n.y;
-                            let abs = Math.abs(dist);
-
-                            if (abs > 0 && abs < .01) n.y = coord.y;
-                            else {
-                                // get acceleration at the half time step
-                                let vy2 = coord.vy - dist * delta2 * NodeLayoutStaticDynamicX.stiffness;
-                                let y2 = n.y + vy2 * NodeLayoutStaticDynamicX.damping;
-                                dist = coord.y - y2;
-
-                                const accel = dist * time * NodeLayoutStaticDynamic.gravity;
-                                // use accerleration from half time step for the full time step
-                                // with some random force for a more "natural" movement
-                                coord.vy -= accel * 0.65 + (accel * 0.35 * Math.random());
-
-                                if (n.fy == undefined) n.y += coord.vy *= NodeLayoutStaticDynamicX.damping;
-                                alpha += Math.abs(coord.vy);
-                            }
-                        }
-
-                        function midpointX() {
-
-                            const delta2 = time / 2;
-                            let dist = coord.x - n.x;
-                            let abs = Math.abs(dist);
-
-                            if (abs > 0 && abs < .01) {
-                                n.x = coord.x;
-                            } else {
-                                // get acceleration at the half time step
-                                let vx2 = coord.vx + dist * delta2 * NodeLayoutStaticDynamicX.stiffnessX;
-                                let x2 = n.x + vx2 * NodeLayoutStaticDynamicX.dampingX;
-                                dist = coord.x - x2;
-
-                                const accel = dist * time * NodeLayoutStaticDynamicX.stiffnessX;
-                                // use accerleration from half time step for the full time step
-                                // with some random force for a more "natural" movement
-                                coord.vx += accel * 0.65 + (accel * 0.35 * Math.random());
-                                if (n.fx == undefined) n.x += coord.vx *= NodeLayoutStaticDynamicX.dampingX;
-                                alpha += Math.abs(coord.vx);
-
-                            }
                         }
 
                     }
@@ -821,11 +776,10 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                 const heatold = heat.v;
                 // cooldown when minAlpha is reached or heat up till the maximum cooldowntime is reached.
                 alpha < NodeLayoutStaticDynamic.minAlpha ? heat.v-- : heat.v += heat.v < NodeLayoutStaticDynamic.coolDownTime ? 1 : 0;
-
+                if (doBenchmark) logTimeGivenValue("velocity", alpha);
                 // set velocity to 0 if we hit zero movement
                 if (heat.v == 0 && heatold == 1) (doBenchmark) ? console.log("Simulation freezed") : 0, shell.nodes.forEach(n => {
                     const coord = n.customData["co"];
-
                     if (coord) coord.vx = 0, coord.vy = 0;
                 });
             }
