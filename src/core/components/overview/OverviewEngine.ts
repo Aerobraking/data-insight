@@ -1,10 +1,7 @@
 
 import { ElementDimension, ElementDimensionInstance } from "@/core/utils/ResizeUtils";
 import * as d3 from "d3";
-import {
-    D3DragEvent,
-    ZoomTransform,
-} from "d3";
+import { D3DragEvent, ZoomTransform } from "d3";
 import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
@@ -23,7 +20,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private static instances: OverviewEngine[] = [];
     private static started: boolean = false;
     private static printlog: boolean = false;
-    private static fpsInterval: number = 0;
+    private static fpsInterval: number = 1000 / 60;
+    private static fpsIntervalLow: number = 1000 / 24;
     private static now: number = 0;
     private static then: number = 0;
     private static elapsed: number = 0;
@@ -33,7 +31,6 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private static delta: number = 0;
 
     private static startClock(): void {
-        OverviewEngine.fpsInterval = 1000 / 60;
         OverviewEngine.then = performance.now();
         OverviewEngine.tickClock();
     }
@@ -51,8 +48,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         requestAnimationFrame(OverviewEngine.tickClock.bind(this));
 
         // if enough time has elapsed, draw the next frame
-        if (OverviewEngine.elapsed > OverviewEngine.fpsInterval) {
-
+        if (OverviewEngine.elapsed > (document.hasFocus() ? OverviewEngine.fpsInterval : OverviewEngine.fpsIntervalLow)) {
             tickStart();
 
             // prevent too large timesteps in case of slow performance
