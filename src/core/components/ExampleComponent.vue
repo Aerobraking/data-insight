@@ -5,24 +5,21 @@
   </div>
 </template>
 
-<script lang="ts">
+<script lang="ts"> 
 import { defineComponent } from "vue";
+import ProjectView from "./ProjectView.vue";
 export default defineComponent({
   name: "ProjectSelector",
-  components: {},
+  components: { ProjectView },
   data() {
-    return {
-      pathToFile: "",
-    };
+    return { pathToFile: "" };
   },
   methods: {
     openFile() {
-      this.pathToFile = FileChooseDialog.select();
+      // this.pathToFile = FileChooseDialog.select();
     },
   },
 });
- 
-
 </script>
 
 <style  lang="scss">
@@ -31,5 +28,3 @@ button {
   color: #111;
 }
 </style>
-
- 

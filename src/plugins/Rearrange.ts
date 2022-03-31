@@ -5,9 +5,10 @@ import AbstractPlugin, { PluginDecorator } from "@/core/plugin/AbstractPlugin"
 @PluginDecorator(true)
 export default class ReArrange extends AbstractPlugin {
 
-    description: string = "<kbd>Alt</kbd> + <kbd>R</kbd>";
-    name: string = "Rearrange Selection";
-    shortcut: string = "ws r";
+    readonly description = "<kbd>Alt</kbd> + <kbd>R</kbd>";
+    readonly name = "Rearrange Selection";
+    readonly shortcut = "ws r";
+    readonly domain = "gl";
     checkboxFit: HTMLInputElement;
     style: HTMLStyleElement;
     div: HTMLDivElement;

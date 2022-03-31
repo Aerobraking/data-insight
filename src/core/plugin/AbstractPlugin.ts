@@ -21,6 +21,7 @@ export default abstract class AbstractPlugin {
     readonly abstract description: string;
     readonly abstract name: string;
     readonly abstract shortcut: string;
+    readonly abstract domain: "ws" | "ov" | "gl";
 
     public abstract isModal(): boolean;
     public abstract init(): void;
@@ -30,13 +31,13 @@ export default abstract class AbstractPlugin {
     public abstract keydown(e: KeyboardEvent): boolean;
     public abstract keyup(e: KeyboardEvent): boolean;
     public abstract mousedown(e: MouseEvent): boolean;
+    public abstract mousemove(e: MouseEvent): boolean;
     public abstract mouseup(e: MouseEvent): boolean;
     public abstract mousedownPan(e: any): boolean;
-    public abstract mousemove(e: MouseEvent): boolean;
     public abstract wheel(e: any): boolean;
-    public abstract drop(e: any): boolean;
     public abstract dragover(e: any): boolean;
     public abstract dragleave(e: any): boolean;
+    public abstract drop(e: any): boolean;
 
 }
 

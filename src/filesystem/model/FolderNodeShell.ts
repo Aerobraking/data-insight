@@ -62,7 +62,6 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
                 switch (event.type) {
                     case "folderfeatures":
                         newFeatures.push({ path: event.path, features: event.features });
-                        // this.addFeatures(event.path, event.features);
                         break;
                     // case "folderdeepsyncfinished":
                     //     this.isSyncing = false;

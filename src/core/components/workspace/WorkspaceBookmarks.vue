@@ -12,9 +12,10 @@ class DragPlugin extends PluginAdapter {
     super();
   }
 
-  readonly description: string = "Dragging";
-  readonly name: string = "Dragging";
-  readonly shortcut: string = "";
+  readonly domain = "gl";
+  readonly description = "Dragging";
+  readonly name = "Dragging";
+  readonly shortcut = "";
   public init() {}
 }
 

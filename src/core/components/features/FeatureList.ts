@@ -5,7 +5,7 @@ import { AbstractFeature, internalCreateNewFeatureList } from '../../model/works
  * 
  */
 export * from '../../../filesystem/model/FolderFeatures'
-import * as FN from '../../model/workspace/overview/FeatureNone'
+export * as FN from '../../model/workspace/overview/FeatureNone'
  
 export function getFeatureList(): AbstractFeature[] { 
     return internalCreateNewFeatureList();

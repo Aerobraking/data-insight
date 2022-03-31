@@ -8,6 +8,7 @@ export default class ToggleCulling extends PluginAdapter {
     readonly description: string = "<kbd>F1</kbd>";
     readonly name: string = "BENCH Print log";
     readonly shortcut: string = "ov f1";
+    readonly domain = "ov";
 
     constructor() { super(); }
     public isModal(): boolean {

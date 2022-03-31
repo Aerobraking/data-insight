@@ -7,6 +7,7 @@ export default class PluginNormalizeSize extends PluginAdapter {
     readonly description: string = "<kbd>N</kbd>";
     readonly name: string = "Normalize Size";
     readonly shortcut: string = "ws n";
+    readonly domain = "ws";
 
     constructor() { super(); }
 

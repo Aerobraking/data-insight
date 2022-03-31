@@ -9,6 +9,7 @@ export default class RandomNodeMovement extends PluginAdapter {
     readonly description: string = "<kbd>F2</kbd>";
     readonly name: string = "BENCH Random Node movement";
     readonly shortcut: string = "ov f2";
+    readonly domain = "ov";
 
     constructor() { super(); }
     public isModal(): boolean {
@@ -25,11 +26,11 @@ export default class RandomNodeMovement extends PluginAdapter {
                         // n.x += 1, n.y += 1;
                         n.x += 1, n.y = 0;
                         // coord.vy = Math.random() * 4000 - 2000, coord.vx = Math.random() * 200 - 100;
-                        n.x = Math.random() * 10000 - 5000 
-                        n.y = Math.random() * 10000 - 5000, 
-                        coord.vy =0;
-                        coord.vx =0;
-                        
+                        n.x = Math.random() * 10000 - 5000
+                        n.y = Math.random() * 10000 - 5000,
+                            coord.vy = 0;
+                        coord.vx = 0;
+
                     }
                 });
             });

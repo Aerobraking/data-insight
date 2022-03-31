@@ -6,6 +6,7 @@ export default class FitAspectRatio extends PluginAdapter {
     readonly description: string = "<kbd>A</kbd>";
     readonly name: string = "Fit Aspect Ratio";
     readonly shortcut: string = "ws a";
+    readonly domain = "ws";
 
     constructor() { super(); }
 

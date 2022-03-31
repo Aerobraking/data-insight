@@ -8,6 +8,7 @@ export default class FitAspectRatio extends PluginAdapter {
     readonly description: string = "<kbd>F3</kbd>";
     readonly name: string = "BENCH Print log";
     readonly shortcut: string = "global f3";
+    readonly domain = "gl";
 
     constructor() { super(); }
     public isModal(): boolean {
