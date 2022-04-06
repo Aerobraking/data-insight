@@ -4,12 +4,18 @@ import {
   CommitOptions,
   DispatchOptions,
 } from 'vuex'
-import {  State } from './state'
+import { State } from './state'
 import { Getters, getters } from './getters'
 import { Mutations, mutations } from './mutations'
 import { Actions, actions } from './actions'
 import { InsightFile } from '../model/InsightFile'
 
+/**
+ * Create the store object from the given InsightFile object. Take care, should only
+ * be called ONCE when creating the Vue Instance.
+ * @param file
+ * @returns 
+ */
 export function initStore(file: InsightFile) {
   return createStore({
     state: {
@@ -19,11 +25,10 @@ export function initStore(file: InsightFile) {
     mutations,
     actions,
   })
-} 
+}
 
 /**
- * hier legen wir fest, das unsere erstellten getters, commit (mutations) und dispatch (actions)
- * vom Store objekt auch genutzt werden.  
+ * The final type of the Store we are using.
  */
 export type Store = Omit<VuexStore<State>, 'getters' | 'commit' | 'dispatch'>
   & {

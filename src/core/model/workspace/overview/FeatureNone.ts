@@ -1,7 +1,7 @@
 import { AbstractNode } from "./AbstractNode";
 import { AbstractFeatureData, FeatureDataType } from "./FeatureData";
 import { AbstractFeatureSettings, AbstractFeature, FeatureViewDecorator } from "./AbstractFeature";
-import { AbstractNodeShell } from "./AbstractNodeShell";
+import { AbstractNodeTree } from "./AbstractNodeTree";
 import { FeatureType } from "./FeatureType";
 
 export class FeatureNoneSettings extends AbstractFeatureSettings {}
@@ -25,16 +25,16 @@ export class NodeFeatureNone extends AbstractFeature<AbstractNode, FeatureNoneDa
     public getNewSettingsInstance(): FeatureNoneSettings {
         return new FeatureNoneSettings();
     }
-    public getNodeRadius(nodes: AbstractNode, entry: AbstractNodeShell<AbstractNode>): number {
+    public getNodeRadius(nodes: AbstractNode, entry: AbstractNodeTree<AbstractNode>): number {
         return 100;
     }
-    public isNodeHidden(nodes: AbstractNode, entry: AbstractNodeShell<AbstractNode>): boolean {
+    public isNodeHidden(nodes: AbstractNode, entry: AbstractNodeTree<AbstractNode>): boolean {
         return false;
     }
-    public getNodeColor(nodes: AbstractNode, entry: AbstractNodeShell<AbstractNode>): string {
+    public getNodeColor(nodes: AbstractNode, entry: AbstractNodeTree<AbstractNode>): string {
         return "white";
     }
-    public getFeatureText(nodes: AbstractNode, entry: AbstractNodeShell<AbstractNode>): string {
+    public getFeatureText(nodes: AbstractNode, entry: AbstractNodeTree<AbstractNode>): string {
         return "";
     }
 }

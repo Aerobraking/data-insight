@@ -2,7 +2,6 @@
   <Tabs />
   <ModalDialog v-show="showAbout" @close="showAbout = false">
     <template v-slot:header> Data Insight </template>
-
     <template v-slot:body>
       Version: {{ version }} <br />
       <br />
@@ -35,7 +34,7 @@
   <ModalDialog v-show="showHelp" @close="showHelp = false">
     <template v-slot:header>Keyboard Layout</template>
     <template v-slot:body>
-      <table style="margin-bottom: 80%;">
+      <table style="margin-bottom: 80%">
         <tr>
           <td><h4>General</h4></td>
           <td></td>
@@ -154,6 +153,13 @@
 </template>
 
 <script lang="ts">
+/**
+ * The App is the root Vue Component. It handles global things like
+ * saving and loading files, global inputs for navigation and global CSS Style Definitions.
+ *
+ * The template consists mainly out of the two modal dialog content and the Tab Components that handles
+ * the list of workspaces.
+ */
 import * as benchmark from "@/core/utils/Benchmark";
 import { deserialize, serialize } from "class-transformer";
 import { ipcRenderer, shell, remote } from "electron";
@@ -167,15 +173,15 @@ import Tabs from "@/core/components/Tabs.vue";
 import ModalDialog from "@/core/components/ModalDialog.vue";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import * as cache from "../../filesystem/utils/ImageCache";
-import * as watcher from "../../filesystem/utils/WatchSystemMain";
+import { FSWatcherConnectorInstance } from "../../filesystem/utils/FileSystemWatcherConnector";
 import * as ovdata from "../model/workspace/overview/OverviewDataCache";
 
-const v = remote.app.getVersion();
 var fs = require("fs");
 
-ipcRenderer.on("log", (event, log) => {
-  //  console.log("log", log);
-});
+/**
+ * Prints all IPC Messages to the console.
+ */
+ipcRenderer.on("log", (event, log) => /*  console.log("log", log); */ 0);
 
 export default defineComponent({
   name: "App",
@@ -184,21 +190,38 @@ export default defineComponent({
     ModalDialog,
   },
   data(): {
+    // a list of all available plugins in the app.
     plugins: AbstractPlugin[];
+    // true: shows the about modal dialog
     showAbout: boolean;
+    // true: shows the help modal dialog
     showHelp: boolean;
+    // the current package.json version of the app
     version: string;
   } {
-    return { plugins: [], showAbout: false, showHelp: false, version: v };
+    return {
+      plugins: [],
+      showAbout: false,
+      showHelp: false,
+      version: remote.app.getVersion(),
+    };
   },
   mounted() {
+    const _this = this;
+
+    /**
+     * Load all plugins for creating the Keyboard Layout entries.
+     */
     getPlugins().forEach((p) => {
       const plugin = new p();
       this.plugins.push(plugin);
     });
 
+    /**
+     * We are listen globally to all keydown events here to be able to to navigation input events from
+     * everywhere in the app.
+     */
     window.addEventListener("keydown", this.keydown, false);
-    const _this = this;
 
     ipcRenderer.on(
       "fire-file-save",
@@ -231,14 +254,8 @@ export default defineComponent({
     );
 
     /**
-     * The app is closing, save the current file and report back to
-     * the background thread that closing can continue.
+     * Toggles the visibility of the modal dialogs help and about.
      */
-    ipcRenderer.on("app-close", (_) => {
-      // _this.saveFile(true);
-      // ipcRenderer.send("closed");
-    });
-
     ipcRenderer.on("show-about", function (event: any, file: string) {
       _this.showHelp = false;
       _this.showAbout = !_this.showAbout;
@@ -248,7 +265,7 @@ export default defineComponent({
       _this.showHelp = !_this.showHelp;
     });
 
-    // remove splash screen
+    // remove splash screen after a delay that makes sure the view is ready
     const splash = document.getElementById("splash");
     if (splash) {
       splash.style.opacity = "0";
@@ -259,7 +276,6 @@ export default defineComponent({
       }, 300);
     }
   },
-
   provide() {
     return {
       loadInsightFileFromPath: this.loadInsightFileFromPath,
@@ -267,9 +283,18 @@ export default defineComponent({
     };
   },
   methods: {
+    /**
+     * Opens the given url String in the default webbrowser of the OS.
+     * @param url url that should be opened in a webbrowser.
+     */
     openURL(url: string) {
       shell.openExternal(url);
     },
+    /**
+     * Loads the json data from the file for the given path, generate the InsightFile object
+     * from the json data and set it to the state object.
+     * @param path The path to the file you want to load.
+     */
     loadInsightFileFromPath(path: string) {
       if (benchmark.doBenchmark)
         benchmark.logTime("vue"), benchmark.logTime("json");
@@ -281,14 +306,20 @@ export default defineComponent({
 
       this.loadInsightFile(file);
     },
+    /**
+     * Sets the given InsightFile instance in the state object which updates the view to match the new state object.
+     * It does a small CSS animation before and after that for a smooth transition and resets all cached data so
+     * the new data for the new file can be cached.
+     * @param file The InsightFile Object that will be set to the state inside the vuex store.
+     */
     loadInsightFile(file: InsightFile) {
       let tabs: HTMLElement[] = Array.from(
         document.querySelectorAll(".close-file-anim")
       ) as HTMLElement[];
 
-      // reset caches
+      // reset cached data for images, file system watcher and overview data.
       cache.ImageCache.reset();
-      watcher.FileSystemWatcher.reset();
+      FSWatcherConnectorInstance.reset();
       ovdata.Instance.reset();
 
       file.initAfterLoading();
@@ -297,9 +328,12 @@ export default defineComponent({
         t.classList.add("close-file");
       });
 
-      this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
-        insightFile: file,
-      });
+      // 250ms are used for the clossing css transitions.
+      setTimeout(() => {
+        this.$store.commit(MutationTypes.LOAD_INSIGHT_FILE, {
+          insightFile: file,
+        });
+      }, 250);
 
       setTimeout(() => {
         tabs.forEach((t) => {
@@ -311,6 +345,15 @@ export default defineComponent({
         });
       }, 10);
     },
+    /**
+     * When saving a file, this method will be called twice (to be able to save the path in the file itself).
+     * The first a path will be chosen by the user which is send back here via "fire-file-save-path-selected".
+     * The path is then put into the state object and then the state is actually saved in the second call
+     * as a json string in a .sind file at the chosen path.
+     * @param temp the file will be saved as a backup in the user directory for restoring after a restart of the app
+     * @param chooseFile true: Opens the file choose dialog from the OS for selecting where to save the file
+     * @param executeSave true: Start the concrete writing of the file.
+     */
     saveFile(
       temp: boolean = false,
       chooseFile: boolean = false,
@@ -318,7 +361,9 @@ export default defineComponent({
     ) {
       WSUtils.Events.prepareFileSaving();
 
-      let jsonString = serialize(this.$store.state.loadedFile);
+      let jsonString = executeSave
+        ? serialize(this.$store.state.loadedFile)
+        : "";
 
       ipcRenderer.send("save-insight-file", {
         json: jsonString,
@@ -337,6 +382,9 @@ export default defineComponent({
             e.stopPropagation();
             break;
           case "Tab":
+            /**
+             * Go to the next/previous tab view like switching tabs in firefox.
+             */
             let listSize = this.$store.getters.getViewList.length;
             if (listSize == 0) return;
             let activeIndex = this.$store.getters.getActiveWorkspaceIndex;
@@ -363,6 +411,9 @@ export default defineComponent({
           case "7":
           case "8":
           case "9":
+            /**
+             * Go to Tab at index ... when pressing CTRL + Number
+             */
             let i: number = +e.key;
             i--;
             if (i < this.$store.state.loadedFile.views.length) {
@@ -386,6 +437,7 @@ export default defineComponent({
       } else {
         switch (e.key) {
           case "Escape":
+            // hide any modal dialog that may be open
             (this.showAbout = false), (this.showHelp = false);
             break;
           case "Delete":
@@ -425,7 +477,6 @@ body {
   padding: 0;
   background-color: #1d1d1d;
   overflow: hidden;
-  // image-rendering: pixelated;
 }
 
 #app {
@@ -535,8 +586,7 @@ a {
 /*
 #
 #
-#
-Scrollbar
+# Custom Scrollbar CSS Styles
 #
 #
 #
@@ -560,6 +610,15 @@ Scrollbar
 ::-webkit-scrollbar-thumb:hover {
   background: rgb(73, 73, 73);
 }
+
+/*
+#
+#
+# noUI CSS Styles Scrollbar
+#
+#
+#
+*/
 
 /* Functional styling;
  * These styles are required for noUiSlider to function.
@@ -912,19 +971,7 @@ Tooltips
 /**
 #
 #
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
+# tippy css styles
 #
 #
 #

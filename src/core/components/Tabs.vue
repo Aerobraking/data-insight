@@ -53,7 +53,17 @@
           >
         </div>
       </template>
-    </draggable> -->
+    </draggable>
+      dragOptions() {
+      return {
+        animation: 150,
+        group: "description",
+        disabled: false,
+        ghostClass: "ghost",
+        direction: "horizontal",
+      };
+    },
+     -->
 
     <!-- Version without dragging -->
     <div
@@ -81,7 +91,6 @@
       >
     </div>
   </div>
-
   <workspaceview
     v-for="(view, index) in getlist"
     @click="selectTab(index)"
@@ -92,8 +101,11 @@
   </workspaceview>
 </template>
 
-
 <script lang="ts">
+/**
+ * This Tab Component handles the top bar with the Workspace Tabs. It updates the view of
+ * the current selected workspace when the selection changes.
+ */
 import { defineComponent } from "vue";
 import workspaceview from "./workspace/WorkspaceView.vue";
 import { MutationTypes } from "@/core/store/mutation-types";
@@ -102,6 +114,10 @@ import _ from "underscore";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import { ArrowCollapseUp, EyeOutline, EyeOffOutline } from "mdue";
 import { ipcRenderer } from "electron";
+/**
+ * When a modal plugin starts we prevent any input for the tabs so the user can not
+ * change the workspace while using the plugin.
+ */
 _.once(() => {
   WSUtils.Events.registerCallback({
     pluginStarted(modal: boolean): void {
@@ -120,14 +136,10 @@ export default defineComponent({
     EyeOffOutline,
     EyeOutline,
   },
-  data(): {} {
-    return {
-      isCollapsed: false,
-      selectedIndex: 0,
-      drag: false,
-    };
-  },
   computed: {
+    /**
+     * Get/Set the list of views (workspaces) from the state object.
+     */
     getlist: {
       get(): any {
         // @ts-ignore: Unreachable code error
@@ -140,19 +152,9 @@ export default defineComponent({
         });
       },
     },
-
-    getViewList() {
-      return this.$store.getters.getViewList;
-    },
-    dragOptions() {
-      return {
-        animation: 150,
-        group: "description",
-        disabled: false,
-        ghostClass: "ghost",
-        direction: "horizontal",
-      };
-    },
+    // getViewList() {
+    //   return this.$store.getters.getViewList;
+    // },
     getShowUI(): boolean {
       return this.$store.getters.getShowUI;
     },
@@ -162,23 +164,30 @@ export default defineComponent({
     ipcRenderer.on(
       "toggle-distract-mode",
       function (event: any, filepath: string) {
-        // @ts-ignore: Unreachable code error
         _this.toggleShowUI();
       }
     );
   },
   methods: {
+    /**
+     * Toggles the distract free mode boolean in the model which updates the view.
+     */
     toggleShowUI() {
-      // @ts-ignore: Unreachable code error
       let show = !this.$store.getters.getShowUI;
       this.$store.commit(MutationTypes.SHOW_UI, {
         showUI: show,
       });
     },
+    /**
+     * Should scroll the list of tabs horizontally, doesn not work correctly so far. :/
+     */
     scrollList(e: WheelEvent) {
       e.preventDefault();
       this.$el.scrollLeft += e.deltaY;
     },
+    /**
+     * Make the workspace tab name editable and set the focus to the textfield.
+     */
     edit(e: MouseEvent) {
       const div = e.target as HTMLElement;
       let input: HTMLInputElement = div.getElementsByTagName(
@@ -193,6 +202,9 @@ export default defineComponent({
 
       e.preventDefault();
     },
+    /**
+     * Finish the editing of the workpsace tab by making it uneditable again.
+     */
     editFinish(e: KeyboardEvent) {
       let input: HTMLInputElement =
         e.target instanceof HTMLInputElement
@@ -204,22 +216,33 @@ export default defineComponent({
       input.readOnly = true;
       e.preventDefault();
     },
+    /**
+     * Creates a new Workspace and makes it the new active workpsace
+     */
     createWorkspaceTab() {
       this.$store.commit(MutationTypes.CREATE_WORKSPACE);
-    }, 
-    selectTab(i: number) {
-      this.$store.commit(MutationTypes.SELECT_WORKSPACE, { index: i });
     },
-    copyTab(i: number) {
+    /**
+     * Make the given index the active index
+     * @param index the index of the workspace in the view list, is the same as the index of the tab element
+     * in the list of tab elements.
+     */
+    selectTab(index: number) {
+      this.$store.commit(MutationTypes.SELECT_WORKSPACE, { index: index });
+    },
+    /**
+     * Create a dublicate of the Workspace for the given index.
+     */
+    dublicateTab(i: number) {
       this.$store.commit(MutationTypes.COPY_WORKSPACE, { index: i });
     },
+    /**
+     * Deletes the workspace at the given index.
+     */
     deleteTab(i: number) {
       this.$store.commit(MutationTypes.DELETE_WORKSPACE, { index: i });
       this.$store.commit(MutationTypes.SELECT_WORKSPACE, { index: i });
     },
-    dragMouseMove: function (e: MouseEvent) {},
-
-    beforeMouseDownHandler(e: any) {},
   },
 });
 </script>
@@ -294,7 +317,7 @@ $base-color: rgb(100, 100, 100);
   padding: 0;
   line-height: 34px;
   font-weight: bold;
-  transition: background-color  0.3s;
+  transition: background-color 0.3s;
 }
 
 .delete:hover {

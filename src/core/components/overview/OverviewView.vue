@@ -10,7 +10,7 @@
   >
     <div
       class="filter-settings"
-      :class="{ 'filter-settings-hide': !model.showFilterSettings }"
+      :class="{ 'filter-settings-hide': !model.showFeatureSettings }"
     >
       <select
         class="feature-select-list"
@@ -28,11 +28,11 @@
       </select>
       <button class="show-filter-settings">
         <TuneVerticalVariant
-          @click="model.showFilterSettings = !model.showFilterSettings"
+          @click="model.showFeatureSettings = !model.showFeatureSettings"
         />
       </button>
 
-      <div v-show="model.showFilterSettings" class="feature-view-list">
+      <div v-show="model.showFeatureSettings" class="feature-view-list">
         <keep-alive>
           <component
             class="feature-view"
@@ -201,10 +201,10 @@ import {
 } from "mdue";
 import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature";
-import { AbstractNodeShell } from "@/core/model/workspace/overview/AbstractNodeShell";
+import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
 import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
-import { FolderNodeShell } from "@/filesystem/model/FolderNodeShell";
+import { FolderNodeTree } from "@/filesystem/model/FolderNodeTree";
 import * as d3 from "d3";
 import { getFeatureList } from "../features/FeatureList";
 import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
@@ -259,7 +259,9 @@ export default defineComponent({
       }
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
+      setTimeout(() => {
       this.model.overviewOpen = newValue < 100;
+      }, 500);
     },
     "selection.y": function (newValue: number, oldValue: number) {
       // funktioniert nicht
@@ -295,7 +297,7 @@ export default defineComponent({
   data(): {
     sliderRange: (number | string)[];
     d3: any;
-    wsListener: WSUtils.Listener | undefined;
+    wsListener: WSUtils.WorkspaceViewListener | undefined;
     id: number;
     panZoomInstance: any;
     selection: AbstractNode | undefined;
@@ -371,7 +373,7 @@ export default defineComponent({
     /**
      * Set the data after the render is set.
      */
-    Instance.getEngine(this.id).shells = Instance.getData(this.id);
+    Instance.getEngine(this.id).trees = Instance.getData(this.id);
 
     /**
      * Update the model coordinates with the current ones from the html view.
@@ -501,16 +503,16 @@ export default defineComponent({
       }
     },
     deleteSelection(): void {
-      let l: AbstractNodeShell[] = Instance.getData(this.id);
+      let l: AbstractNodeTree[] = Instance.getData(this.id);
       const e = Instance.getEngine(this.id);
       if (e) {
         if (e.selection.length > 0 && e.selection[0].isRoot()) {
           // update the data 
-          remove(l, e.selection[0].shell);
+          remove(l, e.selection[0].tree);
           Instance.setData(this.id, l);
           // tell the engine that we removed entries and clear selection
           e.clearSelection();
-          e.shells = l;
+          e.trees = l;
         }
       }
     },
@@ -649,16 +651,16 @@ export default defineComponent({
           case "l":
             if (doBenchmark) logTime("layout");
             for (let index = 0; index < 100; index++) {
-              Layouter.nodesUpdated(Instance.getEngine(this.id).shells[0]);
+              Layouter.nodesUpdated(Instance.getEngine(this.id).trees[0]);
             }
             if (doBenchmark) logTime("layout");
 
             for (
               let i = 0;
-              i < Instance.getEngine(this.id).shells.length;
+              i < Instance.getEngine(this.id).trees.length;
               i++
             ) {
-              const l = Instance.getEngine(this.id).shells[i].nodes.length;
+              const l = Instance.getEngine(this.id).trees[i].nodes.length;
               console.log(i, l);
             }
             break;
@@ -744,8 +746,8 @@ export default defineComponent({
 
       if (lowercase.length > 0) {
         if (Instance.getEngine(this.id)) {
-          for (let i = 0; i < Instance.getEngine(this.id).shells.length; i++) {
-            const entry: AbstractNodeShell = Instance.getEngine(this.id).shells[
+          for (let i = 0; i < Instance.getEngine(this.id).trees.length; i++) {
+            const entry: AbstractNodeTree = Instance.getEngine(this.id).trees[
               i
             ];
 
@@ -768,13 +770,13 @@ export default defineComponent({
       if (Instance.getEngine(this.id)) {
         let n: AbstractNode = Instance.getEngine(this.id).selection[0];
 
-        if (n && n.shell) {
+        if (n && n.tree) {
           if (n.isCollection()) {
-            n.shell.loadCollection(n, useSavedDepth);
+            n.tree.loadCollection(n, useSavedDepth);
           } else {
             n.descendants()
               .filter((c) => c.isCollection())
-              .forEach((c) => n.shell?.loadCollection(c, useSavedDepth));
+              .forEach((c) => n.tree?.loadCollection(c, useSavedDepth));
           }
         }
 
@@ -807,8 +809,8 @@ export default defineComponent({
         this.addFolders([n.getPath()], { x: n.getX(), y: n.getY() });
       }
     },
-    addEntries(entries: FolderNodeShell[], pos: { x: number; y: number }) {
-      let listEntries: AbstractNodeShell[] = Instance.getData(this.id);
+    addEntries(entries: FolderNodeTree[], pos: { x: number; y: number }) {
+      let listEntries: AbstractNodeTree[] = Instance.getData(this.id);
 
       entries.forEach((e) => {
         e.setCoordinates(pos);
@@ -820,7 +822,7 @@ export default defineComponent({
        * register the entries to the engine
        */
       if (Instance.getEngine(this.id)) {
-        Instance.getEngine(this.id).shells = listEntries;
+        Instance.getEngine(this.id).trees = listEntries;
       }
 
       /**
@@ -832,7 +834,7 @@ export default defineComponent({
       }
     },
     addFolders(listFolders: string[], pos: { x: number; y: number }) {
-      let listEntries: FolderNodeShell[] = [];
+      let listEntries: FolderNodeTree[] = [];
 
       /**
        * create the entries based on the dropped files.
@@ -842,7 +844,7 @@ export default defineComponent({
         const p = path.normalize(f).replace(/\\/g, "/");
         const fileStat = fs.lstatSync(p);
         if (fileStat.isDirectory()) {
-          let root: FolderNodeShell = new FolderNodeShell(p);
+          let root: FolderNodeTree = new FolderNodeTree(p);
           let id = 0;
           while (listEntries.find((e) => e.id == id)) id++;
           root.id = id;

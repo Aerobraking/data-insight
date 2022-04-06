@@ -1,6 +1,6 @@
 import { AbstractLink, AbstractNode } from "./AbstractNode";
 import { Simulation, ForceLink } from "d3";
-import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
+import AbstractNodeTreeIfc from "./AbstractNodeTreeIfc";
 import { Constructor } from "@/core/plugin/Constructor";
 import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
 import { doBenchmark, logTime, logTimeGivenValue } from "@/core/utils/Benchmark";
@@ -24,68 +24,68 @@ export abstract class AbstractNodeLayout {
 
     public readonly abstract id: LayoutType;
 
-    public abstract nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
+    public abstract nodeAdded(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void;
 
-    public abstract nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
+    public abstract nodeRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void;
 
-    public abstract nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
+    public abstract nodesRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void;
 
-    public abstract nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void;
+    public abstract nodeUpdated(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void;
 
-    public abstract nodesUpdated(shell: AbstractNodeShellIfc): void;
+    public abstract nodesUpdated(tree: AbstractNodeTreeIfc): void;
 
     public abstract nodeDragged(node: AbstractNode, type: "start" | "move" | "end", offset: { x: number, y: number } | undefined, transform: { k: number }): void;
 
-    public abstract featuresUpdated(shell: AbstractNodeShellIfc): void;
+    public abstract featuresUpdated(tree: AbstractNodeTreeIfc): void;
 
-    public abstract shellUpdated(shell: AbstractNodeShellIfc): void;
+    public abstract treeUpdated(tree: AbstractNodeTreeIfc): void;
 
     public abstract getNodePosition(n: AbstractNode): { x: number, y: number };
 
-    public abstract tickLayout(shells: AbstractNodeShellIfc[], delta: number): void;
+    public abstract tickLayout(trees: AbstractNodeTreeIfc[], delta: number): void;
 
 }
 
 @LayoutDecorator()
 class NodeLayoutDefault extends AbstractNodeLayout {
-    public featuresUpdated(shell: AbstractNodeShellIfc): void {
+    public featuresUpdated(tree: AbstractNodeTreeIfc): void {
 
     }
     public nodeDragged(node: AbstractNode, type: "move" | "end"): void {
 
     }
-    public nodesUpdated(shell: AbstractNodeShellIfc): void {
+    public nodesUpdated(tree: AbstractNodeTreeIfc): void {
 
     }
 
     public id: LayoutType = LayoutType.DEFAULT;
 
-    mapSimulation: Map<AbstractNodeShellIfc, Simulation<AbstractNode, AbstractLink<AbstractNode>>> = new Map();
+    mapSimulation: Map<AbstractNodeTreeIfc, Simulation<AbstractNode, AbstractLink<AbstractNode>>> = new Map();
 
-    public shellUpdated(shell: AbstractNodeShellIfc): void {
-        let simulation = this.mapSimulation.get(shell);
+    public treeUpdated(tree: AbstractNodeTreeIfc): void {
+        let simulation = this.mapSimulation.get(tree);
         if (simulation) {
 
             let f: ForceLink<AbstractNode, AbstractLink<AbstractNode>> | undefined = simulation.force<ForceLink<AbstractNode, AbstractLink<AbstractNode>>>('link');
 
-            if (f) f.links(shell.links);
-            simulation.nodes(shell.nodes);
+            if (f) f.links(tree.links);
+            simulation.nodes(tree.nodes);
         }
     }
 
-    public nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
-    public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeUpdated(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
-    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodesRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
 
-    public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeAdded(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
 
-        let nodes: AbstractNode[] = shell.nodes;
+        let nodes: AbstractNode[] = tree.nodes;
 
         const listNodes = nodes.filter(n => n.getDepth() == parent.getDepth() + 1);
 
@@ -100,7 +100,7 @@ class NodeLayoutDefault extends AbstractNodeLayout {
 
     }
 
-    public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
+    public tickLayout(trees: AbstractNodeTreeIfc[], delta: number): void {
 
     }
 
@@ -112,55 +112,55 @@ class NodeLayoutDefault extends AbstractNodeLayout {
 
 @LayoutDecorator()
 class NodeLayoutStatic extends AbstractNodeLayout {
-    public featuresUpdated(shell: AbstractNodeShellIfc): void {
+    public featuresUpdated(tree: AbstractNodeTreeIfc): void {
     }
     public nodeDragged(node: AbstractNode, type: "move" | "end"): void {
     }
-    public nodesUpdated(shell: AbstractNodeShellIfc): void {
+    public nodesUpdated(tree: AbstractNodeTreeIfc): void {
 
     }
     public getNodePosition(n: AbstractNode): { x: number, y: number } {
         return { x: OV_COLUMNWIDTH * n.depth, y: n.getY() };
     }
 
-    public nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
-    public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeUpdated(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
-    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodesRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
 
     }
 
     public id: LayoutType = LayoutType.STATIC;
 
-    mapSimulation: Map<AbstractNodeShellIfc, Simulation<AbstractNode, AbstractLink<AbstractNode>>> = new Map();
+    mapSimulation: Map<AbstractNodeTreeIfc, Simulation<AbstractNode, AbstractLink<AbstractNode>>> = new Map();
 
-    public shellUpdated(shell: AbstractNodeShellIfc): void {
-        this.calculateBounds(shell.root);
-        this.positionNodes(shell.root);
+    public treeUpdated(tree: AbstractNodeTreeIfc): void {
+        this.calculateBounds(tree.root);
+        this.positionNodes(tree.root);
 
-        // let simulation = this.mapSimulation.get(shell);
+        // let simulation = this.mapSimulation.get(tree);
         // if (simulation) {
 
         //     let f: ForceLink<AbstractNode, AbstractLink<AbstractNode>> | undefined = simulation.force<ForceLink<AbstractNode, AbstractLink<AbstractNode>>>('link');
 
-        //     if (f) f.links(shell.links);
-        //     simulation.nodes(shell.nodes);
+        //     if (f) f.links(tree.links);
+        //     simulation.nodes(tree.nodes);
         // }
     }
 
     static nodeBound: number = 100; // 260
 
-    public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeAdded(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
         var startTime = performance.now()
 
 
 
 
-        this.calculateBounds(shell.root);
-        this.positionNodes(shell.root);
+        this.calculateBounds(tree.root);
+        this.positionNodes(tree.root);
 
         var endTime = performance.now()
         const duration = Math.floor(endTime - startTime)
@@ -210,11 +210,11 @@ class NodeLayoutStatic extends AbstractNodeLayout {
 
     }
 
-    public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
-        shells.forEach(shell => {
+    public tickLayout(trees: AbstractNodeTreeIfc[], delta: number): void {
+        trees.forEach(tree => {
 
-            // this.calculateBounds(shell.root);
-            // this.positionNodes(shell.root);
+            // this.calculateBounds(tree.root);
+            // this.positionNodes(tree.root);
 
         })
     }
@@ -224,7 +224,7 @@ class NodeLayoutStatic extends AbstractNodeLayout {
 @LayoutDecorator()
 class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
-    public featuresUpdated(shell: AbstractNodeShellIfc): void { }
+    public featuresUpdated(tree: AbstractNodeTreeIfc): void { }
 
     public id: LayoutType = LayoutType.STATICDYNAMIC;
 
@@ -256,7 +256,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                 break;
             case "move":
                 if (offset) {
-                    this.reheatShell(node.shell as any);
+                    this.reheatShell(node.tree as any);
 
                     offset = { x: (offset.x - node.customData["initDrag"].x) / t.k, y: (offset.y - node.customData["initDrag"].y) / t.k };
 
@@ -275,12 +275,12 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                             c.customData["i"] = c.getY();
                             c.customData["co"] = { y: c.getY(), vy: 0 }
                         });
-                        this.nodesUpdated(node.shell as any);
+                        this.nodesUpdated(node.tree as any);
                     }
                 }
                 break;
             case "end":
-                this.reheatShell(node.shell as any);
+                this.reheatShell(node.tree as any);
 
                 if (node.parent) {
                     node.parent.children.forEach(c => {
@@ -290,9 +290,9 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                 }
 
                 node.descendants(false).forEach(c => c.customData["co"].vy = 0);
-                if (node.shell) node.shell.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
+                if (node.tree) node.tree.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
 
-                this.nodesUpdated(node.shell as any);
+                this.nodesUpdated(node.tree as any);
 
                 NodeLayoutStaticDynamic.friction = this.frictionNormal;
                 node.descendants(false).forEach(c => delete c.customData["initDrag"]);
@@ -303,31 +303,31 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
         }
     }
 
-    public nodesUpdated(shell: AbstractNodeShellIfc): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root)
+    public nodesUpdated(tree: AbstractNodeTreeIfc): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root)
     }
 
-    public nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root)
+    public nodeRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root)
     }
 
-    public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void { }
+    public nodeUpdated(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void { }
 
-    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root)
+    public nodesRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root)
     }
 
-    public shellUpdated(shell: AbstractNodeShellIfc): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root);
+    public treeUpdated(tree: AbstractNodeTreeIfc): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root);
     }
 
-    public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeAdded(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
         node.y = parent.children.length > 1 && parent.children[parent.children.length - 2].y ? parent.children[parent.children.length - 2].y : parent.y;
-        this.reheatShell(shell);
+        this.reheatShell(tree);
         // layout update will be called later
     }
 
@@ -381,23 +381,23 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
     }
 
-    public reheatShell(shell: AbstractNodeShellIfc) { shell.customData["heat"] = { v: NodeLayoutStaticDynamic.coolDownTime }; };
+    public reheatShell(tree: AbstractNodeTreeIfc) { tree.customData["heat"] = { v: NodeLayoutStaticDynamic.coolDownTime }; };
 
     /**
      * 
-     * @param shells 
+     * @param trees 
      * @param delta ms since last frame, about 5-40 (ms)
      */
-    public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
+    public tickLayout(trees: AbstractNodeTreeIfc[], delta: number): void {
 
-        shells.forEach(shell => {
+        trees.forEach(tree => {
 
-            let heat: { v: number } = shell.customData["heat"];
-            if (heat == undefined) heat = shell.customData["heat"] = { v: NodeLayoutStaticDynamic.coolDownTime };
+            let heat: { v: number } = tree.customData["heat"];
+            if (heat == undefined) heat = tree.customData["heat"] = { v: NodeLayoutStaticDynamic.coolDownTime };
 
             if (heat.v > 0) {
                 let alpha = 0;
-                shell.nodes.forEach(n => {
+                tree.nodes.forEach(n => {
                     const coord = n.customData["co"];
 
                     if (coord != undefined) {
@@ -515,7 +515,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         super();
     }
 
-    public featuresUpdated(shell: AbstractNodeShellIfc): void { }
+    public featuresUpdated(tree: AbstractNodeTreeIfc): void { }
 
     public id: LayoutType = LayoutType.STATICDYNAMICX;
 
@@ -540,7 +540,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                 break;
             case "move":
                 if (offset) {
-                    this.reheatShell(node.shell as any);
+                    this.reheatShell(node.tree as any);
 
                     offset = { x: (offset.x - node.customData["initDrag"].x) / t.k, y: (offset.y - node.customData["initDrag"].y) / t.k };
 
@@ -560,12 +560,12 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                             c.customData["co"].y = c.getY();
                             c.customData["co"].x = c.getX();
                         });
-                        this.nodesUpdated(node.shell as any);
+                        this.nodesUpdated(node.tree as any);
                     }
                 }
                 break;
             case "end":
-                this.reheatShell(node.shell as any);
+                this.reheatShell(node.tree as any);
 
                 if (node.parent) {
                     node.parent.children.forEach(c => {
@@ -577,9 +577,9 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                 }
 
                 node.descendants(true).forEach(c => { c.customData["co"].vy = 0, c.customData["co"].vx = 0 });
-                if (node.shell) node.shell.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
+                if (node.tree) node.tree.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
 
-                this.nodesUpdated(node.shell as any);
+                this.nodesUpdated(node.tree as any);
                 node.descendants(false).forEach(c => delete c.customData["initDrag"]);
 
                 break;
@@ -588,32 +588,32 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         }
     }
 
-    public nodesUpdated(shell: AbstractNodeShellIfc): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root)
+    public nodesUpdated(tree: AbstractNodeTreeIfc): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root)
     }
 
-    public nodeRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root)
+    public nodeRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root)
     }
 
-    public nodeUpdated(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void { }
+    public nodeUpdated(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void { }
 
-    public nodesRemoved(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root)
+    public nodesRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root)
     }
 
-    public shellUpdated(shell: AbstractNodeShellIfc): void {
-        this.reheatShell(shell);
-        this.updateLayout(shell.root);
+    public treeUpdated(tree: AbstractNodeTreeIfc): void {
+        this.reheatShell(tree);
+        this.updateLayout(tree.root);
     }
 
-    public nodeAdded(shell: AbstractNodeShellIfc, parent: AbstractNode, node: AbstractNode): void {
+    public nodeAdded(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
         node.y = parent.y;
         node.x = parent.x;
-        this.reheatShell(shell);
+        this.reheatShell(tree);
         // layout update will be called later
     }
 
@@ -693,7 +693,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
     }
 
-    public reheatShell(shell: AbstractNodeShellIfc) { shell.customData["heat"] = { v: NodeLayoutStaticDynamicX.coolDownTime }; };
+    public reheatShell(tree: AbstractNodeTreeIfc) { tree.customData["heat"] = { v: NodeLayoutStaticDynamicX.coolDownTime }; };
 
     static maxAngle = 60;
     static maxAngleTan = Math.tan(NodeLayoutStaticDynamicX.maxAngle * (Math.PI / 180));
@@ -713,21 +713,21 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
     /**
      * 
-     * @param shells 
+     * @param trees 
      * @param delta ms since last frame, about 5-40 (ms)
      */
-    public tickLayout(shells: AbstractNodeShellIfc[], delta: number): void {
+    public tickLayout(trees: AbstractNodeTreeIfc[], delta: number): void {
 
-        if (doBenchmark && shells.length > 0) logTime("sim");
+        if (doBenchmark && trees.length > 0) logTime("sim");
 
-        shells.forEach(shell => {
+        trees.forEach(tree => {
 
-            let heat: { v: number } = shell.customData["heat"];
-            if (heat == undefined) heat = shell.customData["heat"] = { v: NodeLayoutStaticDynamicX.coolDownTime };
+            let heat: { v: number } = tree.customData["heat"];
+            if (heat == undefined) heat = tree.customData["heat"] = { v: NodeLayoutStaticDynamicX.coolDownTime };
 
             if (heat.v > 0) {
                 let alpha = 0;
-                shell.nodes.forEach(n => {
+                tree.nodes.forEach(n => {
                     const coord = n.customData["co"];
 
                     if (coord != undefined) {
@@ -778,7 +778,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                 alpha < NodeLayoutStaticDynamic.minAlpha ? heat.v-- : heat.v += heat.v < NodeLayoutStaticDynamic.coolDownTime ? 1 : 0;
                 if (doBenchmark) logTimeGivenValue("velocity", alpha);
                 // set velocity to 0 if we hit zero movement
-                if (heat.v == 0 && heatold == 1) (doBenchmark) ? console.log("Simulation freezed") : 0, shell.nodes.forEach(n => {
+                if (heat.v == 0 && heatold == 1) (doBenchmark) ? console.log("Simulation freezed") : 0, tree.nodes.forEach(n => {
                     const coord = n.customData["co"];
                     if (coord) coord.vx = 0, coord.vy = 0;
                 });
@@ -786,7 +786,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
         });
 
-        if (doBenchmark && shells.length > 0) logTime("sim");
+        if (doBenchmark && trees.length > 0) logTime("sim");
 
     }
 

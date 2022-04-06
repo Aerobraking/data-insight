@@ -1,5 +1,9 @@
+/**
+ * Each mutation is defined by an enum for better and more clear usage of mutations.
+ * See the mutations.ts File for detailed description of what each mutation does.
+ */
 export enum MutationTypes {
-  CREATE_WORKSPACE = 'CREATE_WORKSPACE', 
+  CREATE_WORKSPACE = 'CREATE_WORKSPACE',
   COPY_WORKSPACE = 'COPY_WORKSPACE',
   DELETE_WORKSPACE = 'DELETE_WORKSPACE',
   SELECT_WORKSPACE = 'SELECT_WORKSPACE',

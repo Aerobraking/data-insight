@@ -13,7 +13,7 @@
 
 <script lang="ts">
 import * as cache from "../utils/ImageCache";
-import * as watcher from "../utils/WatchSystemMain";
+import {FSWatcherConnectorInstance} from "../utils/FileSystemWatcherConnector";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../model/FileSystemWorkspaceEntries";
 import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
@@ -62,7 +62,7 @@ export default defineComponent({
       callbackSize: this.cacheSizeEvent,
     };
 
-    watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
+    FSWatcherConnectorInstance.registerPath(this.entry.path, this.watcherEvent);
     cache.ImageCache.registerPath(path, this.cacheListener);
     // }
   },

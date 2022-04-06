@@ -3,27 +3,27 @@ import * as d3 from "d3";
 import { Quadtree } from "d3";
 import path from "path";
 import { AbstractLink, AbstractNode } from "./AbstractNode";
-import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
+import AbstractNodeTreeIfc from "./AbstractNodeTreeIfc";
 import { FeatureDataHandler } from "./FeatureData";
 import { FeatureInstanceList } from "./AbstractFeature";
 import { Layouter } from "./NodeLayout";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { Features, FeatureType } from "./FeatureType";
 
-export interface NodeShellListener<D extends AbstractNode = AbstractNode> {
+export interface NodeTreeListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;
     nodesAdded(node: D[]): void;
     nodesUpdated(): void;
     featuresUpdated(): void;
 }
 
-export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> implements AbstractNodeShellIfc {
+export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> implements AbstractNodeTreeIfc {
 
     constructor(nt: string, path: string, root: N) {
         this.nt = nt;
         this.path = path;
         this.root = root;
-        this.root.shell = this;
+        this.root.tree = this;
         this.nodes = this.root.descendants();
     }
 
@@ -39,10 +39,12 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     })
     root: N;
 
-    x: number = 0;
-    y: number = 0;
+    /**
+     * Coordinates of the trees root node in the overview canvas.
+     */
+    x: number = 0; y: number = 0;
 
-    // unique id for this entry
+    // unique id for this tree
     id!: number;
 
     // The absolute path to the root folder
@@ -54,7 +56,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     public isSimulationActive: boolean = true;
 
     // identifier for json serializing
-    nt: string;
+    nt: string; // node type
 
     // list of all nodes inside this entry. will be set everytime the amount of nodes changes
     @Exclude()
@@ -64,16 +66,16 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     @Exclude()
     links: AbstractLink[] = [];
 
-    // used for selection in the overview
+    // used for selection in the overview, contains all the nodes of the tree.
     @Exclude()
     quadtree: Quadtree<N> | undefined;
 
-    // tells if the data of this shell is synced in the moment
+    // tells if the data of this tree is synced in the moment
     @Exclude()
     public isSyncing = false;
 
     @Exclude()
-    engine: NodeShellListener<AbstractNode> | undefined;
+    engine: NodeTreeListener<AbstractNode> | undefined;
 
     public abstract createNodeInstance(name: string): N;
 
@@ -86,7 +88,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
 
         for (let i = 0; i < this.nodes.length; i++) {
             const n = this.nodes[i];
-            n.shell = this;
+            n.tree = this;
             for (let j = 0; j < n.getChildren().length; j++) {
                 const c = n.getChildren()[j];
                 c.parent = n;
@@ -361,7 +363,7 @@ export abstract class AbstractNodeShell<N extends AbstractNode = AbstractNode> i
     private updateNodeLists() {
         this.nodes = this.root.descendants();
         this.links = this.root.links();
-        Layouter.shellUpdated(this);
+        Layouter.treeUpdated(this);
     }
 
     /**

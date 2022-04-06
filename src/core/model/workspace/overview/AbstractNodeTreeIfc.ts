@@ -1,6 +1,6 @@
 import { Quadtree } from "d3";
 
-export default interface AbstractNodeShellIfc {
+export default interface AbstractNodeTreeIfc {
     nodeUpdate(node: any): void;
     nodesRemoved(node: any): void;
     nodeRemoved(node: any): void;

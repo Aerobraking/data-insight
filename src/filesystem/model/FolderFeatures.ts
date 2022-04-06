@@ -1,7 +1,7 @@
 import { fileamountFormat, filesizeFormat, timeFormat } from "@/filesystem/utils/FileStringFormatter";
 import { FeatureDataSum, FeatureDataMedian } from "../../core/model/workspace/overview/FeatureData";
 import { AbstractFeatureGradient, FeatureGradientSettings, FeatureViewDecorator } from "../../core/model/workspace/overview/AbstractFeature";
-import { AbstractNodeShell } from "../../core/model/workspace/overview/AbstractNodeShell";
+import { AbstractNodeTree } from "../../core/model/workspace/overview/AbstractNodeTree";
 
 import FolderNode from "./FolderNode";
 import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
@@ -35,7 +35,7 @@ export class NodeFeatureSize extends AbstractFeatureGradient<FolderNode, Feature
         });
     }
 
-    public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
+    public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
         return 0;
     }
 
@@ -44,7 +44,7 @@ export class NodeFeatureSize extends AbstractFeatureGradient<FolderNode, Feature
         return data ? data.s : undefined;
     }
 
-    public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
+    public getFeatureText(nodes: FolderNode, entry: AbstractNodeTree<FolderNode>): string {
         const data = nodes.getFeatureValue(FeatureType.FolderSize);
         return (data ? filesizeFormat(data.s) : "- MB");
     }
@@ -81,7 +81,7 @@ export class NodeFeatureLastModifiy extends AbstractFeatureGradient<FolderNode, 
         this.gradients.forEach(g => g.reverse = !g.reverse);
     }
 
-    public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
+    public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
         return 0;
     }
 
@@ -90,7 +90,7 @@ export class NodeFeatureLastModifiy extends AbstractFeatureGradient<FolderNode, 
         return data && data.m && data.m > 0 ? (new Date().getTime() / 1000) - data.m : undefined;
     }
 
-    public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
+    public getFeatureText(nodes: FolderNode, entry: AbstractNodeTree<FolderNode>): string {
         const data = nodes.getFeatureValue(FeatureType.FolderLastModify);
         const value = data && data.m && data.m > 0 ? (Math.floor(new Date().getTime() / 1000)) - data.m : undefined;
         return value ? timeFormat(value) /*+ ": " + (data && data.m ? data.m + " | " + data.m?.toString().length + " | " + ((Math.floor(new Date().getTime() / 1000)) - data.m) : "") */ : "No Value";
@@ -118,7 +118,7 @@ export class NodeFeatureQuantity extends AbstractFeatureGradient<FolderNode, Fea
         return new FeatureGradientSettings(0, 50000);
     }
 
-    public getFeatureText(nodes: FolderNode, entry: AbstractNodeShell<FolderNode>): string {
+    public getFeatureText(nodes: FolderNode, entry: AbstractNodeTree<FolderNode>): string {
         const data = nodes.getFeatureValue(FeatureType.FolderQuantity);
 
         return (data ? fileamountFormat(data.s) : "0 Files");
@@ -128,7 +128,7 @@ export class NodeFeatureQuantity extends AbstractFeatureGradient<FolderNode, Fea
         return new FeatureDataSum();
     }
 
-    public getNodeRadius(node: FolderNode, entry: AbstractNodeShell<FolderNode>): number {
+    public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
         return 0;
     }
     public readonly readableName: string = "File Amount";

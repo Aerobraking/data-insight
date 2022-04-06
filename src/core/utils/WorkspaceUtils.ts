@@ -1,4 +1,4 @@
-import { FeatureType } from "@/core/model/workspace/overview/FeatureType"; 
+import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
 import AbstractWorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 import { ElementDimension, getCoordinatesFromElement } from "@/core/utils/ResizeUtils";
 import {
@@ -8,6 +8,11 @@ import {
 } from "vue";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 
+/**
+ * The focus in our app is updated when the mouse is moved. In some situations we don't want that
+ * for example when the focus is on a textfield. Use this method to test if a focus change is allowed.
+ * @returns
+ */
 export function doChangeFocus(): boolean {
     return !(document.activeElement != undefined &&
         (document.activeElement instanceof HTMLInputElement ||
@@ -15,7 +20,13 @@ export function doChangeFocus(): boolean {
                 document.activeElement.contentEditable == "true")));
 }
 
-export function setupEntry(props: any, wsListener: Listener | undefined = undefined) {
+/**
+ * The setup() method for the WorkspaceEntry Components. 
+ * @param props
+ * @param wsListener 
+ * @returns 
+ */
+export function setupEntry(props: any, wsListener: WorkspaceViewListener | undefined = undefined) {
 
     const e: AbstractWorkspaceEntry = props.entry as AbstractWorkspaceEntry;
 
@@ -24,14 +35,19 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 
     let listener = {
         /**
-         * Update the model coordinates with the current ones from the html view.
+         * Update the model coordinates (width,height,x,y) with the current ones from the html view.
          */
-        prepareFileSaving(): void { 
-            let coords: ElementDimension = getCoordinatesFromElement(el.value); 
+        prepareFileSaving(): void {
+            let coords: ElementDimension = getCoordinatesFromElement(el.value);
             e.setDimensions(coords);
         }
     };
 
+    /**
+     * Register the WorkspaceViewListener when the component is mounted and set their dimension and position.
+     * Because this data is not refreshes by the reactivity system of vue, we set it in the beginning and when
+     * the file is saved we update it, see the prepareFileSaving() implementation above.
+     */
     onMounted(() => {
         if (wsListener != undefined) {
             Events.registerCallback(wsListener);
@@ -64,56 +80,54 @@ export function setupEntry(props: any, wsListener: Listener | undefined = undefi
 }
 
 /**
- * 
- * @param r1 rectangle that is tested to be inside r2
- * @param r2 
- * @returns true if r1 is completly inside r2
+ * All WorkspaceEntry Components can use this interface to react to various
+ * Events from the WorkspaceView. It can also be used to trigger Events in the WorkspaceView
+ * by using the event() method. 
  */
-export function intersectRect(
-    r1: { x: number; y: number; x2: number; y2: number },
-    r2: { x: number; y: number; x2: number; y2: number }
-) {
-    let a: boolean = r2.x > r1.x2;
-    let b: boolean = r2.x2 < r1.x;
-    let c: boolean = r2.y > r1.y2;
-    let d: boolean = r2.y2 < r1.y;
-
-    return !(r2.x > r1.x2 || r2.x2 < r1.x || r2.y > r1.y2 || r2.y2 < r1.y);
-}
-
-/**
- * Tests if r2 is inside r1
- * @param r1 
- * @param r2 
- * @returns 
- */
-export function insideRect(
-    r1: { x: number; y: number; x2: number; y2: number }, // the outside one
-    r2: { x: number; y: number; x2: number; y2: number } // the inside one
-) {
-    let a: boolean = r2.x > r1.x2;
-    let b: boolean = r2.x2 < r1.x;
-    let c: boolean = r2.y > r1.y2;
-    let d: boolean = r2.y2 < r1.y;
-
-    return r2.x2 < r1.x2 && r2.x > r1.x && r2.y > r1.y && r2.y2 < r1.y2;
-}
-
-export interface Listener {
+export interface WorkspaceViewListener {
+    /**
+     * Is called when the string inside the searchfield changes.
+     */
     searchEvent?: (value: string) => void;
+    /**
+     * Is called when the dragging of workspace entries starts.
+     */
     dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
-
+    /**
+     * !Work in Progress!
+     * Will be used to update the feature views inside the Workspace when settings are changed for
+     * the feature visualization.
+     */
     featureEvent?: (
         feature: FeatureType | undefined,
         min: number, max: number,
         getColor: (node: any, stat: number, min: number, max: number) => string) => void;
-
+    /**
+     * The state of our app is defined through the store object but there may be data that is not inside the
+     * store while it is used in the app, mainly because of performance reasons (lots of updates in the store are slow
+     * as hell). So before the file will be saved this method will be called and you can use it for updating 
+     * the data in the store to current state. 
+     */
     prepareFileSaving?: () => void;
+    /**
+     * Is called when the zoom value changes in the workpsace.
+     */
     zoom?: (transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc) => void;
+    /**
+     * Is called when a plugin starts.
+     * @param modal true: the plugin is modal, so all other inputs should be disabled.
+     */
     pluginStarted?: (modal: boolean) => void;
+    /**
+     * Different things can be triggered by calling this method, see the type parameter.
+     * @param type fixedZoomUpdate: Updates the elements in the active WorkspaceView that have a fixed scaling.
+     */
     event?: (type: "fixedZoomUpdate") => void;
 }
 
+/**
+ * This class is used for firing workspace events 
+ */
 export class Dispatcher {
 
     private static _instance = new Dispatcher();
@@ -123,7 +137,7 @@ export class Dispatcher {
         return this._instance;
     }
 
-    callbacks: Listener[] = [];
+    callbacks: WorkspaceViewListener[] = [];
 
     pluginStarted(modal: boolean): void {
         this.callbacks.forEach((c) => {
@@ -147,34 +161,26 @@ export class Dispatcher {
     }
 
     searchEvent(value: string): void {
-        this.callbacks.forEach((c) => {
-            if (c.searchEvent) c.searchEvent(value);
-        });
+        this.callbacks.forEach((c) => c.searchEvent ? c.searchEvent(value) : 0);
     }
 
     zoom(workspace: WorkspaceViewIfc): void {
-        this.callbacks.forEach((c) => {
-            if (c.zoom) c.zoom(workspace.getCurrentTransform(), workspace);
-        });
+        this.callbacks.forEach((c) => c.zoom ? c.zoom(workspace.getCurrentTransform(), workspace) : 0);
     }
 
     prepareFileSaving(): void {
-        this.callbacks.forEach((c) => {
-            if (c.prepareFileSaving) c.prepareFileSaving();
-        });
+        this.callbacks.forEach((c) => c.prepareFileSaving ? c.prepareFileSaving() : 0);
     }
 
     event(type: "fixedZoomUpdate"): void {
-        this.callbacks.forEach((c) => {
-            if (c.event) c.event(type);
-        });
+        this.callbacks.forEach((c) => c.event ? c.event(type) : 0);
     }
 
-    registerCallback(callback: Listener) {
+    registerCallback(callback: WorkspaceViewListener) {
         this.callbacks.push(callback);
     }
 
-    unregisterCallback(callback: Listener) {
+    unregisterCallback(callback: WorkspaceViewListener) {
         const index = this.callbacks.indexOf(callback);
         if (index > -1) {
             this.callbacks.splice(index, 1);
@@ -184,7 +190,13 @@ export class Dispatcher {
 }
 export const Events = Dispatcher.instance;
 
-export class DIClipboard {
+/**
+ * For copy and paste files inside our App we use this class. It simply
+ * contains a list of strings which represent a list of paths.
+ * One static instance of this class is used for it so the data can be 
+ * used anywhere in the app. 
+ */
+class DIClipboard {
 
     private static _instance = new DIClipboard();
     private constructor() { }

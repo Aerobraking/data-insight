@@ -1,6 +1,6 @@
 import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
 import { Exclude, Expose } from "class-transformer";
-import AbstractNodeShellIfc from "./AbstractNodeShellIfc";
+import AbstractNodeTreeIfc from "./AbstractNodeTreeIfc";
 import { FeatureType, Features } from "./FeatureType";
 
 export abstract class AbstractNode {
@@ -16,17 +16,17 @@ export abstract class AbstractNode {
 
     public addChild(c: this, fireUpdate = true) {
         c.parent = this;
-        c.shell = this.shell;
+        c.tree = this.tree;
         c.depth = c.parents().length;
         this.children.push(c);
-        if (fireUpdate) this.shell?.nodeAdded(c);
+        if (fireUpdate) this.tree?.nodeAdded(c);
     }
 
     public removeChild(c: any) {
         let index = this.children.indexOf(c);
         if (index > -1) {
             this.children.splice(index, 1);
-            this.shell?.nodeRemoved(c);
+            this.tree?.nodeRemoved(c);
         }
     }
 
@@ -36,8 +36,8 @@ export abstract class AbstractNode {
             return 100;
         } else if (this.isCollection()) {
             return 80;
-        } else if (this.shell) {
-            let abs = (this.shell.root as AbstractNode).getFeatureValue(FeatureType.FolderSize);
+        } else if (this.tree) {
+            let abs = (this.tree.root as AbstractNode).getFeatureValue(FeatureType.FolderSize);
             let part = this.getFeatureValue(FeatureType.FolderSize);
             if (abs != undefined && part != undefined) {
                 let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
@@ -61,7 +61,7 @@ export abstract class AbstractNode {
             } else {
                 this.collectionData = { size: this.children.length, depth: Math.max(... this.descendants(false).map(c => c.depth - this.depth)) };
                 this.children = [];
-                this.shell?.nodesRemoved(this);
+                this.tree?.nodesRemoved(this);
             }
         } else {
 
@@ -85,8 +85,8 @@ export abstract class AbstractNode {
 
     public set name(value: string) {
         this._name = value;
-        if (this.shell) {
-            this.shell.nodeUpdate(this);
+        if (this.tree) {
+            this.tree.nodeUpdate(this);
         }
     }
 
@@ -168,7 +168,7 @@ export abstract class AbstractNode {
     }
 
     getPath(absolute: boolean = true): string {
-        let p = this.shell && absolute ? this.shell.path : "";
+        let p = this.tree && absolute ? this.tree.path : "";
         const desc = this.parents(this.parent ? true : false, !absolute);
         desc.reverse();
         for (let i = 0; i < desc.length; i++) {
@@ -258,7 +258,7 @@ export abstract class AbstractNode {
 
     // the OverviewEntry this nodes belongs to. will be set after loading from the json
     @Exclude()
-    shell: AbstractNodeShellIfc | undefined;
+    tree: AbstractNodeTreeIfc | undefined;
 
     // the parent node. will be set after loading from the json file.
     @Exclude()

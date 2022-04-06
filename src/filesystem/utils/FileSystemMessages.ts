@@ -6,31 +6,38 @@ export interface FileSystemListener {
     getID(): number;
 }
 
-export interface MessageType {
-    type: "folderdeepsync" | "folderfeatures" | "foldersync" | "folderdeepsyncfinished",
-    id: number // the id of the abstractnodeshell that listens to this syncing
+export enum SyncMessageType {
+    folderdeepsync = "folderdeepsync",
+    folderfeatures = "folderfeatures",
+    foldersync = "foldersync",
+    folderdeepsyncfinished = "folderdeepsyncfinished",
 }
 
-export interface FolderSync extends MessageType {
-    type: "folderdeepsync",
+export interface AbstractSyncMessage {
+    type: SyncMessageType,
+    id: number // the id of the AbstractNodeTree that listens to this syncing
+}
+
+export interface FolderSync extends AbstractSyncMessage {
+    type: SyncMessageType.folderdeepsync,
     depth: number,
     collectionSize: number,
     path: string,
 }
- 
-export interface FolderSyncResult extends MessageType {
-    type: "foldersync",
+
+export interface FolderSyncResult extends AbstractSyncMessage {
+    type: SyncMessageType.foldersync,
     path: string,
     childCount: number,
     collection: boolean,
 }
- 
-export interface FolderFeatureResult extends MessageType {
-    type: "folderfeatures",
+
+export interface FolderFeatureResult extends AbstractSyncMessage {
+    type: SyncMessageType.folderfeatures,
     path: string,
     features: Features,
 }
-export interface FolderSyncFinished extends MessageType {
-    type: "folderdeepsyncfinished",
+export interface FolderSyncFinished extends AbstractSyncMessage {
+    type: SyncMessageType.folderdeepsyncfinished,
     path: string,
 }

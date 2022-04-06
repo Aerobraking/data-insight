@@ -38,7 +38,6 @@
   </div>
 </template>
  
-
 <script lang="ts">
 import { Tippy } from "vue-tippy";
 import {
@@ -95,6 +94,7 @@ export default defineComponent({
       }, 5);
 
       Events.event("fixedZoomUpdate");
+
       setTimeout(() => {
         if (!this.entry.displaynameResize) {
           this.$el.style.transform = "scale(" + 1 + ", " + 1 + ")";

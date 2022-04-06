@@ -2,7 +2,7 @@
   "name": "data-insight",
   "version": "0.92.3",
   "homepage": "https://github.com/Aerobraking/ma-data-insight",
-  "description": "A modern File Explorer",
+  "description": "An activity centric File Explorer",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Aerobraking/ma-data-insight/issues",

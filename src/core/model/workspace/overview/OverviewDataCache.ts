@@ -1,13 +1,13 @@
 import { OverviewEngine } from "@/core/components/overview/OverviewEngine";
 import { Workspace } from "../Workspace";
-import { AbstractNodeShell } from "./AbstractNodeShell";
+import { AbstractNodeTree } from "./AbstractNodeTree";
 
 
 
 export class OverviewTransferHandler {
 
     private mapEngines: Map<number, OverviewEngine> = new Map();
-    private mapData: Map<number, AbstractNodeShell[]> = new Map();
+    private mapData: Map<number, AbstractNodeTree[]> = new Map();
     private static _instance = new OverviewTransferHandler();
 
     private constructor() {
@@ -27,13 +27,13 @@ export class OverviewTransferHandler {
     }
 
     transferData(w: Workspace) {
-        let newArray: AbstractNodeShell[] | undefined = this.mapData.get(w.id);
+        let newArray: AbstractNodeTree[] | undefined = this.mapData.get(w.id);
         if (newArray) {
-            w.overview.shells = newArray;
+            w.overview.trees = newArray;
         }
     }
 
-    getData(obj: number | { workspace: Workspace }): AbstractNodeShell[] {
+    getData(obj: number | { workspace: Workspace }): AbstractNodeTree[] {
         let a = (typeof obj == 'number') ? this.mapData.get(obj) : this.mapData.get(obj.workspace.id);
         if (!a) {
             a = [];
@@ -41,15 +41,15 @@ export class OverviewTransferHandler {
         }
         return a;
     }
-    setData(id: number, list: AbstractNodeShell[]): void {
+    setData(id: number, list: AbstractNodeTree[]): void {
         this.mapData.set(id, list);
     }
 
     storeData(w: Workspace) {
         if (!this.mapData.has(w.id)) {
-            let newArray: AbstractNodeShell[] = [];
-            newArray.push(...w.overview.shells);
-            w.overview.shells = [];
+            let newArray: AbstractNodeTree[] = [];
+            newArray.push(...w.overview.trees);
+            w.overview.trees = [];
             this.mapData.set(w.id, newArray);
         }
     }

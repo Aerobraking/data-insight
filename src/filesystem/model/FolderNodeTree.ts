@@ -1,17 +1,17 @@
 import { Exclude } from "class-transformer";
 import pathNodejs from "path";
-import { AbstractNodeShell } from "@/core/model/workspace/overview/AbstractNodeShell";
-import { FileSystemListener, FolderSyncResult, FolderFeatureResult, FolderSyncFinished } from "../utils/FileSystemMessages";
-import { Instance } from "../utils/FileSystemWatcher";
+import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
+import { FileSystemListener, FolderSyncResult, FolderFeatureResult, FolderSyncFinished, SyncMessageType } from "../utils/FileSystemMessages";
+import { Instance } from "../utils/FileSystemScanConnector";
 import FolderNode from "./FolderNode";
-import * as watcher from "../utils/WatchSystemMain";
+import * as watcher from "../utils/FileSystemWatcherConnector";
 import { doBenchmark } from "@/core/utils/Benchmark";
 
-export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements FileSystemListener {
+export class FolderNodeTree extends AbstractNodeTree<FolderNode> implements FileSystemListener {
 
     constructor(path: string | undefined) {
         super("folder", path ? path : "", new FolderNode(path ? pathNodejs.basename(path) : ""));
-        this.root.shell = this;
+        this.root.tree = this;
     }
 
     public createNodeInstance(name: string) {
@@ -60,7 +60,7 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
             let event = this.eventStackFeatures.shift();
             if (event) {
                 switch (event.type) {
-                    case "folderfeatures":
+                    case SyncMessageType.folderfeatures:
                         newFeatures.push({ path: event.path, features: event.features });
                         break;
                     // case "folderdeepsyncfinished":
@@ -80,19 +80,15 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
 
     event(e: FolderFeatureResult | FolderSyncResult | FolderSyncFinished): void {
         switch (e.type) {
-            case "folderfeatures":
-            case "folderdeepsyncfinished":
+            case SyncMessageType.folderdeepsyncfinished:
+                if (doBenchmark) console.log("Time for Syncing: ", (performance.now() - this.timeForSinc) / 1000, "seconds");
+            case SyncMessageType.folderfeatures:
                 this.eventStackFeatures.push(e);
                 break;
-            case "foldersync":
+            case SyncMessageType.foldersync:
                 this.eventStack.push(e);
                 break;
-        }
-        switch (e.type) {
-            case "folderdeepsyncfinished":
-                if (doBenchmark) console.log("Time for Syncing: ", (performance.now() - this.timeForSinc) / 1000, "seconds");
-                break;
-        }
+        } 
     }
 
     getName() {
@@ -115,14 +111,14 @@ export class FolderNodeShell extends AbstractNodeShell<FolderNode> implements Fi
     }
 
     stopWatcher(): void {
-        watcher.FileSystemWatcher.unregisterPath(this.path, this.watcherEvent, true);
+        watcher.FSWatcherConnectorInstance.unregisterPath(this.path, this.watcherEvent, true);
     }
 
     timeForSinc: number = 0;
 
     startWatcher(): void {
         this.timeForSinc = performance.now();
-        watcher.FileSystemWatcher.registerPath(this.path, this.watcherEvent, true);
+        watcher.FSWatcherConnectorInstance.registerPath(this.path, this.watcherEvent, true);
 
         /**
          * this starts the syncing of the folder for this entry.

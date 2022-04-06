@@ -102,7 +102,7 @@ const path = require("path");
 const { shell } = require("electron");
 
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
-import * as watcher from "../utils/WatchSystemMain";
+import { FSWatcherConnectorInstance } from "../utils/FileSystemWatcherConnector";
 import { add, remove, toggle } from "@/core/utils/ListUtils";
 import fs from "fs";
 import wsfolderfile from "./FolderFileViewGrid.vue";
@@ -191,7 +191,7 @@ export default defineComponent({
     );
 
     DriveListSystemInstance.register(this.entry.id + "", this.driveListEvent);
-    watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
+    FSWatcherConnectorInstance.registerPath(this.entry.path, this.watcherEvent);
   },
   unmounted() {
     DriveListSystemInstance.unregister(this.entry.id + "");
@@ -203,8 +203,8 @@ export default defineComponent({
     },
     // whenever the current folder path changes, update the file list
     "entry.path": function (newPath: string, oldPath: string) {
-      watcher.FileSystemWatcher.unregisterPath(oldPath, this.watcherEvent);
-      watcher.FileSystemWatcher.registerPath(newPath, this.watcherEvent);
+      FSWatcherConnectorInstance.unregisterPath(oldPath, this.watcherEvent);
+      FSWatcherConnectorInstance.registerPath(newPath, this.watcherEvent);
       this.updateUI();
     },
   },

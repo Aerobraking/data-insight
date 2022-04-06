@@ -1,26 +1,37 @@
-import { FSWatcher } from "chokidar";
+/**
+ * This is the main entry point for a worker Thread created with a hidden window.
+ * It handles the Watching of specfic Folders in the File System. Folders can be registered 
+ * and unregistered via IPC. It then sends updates via IPC for these folders with the default chokidar types:
+ * add, change, unlink, addDir, unlinkDir 
+ */
 import chokidar from "chokidar";
 import fs from "fs";
 import pathNjs from "path";
 import 'reflect-metadata';
 import { ipcRenderer } from "electron";
 import { FileWatcherUpdate, FileWatcherSend } from "./filesystem/utils/FileWatcherInterfaces";
+import IPCMessageType from "./IpcMessageTypes";
 
+interface MapCallbacks extends Map<string, number> { };
 
-interface MapCallbacks extends Map<string, number> {
+/**
+ * Uses a chokidar for watching folders in the File System. The update events will be send to the main
+ * thread via IPC. 
+ */
+class FileSystemWatcher {
 
-}
-
-
-class Watcher2 {
+    /**
+     * We only have one instance of this class that does the work.
+     */
+    static instance = new FileSystemWatcher();
 
     private hash: MapCallbacks = new Map();
     private hashRecursive: MapCallbacks = new Map();
-    private static _instance = new Watcher2();
 
-    private watcher: FSWatcher;
-    private watcherRecursive: FSWatcher;
+    private watcher: chokidar.FSWatcher;
+    private watcherRecursive: chokidar.FSWatcher;
 
+    // while the FSWatcher are resetted, this flag is set to false, otherwise true.
     private isReady: boolean = true;
 
     private constructor() {
@@ -121,8 +132,7 @@ class Watcher2 {
                 path: path
             }
 
-            ipcRenderer.send('msg-file-to-main', result);
-
+            ipcRenderer.send(IPCMessageType.FileWatcherToRender, result);
         };
 
         let defaultCall = true;
@@ -135,11 +145,15 @@ class Watcher2 {
 
     }
 
-    static get instance() {
-        return this._instance;
-    }
-
-    registerPath(path: string, recursive: boolean = false) {
+    /**
+     * Registers a path in the chokidar instance, if not already watched. For each
+     * registerPath() call a counter will be increased for the given path. Calling unregisterPath() decreases
+     * the counter, when reaching zero the path will be removed from chokidar. So don't forget to call unregisterPath()
+     * when your object doesn't need the updates any more to save performance. :)
+     * @param path the path you want to watch via chokidar. 
+     * @param recursive boolean: should the path watched recursivly or not.
+     */
+    registerPath(path: string, recursive: boolean = false): void {
 
         if (!this.isReady) return;
 
@@ -168,6 +182,12 @@ class Watcher2 {
         mapToUse.set(path, listCallbacks);
     }
 
+    /**
+     * 
+     * @param path string: The path that you want to unregister. When the usage counter of the path reaches zero,
+     * the path will not be watched any longer by the chokidar instance.
+     * @param recursive boolean: is the path watched recursivly or not.
+     */
     unregisterPath(path: string, recursive: boolean = false) {
 
         path = path.replace(/\\/g, "/");
@@ -176,7 +196,7 @@ class Watcher2 {
         const mapToUse = recursive ? this.hashRecursive : this.hash;
         const watcherToUse = recursive ? this.watcherRecursive : this.watcher;
 
-        let listCallbacks: number | undefined = mapToUse.get(path); //get
+        let listCallbacks: number | undefined = mapToUse.get(path);
 
         if (listCallbacks != undefined) {
             listCallbacks--;
@@ -192,20 +212,21 @@ class Watcher2 {
 
 }
 
-const FileSystemWatcher = Watcher2.instance;
+export const Instance = FileSystemWatcher.instance;
 
-
-
-ipcRenderer.on("msg-main-to-file", (event, payload: FileWatcherSend) => {
+/**
+ * Recieve the events from the main thread and transmit them to the FileSystemWatcher instance.
+ */
+ipcRenderer.on(IPCMessageType.RenderToFileWatcher, (event, payload: FileWatcherSend) => {
     switch (payload.type) {
         case "reset":
-            FileSystemWatcher.reset();
+            FileSystemWatcher.instance.reset();
             break;
         case "register":
-            FileSystemWatcher.registerPath(payload.path, payload.recursive)
+            FileSystemWatcher.instance.registerPath(payload.path, payload.recursive)
             break;
         case "unregister":
-            FileSystemWatcher.unregisterPath(payload.path, payload.recursive)
+            FileSystemWatcher.instance.unregisterPath(payload.path, payload.recursive)
             break;
     }
 });

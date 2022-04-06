@@ -7,7 +7,7 @@ import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
 import { Tween } from "@tweenjs/tween.js";
 import { Overview, Workspace } from "@/core/model/workspace/Workspace";
-import { AbstractNodeShell, NodeShellListener } from "@/core/model/workspace/overview/AbstractNodeShell";
+import { AbstractNodeTree, NodeTreeListener } from "@/core/model/workspace/overview/AbstractNodeTree";
 import { ipcRenderer } from "electron";
 import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
 import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature";
@@ -15,7 +15,7 @@ import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
 import { AbstractLink, AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
 
-export class OverviewEngine implements NodeShellListener<AbstractNode>{
+export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     private static instances: OverviewEngine[] = [];
     private static started: boolean = false;
@@ -90,7 +90,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     nodeShift: AbstractNode | undefined;
 
     context: CanvasRenderingContext2D;
-    private _shells: AbstractNodeShell[] = [];
+    private _trees: AbstractNodeTree[] = [];
 
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
     private nodeFiltered: AbstractNode[] = [];
@@ -101,7 +101,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
 
     mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
-    setWidthsTween: Map<AbstractNodeShell, Map<number, Tween<any>>> = new Map();
+    setWidthsTween: Map<AbstractNodeTree, Map<number, Tween<any>>> = new Map();
 
     colorChangeDuration: number = 200;
     render!: AbstractFeature;
@@ -220,7 +220,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             d3.drag<HTMLCanvasElement, unknown>().subject(() => {
                 const obj = this.getNodeAtMousePosition();
                 if (obj && obj.isRoot()) {
-                    return obj.shell;
+                    return obj.tree;
                 }
                 return obj; // Only drag nodes
             })
@@ -229,17 +229,17 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                     _this.nodeShift = undefined;
                     if (ev.sourceEvent.altKey) {
-                        _this.nodeShift = obj instanceof AbstractNodeShell ? undefined : obj;
+                        _this.nodeShift = obj instanceof AbstractNodeTree ? undefined : obj;
                         return;
                     } else {
 
                         this.canvas.classList.add('grabbable');
                         _this.pauseHovering = true;
-                        if (obj instanceof AbstractNodeShell) {
+                        if (obj instanceof AbstractNodeTree) {
                             (obj as any).__initialDragPos = { x: obj.x, y: obj.y, };
                         }
 
-                        if (!(obj instanceof AbstractNodeShell)) {
+                        if (!(obj instanceof AbstractNodeTree)) {
                             const node = ev.subject as AbstractNode;
                             Layouter.nodeDragged(node, "start", undefined, d3.zoomTransform(this.canvas));
 
@@ -256,7 +256,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     const dragPos = ev;
                     const t = d3.zoomTransform(this.canvas);
 
-                    if (obj instanceof AbstractNodeShell) {
+                    if (obj instanceof AbstractNodeTree) {
                         /**
                          * the root can be moved in any direction and moves the whole tree with it
                          */
@@ -276,7 +276,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     const obj = ev.subject;
                     delete (obj.__initialDragPos);
 
-                    if (obj instanceof AbstractNodeShell) return;
+                    if (obj instanceof AbstractNodeTree) return;
 
                     Layouter.nodeDragged(ev.subject as AbstractNode, "end", undefined, d3.zoomTransform(this.canvas))
 
@@ -383,8 +383,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         let mGraph = this.screenToGraphCoords(this.mousePosition);
         let scale = this.transform ? Math.max(40 / this.transform.k, 100) : 200;
         let n = undefined;
-        for (let i = 0; this.transform && i < this.shells.length; i++) {
-            const e = this.shells[i];
+        for (let i = 0; this.transform && i < this.trees.length; i++) {
+            const e = this.trees[i];
             if (e.quadtree) {
                 let nFound: AbstractNode | undefined = e.quadtree.find(mGraph.x - e.x, mGraph.y - e.y, scale);
                 if (nFound && (this.transform.k > 0.005 || nFound.isRoot())) {
@@ -422,7 +422,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.divObserver.disconnect();
     }
 
-    public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeShell[] | undefined = this._shells): ElementDimension {
+    public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeTree[] | undefined = this._trees): ElementDimension {
 
         const _this = this;
         let nodesThere = false;
@@ -439,8 +439,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             const p = n.customData["co"];
             // const p = _this.getNodePosition(n);
-            const x = p.x + n.shell!.x;
-            const y = p.y + n.shell!.y;
+            const x = p.x + n.tree!.x;
+            const y = p.y + n.tree!.y;
             calc(x + 50, y + 50);
             calc(x - 50, y - 50);
             nodesThere = true;
@@ -463,7 +463,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     }
 
     public zoomToFitSelection(duration: number = 400, useShell: boolean = true, padding: number = 1.3) {
-        this.setViewBox(this.getNodesBoundingBox(padding, this.selection.length > 0 ? useShell ? [this.selection[0].shell as AbstractNodeShell] : this.selection[0] : undefined), duration);
+        this.setViewBox(this.getNodesBoundingBox(padding, this.selection.length > 0 ? useShell ? [this.selection[0].tree as AbstractNodeTree] : this.selection[0] : undefined), duration);
     }
 
     public zoomToFit(duration: number = 400) {
@@ -551,8 +551,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
         if (this.nodeFiltered.length > 0) {
             // search for new nodes that will be blending out or in
-            for (let index = 0; index < this.shells.length; index++) {
-                const entry = this.shells[index] as AbstractNodeShell;
+            for (let index = 0; index < this.trees.length; index++) {
+                const entry = this.trees[index] as AbstractNodeTree;
 
                 for (let j = 0; j < entry.nodes.length; j++) {
                     const n = entry.nodes[j];
@@ -627,16 +627,16 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         this.enableCulling = !this.enableCulling;
     }
 
-    public get shells(): any[] {
-        return this._shells;
+    public get trees(): any[] {
+        return this._trees;
     }
 
-    public set shells(value: any[]) {
-        this._shells = value;
+    public set trees(value: any[]) {
+        this._trees = value;
 
         // register the root nodes for color ids
-        for (let j = 0; j < this.shells.length; j++) {
-            const entry: AbstractNodeShell = this.shells[j];
+        for (let j = 0; j < this.trees.length; j++) {
+            const entry: AbstractNodeTree = this.trees[j];
             for (let i = 0; i < entry.nodes.length; i++) {
                 const n = entry.nodes[i];
             }
@@ -648,9 +648,9 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     public tickEngine(): void {
 
-        Layouter.tickLayout(this._shells, OverviewEngine.delta);
+        Layouter.tickLayout(this._trees, OverviewEngine.delta);
         if (doBenchmark) logTime("PrepareRender");
-        this._shells.forEach(s => s.tickShell());
+        this._trees.forEach(s => s.tickShell());
 
         if (this.colorTransitionElapsed != undefined) {
             this.colorTransitionElapsed += OverviewEngine.delta;
@@ -680,7 +680,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             this.setViewBox(this.getNodesBoundingBox(1.3), 0, TWEEN.Easing.Linear.None);
         }
 
-        if (this.enablePainting) {
+        if (this.enablePainting && this.workspace.overviewOpen) {
             // render the canvas 
 
             this.drawCanvas(this.context);
@@ -695,7 +695,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
     private static minOpacity: number = 0.045;
 
     private getNodeGraphCoordinates(n: AbstractNode, offsetX = 0, offsetY = 0): { x: number, y: number } {
-        return n.shell ? { x: n.shell.x + this.getNodePosition(n).x + offsetX, y: n.shell.y + this.getNodePosition(n).y + offsetY } : { x: 0, y: 0 };
+        return n.tree ? { x: n.tree.x + this.getNodePosition(n).x + offsetX, y: n.tree.y + this.getNodePosition(n).y + offsetY } : { x: 0, y: 0 };
     }
 
     nodeCulling(n: AbstractNode): boolean {
@@ -741,7 +741,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             if (transition) {
 
                 const colorOld = this.getColorForNode(node);
-                let colorNew = this.render.getNodeColor(node, node.shell as AbstractNodeShell);
+                let colorNew = this.render.getNodeColor(node, node.tree as AbstractNodeTree);
 
                 var scale = d3.scaleLinear<string>()
                     .domain([0, this.colorChangeDuration])
@@ -753,7 +753,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                 this.colorTransitionTarget = this.colorChangeDuration;
 
             } else {
-                let color = this.render.getNodeColor(node, node.shell as AbstractNodeShell);
+                let color = this.render.getNodeColor(node, node.tree as AbstractNodeTree);
                 this.colorNodeMap.set(node, color);
             }
 
@@ -761,8 +761,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             if (transition) {
 
-                for (let i = 0; i < this.shells.length; i++) {
-                    const entry: AbstractNodeShell = this.shells[i];
+                for (let i = 0; i < this.trees.length; i++) {
+                    const entry: AbstractNodeTree = this.trees[i];
                     let nodes: AbstractNode[] = entry.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
@@ -785,8 +785,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             } else {
 
-                for (let index = 0; index < this.shells.length; index++) {
-                    const entry: AbstractNodeShell = this.shells[index];
+                for (let index = 0; index < this.trees.length; index++) {
+                    const entry: AbstractNodeTree = this.trees[index];
                     let nodes: AbstractNode[] = entry.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
@@ -811,7 +811,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         return Layouter.getNodePosition(n);
     }
 
-    private isNodeHiddenByFeature(n: AbstractNode, entry: AbstractNodeShell) {
+    private isNodeHiddenByFeature(n: AbstractNode, entry: AbstractNodeTree) {
         return this.render.isNodeHidden(n, entry);
     }
 
@@ -862,16 +862,16 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         ctx.translate(this.transform.x, this.transform.y);
         ctx.scale(this.transform.k, this.transform.k);
 
-        if (this.shells) {
+        if (this.trees) {
 
-            for (let i = 0; i < this.shells.length; i++) {
-                const shell: AbstractNodeShell = this.shells[i];
+            for (let i = 0; i < this.trees.length; i++) {
+                const tree: AbstractNodeTree = this.trees[i];
 
                 ctx.save();
-                ctx.translate(shell.x, shell.y);
+                ctx.translate(tree.x, tree.y);
 
-                let nodes: AbstractNode[] = shell.nodes;
-                let links: AbstractLink[] = shell.links;
+                let nodes: AbstractNode[] = tree.nodes;
+                let links: AbstractLink[] = tree.links;
                 var renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
                 var renderDataLinks: { culling: boolean }[] = new Array(links.length);
 
@@ -881,13 +881,13 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                 if (doBenchmark) logTime("Render");
                 if (doBenchmark) logTime("rlinks");
-                this.drawLinks(ctx, nodes, links, shell, renderData, renderDataLinks);
+                this.drawLinks(ctx, nodes, links, tree, renderData, renderDataLinks);
                 if (doBenchmark) logTime("rlinks");
                 if (doBenchmark) logTime("rnodes");
-                this.drawNodes(ctx, nodes, shell, renderData);
+                this.drawNodes(ctx, nodes, tree, renderData);
                 if (doBenchmark) logTime("rnodes");
                 if (doBenchmark) logTime("rtext");
-                this.drawText(ctx, nodes, shell, renderData);
+                this.drawText(ctx, nodes, tree, renderData);
                 if (doBenchmark) logTime("rtext");
                 if (doBenchmark) logTime("Render");
                 ctx.restore();
@@ -906,7 +906,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
         });
     }
 
-    drawLinks(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], links: AbstractLink[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[], renderDataLinks: { culling: boolean }[] = new Array(links.length)) {
+    drawLinks(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], links: AbstractLink[], tree: AbstractNodeTree, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[], renderDataLinks: { culling: boolean }[] = new Array(links.length)) {
 
         let scale = this.transform ? this.transform.k : 1;
         let weight = 0.7;
@@ -932,7 +932,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
             var r = renderData[nodes.indexOf(end)].r;
             var rStart = renderData[nodes.indexOf(start)].r;
-            if (start.isRoot() && shell.isSyncing) rStart += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
+            if (start.isRoot() && tree.isSyncing) rStart += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
             // let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x + rStart : widths[start.depth].x + this.textMaxWidth) : 0;
             let xStart = (start.isRoot() ? renderData[nodes.indexOf(start)].pos.x + rStart : renderData[nodes.indexOf(start)].pos.x + this.textMaxWidth);
             let xEnd = renderData[nodes.indexOf(end)].pos.x - 150;
@@ -968,7 +968,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             }
 
             // draw selection highlighting
-            if ((shell && this.selection.includes(shell.root))) {
+            if ((tree && this.selection.includes(tree.root))) {
                 ctx.globalAlpha = 1;
                 ctx.strokeStyle = OverviewEngine.colorSelection;
                 ctx.lineWidth = lineWidth * 3.5;
@@ -997,7 +997,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
-    drawNodes(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
+    drawNodes(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], tree: AbstractNodeTree, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
 
         const ts = this.transform ? this.transform.k : 1;
         ctx.lineWidth = this.getFixedSize(12, 10, 40);
@@ -1020,7 +1020,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
             ctx.fillStyle = renderData[i].color;
             ctx.strokeStyle = ctx.fillStyle;
 
-            if (node.isRoot() && shell.isSyncing) {
+            if (node.isRoot() && tree.isSyncing) {
                 const t = 0.5 * (1 + Math.sin(OverviewEngine.elapsedTotal / 300));
                 r *= t + 0.01;
 
@@ -1069,7 +1069,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
     }
 
-    drawText(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], shell: AbstractNodeShell, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
+    drawText(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], tree: AbstractNodeTree, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
 
         ctx.fillStyle = "#fff";
 
@@ -1102,7 +1102,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     if (scale < 0.025) continue;
                     // child node
                     const opacity = this.notFound.get(node);
-                    if (!opacity || this.isHoveredNode(node) || this.selection.includes(shell.root)) {
+                    if (!opacity || this.isHoveredNode(node) || this.selection.includes(tree.root)) {
                         ctx.globalAlpha = op;
                     } else {
                         ctx.globalAlpha = opacity.o;
@@ -1112,7 +1112,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         xPos += node.isCollection() ? this.textPadding + 45 : this.textPadding;
                         ctx.textAlign = "left";
 
-                        ctx.fillStyle = this.isNodeHiddenByFeature(node, shell) ? OverviewEngine.hiddenColor : "#fff";
+                        ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#fff";
                         let translate = (fontSize) / 3;
                         ctx.font = `${fontSize}px Arial`;
                         let yName = node.children.length == 0 ? renderData[i].pos.y + (fontSize) / 4 : renderData[i].pos.y - translate;
@@ -1124,10 +1124,10 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                         ctx.fillText(`${node.isCollection() ? limitText(node) + " (+ " + (node.collectionData?.size) + ")" : limitText(node)}  `, xPos, yName);
 
 
-                        ctx.fillStyle = this.isNodeHiddenByFeature(node, shell) ? OverviewEngine.hiddenColor : "#ddd";
+                        ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#ddd";
                         translate = (fontSize2) / (node.children.length == 0 ? 8 : 3);
                         ctx.font = `${fontSize2}px Arial italic`;
-                        const text = this.render.getFeatureText(node, shell);
+                        const text = this.render.getFeatureText(node, tree);
                         if (text) ctx.fillText(text, xPos, yName + translate + (fontSize2 + 4) * 1);
 
 
@@ -1142,7 +1142,7 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
                     let translate = (fontSize) / 4;
                     ctx.font = `${fontSize}px Arial`;
 
-                    let name = (isNodeHovered || this.selection.includes(node)) && shell ? shell.getName() : node.name;
+                    let name = (isNodeHovered || this.selection.includes(node)) && tree ? tree.getName() : node.name;
                     let yName = renderData[i].pos.y + translate;
 
                     var r = renderData[i].r;
@@ -1155,8 +1155,8 @@ export class OverviewEngine implements NodeShellListener<AbstractNode>{
 
                     ctx.fillText(name, xPos, yName);
 
-                    ctx.fillStyle = this.isNodeHiddenByFeature(node, shell) ? OverviewEngine.hiddenColor : "#bbb";
-                    const text = this.render.getFeatureText(node, shell);
+                    ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#bbb";
+                    const text = this.render.getFeatureText(node, tree);
                     if (text) ctx.fillText(text, xPos, yName + (fontSize + 4) * 1);
 
                 }

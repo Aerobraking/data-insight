@@ -6,10 +6,10 @@ import { Workspace } from '@/core/model/workspace/Workspace';
 import AbstractWorkspaceEntry from '@/core/model/workspace/WorkspaceEntry';
 import { InsightFile } from '../model/InsightFile';
 
+/**
+ * For each Mutation Enum the type of the payload is defined here.
+ */
 export type Mutations<S = State> = {
-  // als key für die methode nehmen wir die einzelnen enum types. und da wir die method eh nicht direkt aurufen ala setCounter() sondern per commit("setCounter", parameter ...)
-  // haben wir dann einfach das enum anstelle des strings commit(MutationTypes.SET_COUNTER,parameter ...) 
-
   [MutationTypes.CREATE_WORKSPACE](state: S): void
   [MutationTypes.ADD_ENTRIES](state: S, payload: {
     model: Workspace,
@@ -40,10 +40,17 @@ export type Mutations<S = State> = {
 }
 
 /**
- * Implementiert unser type (interface), hier haben wir dann also den code für jede methode die wir definiert haben im type.
+ * The concrete code for each mutation. 
+ * ToDo: When adding the Undo System, all actions in the app should be represented by a mutation 
+ * and the payload has to have an interface that contains the Command Pattern with undo, redo, etc. methods.
  */
 export const mutations: MutationTree<State> & Mutations = {
 
+  /**
+   * Add the given WorkspaceEntry Instances to the given Workspace.
+   * @param state
+   * @param payload 
+   */
   [MutationTypes.ADD_ENTRIES](state, payload: {
     model: Workspace,
     entries: Array<AbstractWorkspaceEntry>,
@@ -58,6 +65,11 @@ export const mutations: MutationTree<State> & Mutations = {
     }
     payload.model.entries.push(...payload.entries);
   },
+  /**
+   * Removes the given WorkspaceEntry Instances from the Workspace.
+   * @param state 
+   * @param payload 
+   */
   [MutationTypes.REMOVE_ENTRIES](state, payload: {
     model: Workspace,
     listIndices: Array<number>,
@@ -72,16 +84,32 @@ export const mutations: MutationTree<State> & Mutations = {
       }
     });
   },
+  /**
+   * Rearrange the order of the workspaces by passing a list in the payload
+   * that contains a new list with the altered order.
+   * @param state 
+   * @param payload 
+   */
   [MutationTypes.SORT_WORKSPACES](state, payload: {
-    listWorkspaces: Array<Workspace>,
+    listWorkspaces: Array<View>,
   }) {
     state.loadedFile.views = payload.listWorkspaces;
   },
+  /**
+   * Deletes the workspace at the given index.
+   * @param state 
+   * @param payload 
+   */
   [MutationTypes.DELETE_WORKSPACE](state, payload: {
     index: number,
   }) {
     state.loadedFile.views.splice(payload.index, 1);
   },
+  /**
+   * Dublicates the Workspace at the given index at puts it at the end of the workspace list.
+   * @param state 
+   * @param payload 
+   */
   [MutationTypes.COPY_WORKSPACE](state, payload: {
     index: number,
   }) {
@@ -105,6 +133,11 @@ export const mutations: MutationTree<State> & Mutations = {
       }
     );
   },
+  /**
+   * Makes the workspace at the given index active, so it will be visible in the UI.
+   * @param state 
+   * @param payload 
+   */
   [MutationTypes.SELECT_WORKSPACE](state, payload: {
     index: number,
   }) {
@@ -113,26 +146,35 @@ export const mutations: MutationTree<State> & Mutations = {
       entry.isActive = index === payload.index;
     });
   },
+  /**
+   * Puts the given InsightFile Object into the state of the store, which triggers
+   * the complete UI to update to the new state.
+   * @param state 
+   * @param payload 
+   */
   [MutationTypes.LOAD_INSIGHT_FILE](state, payload: {
     insightFile: InsightFile
   }) {
+    /**
+     * We put an empty object as the state first because otherwise
+     * the old views may be used for new objects which leads to errors.
+     * Still need to find a way to fix that
+     */
+    const timeForSinc = performance.now();
+    let empty = new InsightFile();
+    empty.views = [];
+    state.loadedFile = empty;
     setTimeout(function () {
-      const timeForSinc = performance.now();
-      let empty = new InsightFile();
-      empty.views = [];
-      state.loadedFile = empty;
-      setTimeout(function () {
-        state.loadedFile = payload.insightFile;
-
-        console.log(
-          "Time for commiting ins File to Vue: ",
-          (performance.now() - timeForSinc) / 1000,
-          "seconds"
-        );
-
-      }, 10);
-    }, 250);
+      state.loadedFile = payload.insightFile;
+      console.log("Time for commiting ins File to Vue: ",
+        (performance.now() - timeForSinc) / 1000, "seconds"
+      );
+    }, 10);
   },
+  /**
+   * Creates a new workspace and makes it active.
+   * @param state 
+   */
   [MutationTypes.CREATE_WORKSPACE](state) {
     const w = new Workspace();
     let id = 0;
@@ -148,6 +190,11 @@ export const mutations: MutationTree<State> & Mutations = {
       }
     );
   },
+  /**
+   * Show/hides 
+   * @param state 
+   * @param payload 
+   */
   [MutationTypes.SHOW_UI](state, payload) {
     state.loadedFile.settings.showUI = payload.showUI;
   },

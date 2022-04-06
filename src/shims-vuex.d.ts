@@ -1,3 +1,7 @@
+/**
+ * These are some definition to get vuex store working in the project.
+ */
+
 /* eslint-disable  */
 import { ComponentCustomProperties } from 'vue'
 import { Store } from './core/store/store'

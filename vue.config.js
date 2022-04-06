@@ -3,7 +3,7 @@ const WorkerPlugin = require('worker-plugin');
 module.exports = {
   pages: {
     index: 'src/mainWindow.ts',
-    subpage: 'src/mainWorker.ts',
+    subpage: 'src/mainWorkerFileScanner.ts',
     subpage2: 'src/mainWorkerFileWatcher.ts'
   },
   // mode: 'production',

@@ -16,7 +16,7 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
-import * as watcher from "../utils/WatchSystemMain";
+import {FSWatcherConnectorInstance} from "../utils/FileSystemWatcherConnector";
 import { WorkspaceEntryFile } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import * as icons from "../utils/IconHandler";
 
@@ -40,7 +40,7 @@ export default defineComponent({
       _this.$el.getElementsByClassName("file-symbol")[0].style.backgroundImage =
         "url('" + img.src + "')";
     });
-    watcher.FileSystemWatcher.registerPath(this.entry.path, this.watcherEvent);
+    FSWatcherConnectorInstance.registerPath(this.entry.path, this.watcherEvent);
   },
   inject: ["entrySelected"],
   methods: {

@@ -1,7 +1,7 @@
 import Gradient from "@/core/components/overview/Gradient";
 import { AbstractNode } from "./AbstractNode";
 import { AbstractFeatureData } from "./FeatureData";
-import { AbstractNodeShell } from "./AbstractNodeShell";
+import { AbstractNodeTree } from "./AbstractNodeTree";
 import * as d3 from "d3";
 import { Constructor } from "@/core/plugin/Constructor";
 import { FeatureType } from "./FeatureType";
@@ -56,19 +56,19 @@ export abstract class AbstractFeature<N extends AbstractNode = AbstractNode, D e
     public abstract getNewSettingsInstance(): S;
 
     public abstract getNodeRadius(
-        nodes: N, entry: AbstractNodeShell<N>
+        nodes: N, entry: AbstractNodeTree<N>
     ): number;
     
     public abstract isNodeHidden(
-        nodes: N, entry: AbstractNodeShell<N>
+        nodes: N, entry: AbstractNodeTree<N>
     ): boolean;
 
     public abstract getNodeColor(
-        nodes: N, entry: AbstractNodeShell<N>
+        nodes: N, entry: AbstractNodeTree<N>
     ): string | "h";
 
     public abstract getFeatureText(
-        nodes: N, entry: AbstractNodeShell<N>
+        nodes: N, entry: AbstractNodeTree<N>
     ): string;
 
 }
@@ -223,7 +223,7 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
         return gradient;
     }
 
-    public isNodeHidden(nodes: N, entry: AbstractNodeShell<N>): boolean {
+    public isNodeHidden(nodes: N, entry: AbstractNodeTree<N>): boolean {
         return this.getNodeColor(nodes, entry) == "h";
     }
 
@@ -231,7 +231,7 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
 
     public abstract getGradientValue(node: N): number | undefined;
 
-    public getNodeColor(node: N, entry: AbstractNodeShell<N>): string {
+    public getNodeColor(node: N, entry: AbstractNodeTree<N>): string {
 
         if (this.settings.gradientId != this.gradientIDInUse) {
             this.setGradienFunction(this.settings.gradientId)
@@ -257,7 +257,7 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
         return "white";
     }
 
-    public getNodeRadius(node: N, entry: AbstractNodeShell<N>): number {
+    public getNodeRadius(node: N, entry: AbstractNodeTree<N>): number {
         if (node.isRoot()) {
             return 100;
         } else {

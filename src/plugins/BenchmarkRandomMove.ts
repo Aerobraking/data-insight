@@ -18,9 +18,9 @@ export default class RandomNodeMovement extends PluginAdapter {
     public init(): void {
         const model = this.workspace.getModel();
         if (model && doBenchmark) {
-            DataCache.getEngine(model.id).shells.forEach(shell => {
-                shell.customData["heat"] = { v: 100 };
-                shell.nodes.forEach((n: AbstractNode) => {
+            DataCache.getEngine(model.id).trees.forEach(tree => {
+                tree.customData["heat"] = { v: 100 };
+                tree.nodes.forEach((n: AbstractNode) => {
                     const coord = n.customData["co"];
                     if (!n.isRoot() && coord != undefined) {
                         // n.x += 1, n.y += 1;

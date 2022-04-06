@@ -1,18 +1,22 @@
 import pathNjs from "path";
 import { ipcRenderer } from "electron";
 import { FileWatcherSend, FileWatcherUpdate } from "@/filesystem/utils/FileWatcherInterfaces";
+import IPCMessageType from "@/IpcMessageTypes";
 
 interface WatcherListener {
     (type: string, path?: string): void;
 }
 
-interface MapCallbacks extends Map<string, WatcherListener[]> {}
- 
-export class Watcher {
+interface MapCallbacks extends Map<string, WatcherListener[]> { }
+
+/**
+ * This class connects to the FileSystemWatcher instance in the other thread via ipc Messages.
+ */
+class FileSystemWatcherConnector {
 
     private hash: MapCallbacks = new Map();
     private hashRecursive: MapCallbacks = new Map();
-    private static _instance = new Watcher();
+    private static _instance = new FileSystemWatcherConnector();
 
     public reset() {
         this.hash.clear();
@@ -20,17 +24,16 @@ export class Watcher {
 
         let msg: FileWatcherSend = {
             type: "reset",
-            path:"",
-            recursive:false
+            path: "",
+            recursive: false
         };
-        ipcRenderer.send('msg-main-to-file', msg);
-
+        ipcRenderer.send(IPCMessageType.RenderToFileWatcher, msg);
     }
 
     private constructor() {
         const _this = this;
 
-        ipcRenderer.on("msg-file-to-main",
+        ipcRenderer.on(IPCMessageType.FileWatcherToRender,
             function (event: any, payload: FileWatcherUpdate) {
                 _this.callUpdate(payload.path, payload.type, payload.map == "recursive" ? _this.hashRecursive : _this.hash)
             }
@@ -96,7 +99,7 @@ export class Watcher {
             path: path,
             recursive: recursive
         };
-        ipcRenderer.send('msg-main-to-file', msg);
+        ipcRenderer.send(IPCMessageType.RenderToFileWatcher, msg);
 
     }
 
@@ -129,13 +132,11 @@ export class Watcher {
             path: path,
             recursive: recursive
         };
-        ipcRenderer.send('msg-main-to-file', msg);
-
+        ipcRenderer.send(IPCMessageType.RenderToFileWatcher, msg);
 
     }
 
 }
 
-
-export const FileSystemWatcher = Watcher.instance;
-
+// the instance to use
+export const FSWatcherConnectorInstance = FileSystemWatcherConnector.instance;

@@ -2,12 +2,13 @@
   <div ref="el" class="ws-entry-frame-wrapper"></div>
 </template>
 
-<script lang="ts"> 
+<script lang="ts">
 import { defineComponent } from "vue";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc";
 import * as _ from "underscore";
 import { WorkspaceEntryFrame } from "@/core/model/workspace/WorkspaceEntryFrame";
+import { insideRect } from "@/core/utils/GeometryUtils";
 
 _.once(() => {
   WSUtils.Events.registerCallback({
@@ -28,7 +29,7 @@ _.once(() => {
 
             if (
               el != e &&
-              WSUtils.insideRect(coordFrame, coordEntry) &&
+              insideRect(coordFrame, coordEntry) &&
               !selection.includes(el)
             ) {
               addToSelection.push(el);
@@ -47,7 +48,7 @@ _.once(() => {
 export default defineComponent({
   name: "wsentryframe",
   props: {
-    entry: WorkspaceEntryFrame, 
+    entry: WorkspaceEntryFrame,
   },
   inject: ["entrySelected"],
   methods: {

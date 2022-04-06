@@ -180,9 +180,9 @@ export default defineComponent({
       const data = Instance.getData(this);
 
       const checkValue = (n: AbstractNode) => {
-        const v = this.model.getGradientValue(n, n.shell);
+        const v = this.model.getGradientValue(n, n.tree);
         if (data.length > 1 || !n.isRoot()) {
-          // ignore the root when we only have one shell
+          // ignore the root when we only have one tree
           v != undefined && v > 0 && v < min ? (min = v) : "";
           v != undefined && v > 0 && v > max ? (max = v) : "";
         }

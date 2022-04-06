@@ -1,6 +1,6 @@
 <script lang="ts">
 import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
-import { AbstractNodeShell } from "@/core/model/workspace/overview/AbstractNodeShell";
+import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
 import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
 import { Workspace } from "@/core/model/workspace/Workspace";
 import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
@@ -87,7 +87,7 @@ export default defineComponent({
           })
         );
 
-        let listEntries: AbstractNodeShell[] = Instance.getData(this.model.id);
+        let listEntries: AbstractNodeTree[] = Instance.getData(this.model.id);
 
         for (let i = 0; i < listEntries.length; i++) {
           const e = listEntries[i];
@@ -148,7 +148,7 @@ export default defineComponent({
         <template v-else>
           <td>{{ "Node" }}</td>
           <td>{{ e.getPath(false) }}</td>
-          <td>{{ e.shell.root.name }}</td>
+          <td>{{ e.tree.root.name }}</td>
         </template>
       </tr>
     </keep-alive>

@@ -315,6 +315,7 @@ import {
 } from "@/core/plugin/KeyboardShortcut";
 import AbstractPlugin from "@/core/plugin/AbstractPlugin";
 import { WorkspaceEntryFrame } from "@/core/model/workspace/WorkspaceEntryFrame";
+import { insideRect } from "@/core/utils/GeometryUtils";
 
 export default defineComponent({
   el: ".wrapper",
@@ -1476,7 +1477,7 @@ export default defineComponent({
 
         entriesInside.push(
           ...this.getEntries().filter((el) => {
-            return WSUtils.insideRect(
+            return insideRect(
               coordRect,
               comp.getCoordinatesFromElement(el)
             );

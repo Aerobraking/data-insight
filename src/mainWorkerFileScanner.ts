@@ -1,12 +1,16 @@
-
+/**
+ * This is the main entry point for a worker Thread created with a hidden window.
+ * It handles the scanning of the file system for the overview data.
+ */
 import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
-import { FolderSync, FolderSyncResult, FolderFeatureResult } from './filesystem/utils/FileSystemMessages';
+import { FolderSync, FolderSyncResult, FolderFeatureResult, SyncMessageType } from './filesystem/utils/FileSystemMessages';
 import { FeatureDataList, FeatureDataSum, FeatureDataMedian } from './core/model/workspace/overview/FeatureData';
 import path from "path";
 import { Dirent } from 'fs-extra';
 import { FeatureType } from './core/model/workspace/overview/FeatureType';
+import IPCMessageType from './IpcMessageTypes';
 
 /**
  * An Object that can contain any type of FeatureData
@@ -18,28 +22,26 @@ type FolderNodeFeatures = {
     [FeatureType.FolderFileTypes]: FeatureDataList,
 }
 
-
+// outputs every message send via ipc.
 ipcRenderer.on("log", (event, log) => {
     //  console.log("log", log);
 });
 
 /**
- * We scan the complete folder and send back first the folder structure and then the stats for each folder based on their files
+ * We scan the complete folder and send back first the folder structure 
+ * and then the stats for each folder based on their files.
  */
-ipcRenderer.on("msg-main",
+ipcRenderer.on(IPCMessageType.RenderToFileScan,
     function (event: any, payload: any) {
-
-        let sizeAll = 0;
 
         if (payload.type === "folderdeepsync") {
 
             let msg: FolderSync = payload;
 
-            let count = 0;
             // msg.depth
             const maxDepth = msg.depth;
 
-            console.log("Start folder sync");
+            console.log("Start folder syncing");
 
             let listFoldersToSync: FolderSyncResult[] = [];
             let listFoldersToSyncComplete: FolderSyncResult[] = [];
@@ -62,19 +64,17 @@ ipcRenderer.on("msg-main",
 
                     }
 
-                    count += folders.length;
-
                     const depthChildren = depth + 1;
 
                     const isCollection: boolean = (folders.length >= msg.collectionSize && depthChildren > 1) || depthChildren > maxDepth || depthChildren > 100;
 
-                    const e: any = { id: msg.id, childCount: folders.length, path: pathCurrent, type: "foldersync", collection: isCollection };
+                    const e: any = { id: msg.id, childCount: folders.length, path: pathCurrent, type: SyncMessageType.foldersync, collection: isCollection };
                     listFoldersToSync.push(e);
                     listFoldersToSyncComplete.push(e);
 
 
                     if (listFoldersToSync.length > 5) {
-                        listFoldersToSync.forEach(e => ipcRenderer.send('msg-worker', e))
+                        listFoldersToSync.forEach(e => ipcRenderer.send(IPCMessageType.FileScanToRender, e))
                         listFoldersToSync = [];
                     }
 
@@ -94,7 +94,7 @@ ipcRenderer.on("msg-main",
 
             countAndScanFolders(msg.path);
 
-            listFoldersToSync.forEach(e => ipcRenderer.send('msg-worker', e))
+            listFoldersToSync.forEach(e => ipcRenderer.send(IPCMessageType.FileScanToRender, e))
 
             console.log("Scanned folders, now extract features");
 
@@ -106,7 +106,6 @@ ipcRenderer.on("msg-main",
 
             function handleDirectory(pathF: string, files: Dirent[], features: FolderNodeFeatures, sendResults: boolean = true) {
 
-                let mtimeCount = 0;
                 /**
                  * Add the stats from all files together
                  */
@@ -119,47 +118,59 @@ ipcRenderer.on("msg-main",
 
                         const stats = fs.statSync(absolutePath);
 
-                        // size feature
+                        // feature: size feature
                         if (features[FeatureType.FolderSize]) features[FeatureType.FolderSize].s += stats.size;
-                        sizeAll += stats.size;
 
-                        // file quantity feature
+                        // feature: file quantity feature
                         features[FeatureType.FolderQuantity].s += 1;
 
-
-                        // file type feature
+                        // feature: file type feature
                         const fileExtention = path.extname(file.name);
                         if (features[FeatureType.FolderFileTypes].l[fileExtention] == undefined) {
                             features[FeatureType.FolderFileTypes].l[fileExtention] = 0;
                         }
                         features[FeatureType.FolderFileTypes].l[fileExtention] += 1;
-                        if (!isNaN(stats.mtimeMs)) { // last modify time
-                            features[FeatureType.FolderLastModify].m == undefined ? features[FeatureType.FolderLastModify].m = 0 : ""; // init value
+
+                        // feature: last modify time
+                        if (!isNaN(stats.mtimeMs)) {
+                            features[FeatureType.FolderLastModify].m == undefined ? features[FeatureType.FolderLastModify].m = 0 : ""; // init value when undefined
                             features[FeatureType.FolderLastModify].m = features[FeatureType.FolderLastModify].m as number + Math.floor(stats.mtimeMs / 1000);
-                            mtimeCount++;
                             features[FeatureType.FolderLastModify].c += 1;
                         }
-                        //  = isNaN(stats.atimeMs) ?       0 : stats.atimeMs;      // last access
-                        //  = isNaN(stats.birthtimeMs) ?   0 : stats.birthtimeMs;  // creation time
+
+                        // feature: last access time
+                        if (!isNaN(stats.atimeMs)) {
+                            features[FeatureType.FolderLastModify].m == undefined ? features[FeatureType.FolderLastModify].m = 0 : ""; // init value when undefined
+                            features[FeatureType.FolderLastModify].m = features[FeatureType.FolderLastModify].m as number + Math.floor(stats.atimeMs / 1000);
+                            features[FeatureType.FolderLastModify].c += 1;
+                        }
+
+                        // feature: creation time
+                        if (!isNaN(stats.birthtimeMs)) {
+                            features[FeatureType.FolderLastModify].m == undefined ? features[FeatureType.FolderLastModify].m = 0 : ""; // init value when undefined
+                            features[FeatureType.FolderLastModify].m = features[FeatureType.FolderLastModify].m as number + Math.floor(stats.birthtimeMs / 1000);
+                            features[FeatureType.FolderLastModify].c += 1;
+                        }
                     }
                 }
 
                 // get average of the file modify time
                 if (sendResults && features[FeatureType.FolderLastModify] && features[FeatureType.FolderLastModify].m != undefined) {
-
                     calculateMedian(features);
                 }
 
-
-
+                /**
+                 * Send the features to the main thread when 20 feature data objects are created, so the UI is
+                 * updated reguarly when scanning larger folders.
+                 */
                 if (sendResults || updateSteps++ % 20 == 0) {
                     let result: FolderFeatureResult = {
-                        type: "folderfeatures",
+                        type: SyncMessageType.folderfeatures,
                         id: msg.id,
                         features: features,
                         path: pathF
                     }
-                    ipcRenderer.send('msg-worker', result);
+                    ipcRenderer.send(IPCMessageType.FileScanToRender, result);
                 }
 
             }
@@ -200,35 +211,31 @@ ipcRenderer.on("msg-main",
                     /**
                      * Collect data from the folder and all subfolders
                      */
-
                     collectFeaturesRec(pathF, pathF, 0, features);
 
                     calculateMedian(features);
 
                     let result: FolderFeatureResult = {
-                        type: "folderfeatures",
+                        type: SyncMessageType.folderfeatures,
                         id: msg.id,
                         features: features,
                         path: pathF
                     }
 
-                    ipcRenderer.send('msg-worker', result);
+                    ipcRenderer.send(IPCMessageType.FileScanToRender, result);
                 } else {
                     /**
                      * Collect data from the folder 
                      */
-
-
                     let files: Dirent[] = fs.readdirSync(pathF, { withFileTypes: true });
 
                     handleDirectory(pathF, files, features, true);
-
                 }
 
             }
 
-            ipcRenderer.send('msg-worker', {
-                type: "folderdeepsyncfinished",
+            ipcRenderer.send(IPCMessageType.FileScanToRender, {
+                type: SyncMessageType.folderdeepsyncfinished,
                 id: msg.id,
                 path: msg.path
             });
