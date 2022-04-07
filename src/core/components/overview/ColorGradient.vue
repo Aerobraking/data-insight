@@ -5,7 +5,7 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import * as _ from "underscore";
-import Gradient from "./Gradient";
+import Gradient from "@/core/model/workspace/overview/Gradient";
 
 export default defineComponent({
   name: "ColorGradient",
@@ -36,7 +36,7 @@ $color-Selection: rgba(57, 215, 255, 1);
   box-sizing: border-box;
   width: 100%;
   height: 40px;
-  margin: 5px 0 5px 0; 
+  margin: 5px 0 5px 0;
   &:hover {
     cursor: pointer;
     border: 3px solid $color-Selection;

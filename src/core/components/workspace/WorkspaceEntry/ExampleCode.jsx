@@ -1,1 +1,0 @@
-const title = <div><h1>Master Arbeit</h1><h2>Konnie Recker</h2></div>;

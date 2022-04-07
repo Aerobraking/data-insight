@@ -13,6 +13,9 @@ export enum FeatureType {
     FolderFileTypes = "FFA"
 }
 
+/**
+ * An Object that contains FeatureData Instances for the according Feature(types).
+ */
 export type Features = {
     [FeatureType.FolderLastModify]?: FeatureDataMedian,
     [FeatureType.FolderSize]?: FeatureDataSum,

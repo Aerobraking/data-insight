@@ -2,8 +2,9 @@ import { AbstractLink, AbstractNode } from "./AbstractNode";
 import { Simulation, ForceLink } from "d3";
 import AbstractNodeTreeIfc from "./AbstractNodeTreeIfc";
 import { Constructor } from "@/core/plugin/Constructor";
-import { OV_COLUMNWIDTH } from "@/core/components/overview/OverviewEngineValues";
 import { doBenchmark, logTime, logTimeGivenValue } from "@/core/utils/Benchmark";
+
+export const MIN_TREE_COLUMN_WIDTH = 2500;
 
 /**
  * This lists contains an Instacne for each class that extends the AbstractNodeLayout class.
@@ -41,6 +42,8 @@ export enum LayoutType {
  * This way the app can have an abitary number of layouts to switch between.
  */
 export abstract class AbstractNodeLayout {
+
+    public abstract nodesAdded(tree: AbstractNodeTreeIfc, nodesAdded: AbstractNode[]): void;
 
     /**
      * A unique enum for the Layout.
@@ -138,6 +141,10 @@ class NodeLayoutDefault extends AbstractNodeLayout {
 
     }
 
+    public nodesAdded(tree: AbstractNodeTreeIfc, nodesAdded: AbstractNode[]): void {
+
+    }
+
     public id: LayoutType = LayoutType.DEFAULT;
 
     mapSimulation: Map<AbstractNodeTreeIfc, Simulation<AbstractNode, AbstractLink<AbstractNode>>> = new Map();
@@ -169,11 +176,11 @@ class NodeLayoutDefault extends AbstractNodeLayout {
 
         const listNodes = nodes.filter(n => n.getDepth() == parent.getDepth() + 1);
 
-        listNodes.sort((a, b) => a.getY() - b.getY());
+        listNodes.sort((a, b) => a.y - b.y);
 
         let bottom = listNodes.length ? listNodes[listNodes.length - 1] : undefined;
-        let BottomFromList = bottom ? bottom.getY() + 150 : parent.getY();
-        let yfromParent = parent.getY();
+        let BottomFromList = bottom ? bottom.y + 150 : parent.y;
+        let yfromParent = parent.y;
 
 
         node.y = Math.max(yfromParent, BottomFromList);
@@ -185,7 +192,7 @@ class NodeLayoutDefault extends AbstractNodeLayout {
     }
 
     public getNodePosition(n: AbstractNode): { x: number, y: number } {
-        return { x: OV_COLUMNWIDTH * n.depth, y: n.getY() };
+        return { x: MIN_TREE_COLUMN_WIDTH * n.depth, y: n.y };
     }
 
 }
@@ -214,7 +221,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                  * This freezes the simulation of the nodes.
                  */
                 node.fy = node.y; // Fix points
-                let children = node.descendants(false);
+                let children = node.getDescendants(false);
                 for (let i = 0; i < children.length; i++) {
                     const child = children[i];
                     child.customData["initDrag"] = { x: child.x, y: child.y, fx: child.fx, fy: child.fy };
@@ -235,7 +242,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                      * This freezes the simulation of the nodes.
                      */
                     node.fy = node.y = node.customData["initDrag"].y + offset.y;
-                    let children = node.descendants(false);
+                    let children = node.getDescendants(false);
                     for (let i = 0; i < children.length; i++) {
                         const child = children[i];
                         const childInitPos = child.customData["initDrag"];
@@ -249,8 +256,8 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                          * by the dragging of the node.
                          */
                         node.parent.children.forEach(c => {
-                            c.customData["i"] = c.getY();
-                            c.customData["co"] = { y: c.getY(), vy: 0 }
+                            c.customData["i"] = c.y;
+                            c.customData["co"] = { y: c.y, vy: 0 }
                         });
                         /**
                          * Recalculate the layout for the tree.
@@ -263,15 +270,15 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
                 if (node.parent) {
                     node.parent.children.forEach(c => {
-                        c.customData["i"] = c.getY();
-                        c.customData["co"] = { y: c.getY(), vy: 0 }
+                        c.customData["i"] = c.y;
+                        c.customData["co"] = { y: c.y, vy: 0 }
                     });
                 }
 
                 /**
                  * unfreeze the simulation for the nodes.
                  */
-                node.descendants(false).forEach(c => c.customData["co"].vy = 0);
+                node.getDescendants(false).forEach(c => c.customData["co"].vy = 0);
                 if (node.tree) node.tree.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
 
                 /**
@@ -279,7 +286,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
                  */
                 this.nodesUpdated(node.tree as any);
 
-                node.descendants(false).forEach(c => delete c.customData["initDrag"]);
+                node.getDescendants(false).forEach(c => delete c.customData["initDrag"]);
 
                 break;
             default:
@@ -295,6 +302,11 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
     public nodeRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
         this.reheatTree(tree);
         this.updateLayout(tree.root)
+    }
+
+
+    public nodesAdded(tree: AbstractNodeTreeIfc, nodesAdded: AbstractNode[]): void {
+
     }
 
     public nodeUpdated(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void { }
@@ -367,10 +379,10 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
         let bound = n.customData["b"] as number;
 
         // get the y positon of the node
-        let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.getY(), vy: 0 } : n.customData["co"];
+        let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.y, vy: 0 } : n.customData["co"];
 
         // the first child node is placed at top of the bound of the node.
-        let yStart = (coord ? coord.y : n.getY()) - ((bound) / 2);
+        let yStart = (coord ? coord.y : n.y) - ((bound) / 2);
 
         // sort the children based on their given index values.
         n.children.forEach((c, i) => c.customData["i"] == undefined ? c.customData["i"] = i : "");
@@ -505,7 +517,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
 
 
                     } else {
-                        // n.y = n.parent ? n.parent.getY() : n.getY();
+                        // n.y = n.parent ? n.parent.y : n.y;
                     }
 
                 });
@@ -520,7 +532,7 @@ class NodeLayoutStaticDynamic extends AbstractNodeLayout {
     }
 
     public getNodePosition(n: AbstractNode): { x: number, y: number } {
-        return { x: OV_COLUMNWIDTH * n.depth, y: n.getY() };
+        return { x: MIN_TREE_COLUMN_WIDTH * n.depth, y: n.y };
     }
 
 }
@@ -561,7 +573,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                 node.fx = node.x; // Fix points
                 node.customData["initDrag"] = { x: node.x, y: node.y, fx: node.fx, fy: node.fy };
 
-                let descendants = node.descendants(false);
+                let descendants = node.getDescendants(false);
                 for (let i = 0; i < descendants.length; i++) {
                     const child = descendants[i];
                     child.customData["initDrag"] = { x: child.x, y: child.y, fx: child.fx, fy: child.fy };
@@ -580,7 +592,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                     /**
                      * This freezes the simulation of the nodes.
                      */
-                    let children = node.descendants(false);
+                    let children = node.getDescendants(false);
                     for (let i = 0; i < children.length; i++) {
                         const child = children[i];
                         const childInitPos = child.customData["initDrag"];
@@ -595,9 +607,9 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                         * by the dragging of the node.
                         */
                         node.parent.children.forEach(c => {
-                            c.customData["i"] = c.getY();
-                            c.customData["co"].y = c.getY();
-                            c.customData["co"].x = c.getX();
+                            c.customData["i"] = c.y;
+                            c.customData["co"].y = c.y;
+                            c.customData["co"].x = c.x;
                         });
 
                         /**
@@ -611,24 +623,24 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
                 if (node.parent) {
                     node.parent.children.forEach(c => {
-                        c.customData["i"] = c.getY();
-                        c.customData["co"].y = c.getY();
-                        c.customData["co"].x = c.getX();
-                        // c.customData["co"] = { y: c.getY(), vy: 0, x: c.getX(), vx: 0 }
+                        c.customData["i"] = c.y;
+                        c.customData["co"].y = c.y;
+                        c.customData["co"].x = c.x;
+                        // c.customData["co"] = { y: c.y, vy: 0, x: c.x, vx: 0 }
                     });
                 }
 
                 /**
                 * unfreeze the simulation for the nodes.
                 */
-                node.descendants(true).forEach(c => { c.customData["co"].vy = 0, c.customData["co"].vx = 0 });
+                node.getDescendants(true).forEach(c => { c.customData["co"].vy = 0, c.customData["co"].vx = 0 });
                 if (node.tree) node.tree.nodes.forEach(n => { n.fy = undefined; n.fx = undefined });
 
                 /**
                  * Recalculate the layout.
                  */
                 this.nodesUpdated(node.tree as any);
-                node.descendants(false).forEach(c => delete c.customData["initDrag"]);
+                node.getDescendants(false).forEach(c => delete c.customData["initDrag"]);
 
                 break;
             default:
@@ -639,6 +651,10 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     public nodesUpdated(tree: AbstractNodeTreeIfc): void {
         this.reheatTree(tree);
         this.updateLayout(tree.root)
+    }
+
+    public nodesAdded(tree: AbstractNodeTreeIfc, nodesAdded: AbstractNode[]): void {
+
     }
 
     public nodeRemoved(tree: AbstractNodeTreeIfc, parent: AbstractNode, node: AbstractNode): void {
@@ -742,10 +758,10 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         let bound = n.customData["b"] as number;
 
         // get the y positon of the node
-        let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.getY(), vy: 0, x: n.getX(), vx: 0 } : n.customData["co"];
+        let coord = n.customData["co"] == undefined ? n.customData["co"] = { y: n.y, vy: 0, x: n.x, vx: 0 } : n.customData["co"];
 
         // the first child node is placed at top of the bound of the node.
-        let yStart = (coord ? coord.y : n.getY()) - ((bound) / 2);
+        let yStart = (coord ? coord.y : n.y) - ((bound) / 2);
 
         // sort the children based on their given index values.
         n.children.forEach((c, i) => c.customData["i"] == undefined ? c.customData["i"] = i : "");
@@ -894,7 +910,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     }
 
     public getNodePosition(n: AbstractNode): { x: number, y: number } {
-        return { x: n.getX(), y: n.getY() };
+        return { x: n.x, y: n.y };
     }
 
 }

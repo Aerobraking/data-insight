@@ -21,7 +21,6 @@ export default interface AbstractNodeTreeIfc {
     y: number;
     id: number;
     customData: { [any: string]: any };
-    isSimulationActive: boolean;
     nodeAdded(node: any): void;
     loadCollection(node: any, useSavedDepth: boolean): void;
 }

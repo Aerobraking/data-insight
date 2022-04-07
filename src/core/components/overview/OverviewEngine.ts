@@ -9,9 +9,8 @@ import { Tween } from "@tweenjs/tween.js";
 import { Overview, Workspace } from "@/core/model/workspace/Workspace";
 import { AbstractNodeTree, NodeTreeListener } from "@/core/model/workspace/overview/AbstractNodeTree";
 import { ipcRenderer } from "electron";
-import { OV_COLUMNWIDTH } from "./OverviewEngineValues";
 import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature";
-import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
+import { Layouter, MIN_TREE_COLUMN_WIDTH } from "@/core/model/workspace/overview/NodeLayout";
 import { AbstractLink, AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
 import { remove } from "@/core/utils/ListUtils";
@@ -284,7 +283,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                     const listSelection = [];
                     for (let i = 0; i < this.selection.length; i++) {
                         const n = this.selection[i];
-                        listSelection.push(...n.descendants(), ...n.parents());
+                        listSelection.push(...n.getDescendants(), ...n.getAncestors());
                     }
 
                     // this.fireSelectionUpdate();
@@ -351,7 +350,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
         for (let i = 0; i < this.selection.length; i++) {
             const n = this.selection[i];
-            this.selectionBelongingNodes.push(...n.parents(), ...n.descendants());
+            this.selectionBelongingNodes.push(...n.getAncestors(), ...n.getDescendants());
         }
 
         this.overview.highlightSelection && this.selectionBelongingNodes.length > 0 ? this.setFilterList("selection", [... this.selectionBelongingNodes]) : this.setFilterList("selection");
@@ -523,7 +522,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 if (n != _this.nodeHovered) {
                     _this.nodeHovered = n;
                     _this.listnodesHovered = [];
-                    _this.listnodesHovered.push(...n.descendants(), ...n.parents());
+                    _this.listnodesHovered.push(...n.getDescendants(), ...n.getAncestors());
                 }
             } else {
                 _this.nodeHovered = undefined;
@@ -706,8 +705,8 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         const viewportWidth: number = this.size.w;
         const viewportHeight: number = this.size.h;
 
-        const screen = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, OV_COLUMNWIDTH));
-        const screenR = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, -OV_COLUMNWIDTH));
+        const screen = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, MIN_TREE_COLUMN_WIDTH));
+        const screenR = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, -MIN_TREE_COLUMN_WIDTH));
 
         if (screen.x < 0 || screenR.x > viewportWidth || screen.y + 100 < 0 || screen.y - 100 > viewportHeight) {
             return true;

@@ -54,12 +54,12 @@ export default defineComponent({
 
         if (!this.clickTimer) {
           this.clickTimer = setTimeout(() => {
-            engine.setView(zoom ? 0.777 : undefined, e.getX(), e.getY(), 400);
+            engine.setView(zoom ? 0.777 : undefined, e.x, e.y, 400);
           }, 5);
         } else {
           clearTimeout(this.clickTimer);
           this.clickTimer = null;
-          engine.setView(zoom ? 0.777 : undefined, e.getX(), e.getY(), 400);
+          engine.setView(zoom ? 0.777 : undefined, e.x, e.y, 400);
         }
 
         if (this.model.paneSize > move) {

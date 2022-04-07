@@ -1,4 +1,4 @@
-import Gradient from "@/core/components/overview/Gradient";
+import Gradient from "@/core/model/workspace/overview/Gradient";
 import { AbstractNode } from "./AbstractNode";
 import { AbstractFeatureData } from "./FeatureData";
 import { AbstractNodeTree } from "./AbstractNodeTree";
@@ -141,7 +141,6 @@ export abstract class AbstractFeature<N extends AbstractNode = AbstractNode, D e
  */
 export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractNode, D extends AbstractFeatureData = AbstractFeatureData>
     extends AbstractFeature<N, D, FeatureGradientSettings> {
-
 
     // #################
     //

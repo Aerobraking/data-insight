@@ -23,7 +23,8 @@ export interface NodeTreeListener<D extends AbstractNode = AbstractNode> {
 }
 
 /**
- * This class represents 
+ * This class represents a Tree in the overview. The Tree consists
+ * @param
  */
 export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> implements AbstractNodeTreeIfc {
 
@@ -32,7 +33,7 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
         this.path = path;
         this.root = root;
         this.root.tree = this;
-        this.nodes = this.root.descendants();
+        this.nodes = this.root.getDescendants();
     }
 
     /**
@@ -56,29 +57,41 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
     root: N;
 
     /**
-     * Coordinates of the trees root node in the overview canvas.
+     * Coordinates of the trees root node in the overview.
      */
     x: number = 0; y: number = 0;
 
-    // unique id for this tree
+    /**
+     * unique id for this tree.
+     */
     id!: number;
 
-    // The absolute path to the root folder
+    /**
+     * The absolute path to the root folder
+     */
     path: string;
 
+    /**
+     * This property can contain any kind of data. This can be used by other code to store
+     * informations about this tree. For example an implementation of the AbstractNodeLayout
+     * could use that.
+     */
     customData: { [any: string]: any } = {};
 
-    // disables the d3 force simulation when false
-    public isSimulationActive: boolean = true;
-
-    // identifier for json serializing
+    /**
+     * unique identifier for each class implementation for json serializing
+     */
     nt: string; // node type
 
-    // list of all nodes inside this entry. will be set everytime the amount of nodes changes
+    /**
+     * list of all nodes inside this tree. will be set everytime the amount of nodes changes.
+     */
     @Exclude()
     nodes: N[] = [];
 
-    // list of all links between the nodes in this entry. will be set everytime the amount of nodes changes
+    /**
+     * list of all links between the nodes in this tree. will be set everytime the amount of nodes changes.
+     */
     @Exclude()
     links: AbstractLink[] = [];
 
@@ -90,30 +103,56 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
     @Exclude()
     public isSyncing = false;
 
+    /**
+     * The OverviewEngine Instance that renders this tree. Is 
+     * used to inform the Instance when changes in the tree occurs.
+     */
     @Exclude()
     engine: NodeTreeListener<AbstractNode> | undefined;
 
+    /**
+     * Returns a new Instance for the AbstractNode Implementation the tree
+     * uses.
+     * @param name The name for the created node.
+     */
     public abstract createNodeInstance(name: string): N;
 
+    /**
+     * Returns the name that is display in the overview for the tree.
+     */
     abstract getName(): string;
 
+    /**
+     * 
+     * @param node the collection node for what the sub nodes should be loaded.
+     */
+    public abstract loadCollection(node: any): void;
+
+    /**
+     * Setup the list of nodes and the links. Also 
+     * recreate the references to the parent node for all nodes.
+     */
     public initAfterLoading(): void {
 
-        this.nodes = this.root.descendants();
-        this.links = this.root.links();
+        this.nodes = this.root.getDescendants();
+        this.links = this.root.getLinks();
 
         for (let i = 0; i < this.nodes.length; i++) {
             const n = this.nodes[i];
             n.tree = this;
-            for (let j = 0; j < n.getChildren().length; j++) {
-                const c = n.getChildren()[j];
+            for (let j = 0; j < n.children.length; j++) {
+                const c = n.children[j];
                 c.parent = n;
             }
         }
     }
 
-    public abstract loadCollection(node: any): void;
-
+    /**
+     * Updates the name of a node.
+     * @param oldPath The path to the node that should be renamed.
+     * @param newPath The new name for the node. Can also be the path to the node, but the path
+     * has do be the same as the old one, except for the name of the node.
+     */
     public renameByPath(oldPath: string, newPath: string) {
 
         let node = this.getNodeByPath(oldPath);
@@ -129,12 +168,24 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
 
     }
 
+    /**
+     * Adds/Updates the Featues for the given nodes.
+     * @param list A list of Features with their target nodes identified by the path.
+     */
     public addFeaturesList(list: { path: string, features: Features }[]) {
         list.forEach(f => this.addFeatures(f.path, f.features, false));
         if (list.length > 0) this.featuresUpdated();
     }
 
-    public addFeatures(path: string, features: Features, fireUpdate = true) {
+    /**
+     * Set the given Features to the node identified by the given path. 
+     * The Features of the ascendent nodes are updates as well. When the node is not found
+     * nothing is done with the Features.
+     * @param path the path that idenfies the node where the features will be set.
+     * @param features The FeatureData that will be set to the node.
+     * @param fireUpdate fire an update to the OverviewEngine and the Layouter. true by default.
+     */
+    public addFeatures(path: string, features: Features, fireUpdate = true): void {
 
         let node = this.getNodeByPath(path);
         if (node) {
@@ -154,8 +205,8 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
                  */
                 const childData = new Map<FeatureType, any[]>();
 
-                for (let i = 0; i < parent.getChildren().length; i++) {
-                    const c = parent.getChildren()[i];
+                for (let i = 0; i < parent.children.length; i++) {
+                    const c = parent.children[i];
                     let childFeatures = c.featuresRecursive;
                     if (childFeatures) {
 
@@ -217,19 +268,15 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
     }
 
     /**
-    * 
-    * @param nodePath Absolute path 
-    * @param isCollection 
-    * @param collectionSize 
-    * @returns 
-    */
-    public addNodesByPaths(paths: { path: string, collection: { size: number, depth: number } | undefined }[], fireUpdate: boolean = true) {
+     * Adds multiple nodes by the given node description data. 
+     * @param nodeDescriptions 
+     * @param fireUpdate fire an update to the OverviewEngine and the Layouter. true by default.
+     */
+    public addNodesByPaths(nodeDescriptions: { path: string, collection: { size: number, depth: number } | undefined }[], fireUpdate: boolean = true) {
 
         const nodesAdded: N[] = [];
 
-        paths.forEach(p => {
-            nodesAdded.push(...this.addNodeByPath(p.path, p.collection, false));
-        });
+        nodeDescriptions.forEach(p => nodesAdded.push(...this.addNodeByPath(p.path, p.collection, false)));
 
         if (nodesAdded.length > 0 && fireUpdate) {
             this.updateNodeLists();
@@ -238,19 +285,20 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
     }
 
     /**
-     * 
-     * @param nodePath Absolute path 
-     * @param isCollection 
-     * @param collectionSize 
-     * @returns 
+     * Adds a node to the tree. The Node is identified by a path from the root node to the new node.
+     * All nodes that does not exists in this path will be created.
+     * @param pathToNode the path that describes the node. Example: "C/Programs/Adobe/Photoshop" 
+     * @param collection Defines the information for the node when it is a collection node. Is undefined when it is not a collection.
+     * @param fireUpdate fire an update to the OverviewEngine and the Layouter. true by default.
+     * @returns List of all created nodes.
      */
-    public addNodeByPath(nodePath: string, collection: { size: number, depth: number } | undefined, fireUpdate: boolean = true): N[] {
+    public addNodeByPath(pathToNode: string, collection: { size: number, depth: number } | undefined, fireUpdate: boolean = true): N[] {
 
         const nodesAdded: N[] = [];
 
-        nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
-        if (nodePath == ".") return nodesAdded;
-        let folders: string[] = nodePath.split("/");
+        pathToNode = path.normalize(path.relative(this.path, pathToNode)).replace(/\\/g, "/");
+        if (pathToNode == ".") return nodesAdded;
+        let folders: string[] = pathToNode.split("/");
 
         let foldersCreated = false;
 
@@ -258,19 +306,19 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
         for (let i = 0; i < folders.length; i++) {
             const f = folders[i];
 
-            let childFound = currentFolder.getChildren().find(c => c.name == f);
+            let childFound = currentFolder.children.find(c => c.name == f);
             if (childFound) {
                 if (childFound.isCollection()) return nodesAdded; // do not add nodes to a collection
-                // Child was found, go to next subfolder
+                // Child was found, go to next sub node
             } else {
-                // Create new sub folder
+                // Create new sub node
                 foldersCreated = true;
                 childFound = this.createNodeInstance(f);
                 currentFolder.addChild(childFound);
                 nodesAdded.push(childFound);
 
                 if (i == folders.length - 1) {
-                    // the sumbmitted folder
+                    // the sumbmitted node
                     if (collection && collection.size > 0) childFound.collectionData = collection;
                 }
             }
@@ -285,21 +333,16 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
 
     }
 
-    public removeNodeByPath(relativePath: string) {
+    /**
+     * Removes the node that is identified by the given path. When the node is not found, nothing is done.
+     * @param nodePath the path that describes the node. Example: "C/Programs/Adobe/Photoshop" The Node 
+     * Photoshop will be removed in this case.
+     */
+    public removeNodeByPath(nodePath: string) {
 
-        relativePath = path.normalize(path.relative(this.path, relativePath)).replace(/\\/g, "/");
-        let folders: string[] = relativePath.split("/");
-        let currentFolder: N | undefined = this.root;
+        let currentFolder: N | undefined = this.getNodeByPath(nodePath);
 
-        s:
-        for (let i = 0; i < folders.length; i++) {
-            const f = folders[i];
-            if (currentFolder) {
-                currentFolder = currentFolder.getChildren().find(c => c.name == f);
-            }
-        }
-
-        // remove folder if found
+        // remove node if it exists.
         if (currentFolder && currentFolder.parent) {
             currentFolder.parent.removeChild(currentFolder);
             this.updateNodeLists();
@@ -307,11 +350,12 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
     }
 
     /**
-     * 
-     * @param nodePath  Absolute path 
+     * Returns the node 
+     * @param nodePath the path that describes the node. Example: "C/Programs/Adobe/Photoshop"
      * @returns 
      */
     public getNodeByPath(nodePath: string): N | undefined {
+
         nodePath = path.normalize(path.relative(this.path, nodePath)).replace(/\\/g, "/");
         if (nodePath == ".") return this.root;
         let folders: string[] = nodePath.split("/");
@@ -321,7 +365,7 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
         for (let i = 0; i < folders.length; i++) {
             const f = folders[i];
 
-            let childFound: N | undefined = currentFolder.getChildren().find(c => c.name == f);
+            let childFound: N | undefined = currentFolder.children.find(c => c.name == f);
             if (childFound) {
                 currentFolder = childFound;
             } else {
@@ -333,59 +377,85 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
 
     }
 
+    /**
+     * Set the coordinates for this tree, hence for the root node of the tree, in the overview. 
+     * @param c 
+     */
     public setCoordinates(c: { x: number, y: number }) {
         this.x = c.x;
         this.y = c.y;
     }
 
+    /**
+     * Calles the featuresUpdated() in the OverviewEngine and the Layouter Instances.
+     */
     featuresUpdated() {
         this.engine?.featuresUpdated();
         Layouter.featuresUpdated(this);
     }
 
+    /**
+     * Calls the nodeUpdate() in the OverviewEngine and the Layouter Instances.
+     * @param n 
+     */
     nodeUpdate(n: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
         Layouter.nodeUpdated(this, n.parent as AbstractNode, n);
     }
 
-    nodeRemoved(n: N) {
+    /**
+     * Calls the nodeRemoved() in the OverviewEngine and the Layouter Instances.
+     * @param node 
+     */
+    nodeRemoved(node: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
-        Layouter.nodeRemoved(this, n.parent as AbstractNode, n);
+        Layouter.nodeRemoved(this, node.parent as AbstractNode, node);
     }
 
-    nodesRemoved(n: N) {
+    /**
+     * Calls the nodesRemoved() in the OverviewEngine and the Layouter Instances.
+     * @param node 
+     */
+    nodesRemoved(node: N) {
         this.updateNodeLists();
         this.engine?.nodesUpdated();
-        Layouter.nodesRemoved(this, n.parent as AbstractNode, n);
+        Layouter.nodesRemoved(this, node.parent as AbstractNode, node);
     }
 
-    nodeAdded(c: N) {
-        this.engine?.nodeAdded(c);
-        Layouter.nodeAdded(this, c.parent as AbstractNode, c);
+    /**
+     * Calls the nodeAdded() in the OverviewEngine and the Layouter Instances.
+     * @param node 
+     */
+    nodeAdded(node: N) {
+        this.engine?.nodeAdded(node);
+        Layouter.nodeAdded(this, node.parent as AbstractNode, node);
     }
 
-    nodesAdded(c: N[]) {
-        this.engine?.nodesAdded(c);
-
+    /**
+     * Calls the nodesAdded() in the OverviewEngine and the Layouter Instances.
+     * @param nodesAdded 
+     */
+    nodesAdded(nodesAdded: N[]) {
+        this.engine?.nodesAdded(nodesAdded);
+        Layouter.nodesAdded(this, nodesAdded);
     }
 
     /**
      * Updates the list of all nodes and links for this entry.
      * Assign all nodes to the force simulation in case of new created nodes.
-     * @param reheat sets the alpha to one
      */
     private updateNodeLists() {
-        this.nodes = this.root.descendants();
-        this.links = this.root.links();
+        this.nodes = this.root.getDescendants();
+        this.links = this.root.getLinks();
         Layouter.treeUpdated(this);
     }
 
     /**
-     * Updates the quadtree.
+     * Updates the quadtree on each tick so the quadtree contains the current coordinates for each node.
      */
     tickTree() {
-        this.quadtree = d3.quadtree<N>().x(n => n.getX()).y(n => n.getY()).addAll(this.nodes);
+        this.quadtree = d3.quadtree<N>().x(n => n.x).y(n => n.y).addAll(this.nodes);
     }
 }

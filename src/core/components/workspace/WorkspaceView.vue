@@ -1261,24 +1261,6 @@ export default defineComponent({
        */
       if (!e.altKey && !e.shiftKey && !e.ctrlKey) {
         switch (e.key) {
-          // case "a":
-          //   const views = this.getSelectedEntries();
-          //   const models = this.getModelEntriesFromView(views);
-
-          //   for (let i = 0; i < models.length; i++) {
-          //     const m = models[i];
-          //     const v = views[i];
-
-          //     if (m instanceof WorkspaceEntryAspectRatio) {
-          //       if (m.aspectratio) {
-          //         let w: number = Number(v.offsetWidth);
-          //         v.style.width = w + "px";
-          //         v.style.height = w * m.aspectratio.ratio + "px";
-          //       }
-          //     }
-          //   }
-          //   this.updateUI();
-          //   break;
           case "1":
           case "2":
           case "3":

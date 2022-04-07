@@ -535,8 +535,8 @@ export default defineComponent({
         case "ArrowUp":
           if (node && node.parent) {
             let childrenSorted = node.parent
-              .getChildren()
-              .sort((a, b) => a.getY() - b.getY());
+              .children
+              .sort((a, b) => a.y - b.y);
             let i = childrenSorted.indexOf(node);
             if (i - 1 < 0) {
               if (node.parent.parent) {
@@ -545,7 +545,7 @@ export default defineComponent({
                 node.parent.parent.children.forEach((p) =>
                   childrenSorted.push(...p.children)
                 );
-                childrenSorted.sort((a, b) => a.getY() - b.getY());
+                childrenSorted.sort((a, b) => a.y - b.y);
                 i = childrenSorted.indexOf(node);
               }
             }
@@ -579,8 +579,8 @@ export default defineComponent({
         case "ArrowDown":
           if (node && node.parent) {
             let childrenSorted = node.parent
-              .getChildren()
-              .sort((a, b) => a.getY() - b.getY());
+              .children
+              .sort((a, b) => a.y - b.y);
             let i = childrenSorted.indexOf(node);
             if (i + 1 > childrenSorted.length - 1) {
               if (node.parent.parent) {
@@ -589,7 +589,7 @@ export default defineComponent({
                 node.parent.parent.children.forEach((p) =>
                   childrenSorted.push(...p.children)
                 );
-                childrenSorted.sort((a, b) => a.getY() - b.getY());
+                childrenSorted.sort((a, b) => a.y - b.y);
                 i = childrenSorted.indexOf(node);
               }
             }
@@ -608,10 +608,10 @@ export default defineComponent({
           }
           break;
         case "ArrowRight":
-          if (node && node.getChildren().length > 0) {
+          if (node && node.children.length > 0) {
             Instance.getEngine(this.id).updateSelection(
               false,
-              node.getChildren()[0]
+              node.children[0]
             );
             if (e.ctrlKey)
               Instance.getEngine(this.id).zoomToFitSelection(
@@ -751,7 +751,7 @@ export default defineComponent({
               const n = entry.nodes[j];
 
               if (n.name.toLowerCase().includes(lowercase)) {
-                nodesMatching.push(...n.parents(true));
+                nodesMatching.push(...n.getAncestors(true));
               }
             }
           }
@@ -770,7 +770,7 @@ export default defineComponent({
           if (n.isCollection()) {
             n.tree.loadCollection(n, useSavedDepth);
           } else {
-            n.descendants()
+            n.getDescendants()
               .filter((c) => c.isCollection())
               .forEach((c) => n.tree?.loadCollection(c, useSavedDepth));
           }
@@ -802,7 +802,7 @@ export default defineComponent({
       if (Instance.getEngine(this.id)) {
         let n: FolderNode = Instance.getEngine(this.id)
           .selection[0] as FolderNode;
-        this.addFolders([n.getPath()], { x: n.getX(), y: n.getY() });
+        this.addFolders([n.getPath()], { x: n.x, y: n.y });
       }
     },
     addEntries(entries: FolderNodeTree[], pos: { x: number; y: number }) {

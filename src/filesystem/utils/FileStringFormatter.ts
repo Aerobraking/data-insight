@@ -15,15 +15,7 @@ export const filesizeFormat = (value: number) => {
 
   return value + " Bytes";
 };
-function sformat(s: number) {
-  var fm = [
-    Math.floor(s / 60 / 60 / 24), // DAYS
-    Math.floor(s / 60 / 60) % 24, // HOURS
-    Math.floor(s / 60) % 60, // MINUTES
-    s % 60 // SECONDS
-  ];
-  return fm.map((v: number, i: number) => { return ((v < 10) ? '0' : '') + v; }).join(':');
-}
+
 export const timeFormat = (value: number) => {
   value = Math.round(value); 
   if (value < 0) {

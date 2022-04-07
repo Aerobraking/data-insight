@@ -189,7 +189,7 @@ export default defineComponent({
       };
 
       if (this.selection != undefined) {
-        [...(this.selection as AbstractNode).descendants()].forEach((n) =>
+        [...(this.selection as AbstractNode).getDescendants()].forEach((n) =>
           checkValue(n)
         );
       } else {
