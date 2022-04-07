@@ -1,6 +1,8 @@
 import { FeatureDataMedian, FeatureDataSum, FeatureDataList } from "./FeatureData";
 
 /**
+ * EXTEND APP
+ * 
  * Unique identifier for each Feature
  */
 export enum FeatureType {

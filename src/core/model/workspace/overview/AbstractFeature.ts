@@ -12,6 +12,14 @@ export const FeatureInstanceList: {
     [K in FeatureType]?: AbstractFeature;
 } = {};
 
+/**
+ * This Decorator has to be added to all Implementations of the AbstractFeature class.
+ * It collects the classes so the Features can be created automatically for using them
+ * in the Overview. It creates the Vue Components for each Feature in the OverviewView
+ * and the FeatureSettings for each feature and add them to a new created Overview Instance
+ * so the settings can be used for the FeatureViews.
+ * @returns 
+ */
 export function FeatureViewDecorator() {
     return function <T extends Constructor<AbstractFeature>>(target: T) {
         if (FeatureConstructorList) {
@@ -23,6 +31,10 @@ export function FeatureViewDecorator() {
     };
 }
 
+/**
+ * Creates and returns a list with one Instance of all AbstractFeature implementations.
+ * @returns 
+ */
 export function internalCreateNewFeatureList(): AbstractFeature[] {
     let list = [];
     for (let i = 0; i < FeatureConstructorList.length; i++) {
@@ -36,8 +48,37 @@ export type FeatureSettingsList = {
     [K in FeatureType]?: AbstractFeatureSettings;
 }
 
+/**
+ * A feature needs a Settings class which controls how the Feature
+ * visualize the nodes. Different Features can use the same settings class
+ * when it fits their requirements
+ */
 export abstract class AbstractFeatureSettings { }
 
+/**
+ * This Gradient Settings can be used
+ */
+export class FeatureGradientSettings extends AbstractFeatureSettings {
+
+    constructor(slider0: number,
+        slider1: number,) {
+        super();
+        this.sliderRange = [slider0, slider1];
+    }
+
+    sliderRange: [number, number];
+    gradientId: string = "interpolateWarm";
+    public autoSetRange: boolean = false;
+}
+
+/**
+ * The abstract class for each Feature.
+ * A Feature is some kind of information that is available for all nodes. For example the amount
+ * of files that are in each (Folder)Node.
+ * A Feature needs a settings class which describes how the feature should visualize the Nodes. 
+ * The settings usually should be editable by the user. 
+ * The class is then responsible to return the size, color, text and visibility for each node.
+ */
 export abstract class AbstractFeature<N extends AbstractNode = AbstractNode, D extends AbstractFeatureData = AbstractFeatureData, S extends AbstractFeatureSettings = AbstractFeatureSettings> {
 
     settings!: S;
@@ -52,40 +93,52 @@ export abstract class AbstractFeature<N extends AbstractNode = AbstractNode, D e
         this.settings = this.getNewSettingsInstance();
     }
 
+    /**
+     * When the Feature Data is generated for a node, we need to create an "empty" data object for using
+     * it in the node.
+     */
     public abstract getNewDataInstance(): D;
+    /**
+     * When an Overview is created, it needs to get the default settings for all features, so these settings
+     * can then be used in the Feature Views. 
+     */
     public abstract getNewSettingsInstance(): S;
 
     public abstract getNodeRadius(
-        nodes: N, entry: AbstractNodeTree<N>
+        node: N, tree: AbstractNodeTree<N>
     ): number;
-    
+
+    /**
+     * 
+     * @param node 
+     * @param tree 
+     * @returns true: the node will be partially hidden in the overview, false: the node will be displayed normally.
+     */
     public abstract isNodeHidden(
-        nodes: N, entry: AbstractNodeTree<N>
+        node: N, tree: AbstractNodeTree<N>
     ): boolean;
 
+    /**
+     * 
+     * @param node 
+     * @param tree 
+     * @returns a color string that is usable by the Canvas API of Chrome. "h" means the node should be hidden.
+     */
     public abstract getNodeColor(
-        nodes: N, entry: AbstractNodeTree<N>
+        node: N, tree: AbstractNodeTree<N>
     ): string | "h";
 
     public abstract getFeatureText(
-        nodes: N, entry: AbstractNodeTree<N>
+        node: N, tree: AbstractNodeTree<N>
     ): string;
 
 }
 
-export class FeatureGradientSettings extends AbstractFeatureSettings {
-
-    constructor(slider0: number,
-        slider1: number,) {
-        super();
-        this.sliderRange = [slider0, slider1];
-    }
-
-    sliderRange: [number, number];
-    gradientId: string = "interpolateWarm";
-    public autoSetRange: boolean = false;
-}
-
+/**
+ * When your FeatureData has a single numerical value you want to visualize with a ColorGradient,
+ * you can extend this class. It provides all the code for it and you only need to implement
+ * the numerical value you want to use and the Slider Range.
+ */
 export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractNode, D extends AbstractFeatureData = AbstractFeatureData>
     extends AbstractFeature<N, D, FeatureGradientSettings> {
 
@@ -95,7 +148,6 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
     // The Following static functions are extracted from the NoUISlider Package (and modified for being usable in my code) for rectrieving the percentage value of the slider.
     //
     // #################
-
     static subRangeRatio(pa: number, pb: number) {
         return 100 / (pb - pa);
     }
@@ -122,9 +174,9 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
     }
 
     /**
-     * Gibt den index zurück des nächst größeren xVal.
-     * @param {*} value  Der Wert in Bytes
-     * @param {*} arr Konkrete Byte Werte 
+     * Returns the index for the next greate xVal Value.
+     * @param {*} value  The value in Byte
+     * @param {*} arr The Byte value 
      * @returns 
      */
     static getJ(value: number, arr: number[]) {
@@ -186,9 +238,11 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
         [key: string]: number;
     };
 
+    /**
+     * The List of Gradients styles the user can use.
+     */
     public gradients: Gradient[] = [
         new Gradient((n: number) => {
-            // let value = n * 255 * 0.3;
             const value = 215;
             return `rgb(${value},${value},${value})`;
         }, "default"),
@@ -202,7 +256,7 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
         ),
         new Gradient(d3.interpolateYlOrRd, "interpolateYlOrRd", true),
         new Gradient(d3.interpolateViridis, "interpolateViridis", true),
-        new Gradient(d3.interpolateRdBu, "interpolateRdBu", !true), 
+        new Gradient(d3.interpolateRdBu, "interpolateRdBu", !true),
         new Gradient(d3.interpolateYlGn, "interpolateYlGn", true),
     ];
 
@@ -212,9 +266,14 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
     public abstract readonly readableName: string;
     private gradientIDInUse: string | undefined;
 
+    /**
+     * Changes the active gradient that is used for coloring the node in the getNodeColor() method.
+     * @param name the id of the gradient that is stored inside the Gradient Objects.
+     * @returns The now active Gradient Object.
+     */
     public setGradienFunction(name: string): Gradient {
         let gradient: Gradient | undefined = this.gradients.find((g) => g.id == name);
-        gradient = gradient ? gradient : this.gradients[0]; 
+        gradient = gradient ? gradient : this.gradients[0];
         if (gradient) this.colorFunction = (n: number) => {
             return (gradient as Gradient).getColor(n);
         };;
@@ -231,6 +290,15 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
 
     public abstract getGradientValue(node: N): number | undefined;
 
+    /**
+     * It takes the numerical value of the feature data of the node and converts it
+     * to the range inside the gradient. The "Stepping" of the values in the noUislider may
+     * not be linear so we use the toStepping() from NoUISlider to convert the value so it gets
+     * the correct value between 0 ... 100% in the color gradient.
+     * @param node 
+     * @param entry 
+     * @returns 
+     */
     public getNodeColor(node: N, entry: AbstractNodeTree<N>): string {
 
         if (this.settings.gradientId != this.gradientIDInUse) {
@@ -257,20 +325,6 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
         return "white";
     }
 
-    public getNodeRadius(node: N, entry: AbstractNodeTree<N>): number {
-        if (node.isRoot()) {
-            return 100;
-        } else {
-            let abs = entry.root.getFeatureValue(FeatureType.FolderSize);
-            let part = node.getFeatureValue(FeatureType.FolderSize);
-            if (abs != undefined && part != undefined) {
-                let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
-                r = 100 * 0.1 + r * 0.9;
-                return Math.max(r, 16);
-            }
-        }
-        return 16;
-    }
 }
 
 

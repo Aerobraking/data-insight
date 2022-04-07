@@ -69,7 +69,8 @@ export class Overview {
 }
 
 /**
- * 
+ * Represents one Workspace inside an InsightFile. A Workspace is a list of WorkspaceEntry Objects
+ * that can be placed on an infinite sized zoomable and pannable area.
  */
 export class Workspace extends View {
 
@@ -80,32 +81,39 @@ export class Workspace extends View {
 
     @Type(() => Overview)
     overview: Overview = new Overview();
+
     /**
      * Transformation of the view of the workspace (a div element) 
      * (the left pane where the workspace entries are displayed)
      */
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.266 }
+
     /**
      * percentage (0-100) of the size of the left pane in the workspace UI.
      */
     paneSize: number = 75;
+
     /**
      * wether the bookmarks are shown or hidden.
      */
     showBookmarks: boolean = true;
+
     /**
      * wether the settings for the features are shown or hidden in the overview ui.
      */
     showFeatureSettings: boolean = true;
+
     /**
      * true: paneSize<100, the overview UI is visible
      * false: paneSize=100, overview UI is not visible
      */
     overviewOpen: boolean = true;
+
     /**
      * The last path were files were selected for adding to the workspace.
      */
     folderSelectionPath: string | undefined = undefined;
+
     /**
      * used for loading the class again from json data with the class-transformer
      */

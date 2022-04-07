@@ -14,6 +14,7 @@ import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature
 import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
 import { AbstractLink, AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
+import { remove } from "@/core/utils/ListUtils";
 
 export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
@@ -420,6 +421,8 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     public dispose() {
         this.divObserver.disconnect();
+
+        remove(OverviewEngine.instances, this);
     }
 
     public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeTree[] | undefined = this._trees): ElementDimension {
@@ -462,8 +465,8 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         return d;
     }
 
-    public zoomToFitSelection(duration: number = 400, useShell: boolean = true, padding: number = 1.3) {
-        this.setViewBox(this.getNodesBoundingBox(padding, this.selection.length > 0 ? useShell ? [this.selection[0].tree as AbstractNodeTree] : this.selection[0] : undefined), duration);
+    public zoomToFitSelection(duration: number = 400, useTree: boolean = true, padding: number = 1.3) {
+        this.setViewBox(this.getNodesBoundingBox(padding, this.selection.length > 0 ? useTree ? [this.selection[0].tree as AbstractNodeTree] : this.selection[0] : undefined), duration);
     }
 
     public zoomToFit(duration: number = 400) {
@@ -650,7 +653,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
         Layouter.tickLayout(this._trees, OverviewEngine.delta);
         if (doBenchmark) logTime("PrepareRender");
-        this._trees.forEach(s => s.tickShell());
+        this._trees.forEach(s => s.tickTree());
 
         if (this.colorTransitionElapsed != undefined) {
             this.colorTransitionElapsed += OverviewEngine.delta;
@@ -819,11 +822,8 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         return Math.max(min, Math.min(value / d3.zoomTransform(this.canvas).k, max));
     }
 
-    private getRadius(node: AbstractNode, padding: number = 0, weight: number = 0.95): number {
-        let scale = this.transform.k > 1 ? 1 : this.transform.k;
-        var r = node.getRadius() + padding;
-        r = (r * weight) + (r / scale) * (1 - weight);
-        return Math.max(0.1, r);
+    private getNodeRadius(node: AbstractNode, padding: number = 0, weight: number = 0.95): number {
+        return this.render.getNodeRadius(node,node.tree as AbstractNodeTree);
     }
 
     private isHoveredNode(n: any) {
@@ -899,7 +899,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     prepareRenderData(nodes: AbstractNode[], links: AbstractLink[], renderData: { color: any; pos: { x: number; y: number; }; r: number; culling: boolean; }[], renderDataLinks: { culling: boolean; }[]) {
         nodes.forEach((n, i) => {
-            renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getRadius(n, 0, 0.99), culling: this.enableCulling ? this.nodeCulling(n) : false };
+            renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getNodeRadius(n, 0, 0.99), culling: this.enableCulling ? this.nodeCulling(n) : false };
         });
         links.forEach((l, i) => {
             renderDataLinks[i] = { culling: this.enableCulling ? this.linkCulling(l) : false };

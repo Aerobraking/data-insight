@@ -260,7 +260,7 @@ export default defineComponent({
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
       setTimeout(() => {
-      this.model.overviewOpen = newValue < 100;
+        this.model.overviewOpen = newValue < 100;
       }, 500);
     },
     "selection.y": function (newValue: number, oldValue: number) {
@@ -380,7 +380,7 @@ export default defineComponent({
      */
     this.wsListener = {
       prepareFileSaving(): void {
-        Instance.transferData(_this.model);
+        Instance.restoreData(_this.model);
       },
     };
 
@@ -507,7 +507,7 @@ export default defineComponent({
       const e = Instance.getEngine(this.id);
       if (e) {
         if (e.selection.length > 0 && e.selection[0].isRoot()) {
-          // update the data 
+          // update the data
           remove(l, e.selection[0].tree);
           Instance.setData(this.id, l);
           // tell the engine that we removed entries and clear selection
@@ -655,11 +655,7 @@ export default defineComponent({
             }
             if (doBenchmark) logTime("layout");
 
-            for (
-              let i = 0;
-              i < Instance.getEngine(this.id).trees.length;
-              i++
-            ) {
+            for (let i = 0; i < Instance.getEngine(this.id).trees.length; i++) {
               const l = Instance.getEngine(this.id).trees[i].nodes.length;
               console.log(i, l);
             }

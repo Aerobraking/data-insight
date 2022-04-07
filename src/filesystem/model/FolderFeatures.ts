@@ -26,17 +26,34 @@ export class NodeFeatureSize extends AbstractFeatureGradient<FolderNode, Feature
 
     constructor() {
         super({
-            min: 0, // kb
-            20: 1024 * 1024 * 32, // mb
-            40: 1024 * 1024 * 256, // mb
-            60: 1024 * 1024 * 1024, // gb
-            80: 1024 * 1024 * 1024 * 16, // gb
-            max: 1024 * 1024 * 1024 * 512, // tb
+            min: 0,                         // 0 MB
+            20: 1024 * 1024 * 32,           // 32 MB
+            40: 1024 * 1024 * 256,          // 256 MB
+            60: 1024 * 1024 * 1024,         // 1 GB
+            80: 1024 * 1024 * 1024 * 16,    // 16 GB
+            max: 1024 * 1024 * 1024 * 512,  // 512 GB
         });
     }
 
+    /**
+     * We use the Folder Size
+     * @param node 
+     * @param entry 
+     * @returns 
+     */
     public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
-        return 0;
+        if (node.isRoot()) {
+            return 100;
+        } else {
+            let abs = entry.root.getFeatureValue(FeatureType.FolderSize);
+            let part = node.getFeatureValue(FeatureType.FolderSize);
+            if (abs != undefined && part != undefined) {
+                let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
+                r = 100 * 0.1 + r * 0.9;
+                return Math.max(r, 16);
+            }
+        }
+        return 16;
     }
 
     getGradientValue(node: FolderNode): number | undefined {
@@ -48,6 +65,7 @@ export class NodeFeatureSize extends AbstractFeatureGradient<FolderNode, Feature
         const data = nodes.getFeatureValue(FeatureType.FolderSize);
         return (data ? filesizeFormat(data.s) : "- MB");
     }
+
 }
 
 @FeatureViewDecorator()
@@ -70,19 +88,37 @@ export class NodeFeatureLastModifiy extends AbstractFeatureGradient<FolderNode, 
 
     constructor() {
         super({
-            min: 0, // kb
-            20: 60 * 60, // 1 Stunde
-            40: 60 * 60 * 24, // 1 Tag
-            60: 60 * 60 * 24 * 30, // 1 Monat
-            80: 60 * 60 * 24 * 365, // 1 Jahr
-            max: 60 * 60 * 24 * 365 * 10, // 10 Jahre
+            min: 0,
+            20: 60 * 60, // 1 Hours
+            40: 60 * 60 * 24, // 1 Day
+            60: 60 * 60 * 24 * 30, // 1 Month
+            80: 60 * 60 * 24 * 365, // 1 Year
+            max: 60 * 60 * 24 * 365 * 10, // 10 Years
         });
 
         this.gradients.forEach(g => g.reverse = !g.reverse);
     }
 
+    /**
+     * We use the Folder Size for determining the node radius. The area of the circle is relative
+     * to the Folder Size of the root node, which has a radius of 100.
+     * @param node 
+     * @param entry 
+     * @returns 
+     */
     public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
-        return 0;
+        if (node.isRoot()) {
+            return 100;
+        } else {
+            let abs = entry.root.getFeatureValue(FeatureType.FolderSize);
+            let part = node.getFeatureValue(FeatureType.FolderSize);
+            if (abs != undefined && part != undefined) {
+                let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
+                r = 100 * 0.1 + r * 0.9;
+                return Math.max(r, 16);
+            }
+        }
+        return 16;
     }
 
     getGradientValue(node: FolderNode): number | undefined {
@@ -93,7 +129,7 @@ export class NodeFeatureLastModifiy extends AbstractFeatureGradient<FolderNode, 
     public getFeatureText(nodes: FolderNode, entry: AbstractNodeTree<FolderNode>): string {
         const data = nodes.getFeatureValue(FeatureType.FolderLastModify);
         const value = data && data.m && data.m > 0 ? (Math.floor(new Date().getTime() / 1000)) - data.m : undefined;
-        return value ? timeFormat(value) /*+ ": " + (data && data.m ? data.m + " | " + data.m?.toString().length + " | " + ((Math.floor(new Date().getTime() / 1000)) - data.m) : "") */ : "No Value";
+        return value ? timeFormat(value) : "No Value";
     }
 }
 
@@ -128,9 +164,28 @@ export class NodeFeatureQuantity extends AbstractFeatureGradient<FolderNode, Fea
         return new FeatureDataSum();
     }
 
+    /**
+     * We use the Folder Size for determining the node radius. The area of the circle is relative
+     * to the Folder Size of the root node, which has a radius of 100.
+     * @param node 
+     * @param entry 
+     * @returns 
+     */
     public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
-        return 0;
+        if (node.isRoot()) {
+            return 100;
+        } else {
+            let abs = entry.root.getFeatureValue(FeatureType.FolderSize);
+            let part = node.getFeatureValue(FeatureType.FolderSize);
+            if (abs != undefined && part != undefined) {
+                let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
+                r = 100 * 0.1 + r * 0.9;
+                return Math.max(r, 16);
+            }
+        }
+        return 16;
     }
+
     public readonly readableName: string = "File Amount";
 
     getGradientValue(node: FolderNode): number {

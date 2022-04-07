@@ -1,66 +1,6 @@
 import _ from "underscore";
 
-export let resizeClasseName = "resizable";
 export const classPreventInput = "prevent-input";
-
-export function resize(element: HTMLElement) {
-
-    let startX: number, startY: number, startWidth: number, startHeight: number, originalWidth: number, originalHeight: number;
-
-    /**
-     * Todo: Das muss bei allen ws entries passieren!
-     */
-    element.classList.toggle(resizeClasseName);
-
-    var scaledChild: HTMLElement = element.firstChild as HTMLElement;
-
-    originalWidth = parseInt(element.style.width.replace("px", ""));
-    originalHeight = parseInt(element.style.height.replace("px", ""));
-
-    scaledChild.style.width = (originalWidth) + 'px';
-    scaledChild.style.height = (originalHeight) + 'px';
-    scaledChild.style.position = "absolute";
-    scaledChild.style.transformOrigin = "top left";
-
-    var resizer = document.createElement('div');
-    resizer.className = 'resizer';
-    element.appendChild(resizer);
-    resizer.addEventListener('mousedown', initDrag, false);
-
-    function initDrag(e: MouseEvent) {
-        startX = e.clientX;
-        startY = e.clientY;
-        startWidth = parseInt(element.style.width.replace("px", ""));
-        startHeight = parseInt(element.style.height.replace("px", ""));
-        document.documentElement.addEventListener('mousemove', doDrag, false);
-        document.documentElement.addEventListener('mouseup', stopDrag, false);
-
-        element.classList.add(classPreventInput);
-    }
-
-    function doDrag(e: MouseEvent) {
-
-        let newWidth = (startWidth + e.clientX - startX),
-            newHeight = (startHeight + e.clientY - startY);
-
-
-        scaledChild.style.transform = "scale(" + (newWidth / originalWidth) + "," + (newHeight / originalHeight) + ")";
-
-        element.style.width = newWidth + 'px';
-        element.style.height = (originalHeight * (newWidth / originalWidth)) + 'px';
-    }
-
-    function stopDrag(e: MouseEvent) {
-        document.documentElement.removeEventListener('mousemove', doDrag, false); document.documentElement.removeEventListener('mouseup', stopDrag, false);
-
-        /**
-     * Todo: Das muss bei allen ws entries passieren!
-     */
-        element.classList.remove(classPreventInput);
-    }
-
-
-}
 
 export interface ElementDimension {
     x: number,
@@ -122,17 +62,8 @@ export class ElementDimensionInstance implements ElementDimension {
         return this;
     }
 }
-
-export function editElementDimension(d: ElementDimension, coord: (n: number) => number, size: (n: number) => number): void {
-    coord(d.x);
-    coord(d.x2);
-    coord(d.y);
-    coord(d.y2);
-    size(d.w);
-    size(d.h);
-}
-
-export function getCoordinatesFromElement(e: any): ElementDimensionInstance {
+ 
+export function getCoordinatesFromElement(e: HTMLElement): ElementDimensionInstance {
     let results: string = e.style.transform;
     results = results
         .replace("translate3d(", "")
@@ -168,7 +99,6 @@ export function setSize(e: any, w: number, h: number): void {
     e.style.width = Math.abs(w) + "px";
     e.style.height = Math.abs(h) + "px";
 }
-
 
 export interface ResizerComplexOwner {
     getCurrentTransform(): { scale: number; x: number; y: number };

@@ -2159,7 +2159,7 @@ export default defineComponent({
 
       return list;
     },
-    getCoordinatesFromElement(e: any): ElementDimensionInstance {
+    getCoordinatesFromElement(e: HTMLElement): ElementDimensionInstance {
       return getCoordinatesFromElement(e);
     },
     startFileDrag: function () {

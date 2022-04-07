@@ -10,6 +10,11 @@ import { Layouter } from "./NodeLayout";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { Features, FeatureType } from "./FeatureType";
 
+/**
+ * A listener class that gets informed when something in the tree changes. Is used by the 
+ * OverviewEngine to get informed about changes, this way the AbstractNodeTree doesn't need to use
+ * the OverviewEngine class as reference, which would lead to problems in the dependency graph.
+ */
 export interface NodeTreeListener<D extends AbstractNode = AbstractNode> {
     nodeAdded(node: D): void;
     nodesAdded(node: D[]): void;
@@ -17,6 +22,9 @@ export interface NodeTreeListener<D extends AbstractNode = AbstractNode> {
     featuresUpdated(): void;
 }
 
+/**
+ * This class represents 
+ */
 export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> implements AbstractNodeTreeIfc {
 
     constructor(nt: string, path: string, root: N) {
@@ -27,7 +35,15 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
         this.nodes = this.root.descendants();
     }
 
-    // the root node 
+    /**
+     * EXTEND APP
+     * 
+     * When creating a new AbstractNode Implementation, add the class to the subtypes here
+     * so the class can be loaded from JSON Data correctly.
+     * 
+     * The root node of the tree. 
+     * 
+     */
     @Type(() => AbstractNode, {
         keepDiscriminatorProperty: true,
         discriminator: {
@@ -369,7 +385,7 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
     /**
      * Updates the quadtree.
      */
-    tickShell() {
+    tickTree() {
         this.quadtree = d3.quadtree<N>().x(n => n.getX()).y(n => n.getY()).addAll(this.nodes);
     }
 }

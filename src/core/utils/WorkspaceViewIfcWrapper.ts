@@ -1,25 +1,31 @@
 import { Workspace } from "@/core/model/workspace/Workspace";
 import AbstractWorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 import { ElementDimension } from "@/core/utils/ResizeUtils";
+import AbstractPlugin from "../plugin/AbstractPlugin";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
 
+/**
+ * The WorkspaceView uses the WorkspaceViewIfc to pass itself to each
+ * WorkspaceEntry Component. But it can not pass itself directly as an object,
+ * so this class implements the interface and when the WorkspaceView is ready, it sets
+ * itself as the workspace in this class instance. And this class instance is then passed
+ * to all the WorkspaceEntry Components.
+ */
 export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
-    
+
     ws: (WorkspaceViewIfc | undefined) = undefined;
 
-    getCoordinatesFromElement(e: any): ElementDimension {
+    getCoordinatesFromElement(e: HTMLElement): ElementDimension {
         return this.ws ? this.ws.getCoordinatesFromElement(e) :
             "" as unknown as ElementDimension;
     }
     getPositionInWorkspace(e: { clientX: number; clientY: number }): {
-        x: number;
-        y: number;
+        x: number; y: number;
     } {
         return this.ws ? this.ws.getPositionInDocument(e) : { x: 0, y: 0 };
     }
     getPositionInDocument(e: { clientX: number; clientY: number }): {
-        x: number;
-        y: number;
+        x: number; y: number;
     } {
         return this.ws ? this.ws.getPositionInDocument(e) : { x: 0, y: 0 };
     }
@@ -65,7 +71,7 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     updateSelectionWrapper(): void {
         this.ws ? this.ws.updateSelectionWrapper() : [];
     }
-    startPlugin(p: any): void {
+    startPlugin(p: AbstractPlugin): void {
         this.ws ? this.ws.startPlugin(p) : [];
     }
     dispatchEvent(e: Event): void {

@@ -30,5 +30,8 @@ export default abstract class View {
         return this;
     }
 
+    /**
+     * Is called after the View is created from JSON Data.
+     */
     public abstract initAfterLoading(): void;
 }

@@ -30,24 +30,6 @@ export abstract class AbstractNode {
         }
     }
 
-
-    public getRadius() {
-        if (this.isRoot()) {
-            return 100;
-        } else if (this.isCollection()) {
-            return 80;
-        } else if (this.tree) {
-            let abs = (this.tree.root as AbstractNode).getFeatureValue(FeatureType.FolderSize);
-            let part = this.getFeatureValue(FeatureType.FolderSize);
-            if (abs != undefined && part != undefined) {
-                let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
-                r = 100 * 0.1 + r * 0.9;
-                return Math.max(r, 16);
-            }
-        }
-        return 16;
-    }
-
     public canCreateCollection(): boolean {
         return !this.isCollection() && this.children.length > 0;
     }
