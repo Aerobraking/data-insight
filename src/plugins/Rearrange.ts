@@ -314,7 +314,7 @@ export default class ReArrange extends AbstractPlugin {
     }
 
     public mousedown(e: MouseEvent): boolean {
-        this.workspace.finishPlugin();
+        this.workspace.finishPlugin();  
         return true;
     }
 

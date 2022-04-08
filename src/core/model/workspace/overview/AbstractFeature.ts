@@ -56,7 +56,7 @@ export type FeatureSettingsList = {
 export abstract class AbstractFeatureSettings { }
 
 /**
- * This Gradient Settings can be used
+ * This Gradient Settings will be used for the AbstractFeatureGradient class Implementations.
  */
 export class FeatureGradientSettings extends AbstractFeatureSettings {
 
@@ -66,8 +66,17 @@ export class FeatureGradientSettings extends AbstractFeatureSettings {
         this.sliderRange = [slider0, slider1];
     }
 
+    /**
+     * The range for the slider in the view. 
+     */
     sliderRange: [number, number];
+    /**
+     * The id of the current active gradient in the AbstractFeatureGradient.
+     */
     gradientId: string = "interpolateWarm";
+    /**
+     * true: sets sliderRange values automatically 
+     */
     public autoSetRange: boolean = false;
 }
 
@@ -98,36 +107,45 @@ export abstract class AbstractFeature<N extends AbstractNode = AbstractNode, D e
      * it in the node.
      */
     public abstract getNewDataInstance(): D;
+
     /**
      * When an Overview is created, it needs to get the default settings for all features, so these settings
      * can then be used in the Feature Views. 
      */
     public abstract getNewSettingsInstance(): S;
 
+    /**
+      * @param node the node where you get the radius for.
+      * @param tree The tree where this node bleongs to.
+      * @returns number: the radius for the circle that is rendered for the node in the overview.
+      */
     public abstract getNodeRadius(
         node: N, tree: AbstractNodeTree<N>
     ): number;
 
     /**
-     * 
-     * @param node 
-     * @param tree 
+     * @param node the node which is testes for wether it is hidden.
+     * @param tree The tree where this node bleongs to.
      * @returns true: the node will be partially hidden in the overview, false: the node will be displayed normally.
      */
     public abstract isNodeHidden(
         node: N, tree: AbstractNodeTree<N>
     ): boolean;
 
-    /**
-     * 
-     * @param node 
-     * @param tree 
+    /** 
+     * @param node The node where you want to get the color string for.
+     * @param tree The node where this node belongs to.
      * @returns a color string that is usable by the Canvas API of Chrome. "h" means the node should be hidden.
      */
     public abstract getNodeColor(
         node: N, tree: AbstractNodeTree<N>
     ): string | "h";
 
+    /** 
+     * @param node The node where you want to get the color string for.
+     * @param tree The node where this node belongs to.
+     * @returns a  string that is displayed in the overview underneath the name of the Node.
+     */
     public abstract getFeatureText(
         node: N, tree: AbstractNodeTree<N>
     ): string;

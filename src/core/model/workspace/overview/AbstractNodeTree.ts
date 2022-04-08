@@ -23,8 +23,11 @@ export interface NodeTreeListener<D extends AbstractNode = AbstractNode> {
 }
 
 /**
- * This class represents a Tree in the overview. The Tree consists
- * @param
+ * This class represents a Tree in the overview. The Tree contains a tree structure made out of AbstractNode Instances.
+ * An AbstractNodeTree needs a specific AbstractNode Implementation which it contains as Nodes.
+ * This class contains several methods to alter the structure of the tree. All changes will be notified to the OverviewEngine that
+ * renders this tree and the AbstractNodeLayout Instance that handles the Layout for this tree.
+ * @param N The AbstractNode Implementation the Tree uses.
  */
 export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> implements AbstractNodeTreeIfc {
 
