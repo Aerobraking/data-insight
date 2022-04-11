@@ -15,39 +15,89 @@ import { AbstractLink, AbstractNode } from "@/core/model/workspace/overview/Abst
 import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
 import { remove } from "@/core/utils/ListUtils";
 
+/**
+ * The OverviewView Component is responsible for the Rendering of the Overview Data.
+ * As the actual Rendering of the Data in the Canvas is quite complex, it is wrapped in 
+ * this Class, so the Component Code can be slim and only for the other UI elements of 
+ * the Overview.
+ * So OverviewView creates one Instance of this class to render the Data.
+ * This class also takes care for the clocking of the rendering by 
+ * creating a loop with the requestAnimationFrame() that calls the render method
+ * for each OverviewEngine Instance.
+ */
 export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
+    /**
+     * Array of active OverviewEngine Instances.
+     */
     private static instances: OverviewEngine[] = [];
-    private static started: boolean = false;
+
+    /**
+     * true: The loop is 
+     */
+    private static clockStarted: boolean = false;
+
+    /**
+     * When true, the benchmark log will be printed once.
+     */
     private static printlog: boolean = false;
+
+    /**
+     * Maximum Frames per second when the app window is focused.
+     */
     private static fpsInterval: number = 1000 / 60;
+
+    /**
+     * Maximum Frames per second when the app window is not focused.
+     */
     private static fpsIntervalLow: number = 1000 / 24;
+
+    /**
+     * Some values to calculate the time between the ticks. 
+     */
     private static now: number = 0;
     private static then: number = 0;
     private static elapsed: number = 0;
     private static elapsedTotal: number = 0;
+    /**
+     * How many times a tick was called since the clocking started.
+     */
     public static framecounter: number = 0;
-    // milliseconds till last frame
+
+    /**
+     * milliseconds till last frame
+     */
     private static delta: number = 0;
 
+    /**
+     * Starts the tick loop. Has to be called only once.
+     */
     private static startClock(): void {
         OverviewEngine.then = performance.now();
-        OverviewEngine.tickClock();
+        OverviewEngine.tick();
+        OverviewEngine.clockStarted = true;
     }
 
+    /**
+     * Call this method to print the Benchmark log once.
+     */
     public static printLog() {
         OverviewEngine.printlog = true;
     }
 
-    private static tickClock(): void {
+    /**
+     * This method is called in a loop by using requestAnimationFrame().
+     * It calls the tick() method for all active OverviewEngine Instances.
+     */
+    private static tick(): void {
 
-        // calc elapsed time since last loop, ideally ~33
+        // calculate elapsed time since last loop.
         OverviewEngine.now = performance.now();
         OverviewEngine.elapsed = OverviewEngine.now - OverviewEngine.then;
 
-        requestAnimationFrame(OverviewEngine.tickClock.bind(this));
+        requestAnimationFrame(OverviewEngine.tick.bind(this));
 
-        // if enough time has elapsed, draw the next frame
+        // if enough time has elapsed to target the desired framerate, call tick() on each Instance.
         if (OverviewEngine.elapsed > (document.hasFocus() ? OverviewEngine.fpsInterval : OverviewEngine.fpsIntervalLow)) {
             tickStart();
 
@@ -65,6 +115,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 inst.tickEngine();
             }
 
+            // For the animation of the colors, we update the Tween Instance.
             TWEEN.update();
             tickEnd(OverviewEngine.printlog);
             OverviewEngine.framecounter++;
@@ -73,89 +124,217 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     }
 
+    /**
+     * true: Disables the Hovering of nodes, so nodeHovered will always be undefined.
+     */
     pauseHovering: boolean = false;
+
+    /**
+     * The array of selected Nodes. In the Moment it contains at most one node.
+     */
     public selection: AbstractNode[] = [];
+
+    /**
+     * An array that contain all descendants and ancestor nodes of the selected nodes in the "selection" array.
+     */
     public selectionBelongingNodes: AbstractNode[] = [];
+
+    /**
+     * The current mouse position relative to the canvas element.
+     */
     mousePosition: { x: number, y: number } = { x: 0, y: 0 };
-    autocolor: ColorTracker = new ColorTracker();
+
+    /**
+     * The d3 Instance that takes care of the scaling/translating of the Canvas Space.
+     */
     zoom: d3.ZoomBehavior<HTMLCanvasElement, HTMLCanvasElement>;
+
+    /**
+     * The overview and workspace Instances this Engine uses for rendering.
+     */
     overview: Overview;
     workspace: Workspace;
-    size: ElementDimensionInstance;
-    divObserver: ResizeObserver;
+
+    /**
+     * The size of the Canvas Element.
+     */
+    canvasSize: ElementDimensionInstance;
+
+    /**
+     * Observes changes of the Canvas size to update the canvasSize property.
+     */
+    canvasObserver: ResizeObserver;
+
+    /**
+     * We skip the first resize Event for this Canvas because this can trigger
+     * errors in the Rendering.
+     */
     skipInitialResize: number = 0;
+
+    /**
+     * The Canvas Element that is added to the OverviewView and the and the Context Instance of it.
+     */
     canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
+
+    /**
+     * The node that is currently hovered with the mouse. undefined, when no node
+     * is hovered. There is a maximum distance between the mouse position and a node
+     * to set a node as hovered.
+     */
     nodeHovered: AbstractNode | undefined;
+
+    /**
+     * An array that contain all descendants and ancestor nodes of the node in the nodeHovered property.
+     */
     listnodesHovered: AbstractNode[] = [];
+
+    /**
+     * The node that was selected when a drag operations starts while Shift is pressed.
+     * Is set to undefined when a drag starts without Shift being pressed.
+     */
     nodeShift: AbstractNode | undefined;
 
-    context: CanvasRenderingContext2D;
+    /**
+     * The Data of the Overview this Engine uses for rendering.
+     */
     private _trees: AbstractNodeTree[] = [];
 
+    /**
+     * This array contains all nodes that fit to the current filters. When the array is empty
+     * no filter is active and all nodes should be rendered.
+     */
+    private nodesFiltered: AbstractNode[] = [];
+
+    /**
+     * This map contains all lists that contains the filtered nodes. So when you have multiple lists,
+     * only the nodes that a found in all lists will be rendered.
+     */
     private nodeFilterList: Map<string, AbstractNode[]> = new Map();
-    private nodeFiltered: AbstractNode[] = [];
-    private notFound: Map<AbstractNode, { o: number, d: boolean }> = new Map();
+
+    /**
+     * All nodes that does not fit to the active filtering will get an entry in this map
+     * that contains the opacity value (0...1) for this node. Is used for animating the 
+     * fading out of the node. 
+     * When a node should be rendered again and reaches opacity of 1, it is removed from the map.
+     * @param o the opacity value
+     * @param direction true: the opacity value will be increased, false the value will be decreased. 
+     */
+    private notFound: Map<AbstractNode, { o: number, direction: boolean }> = new Map();
+
+    /**
+     * true: Culling will be used when rendering the nodes
+     * false: No Cullind will be used
+     */
     private enableCulling: boolean = true;
+
+    /**
+     * The current transformation of the Canvas space.
+     */
     transform!: ZoomTransform;
-    enablePainting: boolean = true;
 
+    /**
+     * true: This Instance can render the data. But there are other condition that have to be fullfilled
+     * so that the rendering really happens.
+     * false: This Instance won't render the data no matter what.
+     */
+    enableRendering: boolean = true;
 
-    mapEntryColumns: Map<number, Map<number, { x: number, width: number }>> = new Map();
-    setWidthsTween: Map<AbstractNodeTree, Map<number, Tween<any>>> = new Map();
-
+    /**
+     * How many milliseconds should it take to fade out/in the nodes when filtering does happen.
+     */
     colorChangeDuration: number = 200;
-    render!: AbstractFeature;
 
+    /**
+     * The active Feature that takes care of the rendering of the nodes.
+     */
+    activeFeatureRender!: AbstractFeature;
+
+    /**
+     * The minimum opacity that is not undercut when fading out a node.
+     */
     private static opacityMin = 0.04;
-    static hiddenColor: string = "rgb(17,18,19)";
-    static colorNodeDefault: string = "rgb(250,250,250)";
-    static colorSelection: string = "rgb(57, 215, 255)";
+
+    /**
+     * The color that is used for a node when it is hidden by the filtering.
+     */
+    private static hiddenColor: string = "rgb(17,18,19)";
+
+    /**
+     * The default color for a node when no Color can be obtained by the activeFeatureRender.
+     */
+    private static colorNodeDefault: string = "rgb(250,250,250)";
+
+    /**
+     * The color for a node when the node is selected.
+     */
+    private static colorSelection: string = "rgb(57, 215, 255)";
+
+    /**
+     * The Rendering animates the changing of colors for the nodes. For that the old and new
+     * colors are saved in this map for each node as a ScaleLinear Object of d3 that returns the
+     * fitting color string for a linear value between 0...1.
+     */
     colorTransitionMap: Map<AbstractNode, d3.ScaleLinear<string, string, never>> = new Map();
+
+    /**
+     * The elapsed time when starting a color transition for the nodes.
+     */
     colorTransitionElapsed: number | undefined = 0;
+
+    /**
+     * The time a color transition takes.
+     */
     colorTransitionTarget: number = 150;
+
+    /**
+     * This map contains the current color for each node.
+     */
     colorNodeMap: Map<AbstractNode, string | "h"> = new Map();
 
+    /**
+     * How many pixels are additional used for the horizontal line of the curve of a node link before the curve starts.
+     * So the curve does not overlap with the text.
+     */
     readonly textPadding: number = 105;
-    readonly textMaxWidth: number = 440;
 
+    /**
+     * How many pixels are used for the horizontal line of the curve of a node link before the curve starts.
+     * So the curve does not overlap with the text.
+     */
+    readonly textMaxWidth: number = 440;
 
     constructor(div: HTMLElement, workspace: Workspace) {
 
-        if (!OverviewEngine.started) {
+        var _this = this;
+
+        // start the Clocking when not started yet
+        if (!OverviewEngine.clockStarted) {
             OverviewEngine.startClock();
-            OverviewEngine.started = true;
         }
 
+        // add this Instance to the active list so it tick() method will be called.
         OverviewEngine.instances.push(this);
-
-        var _this = this;
 
         this.workspace = workspace;
         this.overview = workspace.overview;
 
-        let c = d3
-            .select(div)
-            .append("canvas")
-            .attr("width", div.clientWidth)
-            .attr("height", div.clientHeight)
-            .attr("class", "overview-canvas")
+        /**
+         * Create the Canvas Object and the Context for it.
+         */
+        let c = d3.select(div).append("canvas").attr("width", div.clientWidth)
+            .attr("height", div.clientHeight).attr("class", "overview-canvas")
             .node();
-
-        if (c) {
-            this.canvas = c;
-        } else {
-            this.canvas = new HTMLCanvasElement();
-        }
-
+        this.canvas = c ? c : new HTMLCanvasElement();
         let context = this.canvas.getContext("2d", { alpha: false });
         this.context = context ? context : new CanvasRenderingContext2D();
 
-        this.size = new ElementDimensionInstance(0, 0, 1, 1);
+        this.canvasSize = new ElementDimensionInstance(0, 0, 1, 1);
 
         /**
-         * Listen for resizing of the canvas parent element
+         * Listen for Resizing of the canvas parent element to update the cached Dimensions of the Canvas.
          */
-        this.divObserver = new ResizeObserver(_.throttle((entries: ResizeObserverEntry[]) => {
+        this.canvasObserver = new ResizeObserver(_.throttle((entries: ResizeObserverEntry[]) => {
             for (let i = 0; i < entries.length && i < 1; i++) {
                 const e = entries[i];
                 e.target; // div element
@@ -171,15 +350,17 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
                 this.canvas.width = w, this.canvas.height = h;
 
-
-                this.size.w = w;
-                this.size.h = h;
+                this.canvasSize.w = w;
+                this.canvasSize.h = h;
 
             }
             this.tickEngine();
         }, 33));
-        this.divObserver.observe(div);
+        this.canvasObserver.observe(div);
 
+        /**
+         * Zoom to the location on the canvas where a double click happened.
+         */
         d3.select(this.canvas).on('dblclick', function (e: MouseEvent) {
 
             var rect = _this.canvas.getBoundingClientRect();
@@ -191,6 +372,9 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             _this.setView(1, pos.x, pos.y, 400);
         });
 
+        /**
+         * Update the node selection and prepare the OS drag operation when shift is pressed 
+         */
         d3.select(this.canvas).on('mousedown', function (e: MouseEvent) {
 
             /**
@@ -214,82 +398,89 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             var rect = _this.canvas.getBoundingClientRect();
             _this.mousePosition = { x: e.clientX - rect.left, y: e.clientY - rect.top };
             _this.hoverFinder(_this);
-
-
         }, 16)).call(
             d3.drag<HTMLCanvasElement, unknown>().subject(() => {
-                const obj = this.getNodeAtMousePosition();
-                if (obj && obj.isRoot()) {
-                    return obj.tree;
+                const node = this.getNodeAtMousePosition();
+                // when the root node is dragged, use the tree instance as the drag object.
+                if (node && node.isRoot()) {
+                    return node.tree;
                 }
-                return obj; // Only drag nodes
-            })
-                .on('start', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
-                    const obj = ev.subject;
+                return node;
+            }).on('start', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
 
-                    _this.nodeShift = undefined;
-                    if (ev.sourceEvent.altKey) {
-                        _this.nodeShift = obj instanceof AbstractNodeTree ? undefined : obj;
-                        return;
-                    } else {
+                /**
+                 * We pass the dragging start data to the current Layouter Instance.
+                 */
 
-                        this.canvas.classList.add('grabbable');
-                        _this.pauseHovering = true;
-                        if (obj instanceof AbstractNodeTree) {
-                            (obj as any).__initialDragPos = { x: obj.x, y: obj.y, };
-                        }
+                const obj = ev.subject;
 
-                        if (!(obj instanceof AbstractNodeTree)) {
-                            const node = ev.subject as AbstractNode;
-                            Layouter.nodeDragged(node, "start", undefined, d3.zoomTransform(this.canvas));
-
-                            this.setFilterList("selection");
-                        }
-                    }
-
-                })
-                .on('drag', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
-
-                    if (_this.nodeShift) return;
-
-                    const obj = ev.subject;
-                    const dragPos = ev;
-                    const t = d3.zoomTransform(this.canvas);
-
+                _this.nodeShift = undefined;
+                if (ev.sourceEvent.altKey) {
+                    _this.nodeShift = obj instanceof AbstractNodeTree ? undefined : obj;
+                    return;
+                } else {
+                    this.canvas.classList.add('grabbable');
+                    _this.pauseHovering = true;
                     if (obj instanceof AbstractNodeTree) {
-                        /**
-                         * the root can be moved in any direction and moves the whole tree with it
-                         */
-                        const initPos = (obj as any).__initialDragPos;
-                        let offset = { x: (dragPos.x - initPos.x) / t.k, y: (dragPos.y - initPos.y) / t.k };
-                        obj.setCoordinates({ x: initPos.x + offset.x, y: initPos.y + offset.y })
-                    } else {
-                        Layouter.nodeDragged(ev.subject as AbstractNode, "move", dragPos, t)
-                    }
-                    _this.fireSelectionUpdate();
-
-                })
-                .on('end', ev => {
-                    _this.pauseHovering = false;
-                    this.canvas.classList.remove('grabbable');
-
-                    const obj = ev.subject;
-                    delete (obj.__initialDragPos);
-
-                    if (obj instanceof AbstractNodeTree) return;
-
-                    Layouter.nodeDragged(ev.subject as AbstractNode, "end", undefined, d3.zoomTransform(this.canvas))
-
-                    const listSelection = [];
-                    for (let i = 0; i < this.selection.length; i++) {
-                        const n = this.selection[i];
-                        listSelection.push(...n.getDescendants(), ...n.getAncestors());
+                        (obj as any).__initialDragPos = { x: obj.x, y: obj.y, };
                     }
 
-                    // this.fireSelectionUpdate();
-                    _this.updateSelection(false);
-                    // _this.overview.highlightSelection || listSelection.length == 0 ? this.setFilterList("selection") : this.setFilterList("selection", listSelection);
-                })
+                    if (!(obj instanceof AbstractNodeTree)) {
+                        const node = ev.subject as AbstractNode;
+                        Layouter.nodeDragged(node, "start", undefined, d3.zoomTransform(this.canvas));
+
+                        this.setFilterList("selection");
+                    }
+                }
+
+            }).on('drag', (ev: D3DragEvent<HTMLCanvasElement, unknown, any>) => {
+
+                // when shift is clicked a OS Drag operation is happening.
+                if (_this.nodeShift) return;
+
+                /**
+                 * Pass the drag data to the current Layouter Instance.
+                 */
+                const obj = ev.subject;
+                const dragPos = ev;
+                const t = d3.zoomTransform(this.canvas);
+
+                if (obj instanceof AbstractNodeTree) {
+                    /**
+                     * the root can be moved in any direction and moves the whole tree with it
+                     */
+                    const initPos = (obj as any).__initialDragPos;
+                    let offset = { x: (dragPos.x - initPos.x) / t.k, y: (dragPos.y - initPos.y) / t.k };
+                    obj.setCoordinates({ x: initPos.x + offset.x, y: initPos.y + offset.y })
+                } else {
+                    Layouter.nodeDragged(ev.subject as AbstractNode, "move", dragPos, t)
+                }
+                _this.fireSelectionUpdate();
+
+            }).on('end', ev => {
+
+                /**
+                 * Pass the drag data to the current Layouter Instance.
+                 */
+
+                _this.pauseHovering = false;
+                this.canvas.classList.remove('grabbable');
+
+                const obj = ev.subject;
+                delete (obj.__initialDragPos);
+
+                if (obj instanceof AbstractNodeTree) return;
+
+                Layouter.nodeDragged(ev.subject as AbstractNode, "end", undefined, d3.zoomTransform(this.canvas))
+
+                const listSelection = [];
+                for (let i = 0; i < this.selection.length; i++) {
+                    const n = this.selection[i];
+                    listSelection.push(...n.getDescendants(), ...n.getAncestors());
+                }
+
+                _this.updateSelection(false);
+            })
         );
 
         // Setup zoom / pan interaction
@@ -304,6 +495,9 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             return true;
         });
 
+        /**
+         * Set some settings and makes sure the hoverfeature is disabled under specific user inputs.
+         */
         this.zoom.translateTo(d3.select(this.canvas), this.overview.viewportTransform.x, this.overview.viewportTransform.y);
         this.zoom.scaleTo(d3.select(this.canvas), this.overview.viewportTransform.scale);
         this.zoom.scaleExtent([0.001, 2]);
@@ -326,27 +520,28 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         this.overview.viewportTransform = { x: t.x, y: t.y, scale: t.k };
     }
 
+    /**
+     * 
+     * @param findNode true: Determine the current nearest node to the mouse cursor, 
+     * false: no node will be determined, in this case pass the node to be selected 
+     * as the newSelectedNode parameter
+     * @param newSelectedNode The node that will be selected. When false and findNode is true, the node will be determined.
+     * @returns The selected node or undefined when no node is selected.
+     */
     public updateSelection(findNode: boolean = true, newSelectedNode: AbstractNode | undefined = undefined): AbstractNode | undefined {
 
         if (newSelectedNode) {
             this.selection = [];
             this.selectionBelongingNodes = [];
             this.selection.push(newSelectedNode);
-        } else
+        } else {
             if (findNode) {
                 const node: AbstractNode | undefined = this.getNodeAtMousePosition();
-                // if (e.shiftKey) {
-                //     if (node && !_this.selection.includes(node)) _this.selection.push(node);
-                // } else if (e.ctrlKey) {
-                //     if (node) _this.selection.includes(node) ? _this.selection.splice(_this.selection.indexOf(node), 1) : _this.selection.push(node);
-                // } else {
                 this.selection = [];
                 this.selectionBelongingNodes = [];
                 if (node) this.selection.push(node);
-                // }
             }
-
-
+        }
 
         for (let i = 0; i < this.selection.length; i++) {
             const n = this.selection[i];
@@ -360,6 +555,9 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         return this.selection.length > 0 ? this.selection[0] : undefined;
     }
 
+    /**
+     * Remove any selected node from the selection and fire an update.
+     */
     public clearSelection() {
         this.selection = [];
         this.selectionBelongingNodes = [];
@@ -367,17 +565,32 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         this.fireSelectionUpdate();
     }
 
+    /**
+     * Fire a selection update to the listener of this Instance.
+     */
     private fireSelectionUpdate() {
         this.selectionListener ?
             this.selectionListener(this.selection.length > 0 ? this.selection[0] : undefined) : 0;
     }
 
+    /**
+     * A listener Instance that can listen to node selection change events for this OverviewEngine Instance.
+     */
     private selectionListener: ((n: AbstractNode | undefined) => void) | undefined = undefined;
 
+    /**
+     * The Listener Instance.
+     * @param l the listener instance.
+     */
     public setSelectionListener(l: (n: AbstractNode | undefined) => void) {
         this.selectionListener = l;
     }
 
+    /**
+     * Determines the closes node to the current mouse position in the canvas.
+     * Uses a maximum distance that changes with the scaling of the Canvas space.
+     * @returns The determined node or undefined when no node could be found.
+     */
     public getNodeAtMousePosition(): AbstractNode | undefined {
 
         let mGraph = this.screenToGraphCoords(this.mousePosition);
@@ -397,6 +610,11 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         return n;
     };
 
+    /**
+     * Converts the given position from canvas space to screen space.
+     * @param c The position in canvas space you want to convert
+     * @returns The converted position in screen space.
+     */
     public graphToScreenCoords(c: MouseEvent | { x: number, y: number }) {
         const t = d3.zoomTransform(this.canvas);
         if (c instanceof MouseEvent) {
@@ -406,6 +624,11 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         }
     }
 
+    /**
+  * Converts the given position from screen space to canvas space.
+  * @param c The position in screen space you want to convert
+  * @returns The converted position in canvas space.
+  */
     public screenToGraphCoords(c: MouseEvent | { x: number, y: number }) {
         const t = d3.zoomTransform(this.canvas);
         if (c instanceof MouseEvent) {
@@ -418,12 +641,21 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         }
     }
 
+    /**
+     * Call this when the OverviewEngine has to stop working. It won't be called 
+     * anymore in the tick loop.
+     */
     public dispose() {
-        this.divObserver.disconnect();
-
+        this.canvasObserver.disconnect();
         remove(OverviewEngine.instances, this);
     }
 
+    /**
+     * 
+     * @param padding how many percentage should be added to each side of the bounding box. 1.1 means 10% are added an so on.
+     * @param selection A node or a tree for which the Boundingbox will be calculated.
+     * @returns The Boundingbox.
+     */
     public getNodesBoundingBox(padding: number = 1, selection: AbstractNode | AbstractNodeTree[] | undefined = this._trees): ElementDimension {
 
         const _this = this;
@@ -440,7 +672,6 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             }
 
             const p = n.customData["co"];
-            // const p = _this.getNodePosition(n);
             const x = p.x + n.tree!.x;
             const y = p.y + n.tree!.y;
             calc(x + 50, y + 50);
@@ -464,21 +695,45 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         return d;
     }
 
+    /**
+     * Updates the transformation with an animation so it fits to the selected node or the tree it belongs to
+     * @param duration How long should the transformation animation run.
+     * @param useTree true: Use the tree of the node for fitting, false: the node is used.
+     * @param padding The extra padding for the viewport in percentage.
+     */
     public zoomToFitSelection(duration: number = 400, useTree: boolean = true, padding: number = 1.3) {
         this.setViewBox(this.getNodesBoundingBox(padding, this.selection.length > 0 ? useTree ? [this.selection[0].tree as AbstractNodeTree] : this.selection[0] : undefined), duration);
     }
 
-    public zoomToFit(duration: number = 400) {
+    /**
+     * Updates the transformation so alle existing nodes in the overview will be visible.
+     * @param duration How long should the animation run.
+     */
+    public zoomToFitAll(duration: number = 400) {
         this.setViewBox(this.getNodesBoundingBox(1.3), duration);
     }
 
-    public setViewBox(dim: ElementDimension, duration: number = 200, easing: (a: number) => number = TWEEN.Easing.Quadratic.InOut) {
+    /**
+     * Updates the transformation so shows the given rectangle.
+     * @param dim The rectangle that will be shown in the viewport.
+     * @param duration How long takes the animation.
+     * @param easing What kind of TWEEN.Easing will be used for the animation.
+     */
+    private setViewBox(dim: ElementDimension, duration: number = 200, easing: (a: number) => number = TWEEN.Easing.Quadratic.InOut) {
         const scale = Math.min(Math.abs(this.canvas.width / dim.w), Math.abs(this.canvas.height / dim.h));
         this.setView(scale, dim.x + dim.w / 2, +dim.y + dim.h / 2, duration, easing);
     }
 
+    /**
+     * Changes the transformation of the canvas space with an animation.
+     * @param scale The scaling factor that should be used for the target transformation.
+     * @param x the x center coordinate for the viewport for the target transformation.
+     * @param y the y center coordinate for the viewport for the target transformation.
+     * @param duration How long takes the animation.
+     * @param easing What kind of TWEEN.Easing will be used for the animation.
+     */
     public setView(scale: number | undefined = undefined, x: number, y: number,
-        duration: number = 200, easing: (a: number) => number = TWEEN.Easing.Quadratic.InOut) {
+        duration: number = 200, easing: (a: number) => number = TWEEN.Easing.Quadratic.InOut): void {
 
         let _this = this;
 
@@ -493,8 +748,8 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             } else {
                 new TWEEN.Tween({
                     k: _this.transform.k,
-                    x: (_this.size.w / 2 - _this.transform.x) / _this.transform.k,
-                    y: (_this.size.h / 2 - _this.transform.y) / _this.transform.k
+                    x: (_this.canvasSize.w / 2 - _this.transform.x) / _this.transform.k,
+                    y: (_this.canvasSize.h / 2 - _this.transform.y) / _this.transform.k
                 })
                     .to({ k: scale, x: x, y: y }, duration)
                     .easing(easing)
@@ -510,8 +765,11 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         }
     }
 
+    /**
+     * Determines the currently hovered node.
+     * @param _this 
+     */
     hoverFinder(_this: this) {
-        const pxScale = 1; //window.devicePixelRatio;
         if (!this.pauseHovering && _this.mousePosition && _this.mousePosition.x >= 0 && _this.mousePosition.y >= 0) {
 
             let n: AbstractNode | undefined = this.getNodeAtMousePosition();
@@ -532,7 +790,13 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         }
     };
 
-    public setFilterList(key: string, listNodes: AbstractNode[] | undefined = undefined, showImmediately: boolean = false) {
+    /**
+     * Add a filter list for the rendering of the node. When a key is passed with an empty array, this list
+     * is removed from the filtering mechanic.
+     * @param key the key that identifies this filter list. For example "search" of "hovering".
+     * @param listNodes The nodes that should be rendered, all other nodes will be faded out.
+     */
+    public setFilterList(key: string, listNodes: AbstractNode[] | undefined = undefined) {
 
         if (listNodes) {
             this.nodeFilterList.set(key, listNodes);
@@ -540,18 +804,18 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             this.nodeFilterList.delete(key);
         }
 
-        this.nodeFiltered = [];
+        this.nodesFiltered = [];
 
         let lists: AbstractNode[][] = Array.from(this.nodeFilterList.values());
 
         if (lists.length > 0) {
-            this.nodeFiltered = lists[0];
+            this.nodesFiltered = lists[0];
             for (let i = 1; i < lists.length; i++) {
-                this.nodeFiltered = this.nodeFiltered.filter(value => lists[i].includes(value));
+                this.nodesFiltered = this.nodesFiltered.filter(value => lists[i].includes(value));
             }
         }
 
-        if (this.nodeFiltered.length > 0) {
+        if (this.nodesFiltered.length > 0) {
             // search for new nodes that will be blending out or in
             for (let index = 0; index < this.trees.length; index++) {
                 const entry = this.trees[index] as AbstractNodeTree;
@@ -559,22 +823,22 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 for (let j = 0; j < entry.nodes.length; j++) {
                     const n = entry.nodes[j];
 
-                    if (!this.nodeFiltered.includes(n)) {
+                    if (!this.nodesFiltered.includes(n)) {
                         if (!this.notFound.has(n)) {
                             // add it to blending out when not already in
-                            this.notFound.set(n, { o: 1, d: false });
+                            this.notFound.set(n, { o: 1, direction: false });
                         } else {
                             // node is in blending mode, so make it blending out
                             let o = this.notFound.get(n)?.o;
                             o = o ? o : 0;
-                            this.notFound.set(n, { o, d: false });
+                            this.notFound.set(n, { o, direction: false });
                         }
                     } else {
                         if (this.notFound.has(n)) {
                             // node is in blending mode, so make it blending in
                             let o = this.notFound.get(n)?.o;
                             o = o ? o : 0;
-                            this.notFound.set(n, { o, d: true });
+                            this.notFound.set(n, { o, direction: true });
                         }
                     }
                 }
@@ -585,7 +849,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             for (let i = 0; i < listOpacity.length; i++) {
                 const n = this.notFound.get(listOpacity[i]);
                 if (n) {
-                    n.d = true;
+                    n.direction = true;
                     this.notFound.set(listOpacity[i], n);
                 }
             }
@@ -594,7 +858,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         if (listNodes) {
             for (let i = 0; i < listNodes.length; i++) {
                 const n = listNodes[i];
-                if (this.nodeFiltered.includes(n)) {
+                if (this.nodesFiltered.includes(n)) {
                     this.notFound.delete(n);
                 }
             }
@@ -603,22 +867,25 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     }
 
-    nodeAdded(node: AbstractNode) {
-    }
+    nodeAdded(node: AbstractNode) { }
 
+    /**
+     * When nodes are added, the selection rendering may need an update.
+     * @param nodes 
+     */
     nodesAdded(nodes: AbstractNode[]) {
         this.updateSelection(false);
     }
 
     /**
-      * When a node is updated, we recalculate the column widths
+      * When a node is updated, we recalculate the node colors.
       */
     featuresUpdated() {
         this.updateNodeColors(undefined, false);
     }
 
     /**
-     * When a node is updated, we recalculate the column widths
+     * When a node is updated, we recalculate the node colors and the selection.
      */
     nodesUpdated() {
         this.updateNodeColors(undefined, false);
@@ -648,12 +915,23 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         this.clearSelection();
     }
 
+    /**
+     * Is called on each tick/frame. 
+     * 1. Layouts the trees
+     * 2. Updates the color transition values.
+     * 3. updates the hovered node
+     * 4. updates the opacity values for fading in/out the nodes
+     * 5. updates the viewport transformation when all tree should be displayed automatically
+     * 6. renders the data.
+     */
     public tickEngine(): void {
 
+        // 1.
         Layouter.tickLayout(this._trees, OverviewEngine.delta);
         if (doBenchmark) logTime("PrepareRender");
         this._trees.forEach(s => s.tickTree());
 
+        // 2.
         if (this.colorTransitionElapsed != undefined) {
             this.colorTransitionElapsed += OverviewEngine.delta;
 
@@ -663,50 +941,59 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             }
         }
 
+        // 3.
         this.hoverFinder(this);
 
+        // 4.
         let stepPos = 1 + OverviewEngine.delta / 60;
         let stepNeg = 1 - OverviewEngine.delta / 160;
-
         let listOpacity = Array.from(this.notFound.keys());
         for (let i = 0; i < listOpacity.length; i++) {
             const n = this.notFound.get(listOpacity[i]);
             if (n) {
-                n.o *= n.d ? stepPos : stepNeg;
-                n.o = Math.min(1, Math.max(OverviewEngine.minOpacity, n.o));
+                n.o *= n.direction ? stepPos : stepNeg;
+                n.o = Math.min(1, Math.max(OverviewEngine.opacityMin, n.o));
                 if (n.o >= 1) this.notFound.delete(listOpacity[i]);
             }
         }
 
+        // 5.
         if (this.overview && this.overview.showAll && this.workspace.isActive) {
             this.setViewBox(this.getNodesBoundingBox(1.3), 0, TWEEN.Easing.Linear.None);
         }
 
-        if (this.enablePainting && this.workspace.overviewOpen) {
-            // render the canvas 
-
+        // 6.
+        if (this.enableRendering && this.workspace.overviewOpen) {
+            // render the data on the canvas
             this.drawCanvas(this.context);
-            // render the shadow canvas
-            if (OverviewEngine.framecounter % 3 == 0) {
-                //   this.drawCanvas(this.contextShadow, true);
-            }
         }
 
     }
 
-    private static minOpacity: number = 0.045;
-
+    /**
+     * Returns the position of the node in the canvas space. As each tree is has a position inside the canvas and the
+     * nodes position is relative to that, we have to consider that in determining the actual position in the canvas.
+     * @param n The node you want to get the coordinates for.
+     * @param offsetX A horizontal offset for the returned coordinates.
+     * @param offsetY A vertical offset for the reunted coordinates.
+     * @returns The coordinates for the node in the canvas space.
+     */
     private getNodeGraphCoordinates(n: AbstractNode, offsetX = 0, offsetY = 0): { x: number, y: number } {
         return n.tree ? { x: n.tree.x + this.getNodePosition(n).x + offsetX, y: n.tree.y + this.getNodePosition(n).y + offsetY } : { x: 0, y: 0 };
     }
 
-    nodeCulling(n: AbstractNode): boolean {
+    /**
+     * Determines if the given node should be rendered or not.
+     * @param node The node you want to test. 
+     * @returns true: Do NOT render the node, false: The node has to be rendered.
+     */
+    nodeCulling(node: AbstractNode): boolean {
         if (!this.enableCulling) return false;
-        const viewportWidth: number = this.size.w;
-        const viewportHeight: number = this.size.h;
+        const viewportWidth: number = this.canvasSize.w;
+        const viewportHeight: number = this.canvasSize.h;
 
-        const screen = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, MIN_TREE_COLUMN_WIDTH));
-        const screenR = this.graphToScreenCoords(this.getNodeGraphCoordinates(n, -MIN_TREE_COLUMN_WIDTH));
+        const screen = this.graphToScreenCoords(this.getNodeGraphCoordinates(node, MIN_TREE_COLUMN_WIDTH));
+        const screenR = this.graphToScreenCoords(this.getNodeGraphCoordinates(node, -MIN_TREE_COLUMN_WIDTH));
 
         if (screen.x < 0 || screenR.x > viewportWidth || screen.y + 100 < 0 || screen.y - 100 > viewportHeight) {
             return true;
@@ -715,27 +1002,34 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     }
 
+    /**
+     * Determines if the given link should be rendered or not.
+     * @param node The link you want to test. 
+     * @returns true: Do NOT render the link, false: The link has to be rendered.
+     */
     linkCulling(l: AbstractLink): boolean {
         if (!this.enableCulling) return false;
 
-        const viewportWidth: number = this.size.w + 100;
-        const viewportHeight: number = this.size.h + 100;
+        const viewportWidth: number = this.canvasSize.w + 100;
+        const viewportHeight: number = this.canvasSize.h + 100;
 
         const screenS = this.graphToScreenCoords(this.getNodeGraphCoordinates(l.source));
         const screenT = this.graphToScreenCoords(this.getNodeGraphCoordinates(l.target));
 
-        if (
-            (screenS.x + 100 < 0 && screenT.x + 100 < 0)
+        if ((screenS.x + 100 < 0 && screenT.x + 100 < 0)
             || (screenS.y < 0 && screenT.y < 0)
             || (screenS.x > viewportWidth && screenT.x > viewportWidth)
-            || (screenS.y > viewportHeight && screenT.y > viewportHeight)
-        ) {
+            || (screenS.y > viewportHeight && screenT.y > viewportHeight)) {
             return true;
         }
         return false;
-
     }
 
+    /**
+     * Updates the color for the given node or for all nodes by the active FeatureRender Instance.
+     * @param node the node for which the color should be updated. if undefined, all nodes will be updated.
+     * @param transition true: Does an animated transition for the color, false: The color is changed without animation.
+     */
     public updateNodeColors(node: AbstractNode | undefined = undefined, transition: boolean = true): void {
 
         if (node) {
@@ -743,7 +1037,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             if (transition) {
 
                 const colorOld = this.getColorForNode(node);
-                let colorNew = this.render.getNodeColor(node, node.tree as AbstractNodeTree);
+                let colorNew = this.activeFeatureRender.getNodeColor(node, node.tree as AbstractNodeTree);
 
                 var scale = d3.scaleLinear<string>()
                     .domain([0, this.colorChangeDuration])
@@ -755,7 +1049,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 this.colorTransitionTarget = this.colorChangeDuration;
 
             } else {
-                let color = this.render.getNodeColor(node, node.tree as AbstractNodeTree);
+                let color = this.activeFeatureRender.getNodeColor(node, node.tree as AbstractNodeTree);
                 this.colorNodeMap.set(node, color);
             }
 
@@ -771,7 +1065,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                         const colorOld = this.getColorForNode(node);
 
                         if (colorOld) {
-                            let colorNew = this.render.getNodeColor(node, entry);
+                            let colorNew = this.activeFeatureRender.getNodeColor(node, entry);
                             colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
                             var scale = d3.scaleLinear<string>()
                                 .domain([0, this.colorChangeDuration])
@@ -792,7 +1086,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                     let nodes: AbstractNode[] = entry.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
-                        let color = this.render.getNodeColor(node, entry);
+                        let color = this.activeFeatureRender.getNodeColor(node, entry);
                         color = color == "h" ? OverviewEngine.hiddenColor : color;
                         this.colorNodeMap.set(node, color);
                     }
@@ -805,7 +1099,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
     }
 
     public setFeatureRender(render: AbstractFeature) {
-        this.render = render;
+        this.activeFeatureRender = render;
         this.updateNodeColors();
     }
 
@@ -814,7 +1108,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
     }
 
     private isNodeHiddenByFeature(n: AbstractNode, entry: AbstractNodeTree) {
-        return this.render.isNodeHidden(n, entry);
+        return this.activeFeatureRender.isNodeHidden(n, entry);
     }
 
     private getFixedSize(value: number, min: number = value, max: number = Infinity) {
@@ -822,7 +1116,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
     }
 
     private getNodeRadius(node: AbstractNode, padding: number = 0, weight: number = 0.95): number {
-        return this.render.getNodeRadius(node,node.tree as AbstractNodeTree);
+        return this.activeFeatureRender.getNodeRadius(node, node.tree as AbstractNodeTree);
     }
 
     private isHoveredNode(n: any) {
@@ -849,13 +1143,13 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     private drawCanvas(ctx: CanvasRenderingContext2D) {
 
-        this.clearCanvas(ctx, this.size.w, this.size.h);
+        this.clearCanvas(ctx, this.canvasSize.w, this.canvasSize.h);
 
         ctx.save();
         ctx.imageSmoothingEnabled = false;
 
         ctx.fillStyle = "rgb(30,30,30)";
-        ctx.fillRect(0, 0, this.size.w, this.size.h);
+        ctx.fillRect(0, 0, this.canvasSize.w, this.canvasSize.h);
 
         this.transform = d3.zoomTransform(this.canvas);
         ctx.translate(this.transform.x, this.transform.y);
@@ -1092,7 +1386,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
             let isNodeHovered = this.isHoveredNode(node);
 
-            if (true || this.nodeFiltered.length == 0 || this.nodeFiltered.includes(node)) {
+            if (true || this.nodesFiltered.length == 0 || this.nodesFiltered.includes(node)) {
 
                 let xPos = renderData[i].pos.x;
 
@@ -1126,7 +1420,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                         ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#ddd";
                         translate = (fontSize2) / (node.children.length == 0 ? 8 : 3);
                         ctx.font = `${fontSize2}px Arial italic`;
-                        const text = this.render.getFeatureText(node, tree);
+                        const text = this.activeFeatureRender.getFeatureText(node, tree);
                         if (text) ctx.fillText(text, xPos, yName + translate + (fontSize2 + 4) * 1);
 
 
@@ -1155,7 +1449,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                     ctx.fillText(name, xPos, yName);
 
                     ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#bbb";
-                    const text = this.render.getFeatureText(node, tree);
+                    const text = this.activeFeatureRender.getFeatureText(node, tree);
                     if (text) ctx.fillText(text, xPos, yName + (fontSize + 4) * 1);
 
                 }
