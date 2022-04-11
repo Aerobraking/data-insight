@@ -200,13 +200,16 @@ import {
   ArrowCollapseRight,
 } from "mdue";
 import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
-import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature";
+import {
+  AbstractFeature,
+  getFeatureList,
+} from "@/core/model/workspace/overview/AbstractFeature";
 import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
 import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { FolderNodeTree } from "@/filesystem/model/FolderNodeTree";
 import * as d3 from "d3";
-import { getFeatureList } from "../features/FeatureList";
+import { initAllFeatures } from "../../model/workspace/overview/FeatureList";
 import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
 import { doBenchmark, logTime } from "@/core/utils/Benchmark";
 import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
@@ -255,7 +258,7 @@ export default defineComponent({
     // only draw the canvas when the overview is visibile
     "model.isActive": function (newValue: boolean, oldValue: boolean) {
       if (Instance.getEngine(this.id)) {
-        Instance.getEngine(this.id).enablePainting = newValue;
+        Instance.getEngine(this.id).enableRendering = newValue;
       }
     },
     "model.paneSize": function (newValue: number, oldValue: number) {
@@ -373,7 +376,7 @@ export default defineComponent({
     /**
      * Set the data after the render is set.
      */
-    Instance.getEngine(this.id).trees = Instance.getData(this.id);
+    Instance.getEngine(this.id).trees = [...Instance.getData(this.id)];
 
     /**
      * Update the model coordinates with the current ones from the html view.
@@ -491,7 +494,7 @@ export default defineComponent({
     showAll(automodeToggle: boolean = true): void {
       if (!automodeToggle) {
         this.model.overview.showAll = false;
-        Instance.getEngine(this.id).zoomToFit(400);
+        Instance.getEngine(this.id).zoomToFitAll(400);
         return;
       }
       if (!this.model.overview.showAll) {
@@ -534,9 +537,7 @@ export default defineComponent({
       switch (e.key) {
         case "ArrowUp":
           if (node && node.parent) {
-            let childrenSorted = node.parent
-              .children
-              .sort((a, b) => a.y - b.y);
+            let childrenSorted = node.parent.children.sort((a, b) => a.y - b.y);
             let i = childrenSorted.indexOf(node);
             if (i - 1 < 0) {
               if (node.parent.parent) {
@@ -578,9 +579,7 @@ export default defineComponent({
           break;
         case "ArrowDown":
           if (node && node.parent) {
-            let childrenSorted = node.parent
-              .children
-              .sort((a, b) => a.y - b.y);
+            let childrenSorted = node.parent.children.sort((a, b) => a.y - b.y);
             let i = childrenSorted.indexOf(node);
             if (i + 1 > childrenSorted.length - 1) {
               if (node.parent.parent) {
@@ -647,18 +646,6 @@ export default defineComponent({
             break;
           case "h":
             this.toggleHighlight();
-            break;
-          case "l":
-            if (doBenchmark) logTime("layout");
-            for (let index = 0; index < 100; index++) {
-              Layouter.nodesUpdated(Instance.getEngine(this.id).trees[0]);
-            }
-            if (doBenchmark) logTime("layout");
-
-            for (let i = 0; i < Instance.getEngine(this.id).trees.length; i++) {
-              const l = Instance.getEngine(this.id).trees[i].nodes.length;
-              console.log(i, l);
-            }
             break;
           case " ":
             this.showAll(false);
@@ -814,11 +801,12 @@ export default defineComponent({
       });
 
       listEntries.push(...entries);
+ 
       /**
-       * register the entries to the engine
+       * register the entries to the engine.
        */
       if (Instance.getEngine(this.id)) {
-        Instance.getEngine(this.id).trees = listEntries;
+        Instance.getEngine(this.id).trees = [...listEntries];
       }
 
       /**

@@ -30,12 +30,12 @@ export function FeatureViewDecorator() {
         FeatureInstanceList[f] = instance;
     };
 }
-
+ 
 /**
  * Creates and returns a list with one Instance of all AbstractFeature implementations.
  * @returns 
  */
-export function internalCreateNewFeatureList(): AbstractFeature[] {
+export function getFeatureList(): AbstractFeature[] {
     let list = [];
     for (let i = 0; i < FeatureConstructorList.length; i++) {
         const f = FeatureConstructorList[i];

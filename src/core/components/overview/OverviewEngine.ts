@@ -2,10 +2,8 @@
 import { ElementDimension, ElementDimensionInstance } from "@/core/utils/ResizeUtils";
 import * as d3 from "d3";
 import { D3DragEvent, ZoomTransform } from "d3";
-import ColorTracker from 'canvas-color-tracker';
 import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
-import { Tween } from "@tweenjs/tween.js";
 import { Overview, Workspace } from "@/core/model/workspace/Workspace";
 import { AbstractNodeTree, NodeTreeListener } from "@/core/model/workspace/overview/AbstractNodeTree";
 import { ipcRenderer } from "electron";
@@ -231,7 +229,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
     /**
      * The current transformation of the Canvas space.
      */
-    transform!: ZoomTransform;
+    private transform!: ZoomTransform;
 
     /**
      * true: This Instance can render the data. But there are other condition that have to be fullfilled
@@ -243,12 +241,12 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
     /**
      * How many milliseconds should it take to fade out/in the nodes when filtering does happen.
      */
-    colorChangeDuration: number = 200;
+    private colorChangeDuration: number = 200;
 
     /**
      * The active Feature that takes care of the rendering of the nodes.
      */
-    activeFeatureRender!: AbstractFeature;
+    public featureRenderer!: AbstractFeature;
 
     /**
      * The minimum opacity that is not undercut when fading out a node.
@@ -965,7 +963,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         // 6.
         if (this.enableRendering && this.workspace.overviewOpen) {
             // render the data on the canvas
-            this.drawCanvas(this.context);
+            this.renderCanvas(this.context);
         }
 
     }
@@ -1037,7 +1035,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             if (transition) {
 
                 const colorOld = this.getColorForNode(node);
-                let colorNew = this.activeFeatureRender.getNodeColor(node, node.tree as AbstractNodeTree);
+                let colorNew = this.featureRenderer.getNodeColor(node, node.tree as AbstractNodeTree);
 
                 var scale = d3.scaleLinear<string>()
                     .domain([0, this.colorChangeDuration])
@@ -1049,7 +1047,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 this.colorTransitionTarget = this.colorChangeDuration;
 
             } else {
-                let color = this.activeFeatureRender.getNodeColor(node, node.tree as AbstractNodeTree);
+                let color = this.featureRenderer.getNodeColor(node, node.tree as AbstractNodeTree);
                 this.colorNodeMap.set(node, color);
             }
 
@@ -1065,7 +1063,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                         const colorOld = this.getColorForNode(node);
 
                         if (colorOld) {
-                            let colorNew = this.activeFeatureRender.getNodeColor(node, entry);
+                            let colorNew = this.featureRenderer.getNodeColor(node, entry);
                             colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
                             var scale = d3.scaleLinear<string>()
                                 .domain([0, this.colorChangeDuration])
@@ -1086,7 +1084,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                     let nodes: AbstractNode[] = entry.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
-                        let color = this.activeFeatureRender.getNodeColor(node, entry);
+                        let color = this.featureRenderer.getNodeColor(node, entry);
                         color = color == "h" ? OverviewEngine.hiddenColor : color;
                         this.colorNodeMap.set(node, color);
                     }
@@ -1098,34 +1096,72 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     }
 
+    /**
+     * Set the active render Instance for the node rendering.
+     * @param render the new AbstractFeature Instance that will handle the rendering of the nodes.
+     */
     public setFeatureRender(render: AbstractFeature) {
-        this.activeFeatureRender = render;
+        this.featureRenderer = render;
         this.updateNodeColors();
     }
 
-    public getNodePosition(n: AbstractNode): { x: number, y: number } {
-        return Layouter.getNodePosition(n);
+    /**
+     * Returns the Position for the given node in the canvas space.
+     * @param node The node you want to get the Position for
+     * @returns The Position in the canvas space for the given node.
+     */
+    public getNodePosition(node: AbstractNode): { x: number, y: number } {
+        return Layouter.getNodePosition(node);
     }
 
-    private isNodeHiddenByFeature(n: AbstractNode, entry: AbstractNodeTree) {
-        return this.activeFeatureRender.isNodeHidden(n, entry);
+    /**
+     * Tests wether this node should be hidden or not.
+     * @param node the node to be tested
+     * @param tree the tree the node belongs to 
+     * @returns true: the node is hidden, false: the node is not hidden.
+     */
+    private isNodeHiddenByFeature(node: AbstractNode, tree: AbstractNodeTree) {
+        return this.featureRenderer.isNodeHidden(node, tree);
     }
 
+    /**
+     * Returns the radius (for drawing node circles) for the given node.
+     * @param node The node for which you want to get the radius for.
+     * @returns A value in pixels that represents the radius.
+     */
+    private getNodeRadius(node: AbstractNode): number {
+        return this.featureRenderer.getNodeRadius(node, node.tree as AbstractNodeTree);
+    }
+
+    /**
+     * Is the given node the current hovered node.
+     * @param node the node you want to test.
+     * @returns true: yes this is the same node is the hovered node, false: it is not.
+     */
+    private isHoveredNode(node: any) {
+        return this.nodeHovered == node;
+    }
+
+    /**
+     * The values for drawing things in the canvas is scaled by when the user zooms the canvas space.
+     * To draw things always in the same size, they need to get adapted by the scaling factor, which this method does
+     * @param value The value you want to adapt
+     * @param min a minimum pixel size for the value.
+     * @param max a maximum pixel size for the value.
+     * @returns 
+     */
     private getFixedSize(value: number, min: number = value, max: number = Infinity) {
         return Math.max(min, Math.min(value / d3.zoomTransform(this.canvas).k, max));
     }
 
-    private getNodeRadius(node: AbstractNode, padding: number = 0, weight: number = 0.95): number {
-        return this.activeFeatureRender.getNodeRadius(node, node.tree as AbstractNodeTree);
-    }
-
-    private isHoveredNode(n: any) {
-        return this.nodeHovered == n;
-    }
-
+    /**
+     * Returns the color in which the given Node should be drawn in.
+     * @param node The node you want to get the color for.
+     * @returns A String that represents a color that works with the CanvasRenderingContext2D Interface.
+     */
     getColorForNode(node: AbstractNode): string {
 
-        // when the node is faded out completly, return the default color
+        // when the node is faded out completley, return the default color
         const opacity = this.notFound.get(node);
         if (opacity && opacity.o == OverviewEngine.opacityMin) {
             return OverviewEngine.hiddenColor;
@@ -1141,9 +1177,16 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         return OverviewEngine.colorNodeDefault;
     }
 
-    private drawCanvas(ctx: CanvasRenderingContext2D) {
+    /**
+     * Takes care of the rendering of the tree data. 
+     * @param ctx The context that should do the rendering.
+     */
+    private renderCanvas(ctx: CanvasRenderingContext2D) {
 
-        this.clearCanvas(ctx, this.canvasSize.w, this.canvasSize.h);
+        // clear the canvas from any rendering from the last tick.
+        ctx.save();
+        ctx.clearRect(0, 0, this.canvasSize.w, this.canvasSize.h);
+        ctx.restore();
 
         ctx.save();
         ctx.imageSmoothingEnabled = false;
@@ -1165,22 +1208,21 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
                 let nodes: AbstractNode[] = tree.nodes;
                 let links: AbstractLink[] = tree.links;
-                var renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
+                var renderDataNodes: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
                 var renderDataLinks: { culling: boolean }[] = new Array(links.length);
 
-
-                this.prepareRenderData(nodes, links, renderData, renderDataLinks);
+                this.prepareRenderData(nodes, links, renderDataNodes, renderDataLinks);
                 if (doBenchmark) logTime("PrepareRender");
 
                 if (doBenchmark) logTime("Render");
                 if (doBenchmark) logTime("rlinks");
-                this.drawLinks(ctx, nodes, links, tree, renderData, renderDataLinks);
+                this.renderLinks(ctx, nodes, links, tree, renderDataNodes, renderDataLinks);
                 if (doBenchmark) logTime("rlinks");
                 if (doBenchmark) logTime("rnodes");
-                this.drawNodes(ctx, nodes, tree, renderData);
+                this.drawNodes(ctx, nodes, tree, renderDataNodes);
                 if (doBenchmark) logTime("rnodes");
                 if (doBenchmark) logTime("rtext");
-                this.drawText(ctx, nodes, tree, renderData);
+                this.drawText(ctx, nodes, tree, renderDataNodes);
                 if (doBenchmark) logTime("rtext");
                 if (doBenchmark) logTime("Render");
                 ctx.restore();
@@ -1190,16 +1232,32 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         ctx.restore();
     }
 
+    /**
+     * 
+     * @param nodes All the nodes of one tree.
+     * @param links All the links of one tree.
+     * @param renderData The Instance where the cached render data for the nodes is added to.
+     * @param renderDataLinks The Instance where the cached render data for the links is added to.
+     */
     prepareRenderData(nodes: AbstractNode[], links: AbstractLink[], renderData: { color: any; pos: { x: number; y: number; }; r: number; culling: boolean; }[], renderDataLinks: { culling: boolean; }[]) {
         nodes.forEach((n, i) => {
-            renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getNodeRadius(n, 0, 0.99), culling: this.enableCulling ? this.nodeCulling(n) : false };
+            renderData[i] = { color: this.getColorForNode(n), pos: this.getNodePosition(n), r: this.getNodeRadius(n), culling: this.enableCulling ? this.nodeCulling(n) : false };
         });
         links.forEach((l, i) => {
             renderDataLinks[i] = { culling: this.enableCulling ? this.linkCulling(l) : false };
         });
     }
 
-    drawLinks(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], links: AbstractLink[], tree: AbstractNodeTree, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[], renderDataLinks: { culling: boolean }[] = new Array(links.length)) {
+    /**
+     * Does the actual rendering of the links of the tree with bezier curves.
+     * @param ctx The context that is used for rendering.
+     * @param nodes The nodes of one tree.
+     * @param links The links of on tree.
+     * @param tree The tree of the nodes.
+     * @param renderDataNode The cached data for rendering the nodes
+     * @param renderDataLinks The cached data for rendering the links
+     */
+    renderLinks(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], links: AbstractLink[], tree: AbstractNodeTree, renderDataNode: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[], renderDataLinks: { culling: boolean }[] = new Array(links.length)) {
 
         let scale = this.transform ? this.transform.k : 1;
         let weight = 0.7;
@@ -1223,13 +1281,12 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 ctx.globalAlpha = 1;
             }
 
-            var r = renderData[nodes.indexOf(end)].r;
-            var rStart = renderData[nodes.indexOf(start)].r;
+            var r = renderDataNode[nodes.indexOf(end)].r;
+            var rStart = renderDataNode[nodes.indexOf(start)].r;
             if (start.isRoot() && tree.isSyncing) rStart += Math.sin(OverviewEngine.elapsedTotal / 300) * 20;
-            // let xStart = widths[start.depth] ? (start.isRoot() ? widths[start.depth].x + rStart : widths[start.depth].x + this.textMaxWidth) : 0;
-            let xStart = (start.isRoot() ? renderData[nodes.indexOf(start)].pos.x + rStart : renderData[nodes.indexOf(start)].pos.x + this.textMaxWidth);
-            let xEnd = renderData[nodes.indexOf(end)].pos.x - 150;
-            let xEndLine = xEnd + 150 - r + 1; // point on the next circle
+            let xStart = (start.isRoot() ? renderDataNode[nodes.indexOf(start)].pos.x + rStart : renderDataNode[nodes.indexOf(start)].pos.x + this.textMaxWidth);
+            let xEnd = renderDataNode[nodes.indexOf(end)].pos.x - 150;
+            let xEndLine = xEnd + 150 - r + 1;
 
             if (start.isRoot()) {
                 ctx.strokeStyle = "#555";
@@ -1238,10 +1295,10 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             const drawCurve = () => {
                 ctx.beginPath();
 
-                const yStart = renderData[nodes.indexOf(start)].pos.y;
-                const yEnd = renderData[nodes.indexOf(end)].pos.y;
+                const yStart = renderDataNode[nodes.indexOf(start)].pos.y;
+                const yEnd = renderDataNode[nodes.indexOf(end)].pos.y;
 
-                ctx.moveTo(renderData[nodes.indexOf(start)].pos.x + rStart, yStart);
+                ctx.moveTo(renderDataNode[nodes.indexOf(start)].pos.x + rStart, yStart);
                 ctx.lineTo(xStart, yStart);
 
                 const midX = (xStart + xEnd) / 2;
@@ -1268,9 +1325,9 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 // drawCurve();
             }
 
-            let colorStart = renderData[nodes.indexOf(start)].color;
+            let colorStart = renderDataNode[nodes.indexOf(start)].color;
 
-            let colorEnd = renderData[nodes.indexOf(end)].color;
+            let colorEnd = renderDataNode[nodes.indexOf(end)].color;
             if (colorEnd == OverviewEngine.hiddenColor) {
                 // colorStart = colorEnd;
             }
@@ -1290,7 +1347,14 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
     }
 
-    drawNodes(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], tree: AbstractNodeTree, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
+    /**
+     * Does the actual rendering of the nodes of the tree with arcs.
+     * @param ctx The context that is used for rendering.
+     * @param nodes The nodes of one tree.
+     * @param tree The tree of the nodes.
+     * @param renderDataNode The cached data for rendering the nodes
+     */
+    drawNodes(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], tree: AbstractNodeTree, renderDataNode: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
 
         const ts = this.transform ? this.transform.k : 1;
         ctx.lineWidth = this.getFixedSize(12, 10, 40);
@@ -1300,8 +1364,8 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
             const node = nodes[i];
 
-            var r = renderData[i].r;
-            if (renderData[i].culling || r * ts < 1) { i++; continue; }
+            var r = renderDataNode[i].r;
+            if (renderDataNode[i].culling || r * ts < 1) { i++; continue; }
 
             const opacity = this.notFound.get(node);
             if (opacity) {
@@ -1310,7 +1374,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 ctx.globalAlpha = 1;
             }
 
-            ctx.fillStyle = renderData[i].color;
+            ctx.fillStyle = renderDataNode[i].color;
             ctx.strokeStyle = ctx.fillStyle;
 
             if (node.isRoot() && tree.isSyncing) {
@@ -1323,20 +1387,20 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 ctx.fillStyle = scale(Math.sin(t));
             }
 
-            let xPos = renderData[i].pos.x;
+            let xPos = renderDataNode[i].pos.x;
 
             ctx.beginPath();
 
             if (node.isCollection()) {
                 ctx.arc(
-                    xPos, renderData[i].pos.y,
+                    xPos, renderDataNode[i].pos.y,
                     Math.max(0.1, r - ctx.lineWidth / 2),
                     0, angle
                 );
                 ctx.stroke();
             } else {
                 ctx.arc(
-                    xPos, renderData[i].pos.y,
+                    xPos, renderDataNode[i].pos.y,
                     r,
                     0, angle
                 );
@@ -1348,21 +1412,26 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 ctx.globalAlpha = 1;
                 ctx.beginPath();
                 ctx.arc(
-                    xPos, renderData[i].pos.y, Math.max(1, r - ctx.lineWidth / 2),
+                    xPos, renderDataNode[i].pos.y, Math.max(1, r - ctx.lineWidth / 2),
                     0, angle
                 );
                 ctx.strokeStyle = OverviewEngine.colorSelection;
                 ctx.stroke();
             }
 
-
-
-            i++
+            i++;
         }
 
     }
 
-    drawText(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], tree: AbstractNodeTree, renderData: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
+    /**
+     * Does the actual rendering of the Text next to the nodes.
+     * @param ctx The context that is used for rendering.
+     * @param nodes The nodes of one tree.
+     * @param tree The tree of the nodes.
+     * @param renderDataNode The cached data for rendering the nodes
+     */
+    drawText(ctx: CanvasRenderingContext2D, nodes: AbstractNode[], tree: AbstractNodeTree, renderDataNode: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[]) {
 
         ctx.fillStyle = "#fff";
 
@@ -1376,95 +1445,80 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
         const limitText = (n: AbstractNode) => (n.children.length > 0 && (n.name + "...").length > 24) ? n.name.substring(0, 18) + "..." : n.name;
 
-        /**
-         * Draw Folder names
-         */
         for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i];
 
-            if (renderData[i].culling) continue;
+            if (renderDataNode[i].culling) continue;
 
             let isNodeHovered = this.isHoveredNode(node);
 
-            if (true || this.nodesFiltered.length == 0 || this.nodesFiltered.includes(node)) {
+            let xPos = renderDataNode[i].pos.x;
 
-                let xPos = renderData[i].pos.x;
+            if (!node.isRoot()) {
 
-                if (!node.isRoot()) {
-
-                    if (scale < 0.025) continue;
-                    // child node
-                    const opacity = this.notFound.get(node);
-                    if (!opacity || this.isHoveredNode(node) || this.selection.includes(tree.root)) {
-                        ctx.globalAlpha = op;
-                    } else {
-                        ctx.globalAlpha = opacity.o;
-                    }
-
-                    if (op > 0) {
-                        xPos += node.isCollection() ? this.textPadding + 45 : this.textPadding;
-                        ctx.textAlign = "left";
-
-                        ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#fff";
-                        let translate = (fontSize) / 3;
-                        ctx.font = `${fontSize}px Arial`;
-                        let yName = node.children.length == 0 ? renderData[i].pos.y + (fontSize) / 4 : renderData[i].pos.y - translate;
-
-
-
-                        if (this.selection.includes(node)) ctx.fillStyle = OverviewEngine.colorSelection;
-
-                        ctx.fillText(`${node.isCollection() ? limitText(node) + " (+ " + (node.collectionData?.size) + ")" : limitText(node)}  `, xPos, yName);
-
-
-                        ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#ddd";
-                        translate = (fontSize2) / (node.children.length == 0 ? 8 : 3);
-                        ctx.font = `${fontSize2}px Arial italic`;
-                        const text = this.activeFeatureRender.getFeatureText(node, tree);
-                        if (text) ctx.fillText(text, xPos, yName + translate + (fontSize2 + 4) * 1);
-
-
-                    }
-
+                if (scale < 0.025) continue;
+                // child node
+                const opacity = this.notFound.get(node);
+                if (!opacity || this.isHoveredNode(node) || this.selection.includes(tree.root)) {
+                    ctx.globalAlpha = op;
                 } else {
-                    // root node
-                    ctx.globalAlpha = 1;
-                    ctx.textAlign = "right";
-
-                    let fontSize = this.getFixedSize(20);
-                    let translate = (fontSize) / 4;
-                    ctx.font = `${fontSize}px Arial`;
-
-                    let name = (isNodeHovered || this.selection.includes(node)) && tree ? tree.getName() : node.name;
-                    let yName = renderData[i].pos.y + translate;
-
-                    var r = renderData[i].r;
-                    xPos -= r * 1.1;
-
-                    ctx.fillStyle = "#fff";
-                    if (this.selection.includes(node)) {
-                        ctx.fillStyle = OverviewEngine.colorSelection;
-                    }
-
-                    ctx.fillText(name, xPos, yName);
-
-                    ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#bbb";
-                    const text = this.activeFeatureRender.getFeatureText(node, tree);
-                    if (text) ctx.fillText(text, xPos, yName + (fontSize + 4) * 1);
-
+                    ctx.globalAlpha = opacity.o;
                 }
+
+                if (op > 0) {
+                    xPos += node.isCollection() ? this.textPadding + 45 : this.textPadding;
+                    ctx.textAlign = "left";
+
+                    ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#fff";
+                    let translate = (fontSize) / 3;
+                    ctx.font = `${fontSize}px Arial`;
+                    let yName = node.children.length == 0 ? renderDataNode[i].pos.y + (fontSize) / 4 : renderDataNode[i].pos.y - translate;
+
+
+
+                    if (this.selection.includes(node)) ctx.fillStyle = OverviewEngine.colorSelection;
+
+                    ctx.fillText(`${node.isCollection() ? limitText(node) + " (+ " + (node.collectionData?.size) + ")" : limitText(node)}  `, xPos, yName);
+
+
+                    ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#ddd";
+                    translate = (fontSize2) / (node.children.length == 0 ? 8 : 3);
+                    ctx.font = `${fontSize2}px Arial italic`;
+                    const text = this.featureRenderer.getFeatureText(node, tree);
+                    if (text) ctx.fillText(text, xPos, yName + translate + (fontSize2 + 4) * 1);
+                }
+
+            } else {
+                // root node
+                ctx.globalAlpha = 1;
+                ctx.textAlign = "right";
+
+                let fontSize = this.getFixedSize(20);
+                let translate = (fontSize) / 4;
+                ctx.font = `${fontSize}px Arial`;
+
+                let name = (isNodeHovered || this.selection.includes(node)) && tree ? tree.getName() : node.name;
+                let yName = renderDataNode[i].pos.y + translate;
+
+                var r = renderDataNode[i].r;
+                xPos -= r * 1.1;
+
+                ctx.fillStyle = "#fff";
+                if (this.selection.includes(node)) {
+                    ctx.fillStyle = OverviewEngine.colorSelection;
+                }
+
+                ctx.fillText(name, xPos, yName);
+
+                ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#bbb";
+                const text = this.featureRenderer.getFeatureText(node, tree);
+                if (text) ctx.fillText(text, xPos, yName + (fontSize + 4) * 1);
+
             }
 
 
         }
         ctx.globalAlpha = 1;
-
-    }
-
-    private clearCanvas(ctx: CanvasRenderingContext2D, width: number, height: number) {
-        ctx.save();
-        ctx.clearRect(0, 0, width, height);
-        ctx.restore();
     }
 
 }

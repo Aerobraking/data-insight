@@ -11,15 +11,18 @@ export default abstract class View {
      * places in the code.
      */
     id: number = 0;
+    
     /**
      * true: the view is shown in the UI, only one workspace at a time is allowed to have 
      * this set to true
      */
     isActive: boolean = false;
+
     /**
      * The name that is shown in the tab.
      */
     name: string = "";
+
     /**
      * Identifies the implemented class for the json class loader.
      */

@@ -219,7 +219,7 @@ export default defineComponent({
     },
     sendSettingsToEngine() {
       if(this.model.id ==  this.workspace.overview.featureActive)
-      Instance.getEngine(this.workspace.id).render.settings = JSON.parse(
+      Instance.getEngine(this.workspace.id).featureRenderer.settings = JSON.parse(
         JSON.stringify(this.model.settings)
       );
     },
@@ -249,18 +249,7 @@ export default defineComponent({
 
       this.filterfunc(this);
     },
-    filterfunc: _.throttle((_this: any) => {
-      /**
-       * Sobald sich die Werte ändern, was eigentlich nur passiert wenn der filter angepasst wird? Dann ein event firen.
-       *
-       * Das muss dann von allen Files aufgegriffen werden um ihre Farbe zu aktualisieren.
-       */
-      // WSUtils.Dispatcher.instance.featureEvent(
-      //   stats,
-      //   Number(min),
-      //   Number(max),
-      //   _this.gradientFunction.getColor
-      // );
+    filterfunc: _.throttle((_this: any) => { 
 
       if (Instance.getEngine(_this.workspace.id)) {
         Instance.getEngine(_this.workspace.id).updateNodeColors();
