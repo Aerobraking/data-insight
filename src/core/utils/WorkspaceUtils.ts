@@ -85,14 +85,17 @@ export function setupEntry(props: any, wsListener: WorkspaceViewListener | undef
  * by using the event() method. 
  */
 export interface WorkspaceViewListener {
+
     /**
      * Is called when the string inside the searchfield changes.
      */
     searchEvent?: (value: string) => void;
+
     /**
      * Is called when the dragging of workspace entries starts.
      */
     dragStarting?: (selection: Element[], workspace: WorkspaceViewIfc) => void;
+
     /**
      * !Work in Progress!
      * Will be used to update the feature views inside the Workspace when settings are changed for
@@ -102,6 +105,7 @@ export interface WorkspaceViewListener {
         feature: FeatureType | undefined,
         min: number, max: number,
         getColor: (node: any, stat: number, min: number, max: number) => string) => void;
+
     /**
      * The state of our app is defined through the store object but there may be data that is not inside the
      * store while it is used in the app, mainly because of performance reasons (lots of updates in the store are slow
@@ -109,15 +113,18 @@ export interface WorkspaceViewListener {
      * the data in the store to current state. 
      */
     prepareFileSaving?: () => void;
+
     /**
      * Is called when the zoom value changes in the workpsace.
      */
     zoom?: (transform: { x: number, y: number, scale: number }, workspace: WorkspaceViewIfc) => void;
+
     /**
      * Is called when a plugin starts.
      * @param modal true: the plugin is modal, so all other inputs should be disabled.
      */
     pluginStarted?: (modal: boolean) => void;
+
     /**
      * Different things can be triggered by calling this method, see the type parameter.
      * @param type fixedZoomUpdate: Updates the elements in the active WorkspaceView that have a fixed scaling.

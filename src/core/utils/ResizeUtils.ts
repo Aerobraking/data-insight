@@ -2,15 +2,23 @@ import _ from "underscore";
 
 export const classPreventInput = "prevent-input";
 
+
 export interface ElementDimension {
     x: number,
     y: number,
+    // width of the element
     w: number,
+    // height of the element
     h: number,
+    // x position + width
     x2: number,
+    // y position + height
     y2: number,
 }
 
+/**
+ * A Class that implements the ElementDimension interface.
+ */
 export class ElementDimensionInstance implements ElementDimension {
 
     constructor(x: number = 0,
@@ -34,13 +42,19 @@ export class ElementDimensionInstance implements ElementDimension {
     x2: number;
     y2: number;
 
-    public calculateSize(minSize: number = 1) {
+    /**
+     * When x, y, x2, y2 is given, it calculates w and h from it.
+     */
+    public calculateSize() {
         this.w = this.x2 - this.x;
         this.h = this.y2 - this.y;
-
     }
 
-    public scaleFromCenter(s: number = 1) {
+    /**
+     * Scales the Rectangle from its center by the given percantage value.
+     * @param s Scale value. 1 is 100%, so 1.43 is 143% and so on.
+     */
+    public scaleFromCenter(s: number = 1): void {
         if (s == 1) return;
         const oldW = this.w;
         const oldH = this.h;
@@ -51,18 +65,30 @@ export class ElementDimensionInstance implements ElementDimension {
         this.x2 += ((this.w - oldW) / 2);
         this.y2 += ((this.h - oldH) / 2);
     }
-    public addPadding(p: number = 1): this {
-        if (p == 1) return this;
-        this.w += p * 2;
-        this.h += p * 2;
-        this.x -= p;
-        this.y -= p;
-        this.x2 += p;
-        this.y2 += p;
+
+    /**
+     * Adds the given padding to the rectangle. The position will be modified  from its center.
+     * @param padding 
+     * @returns This ElementDimensionInstance instance.
+     */
+    public addPadding(padding: number = 1): this {
+        if (padding == 1) return this;
+        this.w += padding * 2;
+        this.h += padding * 2;
+        this.x -= padding;
+        this.y -= padding;
+        this.x2 += padding;
+        this.y2 += padding;
         return this;
     }
 }
- 
+
+/**
+ * Returns the size and position for the given HTMLElement by extrating
+ * these values from its CSS Styles.
+ * @param e The HTMLElement.
+ * @returns a ElementDimensionInstance Instance containing the calculated size and position.
+ */
 export function getCoordinatesFromElement(e: HTMLElement): ElementDimensionInstance {
     let results: string = e.style.transform;
     results = results
@@ -91,23 +117,44 @@ export function getCoordinatesFromElement(e: HTMLElement): ElementDimensionInsta
     );
 }
 
-export function set3DPosition(e: any, x: number, y: number): void {
+/**
+ * Sets the x and y position for the given HTMLElement in CSS style by using translate3d.
+ * @param e The HTMLElement element.
+ * @param x The x position value.
+ * @param y The y position value.
+ */
+export function set3DPosition(e: HTMLElement, x: number, y: number): void {
     e.style.transform = `translate3d(${x}px, ${y}px,0px)`;
 }
 
-export function setSize(e: any, w: number, h: number): void {
+/**
+ * Sets the width and height style for the given HTMLElement.
+ * @param e The HTMLElement element.
+ * @param w The width value.
+ * @param h The height value.
+ */
+export function setSize(e: HTMLElement, w: number, h: number): void {
     e.style.width = Math.abs(w) + "px";
     e.style.height = Math.abs(h) + "px";
 }
 
+/**
+ * The ResizerComplex needs to know the current transformation of the viewport of the HTMLElements so
+ * this interfaces provides this data for it.
+ */
 export interface ResizerComplexOwner {
     getCurrentTransform(): { scale: number; x: number; y: number };
 }
 
-const maxSize: number = 30000;
-
+/**
+ * Handles the resizing of HTMLELements by the mouse.
+ */
 export class ResizerComplex {
 
+    /**
+     * The maximum size for HTML Elements when they will be resized
+     */
+    static maxSize: number = 30000;
     startX: number = 0;
     startY: number = 0;
     startWidth: number = 0;
@@ -143,11 +190,6 @@ export class ResizerComplex {
          * Add resize handler divs
          */
         var resizer;
-        //   resizer = document.createElement('div');
-        // resizer.className = 'resizer-top-right';
-        // resizer.classList.add('ws-zoom-fixed');
-        // element.appendChild(resizer);
-        // resizer.addEventListener('mousedown', ev => this.initDrag(ev), false);
 
         if (resizeElement != undefined) {
             resizeElement.addEventListener('mousedown', ev => this.initDrag(ev), { capture: true });
@@ -287,7 +329,7 @@ export class ResizerComplex {
                 const eW = dimE.w * scaleW;
                 const eH = dimE.h * scaleH;
 
-                maxSizeReached = eW > maxSize || eH > maxSize;
+                maxSizeReached = eW > ResizerComplex.maxSize || eH > ResizerComplex.maxSize;
             }
 
             // resize the children
@@ -306,7 +348,7 @@ export class ResizerComplex {
                 const eW = dimE.w * scaleW;
                 const eH = dimE.h * scaleH;
 
-                if (eW > maxSize || eH > maxSize) {
+                if (eW > ResizerComplex.maxSize || eH > ResizerComplex.maxSize) {
                     break;
                 }
 

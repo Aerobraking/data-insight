@@ -87,7 +87,7 @@
         </tippy>
 
         <tippy>
-          <button :disabled="!nodeCollapsable">
+          <button :disabled="!collectionCreatable">
             <RecordCircle
               @click.exact="createCollection()"
               @click.ctrl.exact="createCollection(true)"
@@ -98,7 +98,7 @@
           >
         </tippy>
         <tippy>
-          <button :disabled="isContainer">
+          <button :disabled="isCollection">
             <FileTree
               @click.exact="loadCollection()"
               @click.ctrl.exact="loadCollection(true)"
@@ -141,39 +141,12 @@
 </template>
 
 <script lang="ts">
-/*
- <panZoom
-      @init="panHappen"
-      tabIndex="0"
-      :options="{
-        zoomDoubleClickSpeed: 1,
-        minZoom: 0.03,
-        maxZoom: 15,
-        bounds: false,
-        initialX: model.overview.viewportTransform.x,
-        initialY: model.overview.viewportTransform.y,
-        initialZoom: model.overview.viewportTransform.scale,
-      }"
-      selector=".zoomable"
-    >
-      <div class="zoomable close-file-anim">
-        <!-- <div
-          :class="{ 'blend-out': model.entries.length > 0 }"
-          class="welcome-message"
-        >
-          <h2>
-            Let's drop some Folders to get going!
-            <EmoticonHappyOutline class="svg-smile" />
-          </h2>
-          <p>
-            <FolderOutline class="svg-folder" />
-          </p>
-          <p><Download class="svg-download" /></p>
-        </div> -->
-      </div>
-    </panZoom> 
-
-*/
+/**
+ * Displays the Overview of an activity.
+ * This is made up of an Canvas for rendering the trees and some
+ * buttons for the UI.
+ * It also Creates the UI for the Feature Settings.
+ */
 import fs from "fs";
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
@@ -183,19 +156,14 @@ import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
 import path from "path";
 import {
-  Pause,
   DeleteEmptyOutline,
-  Qrcode,
-  EmoticonHappyOutline,
   RecordCircle,
-  Download,
   TuneVerticalVariant,
   ContentCopy,
   Flashlight,
   Overscan,
   FolderOutline,
   FormatHorizontalAlignCenter,
-  CogOutline,
   FileTree,
   ArrowCollapseRight,
 } from "mdue";
@@ -208,19 +176,19 @@ import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTr
 import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { FolderNodeTree } from "@/filesystem/model/FolderNodeTree";
-import * as d3 from "d3";
-import { initAllFeatures } from "../../model/workspace/overview/FeatureList";
-import { Layouter } from "@/core/model/workspace/overview/NodeLayout";
-import { doBenchmark, logTime } from "@/core/utils/Benchmark";
 import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
-import { OverviewEngine } from "./OverviewEngine";
 import {
   createKeyboardInputContext,
   PluginShortCutHandler,
 } from "@/core/plugin/KeyboardShortcut";
 import { getPlugins } from "@/plugins/PluginList";
 import AbstractPlugin from "@/core/plugin/AbstractPlugin";
-import { remove } from "@/core/utils/ListUtils";
+import { removeFromList } from "@/core/utils/ListUtils";
+
+/**
+ * This import loads Instances for all Feature Classes, so don't remove it.
+ */
+import { initAllFeatures } from "../../model/workspace/overview/FeatureList";
 
 export default defineComponent({
   name: "App",
@@ -228,17 +196,12 @@ export default defineComponent({
     Tippy,
     TippySingleton,
     RecordCircle,
-    CogOutline,
-    Qrcode,
     FileTree,
     ColorGradient,
     ContentCopy,
     Flashlight,
     TuneVerticalVariant,
-    EmoticonHappyOutline,
     Overscan,
-    Pause,
-    Download,
     DeleteEmptyOutline,
     FolderOutline,
     FormatHorizontalAlignCenter,
@@ -266,9 +229,10 @@ export default defineComponent({
         this.model.overviewOpen = newValue < 100;
       }, 500);
     },
-    "selection.y": function (newValue: number, oldValue: number) {
-      // funktioniert nicht
-    },
+    /**
+     * When the id of the active Feature changes, update the view
+     * to load the appropiate view for the now active feature.
+     */
     "model.overview.featureActive": function (
       newValue: FeatureType | undefined,
       oldValue: FeatureType | undefined
@@ -279,57 +243,58 @@ export default defineComponent({
       newValue: AbstractNode | undefined,
       oldValue: AbstractNode | undefined
     ) {
-      if (newValue instanceof FolderNode) {
-        const fn: FolderNode = newValue;
-        //  this.$emit("folderSelected", fn.getPath());
-      } else {
-        //  this.$emit("folderSelected", undefined);
-      }
-    },
-    "model.overview.viewportTransform": function (
-      newValue: { x: number; y: number; scale: number },
-      oldValue: { x: number; y: number; scale: number }
-    ) {
-      // sync the panzoom div content with the canvas viewport transformations
-      this.updateDivTransformation(newValue);
+      // used for connecting a selected FolderNode to a FolderView in the future.
     },
     searchstring: function (newValue: String, oldValue: String) {
       this.searchUpdate();
     },
   },
   data(): {
-    sliderRange: (number | string)[];
-    d3: any;
+    /**
+     *
+     */
     wsListener: WSUtils.WorkspaceViewListener | undefined;
+    /**
+     * Stores the id of the workspace for easier access
+     */
     id: number;
-    panZoomInstance: any;
+    /**
+     * The current selected Node Object in the Overview,
+     * or undefined when none is selected.
+     */
     selection: AbstractNode | undefined;
+    /**
+     * Contains for each existing class that extends from AbstractFeature
+     * An Instance.
+     */
     listFeatures: AbstractFeature[];
-    c: PluginShortCutHandler | undefined;
+    /**
+     * Handles the activiation of the plugins by the
+     * keyboard inputs.
+     */
+    pluginShortCutHandler: PluginShortCutHandler | undefined;
   } {
     return {
       listFeatures: [],
-      sliderRange: [0, 100],
-      d3: d3,
       selection: undefined,
       id: 0,
-      panZoomInstance: null,
       wsListener: undefined,
-      c: undefined,
+      pluginShortCutHandler: undefined,
     };
   },
   mounted() {
     const _this = this;
 
-    this.c = createKeyboardInputContext({
+    this.pluginShortCutHandler = createKeyboardInputContext({
       debounceTime: 100,
       autoEnable: true,
     });
 
+    // register all plugins to the shortcut handler.
     getPlugins().forEach((p) => {
       const plugin = new p();
-      if (this.c)
-        this.c.register(plugin.shortcut, () => {
+      if (this.pluginShortCutHandler)
+        this.pluginShortCutHandler.register(plugin.shortcut, () => {
           this.startPlugin(plugin);
         });
     });
@@ -340,6 +305,9 @@ export default defineComponent({
     Instance.storeData(this.model);
     this.id = this.model.id;
 
+    /**
+     * Create the OverviewEngine Instance for this overview model instance.
+     */
     Instance.createEngine(
       this.id,
       this.$el.getElementsByClassName("overview-wrapper")[0],
@@ -347,7 +315,7 @@ export default defineComponent({
     );
 
     /**
-     * Set engine for existing nodes
+     * Set engine for existing nodes.
      */
     Instance.getData(this.id).forEach((e) => {
       e.engine = Instance.getEngine(this.id);
@@ -361,7 +329,7 @@ export default defineComponent({
     const listFeatures = getFeatureList();
 
     /**
-     * get the settings from the overview to the view. when no settings exists, create a new instance.
+     * transfer the settings from the overview to the view. when no settings exists, create a new instance.
      */
     for (let i = 0; i < listFeatures.length; i++) {
       const f = listFeatures[i];
@@ -387,6 +355,9 @@ export default defineComponent({
       },
     };
 
+    /**
+     * When folders were selected in the main process, add them as trees to the overview.
+     */
     ipcRenderer.on(
       "files-selected",
       function (
@@ -399,37 +370,45 @@ export default defineComponent({
       }
     );
 
-    // init view for div
-    this.updateDivTransformation(this.model.overview.viewportTransform);
-
-    // set3DPosition(
-    //   this.$el.getElementsByClassName("welcome-message")[0],
-    //   -750,
-    //   -500
-    // );
-
-    const l = (n: AbstractNode | undefined) => {
-      this.selection = n;
-    };
-
-    Instance.getEngine(this.id).setSelectionListener(l);
+    /**
+     * Listen to the selection change in the OverviewEngine to update
+     * it here in the Component.
+     */
+    Instance.getEngine(this.id).setSelectionListener(
+      (n: AbstractNode | undefined) => {
+        this.selection = n;
+      }
+    );
 
     WSUtils.Events.registerCallback(this.wsListener);
   },
   unmounted() {
+    /**
+     * When the Component gets unmounted then we can also stop the OverviewEngine
+     * because in this case the Overview was deleted or the InsightFile was closed.
+     */
     if (Instance.getEngine(this.id)) Instance.getEngine(this.id).dispose();
     if (this.wsListener) {
       WSUtils.Events.unregisterCallback(this.wsListener);
     }
   },
   computed: {
+    /**
+     * @return: true A root node of a tree is selected. false: otherwise.
+     */
     deleteAllowed(): boolean {
       return this.selection != undefined && this.selection.isRoot();
     },
+    /**
+     * @return: true a node is selected that is NOT the root node, false otherwise.
+     */
     nodeSelected(): boolean {
       return this.selection != undefined && !this.selection.isRoot();
     },
-    nodeCollapsable(): boolean {
+    /**
+     * @return: true if the selected node can be converted to a collection, false otherwise.
+     */
+    collectionCreatable(): boolean {
       return (
         this.selection != undefined &&
         !this.selection.isRoot() &&
@@ -437,27 +416,42 @@ export default defineComponent({
         !this.selection.isCollection()
       );
     },
-    isContainer(): boolean {
+    /**
+     * @return: true if the selected node is a collection node, false otherwise.
+     */
+    isCollection(): boolean {
       return this.selection != undefined && !this.selection.isCollection();
     },
+    /**
+     * @return true if the UI should be visible, false when certain UI Elements should be
+     * hidden for the "distract free mode"
+     */
     getShowUI(): boolean {
       return this.$store.getters.getShowUI;
     },
   },
   inject: ["getWorkspaceIfc"],
   methods: {
+    /**
+     * Starts the given Plugin instance.
+     */
     startPlugin(p: AbstractPlugin): void {
-      // this.activePlugin = p;
       // @ts-ignore: Unreachable code error
       p.setWorkspace(this.getWorkspaceIfc());
       p.init();
       WSUtils.Events.pluginStarted(p.isModal());
     },
+    /**
+     * Toggle the highlighting of the related tree parts of the selected node.
+     */
     toggleHighlight() {
       this.model.overview.highlightSelection =
         !this.model.overview.highlightSelection;
       Instance.getEngine(this.model.id).updateSelection(false);
     },
+    /**
+     *
+     */
     setRender() {
       if (Instance.getEngine(this.model.id)) {
         const nonreactiveInstances = getFeatureList();
@@ -478,19 +472,11 @@ export default defineComponent({
         }
       }
     },
-    updateDivTransformation(value: { x: number; y: number; scale: number }) {
-      // this.panZoomInstance.moveTo(value.x, value.y);
-      // this.panZoomInstance.zoomAbs(value.x, value.y, value.scale);
-    },
-    panHappen: function (p: any, id: String) {
-      /*p.setTransformOrigin(null);
-      // this.panZoomInstance = p;
-      // p.set;
-      // p.on("panzoompan", function (e: any) {});
-      // p.on("onDoubleClick", function (e: any) {
-      //   return false;
-      // });*/
-    },
+    /**
+     *
+     * @param automodeToggle true: the view will be updated each frame so all trees are visible,
+     * false: the view will be updated once so all trees are visible. true by default.
+     */
     showAll(automodeToggle: boolean = true): void {
       if (!automodeToggle) {
         this.model.overview.showAll = false;
@@ -505,13 +491,16 @@ export default defineComponent({
         this.model.overview.showAll = false;
       }
     },
+    /**
+     * Deletes the tree of the selected node, when this node is the root node.
+     */
     deleteSelection(): void {
       let l: AbstractNodeTree[] = Instance.getData(this.id);
       const e = Instance.getEngine(this.id);
       if (e) {
         if (e.selection.length > 0 && e.selection[0].isRoot()) {
           // update the data
-          remove(l, e.selection[0].tree);
+          removeFromList(l, e.selection[0].tree);
           Instance.setData(this.id, l);
           // tell the engine that we removed entries and clear selection
           e.clearSelection();
@@ -523,7 +512,12 @@ export default defineComponent({
       const node = Instance.getEngine(this.id).getNodeAtMousePosition();
     },
     keydown(e: KeyboardEvent) {
-      if (this.c) this.c.keydown("ov", e);
+      /**
+       * Key events in the overview will be transferd to the PluginShortCutHandler
+       * with the overview context string "ov"
+       */
+      if (this.pluginShortCutHandler)
+        this.pluginShortCutHandler.keydown("ov", e);
 
       let node: AbstractNode | undefined =
         Instance.getEngine(this.id).selection.length > 0
@@ -532,7 +526,7 @@ export default defineComponent({
 
       const padding = 50;
       /**
-       * Arrow key navigation
+       * Arrow key navigation through the tree.
        */
       switch (e.key) {
         case "ArrowUp":
@@ -626,6 +620,7 @@ export default defineComponent({
       // no modifier
       if (!e.shiftKey && !e.altKey && !e.ctrlKey) {
         switch (e.key) {
+          // switch through the active features.
           case "Tab":
             for (let i = 0; i < this.listFeatures.length; i++) {
               const f = this.listFeatures[i];
@@ -706,6 +701,11 @@ export default defineComponent({
         }
       }
     },
+    /**
+     * Set the Focus for the HTML View to the $el of this component. Is necessary so
+     * the Inputevents will be captured correctly. So it should be called when
+     * the mouse is inside this component.
+     */
     setFocusToOverview(): void {
       if (WSUtils.doChangeFocus()) {
         setTimeout(() => {
@@ -713,9 +713,15 @@ export default defineComponent({
         }, 2);
       }
     },
+    /**
+     * Updates the pane position.
+     */
     paneButtonClicked(e: MouseEvent) {
       this.model.paneSize = this.model.paneSize <= 15 ? 50 : 100;
     },
+    /**
+     * Start the selection of folders via an Dialog.
+     */
     selectFolders() {
       ipcRenderer.send("select-files", {
         target: "o" + this.model.id,
@@ -723,6 +729,11 @@ export default defineComponent({
         path: this.model.folderSelectionPath,
       });
     },
+    /**
+     * Call this method when the search string was updated.
+     * It searches for all nodes that fit to the search string
+     * and updates the filtering in the OverviewEngine with these nodes.
+     */
     searchUpdate() {
       let lowercase = this.searchstring.toLowerCase().trim();
       let nodesMatching: AbstractNode[] = [];
@@ -749,6 +760,11 @@ export default defineComponent({
         Instance.getEngine(this.id).setFilterList("search");
       }
     },
+    /**
+     * Open the selected Collection node.
+     * @param useSavedDepth: true, use the load depth that is saved inside the node,
+     * false: only open with depth of 1.
+     */
     loadCollection(useSavedDepth: boolean = false) {
       if (Instance.getEngine(this.id)) {
         let n: AbstractNode = Instance.getEngine(this.id).selection[0];
@@ -762,18 +778,12 @@ export default defineComponent({
               .forEach((c) => n.tree?.loadCollection(c, useSavedDepth));
           }
         }
-
-        /**
-         * A dirty hack to update the computed property on the selection, as the synced subfolders will be added after the syncing that takes some time. For huge folders this may not work.
-         */
-        // setTimeout(() => {
-        //   const t = this.selection;
-        //   this.selection = undefined;
-        //   this.selection = t;
-        // }, 100);
       }
     },
-    createCollection(complete: boolean = false) {
+    /**
+     * Create a collection node out of the selected node.
+     */
+    createCollection(complete: boolean = false): void {
       if (Instance.getEngine(this.id)) {
         let n: AbstractNode | undefined = Instance.getEngine(this.id)
           .selection[0];
@@ -785,14 +795,20 @@ export default defineComponent({
         this.selection = t;
       }
     },
-    createRootFromNode() {
+    /**
+     * Creates a new tree starting by the selected node.
+     */
+    createRootFromNode(): void {
       if (Instance.getEngine(this.id)) {
         let n: FolderNode = Instance.getEngine(this.id)
           .selection[0] as FolderNode;
         this.addFolders([n.getPath()], { x: n.x, y: n.y });
       }
     },
-    addEntries(entries: FolderNodeTree[], pos: { x: number; y: number }) {
+    /**
+     * Adds the given Trees to the Overview.
+     */
+    addTrees(entries: FolderNodeTree[], pos: { x: number; y: number }) {
       let listEntries: AbstractNodeTree[] = Instance.getData(this.id);
 
       entries.forEach((e) => {
@@ -801,7 +817,7 @@ export default defineComponent({
       });
 
       listEntries.push(...entries);
- 
+
       /**
        * register the entries to the engine.
        */
@@ -817,7 +833,13 @@ export default defineComponent({
         e.startWatcher();
       }
     },
-    addFolders(listFolders: string[], pos: { x: number; y: number }) {
+    /**
+     * Creates FolderNodeTree for the given list of Folder paths at the given
+     * position.
+     * @param listFolders The list of paths (to folders), to create FolderNodeTree for them.
+     * @param position The position in the overview space where the tree will be added.
+     */
+    addFolders(listFolders: string[], position: { x: number; y: number }) {
       let listEntries: FolderNodeTree[] = [];
 
       /**
@@ -836,14 +858,17 @@ export default defineComponent({
         }
       }
       if (listEntries.length > 0) {
-        this.addEntries(listEntries, pos);
+        this.addTrees(listEntries, position);
       }
     },
+    /**
+     * A drop event from the Operating System.
+     */
     drop(e: DragEvent) {
       let listFolders: string[] = [];
 
       /**
-       * create the entries based on the dropped files.
+       * create Tree based on the dropped folders.
        */
       if (e.dataTransfer && Instance.getEngine(this.id)) {
         for (let index = 0; index < e.dataTransfer?.files.length; index++) {
@@ -861,12 +886,12 @@ export default defineComponent({
 });
 </script>
 
-
 <style scoped lang="scss">
 .feature-view-list {
   height: 100%;
   margin-top: 60px;
 }
+
 .feature-select-list {
   position: absolute;
   right: 30px;
@@ -900,6 +925,7 @@ export default defineComponent({
 </style>
 
 <style lang="scss">
+
 .filter-settings {
   position: absolute;
   top: 1px;
@@ -985,4 +1011,5 @@ export default defineComponent({
     -ms-interpolation-mode: nearest-neighbor;
   }
 }
+
 </style>

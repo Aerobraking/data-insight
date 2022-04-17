@@ -36,7 +36,7 @@
   </transition>
 </template>
 <script lang="ts">
-import { defineComponent } from "vue"; 
+import { defineComponent } from "vue";
 
 export default defineComponent({
   name: "ModalDialog",
@@ -50,9 +50,8 @@ export default defineComponent({
 });
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-$color-Selection: rgba(57, 215, 255, 1);
+@import "@/core/components/styles/variables.scss";
 
 .modal-backdrop {
   position: fixed;

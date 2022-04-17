@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import View from "./AbstractView";
+import Activity from "./AbstractView";
 import { Workspace } from "./workspace/Workspace";
 
 /**
@@ -27,7 +27,7 @@ export class InsightFile {
      * The list of views. In the Moment this are only Workspaces but this can be extendes by implementing the View class.
      * Each View is represented by a Tab in the View.
      */
-    @Type(() => View, {
+    @Type(() => Activity, {
         keepDiscriminatorProperty: true,
         discriminator: {
             property: 'type',
@@ -36,7 +36,7 @@ export class InsightFile {
             ],
         },
     })
-    views: Array<View> = [new Workspace("Default").setActive(true)];
+    views: Array<Activity> = [new Workspace("Default").setActive(true)];
     // Some settings paramenters
     settings: InsightFileSettings = new InsightFileSettings();
 

@@ -23,6 +23,11 @@ export default defineComponent({
   mounted() {},
   inject: ["entrySelected"],
   methods: {
+    /**
+     * Call this method to selected this Entry in the workspace
+     * @param type add: Adds this node to the selection, single: make this entry as the new unique selection
+     * toggle: toggles the selection status for this entry.
+     */
     entrySelectedLocal(type: "add" | "single" | "toggle") {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.entry.id, type);

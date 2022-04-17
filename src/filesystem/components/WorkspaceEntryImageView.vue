@@ -13,7 +13,7 @@
 
 <script lang="ts">
 import * as cache from "../utils/ImageCache";
-import {FSWatcherConnectorInstance} from "../utils/FileSystemWatcherConnector";
+import { FSWatcherConnectorInstance } from "../utils/FileSystemWatcherConnector";
 import { defineComponent } from "vue";
 import { WorkspaceEntryImage } from "../model/FileSystemWorkspaceEntries";
 import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
@@ -106,7 +106,7 @@ export default defineComponent({
       if (
         // type == cache.ImageSize.small
         // ||
-        type==cache.ImageSize.medium 
+        type == cache.ImageSize.medium
         // ||
         // type == cache.ImageSize.original
       ) {
@@ -180,6 +180,8 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
+@import "@/core/components/styles/variables.scss";
+
 .image-selector {
   width: 100%;
   height: 100%;
@@ -190,16 +192,14 @@ export default defineComponent({
   width: 100%;
   height: 100%;
   z-index: 10;
-  background-size: cover; 
+  background-size: cover;
 }
 
 .ws-entry-image-wrapper {
   // images are behind the normal stuff to use them as a background
-  z-index: 50; 
-  background: #000; 
+  z-index: 50;
+  background: #000;
   padding: 0px;
-  background-size: cover; 
+  background-size: cover;
 }
-
-$color-Selection: rgba(57, 215, 255, 0.3);
 </style>

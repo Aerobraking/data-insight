@@ -3,6 +3,9 @@
 </template>
 
 <script lang="ts">
+/**
+ * This component displays the Color Gradient of a Gradient object..
+ */
 import { defineComponent } from "vue";
 import * as _ from "underscore";
 import Gradient from "@/core/model/workspace/overview/Gradient";
@@ -14,6 +17,10 @@ export default defineComponent({
     gradient: { type: Gradient, required: true },
   },
   mounted() {
+    /**
+     * Take 5 colors out of the gradient and
+     * use them for a css linear gradient background.
+     */
     let values: string[] = [];
     const steps = 5;
     for (let i = 0; i <= steps; i++) {
@@ -24,13 +31,11 @@ export default defineComponent({
     const style = "linear-gradient( 270deg, " + values.join(", ") + ")";
     this.$el.style.backgroundImage = style;
   },
-  methods: {},
 });
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-$color-Selection: rgba(57, 215, 255, 1);
+@import "@/core/components/styles/variables.scss";
 
 .color-gradient-div {
   box-sizing: border-box;

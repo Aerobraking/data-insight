@@ -1,4 +1,10 @@
-export function remove(list: any[], value: any) {
+/**
+ * Removes an Object from a List.
+ * @param list The list where you want to remove an object from.
+ * @param value The Object you want to remove from the list.
+ * @returns the given list object.
+ */
+export function removeFromList(list: any[], value: any) {
     if (value instanceof Array) {
         var i = 0;
         while (i < list.length) {
@@ -17,16 +23,26 @@ export function remove(list: any[], value: any) {
     return list;
 }
 
-export function add(arr: any[], value: any) {
-    if (!arr.includes(value)) {
-        arr.push(value);
+/**
+ * Adds an Object to a list when it's not part of it already.
+ * @param list The list where you want to add the object to.
+ * @param value the Object you want to add.
+ */
+export function add(list: any[], value: any) {
+    if (!list.includes(value)) {
+        list.push(value);
     }
 }
-export function toggle(arr: any[], value: any) {
-    if (!arr.includes(value)) {
-        arr.push(value);
+/**
+ * Toggles the existince of an Object in a List.
+ * @param list The list that should (not) contain the object.
+ * @param value The object whoose existince you want to toggle.
+ */
+export function toggle(list: any[], value: any) {
+    if (!list.includes(value)) {
+        list.push(value);
     } else {
-        remove(arr, value);
+        removeFromList(list, value);
     }
 }
 

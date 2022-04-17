@@ -1,14 +1,15 @@
 import { GetterTree } from 'vuex'
-import View from '../model/AbstractView';
+import Activity from '../model/AbstractView';
 import { State } from './state'
 
 export type Getters = {
   getShowUI(state: State): boolean
-  getViewList(state: State): Array<View>
+  getViewList(state: State): Array<Activity>
   getActiveWorkspaceIndex(state: State): number
 }
 
 export const getters: GetterTree<State, State> & Getters = {
+  
   /**
    * Returns the showUI boolean of the current InsightFile
    * @param state 
@@ -17,6 +18,7 @@ export const getters: GetterTree<State, State> & Getters = {
   getShowUI: (state) => {
     return state.loadedFile.settings.showUI;
   },
+
   /**
    * 
    * @param state 
@@ -25,6 +27,7 @@ export const getters: GetterTree<State, State> & Getters = {
   getViewList: (state) => {
     return state.loadedFile.views;
   },
+
   /**
    * 
    * @param state 

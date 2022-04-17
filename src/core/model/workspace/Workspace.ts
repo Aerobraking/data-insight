@@ -1,6 +1,6 @@
 import * as _ from "underscore";
 import { Expose, Type } from "class-transformer";
-import View from "../AbstractView";
+import Activity from "../AbstractView";
 import { AbstractNodeTree } from "./overview/AbstractNodeTree";
 import { Instance } from "./overview/OverviewDataCache";
 import { FeatureSettingsList } from "./overview/AbstractFeature";
@@ -72,7 +72,7 @@ export class Overview {
  * Represents one Workspace inside an InsightFile. A Workspace is a list of WorkspaceEntry Objects
  * that can be placed on an infinite sized zoomable and pannable area.
  */
-export class Workspace extends View {
+export class Workspace extends Activity {
 
     constructor(name: string = "New Workspace") {
         super();

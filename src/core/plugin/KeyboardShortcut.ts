@@ -2,7 +2,76 @@
 /**
  * The following code is based on this example:
  * https://betterprogramming.pub/full-featured-hotkeys-library-in-200-lines-of-javascript-code-81a74e3138cc
+ * 
+ * The code is quite messy and needs to be refractored to match well TypeScript Code, but it does the job already.
+ *  
  */
+
+/**
+ * An Instance of this Interface represents one keyboard input. When its rawHotkey fits to the
+ * current Input, its callback method will be called.
+ */
+export interface HotKey {
+    /**
+     * This string represents the input that trigges the callback method.
+     * Examples:
+     * "ctrl s"
+     * "shift alt 2"
+     * "cmdorctrl e"
+     */
+    rawHotkey: string,
+    /**
+     * A array representation of the rawHotkey string.
+     */
+    hotkey: { [any: string]: boolean },
+    /**
+     * ws: The input happens inside the WorkspaceView.
+     * ov: The input happens inside the OverviewView.
+     * global: THe input happens anywhere in the app.
+     */
+    context: "ws" | "ov" | "global",
+    callback: (e: KeyboardEvent) => void
+}
+
+/**
+ * Handles the given Input and calls the registered HotKey Instances that fit to the input.
+ * Create an Instance of this Interface with the createKeyboardInputContext and pass the keydown
+ * events to it. Before that, register the Plugins in the instance.
+ */
+export interface PluginShortCutHandler {
+    /**
+     * Call this method in your Component when you want to trigger Plugins by keydown events.
+     */
+    keydown: (context: "ws" | "ov" | "global", event: KeyboardEvent) => void,
+    /**
+     * Registers a HotKey by the given string.
+     */
+    register: (hotkey: string, callback: () => void) => void,
+    /**
+     * Unregister the given callback method by the given hotkey string.
+     */
+    unregister: (hotkey: string, callback: () => void) => void,
+}
+
+/**
+ * Creates an Instace of the PluginShortCutHandler that processes the Input.
+ * @param options 
+ * @returns 
+ */
+export const createKeyboardInputContext = (options: { debounceTime: number, autoEnable: boolean }): PluginShortCutHandler => {
+    const { debounceTime, autoEnable } = validateContext(options);
+
+    const listeners: HotKey[] = [];
+    const keyDownListener = createKeyDownListener(
+        listeners, debounceTime,
+    );
+
+    return {
+        keydown: keyDownListener,
+        register: createListenersFn(listeners, registerListener),
+        unregister: createListenersFn(listeners, unregisterListener),
+    };
+};
 
 const isEqual = (a: any, b: any) => {
     const aKeys = Object.keys(a);
@@ -20,7 +89,7 @@ const isEqual = (a: any, b: any) => {
 const isArrayEqual = (a: any, b: any[]) => a.length === b.length
     && a.every((v: any, i: any) => isEqual(v, b[i]));
 
-export const matchHotkey = (buffer: any, hotkey: any) => {
+const matchHotkey = (buffer: any, hotkey: any) => {
     if (buffer.length < hotkey.length) {
         return false;
     }
@@ -62,7 +131,7 @@ const validateType = (value: any, name: any, type: any) => {
     );
 };
 
-export function normalizeHotkey(hotkey: any): { [any: string]: boolean } {
+function normalizeHotkey(hotkey: any): { [any: string]: boolean } {
     return hotkey.split(/ +/g).map(
         (part: any) => {
 
@@ -194,44 +263,3 @@ const validateContext = (options: { debounceTime: number, autoEnable: boolean })
     return { debounceTime, autoEnable };
 };
 
-export interface HotKey {
-    rawHotkey: string,
-    hotkey: { [any: string]: boolean },
-    context: "ws" | "ov" | "global",
-    callback: (e: KeyboardEvent) => void
-}
-
-export interface PluginShortCutHandler {
-    keydown: (context: "ws" | "ov" | "global", event: KeyboardEvent) => void,
-    register: (hotkey: string, callback: () => void) => void,
-    unregister: (hotkey: string, callback: () => void) => void,
-}
-
-export const createKeyboardInputContext = (options: { debounceTime: number, autoEnable: boolean }): PluginShortCutHandler => {
-    const { debounceTime, autoEnable } = validateContext(options);
-
-    const listeners: HotKey[] = [];
-    const keyDownListener = createKeyDownListener(
-        listeners,
-        debounceTime,
-    );
-
-    // const enable = () => document.addEventListener(
-    //     'keydown',
-    //     keyDownListener,
-    // );
-    // const disable = () => document.removeEventListener(
-    //     'keydown',
-    //     keyDownListener,
-    // );
-
-    // if (autoEnable) {
-    //     enable();
-    // }
-
-    return {
-        keydown: keyDownListener,
-        register: createListenersFn(listeners, registerListener),
-        unregister: createListenersFn(listeners, unregisterListener),
-    };
-};

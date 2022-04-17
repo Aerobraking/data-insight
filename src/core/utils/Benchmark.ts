@@ -1,6 +1,11 @@
-var os = require('os');
-var osu = require('node-os-utils')
-var cpu = osu.cpu
+
+/**
+ * Is the benchmark code active.
+ */
+export const doBenchmark = true;
+
+var osu = require('node-os-utils');
+var cpu = osu.cpu;
 
 interface entry {
     time: number,
@@ -15,8 +20,6 @@ interface entry {
 
 const mapTimes: Map<string, entry> = new Map();
 
-export const doBenchmark = true;
-
 let keysUsedInTick: string[] = [];
 let log: string[] = [];
 let indexCounter = 0;
@@ -28,26 +31,25 @@ export function tickStart() {
 
     const t = performance.now();
     lastFrame = (t - lastFrameTime);
-    lastFrameTime = t; 
- 
+    lastFrameTime = t;
+
     logTime("chrome");
 
     mapTimes.forEach((value: entry, key: string) => {
         value.isMeasured = 0;
     });
 
-    // set to 2 so it get printed
+    // set to 2 so it get printed.
     const n = mapTimes.get("chrome"); if (n) n.isMeasured = 2;
 
- 
     keysUsedInTick.push("chrome");
 }
 
-export function logTimeGivenValue(key: string, value:number) {
-    logTime(key); let f = mapTimes.get(key); if (f) f.isMeasured = 3, f.time = value; 
+export function logTimeGivenValue(key: string, value: number) {
+    logTime(key); let f = mapTimes.get(key); if (f) f.isMeasured = 3, f.time = value;
 }
 
-export function logTime(key: string, log: boolean = false, scale: "s" | "ms" = "s") {
+export function logTime(key: string, log: boolean = false) {
     if (!keysUsedInTick.includes(key)) keysUsedInTick.push(key);
 
     if (!mapTimes.has(key)) { mapTimes.set(key, { index: indexCounter++, time: performance.now(), isMeasured: 0, fpsStep: 0, fpsMean: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }); } else {
@@ -57,22 +59,15 @@ export function logTime(key: string, log: boolean = false, scale: "s" | "ms" = "
             else { n.time = (performance.now() - n.time); n.isMeasured = 2; } // att the second call we save the time
         }
     }
-    if (log) print(key, scale, log);
+    if (log) print(key, log);
 }
 
-function print(key: string, scale: "s" | "ms" = "s", log: boolean = false) {
+function print(key: string, log: boolean = false) {
     const n = mapTimes.get(key);
     if (n) {
-        switch (scale) {
-            case "s":
-                console.log((((performance.now() - n.time) / 1000)).toFixed(4), "sec");
-                break;
-            case "ms":
-                const columns: string[] = [];
-                addPrintText(columns, key);
-                if (log) console.log(...columns);
-                break;
-        }
+        const columns: string[] = [];
+        addPrintText(columns, key);
+        if (log) console.log(...columns);
     }
 }
 
@@ -89,8 +84,8 @@ function addPrintText(columns: string[], key: string) {
 
 export function tickEnd(print: boolean = false) {
 
-    logTime("Frame");
-    let f = mapTimes.get("Frame"); if (f) f.isMeasured = 2, f.time = lastFrame;
+    let f;
+    logTime("Frame"); f = mapTimes.get("Frame"); if (f) f.isMeasured = 2, f.time = lastFrame;
     logTime("Time (s)"); f = mapTimes.get("Time (s)"); if (f) f.isMeasured = 3, f.time = timeTotal += lastFrame / 1000;
     logTime("CPU (%)"); f = mapTimes.get("CPU (%)"); if (f) f.isMeasured = 3, f.time = cpuUsage;
     logTime("heap (MB)"); f = mapTimes.get("heap (MB)"); if (f) f.isMeasured = 3, f.time = (process.memoryUsage().heapUsed / 1024 / 1024);

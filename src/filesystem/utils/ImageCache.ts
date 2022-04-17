@@ -30,7 +30,7 @@ export interface ImageDim {
 
 // import os from "os";
 // const cpuCount = os.cpus().length 
-import { remove } from "../../core/utils/ListUtils";
+import { removeFromList } from "../../core/utils/ListUtils";
 export class Cache {
 
     private hashDim: Map<string, ImageDim> = new Map();
@@ -66,7 +66,7 @@ export class Cache {
                 // Grab the message data from the event
 
                 if (e.data.type == ImageSize.finish || e.data.type == ImageSize.error) {
-                    remove(this.listQueue, e.data.path);
+                    removeFromList(this.listQueue, e.data.path);
 
                     if (doBenchmark && this.listQueue.length == 0) console.log("Time for Image loading: "), logTime("images", true);
 

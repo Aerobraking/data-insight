@@ -15,11 +15,11 @@
       />
       <div class="prevent-input"></div>
       <div class="search-results" v-show="searchActive">
-        <wssearchlist
+        <activitysearchlist
           :model="model"
           :searchString="searchString"
           @bookmarkclicked="moveToEntry"
-        ></wssearchlist>
+        ></activitysearchlist>
       </div>
     </div>
 
@@ -265,7 +265,7 @@ import { MutationTypes } from "@/core/store/mutation-types";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import OverviewView from "../overview/OverviewView.vue";
 import wsentriesbookmarks from "./WorkspaceBookmarks.vue";
-import wssearchlist from "./WorkspaceSeachList.vue";
+import activitysearchlist from "./ActivitySeachList.vue";
 import wsentryfolder from "@/filesystem/components/WorkspaceEntryFolderView.vue";
 import { defineComponent } from "vue";
 import {
@@ -349,7 +349,7 @@ export default defineComponent({
     Resize,
     wsentrydisplayname,
     wsentriesbookmarks,
-    wssearchlist,
+    activitysearchlist,
     OverviewView,
   },
   props: {
@@ -389,6 +389,10 @@ export default defineComponent({
     eventOnMouseup:
       | { entries: HTMLElement[]; type: "add" | "single" | "toggle" }
       | undefined;
+    /**
+     * Handles the activiation of the plugins by the
+     * keyboard inputs.
+     */
     c: PluginShortCutHandler | undefined;
   } {
     return {
@@ -1459,10 +1463,7 @@ export default defineComponent({
 
         entriesInside.push(
           ...this.getEntries().filter((el) => {
-            return insideRect(
-              coordRect,
-              comp.getCoordinatesFromElement(el)
-            );
+            return insideRect(coordRect, comp.getCoordinatesFromElement(el));
           })
         );
         selectionRectangle.style.width = "0px";
@@ -1844,20 +1845,36 @@ export default defineComponent({
         }
       }
     },
-    entrySelected(entry: any, type: "add" | "single" | "toggle") {
+    /**
+     * Call this method to selected this Entry in the workspace
+     * @param entry The HTMLElement of the Entry Component | the "id" property of the Entry.
+     * @param type add: Adds this node to the selection, single: make this entry as the new unique selection
+     * toggle: toggles the selection status for this entry.
+     */
+    entrySelected(
+      entry: HTMLElement | number,
+      type: "add" | "single" | "toggle"
+    ) {
       entry =
         entry instanceof HTMLElement
           ? entry
           : (this.getViewByID(entry) as HTMLElement);
       this.entriesSelected([entry], type);
     },
+    /**
+     * Call this method to selected this Entry in the workspace
+     * @param entries List of Object that determine what should be selected:
+     * The HTMLElement of the Entry Component | the "id" property of the Entry.
+     * @param type add: Adds this node to the selection, single: make this entry as the new unique selection
+     * toggle: toggles the selection status for this entry.
+     */
     entriesSelected(
       entries: HTMLElement[],
       type: "add" | "single" | "toggle",
       activateDrag: boolean = true
     ) {
       /**
-       * Do not select entries that don't fit to the search
+       * Do not select entries that don't fit to the active search string.
        */
       entries = entries.filter(
         (e) => !e.classList.contains("search-not-found")
@@ -1875,6 +1892,15 @@ export default defineComponent({
 
       this.handleSelectionEvent(entries, type, activateDrag);
     },
+    /**
+     * Contains the actual code for executing the changes to the selection.
+     * Call this method to selected this Entry in the workspace
+     * @param entries List of HTMLElement of the Entry Components 
+     * @param type add: Adds this node to the selection, single: make this entry as the new unique selection
+     * toggle: toggles the selection status for this entry.
+     * @param activateDrag true: The dragging of the selected entry elements will be started, false: no drag
+     * will be started. true by default.
+     */
     handleSelectionEvent(
       entries: HTMLElement[],
       type: "add" | "single" | "toggle",
@@ -1912,9 +1938,6 @@ export default defineComponent({
           );
         });
 
-        /**
-         *
-         */
         if (this.getSelectedEntries().length > 1) {
           /**
            * when more then one entry is selected,
@@ -1949,9 +1972,16 @@ export default defineComponent({
         this.startSelectionDrag(this.mousePositionLastRaw);
       }
     },
+    /**
+     * @return: The last position of the mouse determened by the mousemove event.
+     */
     getLastMousePosition(): { x: number; y: number } {
       return this.mousePositionLast;
     },
+    /**
+     * Sets the Focus to the textfield of the given entry, identified by its HTMLElement.
+     * The textfield edits the displayname for the entry.
+     */
     setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
       if (!entry) return;
@@ -1974,11 +2004,17 @@ export default defineComponent({
         this.moveToEntry({ zoom: true, entry: entry }, 256);
       }
     },
+    /**
+     * Toggles the displaynameResize property for the given entry, identified by its HTMLElement.
+     */
     toggleNameResizing(entry: HTMLElement | undefined = undefined) {
       entry = entry ? entry : this.getSelectedEntries()[0];
       let model = this.getModelEntryFromView(entry);
       model.displaynameResize = !model.displaynameResize;
     },
+    /**
+     * Deletes the selected entries.
+     */
     deleteSelection() {
       if (this.getSelectedEntries().length == 0) {
         return;
@@ -2208,7 +2244,6 @@ export default defineComponent({
         }px,0px)`;
       }
     }, 16),
-
     onPanStart(e: any) {
       this.drawCanvas(); // Todo: is also called handled by mousemove event, but that results in a delay. try to do not make a draw when the mouse move and the user is panning
 
@@ -2265,7 +2300,7 @@ export default defineComponent({
 </script>
 
 <style   lang="scss">
-$color-Selection: rgba(57, 215, 255, 0.3);
+@import "@/core/components/styles/variables.scss";
 
 .transition-none {
   transition: none !important;
@@ -2785,9 +2820,4 @@ visually highlights elements for selection with a hover effect
   background-color: yellow;
   transform: translate3d(0, 0, 0);
 }
-</style>
-
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped  lang="scss">
 </style>

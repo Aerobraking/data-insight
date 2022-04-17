@@ -1,9 +1,9 @@
 /**
- * The abstract class for a View in the app. A View is represented by a tab
+ * The abstract class for a Activity in the app. A View is represented by a tab
  * in the window it fills up the rest of the window space.
  * In the moment the workspace if the only implementation of the view.
  */
-export default abstract class View {
+export default abstract class Activity {
 
     // order: number = 0; used in future for sorting of the Tabs in the View
     /**
