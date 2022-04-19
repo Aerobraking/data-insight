@@ -28,8 +28,6 @@ export interface ImageDim {
     ratio: number;
 }
 
-// import os from "os";
-// const cpuCount = os.cpus().length 
 import { removeFromList } from "../../core/utils/ListUtils";
 export class Cache {
 
@@ -44,6 +42,7 @@ export class Cache {
 
     public reset() {
 
+
         this.hash.forEach((value: Map<ImageSize, string>, key: string) => {
             value.forEach((value: string, key: ImageSize) => {
                 URL.revokeObjectURL(value);
@@ -53,15 +52,35 @@ export class Cache {
         this.hash.clear();
         this.hashCallbacks.clear();
         this.hashDim.clear();
+
+        this.deleteWorkers();
+        this.createWorkers();
+  
+    }
+
+    private deleteWorkers() {
+        for (let i = 0; i < this.listWorker.length; i++) {
+            const w = this.listWorker[i];
+            w.terminate();
+        }
+        this.listWorker = [];
     }
 
     private constructor() {
+        this.createWorkers();
+
+
+    }
+
+    private createWorkers() {
         const _this = this;
+
         // cpuCount
         for (let index = 0; index < 3; index++) {
             let w = new Worker("@/filesystem/utils/ImageCacheWorker", {
                 type: "module",
             });
+
             w.onmessage = (e: any) => {
                 // Grab the message data from the event
 
@@ -140,7 +159,6 @@ export class Cache {
             };
             this.listWorker.push(w);
         }
-
     }
 
     static get instance() {
@@ -197,7 +215,7 @@ export class Cache {
 
     createPreview(p: string) {
 
-        if (doBenchmark && this.listQueue.length == 0)  logTime("images");
+        if (doBenchmark && this.listQueue.length == 0) logTime("images");
         this.hash.set(p, new Map());
         this.listQueue.push(p);
         this.timeNow = performance.now();
@@ -212,7 +230,7 @@ export class Cache {
     };
 
 
-    timeForSinc: number = 0; 
+    timeForSinc: number = 0;
     private timeLast = performance.now();
     private timeNow = performance.now();
     private listQueue: string[] = [];
