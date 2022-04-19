@@ -550,8 +550,6 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         super();
     }
 
-    public featuresUpdated(tree: AbstractNodeTreeIfc): void { }
-
     public id: LayoutType = LayoutType.STATICDYNAMICX;
 
     /**
@@ -648,6 +646,8 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
         }
     }
 
+    public featuresUpdated(tree: AbstractNodeTreeIfc): void { }
+
     public nodesUpdated(tree: AbstractNodeTreeIfc): void {
         this.reheatTree(tree);
         this.updateLayout(tree.root)
@@ -696,6 +696,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     * @param node
     */
     private updateLayout(node: AbstractNode): void {
+        logTime("layout");
         this.mapColumnBounds.clear();
         this.mapBounds.clear();
         this.calculateBounds(node);
@@ -714,6 +715,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
             sum += x;
         }
         this.positionNodes(node);
+        logTime("layout");
     }
 
     /**

@@ -31,12 +31,12 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
     private static instances: OverviewEngine[] = [];
 
     /**
-     * true: The loop is 
+     * true: The loop that calls tick() frequently has been started.
      */
     private static clockStarted: boolean = false;
 
     /**
-     * When true, the benchmark log will be printed once.
+     * When true, the benchmark log will be printed once and the property will be set to false again.
      */
     private static printlog: boolean = false;
 
@@ -57,6 +57,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
     private static then: number = 0;
     private static elapsed: number = 0;
     private static elapsedTotal: number = 0;
+
     /**
      * How many times a tick was called since the clocking started.
      */
@@ -926,7 +927,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
         // 1.
         Layouter.tickLayout(this._trees, OverviewEngine.delta);
-        if (doBenchmark) logTime("PrepareRender");
+      
         this._trees.forEach(s => s.tickTree());
 
         // 2.
@@ -1211,6 +1212,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 var renderDataNodes: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
                 var renderDataLinks: { culling: boolean }[] = new Array(links.length);
 
+                if (doBenchmark) logTime("PrepareRender");
                 this.prepareRenderData(nodes, links, renderDataNodes, renderDataLinks);
                 if (doBenchmark) logTime("PrepareRender");
 
@@ -1341,9 +1343,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             ctx.strokeStyle = grd;
             drawCurve();
 
-
         }
-
 
     }
 
@@ -1474,12 +1474,9 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                     ctx.font = `${fontSize}px Arial`;
                     let yName = node.children.length == 0 ? renderDataNode[i].pos.y + (fontSize) / 4 : renderDataNode[i].pos.y - translate;
 
-
-
                     if (this.selection.includes(node)) ctx.fillStyle = OverviewEngine.colorSelection;
 
                     ctx.fillText(`${node.isCollection() ? limitText(node) + " (+ " + (node.collectionData?.size) + ")" : limitText(node)}  `, xPos, yName);
-
 
                     ctx.fillStyle = this.isNodeHiddenByFeature(node, tree) ? OverviewEngine.hiddenColor : "#ddd";
                     translate = (fontSize2) / (node.children.length == 0 ? 8 : 3);
