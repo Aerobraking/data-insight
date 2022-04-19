@@ -1,4 +1,7 @@
 <script lang="ts">
+/**
+ * Displays the Bookmark list for a Workspace.
+ */
 import { defineComponent } from "vue";
 import draggable from "vuedraggable";
 import { PlaylistStar } from "mdue";

@@ -103,7 +103,7 @@ const { shell } = require("electron");
 
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import { FSWatcherConnectorInstance } from "../utils/FileSystemWatcherConnector";
-import { add, remove, toggle } from "@/core/utils/ListUtils";
+import { add, toggle } from "@/core/utils/ListUtils";
 import fs from "fs";
 import wsfolderfile from "./FolderFileViewGrid.vue";
 import wsfolderfilelist from "./FolderFileViewList.vue";
@@ -749,7 +749,8 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
-$color-Selection: rgba(57, 215, 255, 1);
+@import "@/core/components/styles/variables.scss";
+
 $colorBG: rgb(34, 34, 34);
 $colorFG: rgb(234, 234, 234);
 

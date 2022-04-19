@@ -1,4 +1,7 @@
 <script lang="ts">
+/**
+ * This Component represents the search list
+ */
 import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
 import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
@@ -7,7 +10,7 @@ import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
 import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: "wssearchlist",
+  name: "activitysearchlist",
   components: {},
   props: {
     model: {
@@ -25,14 +28,21 @@ export default defineComponent({
     };
   },
   methods: {
-    goToEntry(zoom: boolean, event: any, e: any) {
+    goToEntry(
+      zoom: boolean,
+      evt: MouseEvent,
+      e: WorkspaceEntry | AbstractNode
+    ) {
       const move = 80;
 
       if (e instanceof WorkspaceEntry) {
         if (!this.clickTimer) {
           this.clickTimer = setTimeout(() => {
             this.$emit("bookmarkclicked", {
-              id: event.target.getAttribute("name"),
+              id:
+                evt.target && evt.target instanceof HTMLElement
+                  ? evt.target.getAttribute("name")
+                  : 0,
               zoom: zoom,
             });
             this.clickTimer = null;
@@ -41,7 +51,10 @@ export default defineComponent({
           clearTimeout(this.clickTimer);
           this.clickTimer = null;
           this.$emit("bookmarkclicked", {
-            id: event.target.getAttribute("name"),
+            id:
+              evt.target && evt.target instanceof HTMLElement
+                ? evt.target.getAttribute("name")
+                : 0,
             zoom: zoom,
           });
         }

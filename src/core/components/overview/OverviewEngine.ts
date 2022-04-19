@@ -11,7 +11,7 @@ import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature
 import { Layouter, MIN_TREE_COLUMN_WIDTH } from "@/core/model/workspace/overview/NodeLayout";
 import { AbstractLink, AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
-import { remove } from "@/core/utils/ListUtils";
+import { removeFromList } from "@/core/utils/ListUtils";
 
 /**
  * The OverviewView Component is responsible for the Rendering of the Overview Data.
@@ -646,7 +646,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
      */
     public dispose() {
         this.canvasObserver.disconnect();
-        remove(OverviewEngine.instances, this);
+        removeFromList(OverviewEngine.instances, this);
     }
 
     /**
@@ -1034,7 +1034,6 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
         if (node) {
 
             if (transition) {
-
                 const colorOld = this.getColorForNode(node);
                 let colorNew = this.featureRenderer.getNodeColor(node, node.tree as AbstractNodeTree);
 
@@ -1046,7 +1045,6 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
                 this.colorTransitionElapsed = 1;
                 this.colorTransitionTarget = this.colorChangeDuration;
-
             } else {
                 let color = this.featureRenderer.getNodeColor(node, node.tree as AbstractNodeTree);
                 this.colorNodeMap.set(node, color);

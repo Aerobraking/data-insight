@@ -1,7 +1,7 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
 import { State } from './state'
-import View from '@/core/model/AbstractView';
+import Activity from '@/core/model/AbstractView';
 import { Workspace } from '@/core/model/workspace/Workspace';
 import AbstractWorkspaceEntry from '@/core/model/workspace/WorkspaceEntry';
 import { InsightFile } from '../model/InsightFile';
@@ -91,7 +91,7 @@ export const mutations: MutationTree<State> & Mutations = {
    * @param payload 
    */
   [MutationTypes.SORT_WORKSPACES](state, payload: {
-    listWorkspaces: Array<View>,
+    listWorkspaces: Array<Activity>,
   }) {
     state.loadedFile.views = payload.listWorkspaces;
   },
@@ -128,7 +128,7 @@ export const mutations: MutationTree<State> & Mutations = {
     state.loadedFile.views.push(wCopy);
     let lastIndex = state.loadedFile.views.length - 1;
     state.loadedFile.views.forEach(
-      (entry: View, index: Number) => {
+      (entry: Activity, index: Number) => {
         entry.isActive = index === lastIndex;
       }
     );
@@ -142,7 +142,7 @@ export const mutations: MutationTree<State> & Mutations = {
     index: number,
   }) {
     payload.index = payload.index < 0 ? 0 : payload.index > state.loadedFile.views.length - 1 ? state.loadedFile.views.length - 1 : payload.index;
-    state.loadedFile.views.forEach((entry: View, index: Number) => {
+    state.loadedFile.views.forEach((entry: Activity, index: Number) => {
       entry.isActive = index === payload.index;
     });
   },
@@ -185,7 +185,7 @@ export const mutations: MutationTree<State> & Mutations = {
     let lastIndex = state.loadedFile.views.length - 1;
 
     state.loadedFile.views.forEach(
-      (entry: View, index: Number) => {
+      (entry: Activity, index: Number) => {
         entry.isActive = index === lastIndex;
       }
     );

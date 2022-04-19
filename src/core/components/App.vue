@@ -461,12 +461,11 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
-$color-Selection: rgba(57, 215, 255, 1);
+@import "@/core/components/styles/variables.scss";
 
 * {
   user-select: none;
 }
-$color-Selection: rgba(57, 215, 255, 0.95);
 
 .selected {
   background: $color-Selection;

@@ -26,6 +26,8 @@ import { FeatureType } from './core/model/workspace/overview/FeatureType';
 import wsentryframe from "./core/components/workspace/WorkspaceEntry/WorkspaceEntryFrame.vue";
 
 /**
+ * EXTEND APP
+ * 
  * Workspace Folder Entry Components
  */
 import wsentryfile from "./filesystem/components/WorkspaceEntryFileView.vue";
@@ -36,11 +38,17 @@ import wsentryvideo from "./filesystem/components/WorkspaceEntryVideoView.vue";
 import wsentryyoutube from "./filesystem/components/WorkspaceEntryYoutubeView.vue";
 
 /**
+ * EXTEND APP
+ * 
  * Feature Components
  */
 import featurenone from "./core/components/features/FeatureNone.vue";
 import featuresize from "./core/components/features/FeatureSizeComp.vue";
 
+/**
+ * Triggers the main Thread to set the apps window to visible. This way
+ * The window will be shown when it's content is already loaded.
+ */
 ipcRenderer.send("show-window");
 
 /**
@@ -99,7 +107,11 @@ function startApp(store: Store) {
         .use(panZoom)
         .mount('#app');
 
-    // register all workspace entry components
+    /**
+     * EXTEND APP
+     * 
+     * register all workspace entry components
+     */
     app.component('wsentryfile', wsentryfile);
     app.component('wsentrytextarea', wsentrytextarea);
     app.component('wsentryframe', wsentryframe);
@@ -108,7 +120,11 @@ function startApp(store: Store) {
     app.component('wsentryvideo', wsentryvideo);
     app.component('wsentryyoutube', wsentryyoutube);
 
-    // register all features components
+    /**
+    * EXTEND APP
+    * 
+    * register all features components
+    */
     app.component(FeatureType.None, featurenone);
     app.component(FeatureType.FolderLastModify, featuresize);
     app.component(FeatureType.FolderSize, featuresize);

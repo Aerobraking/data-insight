@@ -122,7 +122,8 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-$color-Selection: rgba(57, 215, 255, 0.1);
+@import "@/core/components/styles/variables.scss";
+
 
 .file-not-found {
   display: none;
