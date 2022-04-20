@@ -103,7 +103,7 @@ export default defineComponent({
 });
 </script>
   
-<style scoped lang="scss">
+<style lang="scss">
 .no-text {
   position: absolute;
   top: 65px;
@@ -141,6 +141,7 @@ export default defineComponent({
   padding: 10px;
   outline: none;
   overflow: auto;
+  cursor: text;
   white-space: nowrap;
   background: transparent;
   // transform: scale(3);

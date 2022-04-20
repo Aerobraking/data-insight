@@ -30,7 +30,7 @@ export function FeatureViewDecorator() {
         FeatureInstanceList[f] = instance;
     };
 }
- 
+
 /**
  * Creates and returns a list with one Instance of all AbstractFeature implementations.
  * @returns 
@@ -299,8 +299,8 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
         return gradient;
     }
 
-    public isNodeHidden(nodes: N, entry: AbstractNodeTree<N>): boolean {
-        return this.getNodeColor(nodes, entry) == "h";
+    public isNodeHidden(nodes: N, tree: AbstractNodeTree<N>): boolean {
+        return this.getNodeColor(nodes, tree) == "h";
     }
 
     public colorFunction?: (n: number) => string;
@@ -312,11 +312,11 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
      * to the range inside the gradient. The "Stepping" of the values in the noUislider may
      * not be linear so we use the toStepping() from NoUISlider to convert the value so it gets
      * the correct value between 0 ... 100% in the color gradient.
-     * @param node 
-     * @param entry 
+     * @param node the node for that the color has to be returned
+     * @param tree the tree this node belongs to
      * @returns 
      */
-    public getNodeColor(node: N, entry: AbstractNodeTree<N>): string {
+    public getNodeColor(node: N, tree: AbstractNodeTree<N>): string {
 
         if (this.settings.gradientId != this.gradientIDInUse) {
             this.setGradienFunction(this.settings.gradientId)
@@ -325,19 +325,19 @@ export abstract class AbstractFeatureGradient<N extends AbstractNode = AbstractN
         if (this.colorFunction) {
 
             let data = this.getGradientValue(node);
-            if (data) {
-                // round the numbers to the < | > works correctly with the large numbers.
-                const max = Math.round(this.settings.sliderRange[1]), min = Math.round(this.settings.sliderRange[0]);
-                const value = Math.round(data) > max && !false ? max : Math.round(data);
-                const p = AbstractFeatureGradient.toStepping(this.rangeValues, this.rangePercentage, value);
-                const pmin = AbstractFeatureGradient.toStepping(this.rangeValues, this.rangePercentage, min);
-                const pmax = AbstractFeatureGradient.toStepping(this.rangeValues, this.rangePercentage, max);
-                const pR = Math.min(1, (p - pmin) / (pmax - pmin));
+            data = data ? data : 100;
 
-                return p < pmin || p > pmax ? "h" : this.colorFunction(1 - pR);
-            }
+            // round the numbers to the < | > works correctly with the large numbers.
+            const max = Math.round(this.settings.sliderRange[1]), min = Math.round(this.settings.sliderRange[0]);
+            const value = Math.round(data) > max && !false ? max : Math.round(data);
+            const p = AbstractFeatureGradient.toStepping(this.rangeValues, this.rangePercentage, value);
+            const pmin = AbstractFeatureGradient.toStepping(this.rangeValues, this.rangePercentage, min);
+            const pmax = AbstractFeatureGradient.toStepping(this.rangeValues, this.rangePercentage, max);
+            const pR = Math.min(1, (p - pmin) / (pmax - pmin));
 
-            return "white";
+            return p < pmin || p > pmax ? "h" : this.colorFunction(1 - pR);
+
+
         }
         return "white";
     }

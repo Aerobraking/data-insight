@@ -904,9 +904,9 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
         // register the root nodes for color ids
         for (let j = 0; j < this.trees.length; j++) {
-            const entry: AbstractNodeTree = this.trees[j];
-            for (let i = 0; i < entry.nodes.length; i++) {
-                const n = entry.nodes[i];
+            const tree: AbstractNodeTree = this.trees[j];
+            for (let i = 0; i < tree.nodes.length; i++) {
+                const n = tree.nodes[i];
             }
         }
         this.updateNodeColors(undefined, false);
@@ -1055,14 +1055,14 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             if (transition) {
 
                 for (let i = 0; i < this.trees.length; i++) {
-                    const entry: AbstractNodeTree = this.trees[i];
-                    let nodes: AbstractNode[] = entry.nodes;
+                    const tree: AbstractNodeTree = this.trees[i];
+                    let nodes: AbstractNode[] = tree.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
                         const colorOld = this.getColorForNode(node);
 
                         if (colorOld) {
-                            let colorNew = this.featureRenderer.getNodeColor(node, entry);
+                            let colorNew = this.featureRenderer.getNodeColor(node, tree);
                             colorNew = colorNew == "h" ? OverviewEngine.hiddenColor : colorNew;
                             var scale = d3.scaleLinear<string>()
                                 .domain([0, this.colorChangeDuration])
@@ -1079,11 +1079,11 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
             } else {
 
                 for (let index = 0; index < this.trees.length; index++) {
-                    const entry: AbstractNodeTree = this.trees[index];
-                    let nodes: AbstractNode[] = entry.nodes;
+                    const tree: AbstractNodeTree = this.trees[index];
+                    let nodes: AbstractNode[] = tree.nodes;
                     for (let j = 0; j < nodes.length; j++) {
                         const node = nodes[j];
-                        let color = this.featureRenderer.getNodeColor(node, entry);
+                        let color = this.featureRenderer.getNodeColor(node, tree);
                         color = color == "h" ? OverviewEngine.hiddenColor : color;
                         this.colorNodeMap.set(node, color);
                     }

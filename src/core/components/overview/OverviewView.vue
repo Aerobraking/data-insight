@@ -741,12 +741,12 @@ export default defineComponent({
       if (lowercase.length > 0) {
         if (Instance.getEngine(this.id)) {
           for (let i = 0; i < Instance.getEngine(this.id).trees.length; i++) {
-            const entry: AbstractNodeTree = Instance.getEngine(this.id).trees[
+            const tree: AbstractNodeTree = Instance.getEngine(this.id).trees[
               i
             ];
 
-            for (let j = 0; j < entry.nodes.length; j++) {
-              const n = entry.nodes[j];
+            for (let j = 0; j < tree.nodes.length; j++) {
+              const n = tree.nodes[j];
 
               if (n.name.toLowerCase().includes(lowercase)) {
                 nodesMatching.push(...n.getAncestors(true));

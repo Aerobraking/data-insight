@@ -296,13 +296,14 @@ export default defineComponent({
      * @param path The path to the file you want to load.
      */
     loadInsightFileFromPath(path: string) {
-      if (benchmark.doBenchmark)
-        benchmark.logTime("vue"), benchmark.logTime("json");
+      if (benchmark.doBenchmark) {
+        benchmark.logTime("vue"); benchmark.logTime("json");
+      }
 
       let jsonString = fs.readFileSync(path, "utf8");
       let file: InsightFile = deserialize(InsightFile, jsonString);
 
-      if (benchmark.doBenchmark) benchmark.logTime("json");
+      if (benchmark.doBenchmark) benchmark.logTime("json", true);
 
       this.loadInsightFile(file);
     },

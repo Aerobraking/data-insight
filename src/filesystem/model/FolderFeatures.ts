@@ -38,14 +38,14 @@ export class NodeFeatureSize extends AbstractFeatureGradient<FolderNode, Feature
     /**
      * We use the Folder Size
      * @param node 
-     * @param entry 
+     * @param tree 
      * @returns 
      */
-    public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
+    public getNodeRadius(node: FolderNode, tree: AbstractNodeTree<FolderNode>): number {
         if (node.isRoot()) {
             return 100;
         } else {
-            let abs = entry.root.getFeatureValue(FeatureType.FolderSize);
+            let abs = tree.root.getFeatureValue(FeatureType.FolderSize);
             let part = node.getFeatureValue(FeatureType.FolderSize);
             if (abs != undefined && part != undefined) {
                 let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
@@ -61,7 +61,7 @@ export class NodeFeatureSize extends AbstractFeatureGradient<FolderNode, Feature
         return data ? data.s : undefined;
     }
 
-    public getFeatureText(nodes: FolderNode, entry: AbstractNodeTree<FolderNode>): string {
+    public getFeatureText(nodes: FolderNode, tree: AbstractNodeTree<FolderNode>): string {
         const data = nodes.getFeatureValue(FeatureType.FolderSize);
         return (data ? filesizeFormat(data.s) : "- MB");
     }
@@ -103,14 +103,14 @@ export class NodeFeatureLastModifiy extends AbstractFeatureGradient<FolderNode, 
      * We use the Folder Size for determining the node radius. The area of the circle is relative
      * to the Folder Size of the root node, which has a radius of 100.
      * @param node 
-     * @param entry 
+     * @param tree 
      * @returns 
      */
-    public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
+    public getNodeRadius(node: FolderNode, tree: AbstractNodeTree<FolderNode>): number {
         if (node.isRoot()) {
             return 100;
         } else {
-            let abs = entry.root.getFeatureValue(FeatureType.FolderSize);
+            let abs = tree.root.getFeatureValue(FeatureType.FolderSize);
             let part = node.getFeatureValue(FeatureType.FolderSize);
             if (abs != undefined && part != undefined) {
                 let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;
@@ -126,7 +126,7 @@ export class NodeFeatureLastModifiy extends AbstractFeatureGradient<FolderNode, 
         return data && data.m && data.m > 0 ? (new Date().getTime() / 1000) - data.m : undefined;
     }
 
-    public getFeatureText(nodes: FolderNode, entry: AbstractNodeTree<FolderNode>): string {
+    public getFeatureText(nodes: FolderNode, tree: AbstractNodeTree<FolderNode>): string {
         const data = nodes.getFeatureValue(FeatureType.FolderLastModify);
         const value = data && data.m && data.m > 0 ? (Math.floor(new Date().getTime() / 1000)) - data.m : undefined;
         return value ? timeFormat(value) : "No Value";
@@ -154,7 +154,7 @@ export class NodeFeatureQuantity extends AbstractFeatureGradient<FolderNode, Fea
         return new FeatureGradientSettings(0, 50000);
     }
 
-    public getFeatureText(nodes: FolderNode, entry: AbstractNodeTree<FolderNode>): string {
+    public getFeatureText(nodes: FolderNode, tree: AbstractNodeTree<FolderNode>): string {
         const data = nodes.getFeatureValue(FeatureType.FolderQuantity);
 
         return (data ? fileamountFormat(data.s) : "0 Files");
@@ -168,14 +168,14 @@ export class NodeFeatureQuantity extends AbstractFeatureGradient<FolderNode, Fea
      * We use the Folder Size for determining the node radius. The area of the circle is relative
      * to the Folder Size of the root node, which has a radius of 100.
      * @param node 
-     * @param entry 
+     * @param tree 
      * @returns 
      */
-    public getNodeRadius(node: FolderNode, entry: AbstractNodeTree<FolderNode>): number {
+    public getNodeRadius(node: FolderNode, tree: AbstractNodeTree<FolderNode>): number {
         if (node.isRoot()) {
             return 100;
         } else {
-            let abs = entry.root.getFeatureValue(FeatureType.FolderSize);
+            let abs = tree.root.getFeatureValue(FeatureType.FolderSize);
             let part = node.getFeatureValue(FeatureType.FolderSize);
             if (abs != undefined && part != undefined) {
                 let r = abs.s > 0 ? Math.sqrt(31415 * (part.s / abs.s) / Math.PI) : 1;

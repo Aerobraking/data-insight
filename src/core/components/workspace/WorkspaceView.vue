@@ -1747,22 +1747,22 @@ export default defineComponent({
       payload:
         | { index: any; zoom: boolean }
         | { id: any; zoom: boolean }
-        | { entry: HTMLElement; zoom: boolean },
+        | { element: HTMLElement; zoom: boolean },
       padding: number = 16
     ) {
       let p: any = payload;
 
-      let entry: HTMLElement | null = null;
+      let element: HTMLElement | null = null;
 
       if (p.index != undefined) {
       } else if (p.entry != undefined) {
-        entry = p.entry;
+        element = p.entry;
       } else if (p.id != undefined) {
-        entry = this.getViewByID(Number(p.id));
+        element = this.getViewByID(Number(p.id));
       }
 
-      if (entry != null)
-        this.moveToHTMLElement(entry, payload.zoom, true, padding);
+      if (element != null)
+        this.moveToHTMLElement(element, payload.zoom, true, padding);
     },
     /**
      * The basic code of this method is taken from the PanZoom package. It calulates and returns the target
@@ -1852,14 +1852,14 @@ export default defineComponent({
      * toggle: toggles the selection status for this entry.
      */
     entrySelected(
-      entry: HTMLElement | number,
+      element: HTMLElement | number,
       type: "add" | "single" | "toggle"
     ) {
-      entry =
-        entry instanceof HTMLElement
-          ? entry
-          : (this.getViewByID(entry) as HTMLElement);
-      this.entriesSelected([entry], type);
+      element =
+        element instanceof HTMLElement
+          ? element
+          : (this.getViewByID(element) as HTMLElement);
+      this.entriesSelected([element], type);
     },
     /**
      * Call this method to selected this Entry in the workspace
@@ -1982,11 +1982,11 @@ export default defineComponent({
      * Sets the Focus to the textfield of the given entry, identified by its HTMLElement.
      * The textfield edits the displayname for the entry.
      */
-    setFocusOnNameInput(entry: HTMLElement | undefined = undefined) {
-      entry = entry ? entry : this.getSelectedEntries()[0];
-      if (!entry) return;
+    setFocusOnNameInput(element: HTMLElement | undefined = undefined) {
+      element = element ? element : this.getSelectedEntries()[0];
+      if (!element) return;
 
-      let input: HTMLElement = entry.getElementsByClassName(
+      let input: HTMLElement = element.getElementsByClassName(
         "wsentry-displayname-input"
       )[0] as HTMLElement;
 
@@ -2001,15 +2001,15 @@ export default defineComponent({
 
       if (input != undefined) {
         input.focus();
-        this.moveToEntry({ zoom: true, entry: entry }, 256);
+        this.moveToEntry({ zoom: true, element: element }, 256);
       }
     },
     /**
      * Toggles the displaynameResize property for the given entry, identified by its HTMLElement.
      */
-    toggleNameResizing(entry: HTMLElement | undefined = undefined) {
-      entry = entry ? entry : this.getSelectedEntries()[0];
-      let model = this.getModelEntryFromView(entry);
+    toggleNameResizing(element: HTMLElement | undefined = undefined) {
+      element = element ? element : this.getSelectedEntries()[0];
+      let model = this.getModelEntryFromView(element);
       model.displaynameResize = !model.displaynameResize;
     },
     /**
