@@ -22,17 +22,19 @@ interface WindowSettings {
 
 var menu: Menu;
 var windowSettings: WindowSettings = {
-  wWidth: 0,
-  wHeight: 0,
+  wWidth: 1400,
+  wHeight: 800,
   wX: 0,
   wY: 0,
   frame: -1,
   maximized: 1,
   fullscreen: -1,
 };
-// try to load saved window settings
-const windowSettingsLoaded: any = settings.getSync('settings_main');
-if (windowSettingsLoaded) windowSettings = windowSettingsLoaded;
+// try to load saved window. On macOS this is not stable yet, so it is disabled.
+if (process.platform !== 'darwin') {
+  const windowSettingsLoaded: any = settings.getSync('settings_main');
+  if (windowSettingsLoaded) windowSettings = windowSettingsLoaded;
+}
 
 // arguments from the app process
 var args = process.argv;
@@ -157,9 +159,9 @@ ipcMain.on('insight-file-loaded', (event: any, arg: { filePath: string }) => {
   }
 })
 
-ipcMain.on('frame', (event: any, arg: boolean) => {
-  windowSettings.frame = arg ? 1 : 0;
-})
+// ipcMain.on('frame', (event: any, arg: boolean) => {
+// windowSettings.frame = arg ? 1 : 0;
+// })
 
 ipcMain.on('open-insight-file', (event: any, arg: any) => {
   openFile();
@@ -238,7 +240,7 @@ function windowClosed() {
 
   usbDetect.stopMonitoring();
 
-  if (win && windowWorker && windowWorkerFile) {
+  if (windowWorker && windowWorkerFile) {
     windowWorker.close();
     windowWorkerFile.close();
   }
@@ -247,9 +249,9 @@ function windowClosed() {
   windowWorker = null;
   windowWorkerFile = null;
 
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  //  if (process.platform !== 'darwin') {
+  app.quit();
+  //}
 }
 
 app.on('open-file', (event, path) => {
@@ -399,7 +401,7 @@ function fireNewFileEvent() {
  * Gets the current window settings and put them into the windowsettings instance.
  */
 function updateSettings() {
-  if (win) {
+  if (win && process.platform != 'darwin') {
     windowSettings.maximized = win.isMaximized() ? 1 : 0;
     if (!win.isMaximized() && windowSettings.fullscreen != 1) {
       windowSettings.wX = win.getBounds().x;
@@ -539,7 +541,7 @@ async function createWindow() {
           label: 'Exit',
           accelerator: 'CmdOrCtrl+Q',
           click() {
-            app.quit()
+            if (win) win.close();
           }
         }
       ]
@@ -572,30 +574,6 @@ async function createWindow() {
           accelerator: 'F11',
           label: 'Fullscreen'
         },
-        /** {
-         //   accelerator: 'F4',
-         //   label: 'Frameless',
-         //   // does not work in osx
-         //   visible: process.platform != 'darwin',
-         //   click() {
-         //     if (win) {
-         //       s.frame = s.frame == 0 ? 1 : 0;
-         //       switchFrameType = true;
-         //       if (win) {
-         //         updateSettings();
-         //         console.log("set settings: ", s);
-         //         settings.setSync('settings_main', s);
-         //       }
- 
-         //       usbDetect.stopMonitoring();
-         //       if (win) {  
-         //         console.log("send close event manually");
-         //         win.webContents.send('app-close');
-         //       }
- 
-         //     }
-         //   }
-         // },*/
         {
           label: 'Reload Page',
           visible: isDevMode(),
