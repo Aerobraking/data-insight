@@ -297,7 +297,8 @@ export default defineComponent({
      */
     loadInsightFileFromPath(path: string) {
       if (benchmark.doBenchmark) {
-        benchmark.logTime("vue"); benchmark.logTime("json");
+        benchmark.logTime("vue", false, false);
+        benchmark.logTime("json");
       }
 
       let jsonString = fs.readFileSync(path, "utf8");

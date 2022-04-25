@@ -7,9 +7,10 @@ export const doBenchmark = true;
 var osu = require('node-os-utils');
 var cpu = osu.cpu;
 
-interface entry {
+interface LogEntry {
     time: number,
     index: number,
+    useTick:boolean,
     /**
      * 0: set current time
      * 1: calculate time since last call
@@ -18,7 +19,7 @@ interface entry {
     isMeasured: 0 | 1 | 2 | 3, fpsStep: number, fpsMean: number[]
 }
 
-const mapTimes: Map<string, entry> = new Map();
+const mapTimes: Map<string, LogEntry> = new Map();
 
 let keysUsedInTick: string[] = [];
 let log: string[] = [];
@@ -35,8 +36,8 @@ export function tickStart() {
 
     logTime("chrome");
 
-    mapTimes.forEach((value: entry, key: string) => {
-        value.isMeasured = 0;
+    mapTimes.forEach((value: LogEntry, key: string) => {
+        if(value.useTick) value.isMeasured = 0;
     });
 
     // set to 2 so it get printed.
@@ -49,16 +50,20 @@ export function logTimeGivenValue(key: string, value: number) {
     logTime(key); let f = mapTimes.get(key); if (f) f.isMeasured = 3, f.time = value;
 }
 
-export function logTime(key: string, log: boolean = false) {
+export function logTime(key: string, log: boolean = false,useTick:boolean=true) {
     if (!keysUsedInTick.includes(key)) keysUsedInTick.push(key);
 
-    if (!mapTimes.has(key)) { mapTimes.set(key, { index: indexCounter++, time: performance.now(), isMeasured: 0, fpsStep: 0, fpsMean: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }); } else {
+    if (!mapTimes.has(key)) { mapTimes.set(key, { index: indexCounter++,useTick:useTick, time: performance.now(), isMeasured: 0, fpsStep: 0, fpsMean: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }); } else {
         const n = mapTimes.get(key);
         if (n) {
+            if(key == "vue") console.log("1", n);
             if (n.isMeasured == 0) { n.time = performance.now(); n.isMeasured = 1; }
-            else { n.time = (performance.now() - n.time); n.isMeasured = 2; } // att the second call we save the time
+            else { n.time = (performance.now() - n.time); n.isMeasured = 2; } 
+            if(key == "vue") console.log("2",n);
         }
     }
+
+    
     if (log) print(key, log);
 }
 
@@ -68,6 +73,7 @@ function print(key: string, log: boolean = false) {
         const columns: string[] = [];
         addPrintText(columns, key);
         if (log) console.log(...columns);
+        if(log) n.isMeasured=0;
     }
 }
 

@@ -594,7 +594,7 @@ export default defineComponent({
     });
 
     this.$nextTick(function () {
-      if (benchmark.doBenchmark) benchmark.logTime("vue", true);
+      if (benchmark.doBenchmark) benchmark.logTime("vue", true,false);
     });
   },
   unmounted() {
