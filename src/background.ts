@@ -30,6 +30,16 @@ var windowSettings: WindowSettings = {
   maximized: 1,
   fullscreen: -1,
 };
+/**
+ 
+Uncaught Exception:
+TypeError: Object has been destroyed
+    at j (/Users/krecker/Documents/code/data-insight/dist_electron/mac/Data Insight.app/Contents/Resources/app.asar/background.js:2:196793)
+    at BrowserWindow.<anonymous> (/Users/krecker/Documents/code/data-insight/dist_electron/mac/Data Insight.app/Contents/Resources/app.asar/background.js:2:198847)
+    at BrowserWindow.emit (events.js:315:20)
+
+
+ */
 // try to load saved window. On macOS this is not stable yet, so it is disabled.
 if (process.platform !== 'darwin') {
   const windowSettingsLoaded: any = settings.getSync('settings_main');
@@ -238,20 +248,12 @@ ipcMain.on('closed', e => {
  */
 function windowClosed() {
 
-  usbDetect.stopMonitoring();
-
-  if (windowWorker && windowWorkerFile) {
-    windowWorker.close();
-    windowWorkerFile.close();
-  }
-
-  win = null;
-  windowWorker = null;
-  windowWorkerFile = null;
-
-  //  if (process.platform !== 'darwin') {
-  app.quit();
-  //}
+  if(usbDetect)usbDetect.stopMonitoring();
+  if(win) win = null;
+  if(windowWorker) windowWorker = null;
+  if(windowWorkerFile) windowWorkerFile = null;
+ 
+  app.quit(); 
 }
 
 app.on('open-file', (event, path) => {
@@ -488,9 +490,10 @@ async function createWindow() {
 
   win.on('close', (e) => {
     if (win) {
-      updateSettings();
-      settings.setSync('settings_main', windowSettings as any);
-      // e.preventDefault();
+      if (process.platform != 'darwin') {
+        updateSettings();
+        settings.setSync('settings_main', windowSettings as any);
+      }
       windowClosed();
     }
   });
