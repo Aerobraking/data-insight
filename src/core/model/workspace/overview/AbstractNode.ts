@@ -17,7 +17,8 @@ export abstract class AbstractNode {
     features: Features = {};
 
     /**
-    * The Combination of Features for this node and all underlying Nodes. Is stored as key-value entries, where the key
+    * The Combination of Features for this node and all underlying Nodes. 
+    * Is stored as key-value entries, where the key
     * is the Feature Enum and the Value the corresponding FeatureData Object.
     */
     @Expose({ name: 'fs' })
@@ -305,13 +306,17 @@ export abstract class AbstractNode {
 }
 
 /**
- * Defines the Link between two AbstractNode instances which are in a parent-child relationship. Extend it to use it with your AbstractNode subclass.
+ * Defines the Link between two AbstractNode instances which are in a parent-child relationship.
+ * Extend it to use it with your AbstractNode subclass.
  */
 export class AbstractLink<D extends AbstractNode = AbstractNode>  {
+    
     constructor(source: D, target: D) {
         this.source = source;
         this.target = target;
     }
+
     source: D;
+    
     target: D;
 }
