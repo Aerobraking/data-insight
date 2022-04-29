@@ -7,10 +7,12 @@ import AbstractWorkspaceEntry from "./WorkspaceEntry";
 export class WorkspaceEntryFrame extends AbstractWorkspaceEntry {
 
     public static viewid: string = "wsentryframe";
+    
     /**
      * The color of the frame. Should be made editable in the future.
      */
     color: string = "rgb(10,10,10)";
+
     /**
      * Disable making it selectable by clicking on it because this can be irritating when
      * the user tries to select other entries inside the frame.

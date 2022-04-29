@@ -12,6 +12,7 @@
  * current Input, its callback method will be called.
  */
 export interface HotKey {
+
     /**
      * This string represents the input that trigges the callback method.
      * Examples:
@@ -20,10 +21,12 @@ export interface HotKey {
      * "cmdorctrl e"
      */
     rawHotkey: string,
+
     /**
      * A array representation of the rawHotkey string.
      */
     hotkey: { [any: string]: boolean },
+
     /**
      * ws: The input happens inside the WorkspaceView.
      * ov: The input happens inside the OverviewView.
@@ -39,14 +42,17 @@ export interface HotKey {
  * events to it. Before that, register the Plugins in the instance.
  */
 export interface PluginShortCutHandler {
+
     /**
      * Call this method in your Component when you want to trigger Plugins by keydown events.
      */
     keydown: (context: "ws" | "ov" | "global", event: KeyboardEvent) => void,
+
     /**
      * Registers a HotKey by the given string.
      */
     register: (hotkey: string, callback: () => void) => void,
+    
     /**
      * Unregister the given callback method by the given hotkey string.
      */

@@ -1,3 +1,6 @@
+/**
+ * Some functions for formatting numbers to a string.
+ */
 
 export const filesizeFormat = (value: number) => {
   value = Math.round(value);

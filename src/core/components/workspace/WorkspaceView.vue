@@ -594,7 +594,7 @@ export default defineComponent({
     });
 
     this.$nextTick(function () {
-      if (benchmark.doBenchmark) benchmark.logTime("vue", true,false);
+      if (benchmark.doBenchmark) benchmark.logTime("vue", true, false);
     });
   },
   unmounted() {
@@ -1895,7 +1895,7 @@ export default defineComponent({
     /**
      * Contains the actual code for executing the changes to the selection.
      * Call this method to selected this Entry in the workspace
-     * @param entries List of HTMLElement of the Entry Components 
+     * @param entries List of HTMLElement of the Entry Components
      * @param type add: Adds this node to the selection, single: make this entry as the new unique selection
      * toggle: toggles the selection status for this entry.
      * @param activateDrag true: The dragging of the selected entry elements will be started, false: no drag

@@ -58,7 +58,7 @@ export interface FeatureDataHandlerIfc extends AbstractFeaturesDataHandlerTypes 
 }
 
 /**
- * EXTEND APP
+ * EXTEND APP: Register new FeatureDataType Entries
  * 
  * When creating a new FeatureData from the AbstractFeatureData, 
  * an Entry needs to be added for the new FeatureDataType that handles how

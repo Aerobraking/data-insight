@@ -1,8 +1,10 @@
-
 const drivelist = require("drivelist");
 import os from "os"; 
 import { ipcRenderer } from "electron";
 
+/**
+ * Returns a list of the drives of the OS
+ */
 async function getDrives() {
     listDrives = [];
     const drives = await drivelist.list();
@@ -64,6 +66,9 @@ getDrives();
 
 export const DriveListRoot: string = "root-drivelist";
 
+/**
+ * Represents a drive from the OS
+ */
 export class Drive {
 
     constructor(path: string, size: number, name: string = path) {
@@ -71,13 +76,20 @@ export class Drive {
         this.name = name;
         this.size = size;
     }
+    // the path for it to use it in file paths.
     path: string;
+    // the name of it
     name: string;
+    // size in bytes
     size: number;
 }
 
 var listDrives: Drive[] = [];
   
+/**
+ * An Event Syste that listens to usb-events from the system to update the drive list in case
+ * that a usb drive was added/removed.
+ */
 export class DriveListSystem {
 
     private hash: Map<String, { (): void; }> = new Map();

@@ -13,7 +13,7 @@ import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, Workspa
 export default class WorkspaceEntryCollection {
 
     /**
-     * EXTEND APP
+     * EXTEND APP: Register AbstractWorkspaceEntry Classes 
      * 
      * All classes that implement the WorkspaceEntry class needs to be listed 
      * in the subTypes here with a unique name in their 'et' property, so they

@@ -741,9 +741,7 @@ export default defineComponent({
       if (lowercase.length > 0) {
         if (Instance.getEngine(this.id)) {
           for (let i = 0; i < Instance.getEngine(this.id).trees.length; i++) {
-            const tree: AbstractNodeTree = Instance.getEngine(this.id).trees[
-              i
-            ];
+            const tree: AbstractNodeTree = Instance.getEngine(this.id).trees[i];
 
             for (let j = 0; j < tree.nodes.length; j++) {
               const n = tree.nodes[j];
@@ -808,7 +806,7 @@ export default defineComponent({
     /**
      * Adds the given Trees to the Overview.
      */
-    addTrees(entries: FolderNodeTree[], pos: { x: number; y: number }) {
+    addTrees(entries: AbstractNodeTree[], pos: { x: number; y: number }) {
       let listEntries: AbstractNodeTree[] = Instance.getData(this.id);
 
       entries.forEach((e) => {
@@ -830,7 +828,7 @@ export default defineComponent({
        */
       for (let i = 0; i < entries.length; i++) {
         const e = entries[i];
-        e.startWatcher();
+        if (e instanceof FolderNodeTree) e.startWatcher();
       }
     },
     /**
@@ -925,7 +923,6 @@ export default defineComponent({
 </style>
 
 <style lang="scss">
-
 .filter-settings {
   position: absolute;
   top: 1px;
@@ -1011,5 +1008,4 @@ export default defineComponent({
     -ms-interpolation-mode: nearest-neighbor;
   }
 }
-
 </style>

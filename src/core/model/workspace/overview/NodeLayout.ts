@@ -649,8 +649,10 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     public featuresUpdated(tree: AbstractNodeTreeIfc): void { }
 
     public nodesUpdated(tree: AbstractNodeTreeIfc): void {
+        if (doBenchmark) logTime("Layout");
         this.reheatTree(tree);
         this.updateLayout(tree.root)
+        if (doBenchmark) logTime("Layout");
     }
 
     public nodesAdded(tree: AbstractNodeTreeIfc, nodesAdded: AbstractNode[]): void {
@@ -682,7 +684,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     }
 
     mapColumnBounds: Map<number, number> = new Map();
-    mapBounds: Map<number, number> = new Map();
+    mapXPosition: Map<number, number> = new Map();
 
     /**
     * (Re-)activates the simulation for the given Tree.
@@ -690,15 +692,18 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
     */
     public reheatTree(tree: AbstractNodeTreeIfc) { tree.customData["heat"] = { v: NodeLayoutStaticDynamicX.coolDownTime }; };
 
+    static maxAngle = 60; // maximum angle between the first or last child node and its parent node.
+    static maxAngleTan = Math.tan(NodeLayoutStaticDynamicX.maxAngle * (Math.PI / 180));
+
     /**
     * Creates a new layout for the given node and all of its descendants It firsts calculates the required
     * bounds for each node and then positions them.
     * @param node
     */
     private updateLayout(node: AbstractNode): void {
-        logTime("layout");
+       
         this.mapColumnBounds.clear();
-        this.mapBounds.clear();
+        this.mapXPosition.clear();
         this.calculateBounds(node);
         this.mapColumnBounds = new Map([...this.mapColumnBounds.entries()].sort());
 
@@ -708,14 +713,13 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
          * in the mapBounds map.
          */
         let sum = 0;
-        for (const [key, h] of this.mapColumnBounds.entries()) {
-            const w = h / (2 * NodeLayoutStaticDynamicX.maxAngleTan);
-            const x = Math.max(w, NodeLayoutStaticDynamicX.ColumnWidthMin);
-            this.mapBounds.set(key, sum);
+        for (const [key, bound] of this.mapColumnBounds.entries()) {
+            const width = bound / (2 * NodeLayoutStaticDynamicX.maxAngleTan);
+            const x = Math.max(width, NodeLayoutStaticDynamicX.ColumnWidthMin);
+            this.mapXPosition.set(key, sum);
             sum += x;
         }
-        this.positionNodes(node);
-        logTime("layout");
+        this.positionNodes(node); 
     }
 
     /**
@@ -780,7 +784,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
              * Get the x Position for the node from the mapBounds map where the x Position for each column (depth value) is stored.
              */
             const newY = yStart + (c.customData["b"] / 2);
-            const xC = this.mapBounds.get(c.depth);
+            const xC = this.mapXPosition.get(c.depth);
 
             // init data for spring simulation and set the final position for it.
             let coordChild = c.customData["co"] == undefined ? c.customData["co"] = { y: newY, vy: 0, x: xC ? xC : 0, vx: 0 } : c.customData["co"];
@@ -796,8 +800,7 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
 
     }
 
-    static maxAngle = 60; // maximum angle between the first or last child node and its parent node.
-    static maxAngleTan = Math.tan(NodeLayoutStaticDynamicX.maxAngle * (Math.PI / 180));
+
     static nodeBound: number = 200; // bound for a node with children <= 1 
     static coolDownTime: number = 256; // in frames
     static minAlpha: number = 0.0003; // cooldown starts when alpha in current tick is less then minAlpha
@@ -858,12 +861,14 @@ class NodeLayoutStaticDynamicX extends AbstractNodeLayout {
                          * @param vel 
                          */
                         function explicitEuler(pos: "x" | "y", stiffness = NodeLayoutStaticDynamicX.stiffnessY, damping = NodeLayoutStaticDynamicX.dampingY, vel = "v" + pos) {
+
                             let dist = coord[pos] - n[pos];
                             const acc = (stiffness * dist - damping * coord[vel]) * delta;
                             // add random force for a more "natural" movement
                             coord[vel] += random(acc);
                             if (n.fy == undefined) n[pos] += coord[vel];
                             maxVelocity = Math.max(maxVelocity, Math.abs(coord[vel]));
+
                         }
                         /**
                          * Calculate the next x or y position for the node with the given stiffnes and damping values

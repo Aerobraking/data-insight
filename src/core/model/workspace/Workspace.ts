@@ -104,8 +104,8 @@ export class Workspace extends Activity {
     showFeatureSettings: boolean = true;
 
     /**
-     * true: paneSize<100, the overview UI is visible
-     * false: paneSize=100, overview UI is not visible
+     * true: paneSize<100, the overview Interface is visible
+     * false: paneSize=100, overview Interface is not visible
      */
     overviewOpen: boolean = true;
 
@@ -120,7 +120,7 @@ export class Workspace extends Activity {
     type = "ws";
 
     /**
-     * EXTEND APP
+     * EXTEND APP: Register AbstractWorkspaceEntry Classes 
      * 
      * All classes that implement the WorkspaceEntry class needs to be listed 
      * in the subTypes here with a unique name in their 'et' property, so they

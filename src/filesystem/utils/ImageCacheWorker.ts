@@ -1,3 +1,7 @@
+/**
+ * This file handles the creation of images for using them in the HTML UI.
+ * It loads the image data from the given image file paths and creates various previews of them.
+ */
 var canvasPreview: OffscreenCanvas;
 var ctxPreview: OffscreenCanvasRenderingContext2D | null = null;
 var canvasSmall: OffscreenCanvas;

@@ -1,6 +1,9 @@
 import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 import { Type } from "class-transformer"; 
 
+/**
+ * The AbstractNode implementation for a Folder does not need any special functionality.
+ */
 export default class FolderNode extends AbstractNode {
     constructor(name: string) {
         super("folder", name);

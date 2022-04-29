@@ -4,7 +4,7 @@ import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
 export default class FitAspectRatio extends PluginAdapter {
 
     readonly description: string = "<kbd>A</kbd>";
-    readonly name: string = "Fit Aspect Ratio";
+    readonly name: string = "Fit Aspect Ratio of Selected Elements";
     readonly shortcut: string = "ws a";
     readonly domain = "ws";
 

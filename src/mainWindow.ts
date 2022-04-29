@@ -21,14 +21,12 @@ import { InsightFile } from './core/model/InsightFile';
 import { FeatureType } from './core/model/workspace/overview/FeatureType';
 
 /**
- * Workspace Entry Components
+ * Workspace Entry Internal Components
  */
 import wsentryframe from "./core/components/workspace/WorkspaceEntry/WorkspaceEntryFrame.vue";
 
 /**
- * EXTEND APP
- * 
- * Workspace Folder Entry Components
+ * EXTEND APP: Import Workspace Entry Components
  */
 import wsentryfile from "./filesystem/components/WorkspaceEntryFileView.vue";
 import wsentrytextarea from "./filesystem/components/WorkspaceEntryTextareaView.vue";
@@ -38,9 +36,7 @@ import wsentryvideo from "./filesystem/components/WorkspaceEntryVideoView.vue";
 import wsentryyoutube from "./filesystem/components/WorkspaceEntryYoutubeView.vue";
 
 /**
- * EXTEND APP
- * 
- * Feature Components
+ * EXTEND APP: Import Feature Components
  */
 import featurenone from "./core/components/features/FeatureNone.vue";
 import featuresize from "./core/components/features/FeatureSizeComp.vue";
@@ -108,9 +104,7 @@ function startApp(store: Store) {
         .mount('#app');
 
     /**
-     * EXTEND APP
-     * 
-     * register all workspace entry components
+     * EXTEND APP: Register Workspace Entry Components
      */
     app.component('wsentryfile', wsentryfile);
     app.component('wsentrytextarea', wsentrytextarea);
@@ -121,10 +115,8 @@ function startApp(store: Store) {
     app.component('wsentryyoutube', wsentryyoutube);
 
     /**
-    * EXTEND APP
-    * 
-    * register all features components
-    */
+     * EXTEND APP: Register Features Components
+     */
     app.component(FeatureType.None, featurenone);
     app.component(FeatureType.FolderLastModify, featuresize);
     app.component(FeatureType.FolderSize, featuresize);

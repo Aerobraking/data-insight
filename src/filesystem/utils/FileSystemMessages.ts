@@ -1,7 +1,12 @@
 import { Features } from "../../core/model/workspace/overview/FeatureType";
+/**
+ * These interfaces are used for sending data back and forth between the app and the Thread that scans
+ * the file system.
+ */
 
 export interface FileSystemListener {
     event(e: FolderFeatureResult | FolderSyncResult | FolderSyncFinished): void;
+    // the path you want to scan
     getPath(): string;
     getID(): number;
 }

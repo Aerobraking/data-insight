@@ -3,6 +3,9 @@ import { nativeImage } from "electron";
 import fs from "fs";
 import path from "path";
 
+/**
+ * Retrieves the icons of the OS for the given file/folder paths.
+ */
 export class Handler {
 
     private hash: Map<String, string> = new Map();
@@ -16,6 +19,11 @@ export class Handler {
 
     private app: any = require("electron").remote.app;
   
+    /**
+     * Get an icon for a given filesystem path.
+     * @param p The path to the file/folder 
+     * @param callback The callback that is fired when the icon has loaded
+     */
     registerPath(p: string, callback: (url: string) => void): void {
 
         p = path.normalize(p).replaceAll("\\", "/");
@@ -47,8 +55,7 @@ export class Handler {
                     size: "normal",
                 }).then((res: Electron.NativeImage) => {
                     if (filetype) {
-                        const w = nativeImage.createFromBuffer(res.toPNG()).toDataURL();
-                        // const w =res.toPNG().toDataURL({scaleFactor:0.2});
+                        const w = nativeImage.createFromBuffer(res.toPNG()).toDataURL(); 
                         this.hash.set(filetype, w);
                         callback(w);
                     }

@@ -2,7 +2,6 @@ import { fileamountFormat, filesizeFormat, timeFormat } from "@/filesystem/utils
 import { FeatureDataSum, FeatureDataMedian } from "../../core/model/workspace/overview/FeatureData";
 import { AbstractFeatureGradient, FeatureGradientSettings, FeatureViewDecorator } from "../../core/model/workspace/overview/AbstractFeature";
 import { AbstractNodeTree } from "../../core/model/workspace/overview/AbstractNodeTree";
-
 import FolderNode from "./FolderNode";
 import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
 
@@ -134,7 +133,7 @@ export class NodeFeatureLastModifiy extends AbstractFeatureGradient<FolderNode, 
 }
 
 /**
- * Dieses Feature wird von Folder Nodes benutzt. Es nutzt einen Gradienten als view, dessen min und max werte hier enthalten sind.
+ * This feature is used by folder nodes. It uses a gradient as view, whose min and max values are contained here.
  */
 @FeatureViewDecorator()
 export class NodeFeatureQuantity extends AbstractFeatureGradient<FolderNode, FeatureDataSum> {

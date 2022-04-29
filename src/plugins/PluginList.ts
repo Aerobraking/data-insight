@@ -1,3 +1,6 @@
+/**
+ * EXTEND APP:register Plugin Files.
+ */
 export * from './Rearrange'
 export * from './FitAspectRatio'
 export * from './NormalizeSize'

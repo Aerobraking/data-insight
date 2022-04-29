@@ -3,6 +3,10 @@ import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
 import { Instance as DataCache } from "@/core/model/workspace/overview/OverviewDataCache";
 import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
 
+/**
+ * Only usable in the App when benchmarking is enabled. 
+ * Adds random movement to all nodes in the visible overview.
+ */
 @PluginDecorator(doBenchmark)
 export default class RandomNodeMovement extends PluginAdapter {
 

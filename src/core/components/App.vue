@@ -11,10 +11,10 @@
       <br />
       <a
         @click.capture.stop="
-          openURL('https://github.com/Aerobraking/ma-data-insight')
+          openURL('https://github.com/Aerobraking/data-insight')
         "
-        href="https://github.com/Aerobraking/ma-data-insight"
-        >https://github.com/Aerobraking/ma-data-insight</a
+        href="https://github.com/Aerobraking/data-insight"
+        >https://github.com/Aerobraking/data-insight</a
       >
       <br />
       <br />
@@ -93,10 +93,17 @@
           <td>Add Frame</td>
           <td><kbd>F</kbd></td>
         </tr>
-
         <tr>
           <td><h4>Workspace</h4></td>
           <td></td>
+        </tr>
+        <tr>
+          <td>Create Workspace</td>
+          <td><kbd>Ctrl</kbd> + <kbd>T</kbd></td>
+        </tr>
+        <tr>
+          <td>Switch Workspace</td>
+          <td><kbd>Ctrl</kbd> + <kbd>Tab</kbd></td>
         </tr>
         <template v-for="p in plugins" :key="p.name">
           <tr
@@ -134,6 +141,25 @@
         <tr>
           <td><h4>Overview</h4></td>
           <td></td>
+        </tr>
+        <tr>
+          <td>Delete Tree by selected Root Node</td>
+          <td><kbd>Del</kbd></td>
+        </tr>
+        <tr>
+          <td>Open the selected Collection</td>
+          <td>(<kbd>Ctrl</kbd>) | <kbd>+</kbd></td>
+        </tr>
+        <tr>
+          <td>Make selected Node (or its sub nodes) to Collection(s)</td>
+          <td>(<kbd>Ctrl</kbd>) | <kbd>-</kbd></td>
+        </tr>
+        <tr>
+          <td>Navigate through a Tree</td>
+          <td>
+            (<kbd>Ctrl</kbd>) | (<kbd>Left</kbd> | <kbd>Up</kbd> |
+            <kbd>Right</kbd> | <kbd>Down</kbd>)
+          </td>
         </tr>
         <template v-for="p in plugins" :key="p.name">
           <tr

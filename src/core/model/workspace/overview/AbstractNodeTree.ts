@@ -40,7 +40,7 @@ export abstract class AbstractNodeTree<N extends AbstractNode = AbstractNode> im
     }
 
     /**
-     * EXTEND APP
+     * EXTEND APP: register AbstractNode classes 
      * 
      * When creating a new AbstractNode Implementation, add the class to the subtypes here
      * so the class can be loaded from JSON Data correctly.

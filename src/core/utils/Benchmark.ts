@@ -2,7 +2,7 @@
 /**
  * Is the benchmark code active.
  */
-export const doBenchmark = true;
+export const doBenchmark = false;
 
 var osu = require('node-os-utils');
 var cpu = osu.cpu;

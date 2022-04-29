@@ -1,5 +1,5 @@
 /**
- * EXTEND APP
+ * EXTEND APP: Register AbstractFeature implementations 
  * 
  * All AbstractFeature implementations have to be imported here. 
  */

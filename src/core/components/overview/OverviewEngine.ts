@@ -921,14 +921,17 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
      * 3. updates the hovered node
      * 4. updates the opacity values for fading in/out the nodes
      * 5. updates the viewport transformation when all tree should be displayed automatically
-     * 6. renders the data.
+     * 6. renders the data when the overview is visible.
      */
     public tickEngine(): void {
 
         // 1.
         Layouter.tickLayout(this._trees, OverviewEngine.delta);
-      
+
+        if (doBenchmark) logTime("PrepareRender");
+
         this._trees.forEach(s => s.tickTree());
+        this._trees.forEach(s => Layouter.nodesUpdated(s));
 
         // 2.
         if (this.colorTransitionElapsed != undefined) {
@@ -963,7 +966,6 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
 
         // 6.
         if (this.enableRendering && this.workspace.overviewOpen) {
-            // render the data on the canvas
             this.renderCanvas(this.context);
         }
 
@@ -1210,7 +1212,6 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
                 var renderDataNodes: { color: any, pos: { x: number, y: number }, r: number, culling: boolean }[] = new Array(nodes.length);
                 var renderDataLinks: { culling: boolean }[] = new Array(links.length);
 
-                if (doBenchmark) logTime("PrepareRender");
                 this.prepareRenderData(nodes, links, renderDataNodes, renderDataLinks);
                 if (doBenchmark) logTime("PrepareRender");
 

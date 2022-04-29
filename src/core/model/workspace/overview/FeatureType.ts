@@ -1,7 +1,7 @@
 import { FeatureDataMedian, FeatureDataSum, FeatureDataList } from "./FeatureData";
 
 /**
- * EXTEND APP
+ * EXTEND APP: Create FeatureType for new AbstractFeature implementation
  * 
  * Unique identifier for each Feature
  */

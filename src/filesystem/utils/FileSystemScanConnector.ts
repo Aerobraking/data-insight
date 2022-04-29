@@ -2,6 +2,9 @@ import IPCMessageType from "@/IpcMessageTypes";
 import { ipcRenderer } from "electron";
 import { AbstractSyncMessage, FileSystemListener, FolderFeatureResult, FolderSync, FolderSyncFinished, FolderSyncResult, SyncMessageType } from "./FileSystemMessages";
 
+/**
+ * This class connects the app with the thread that handles the filesystem scanning.
+ */
 export class FileSystemScanConnector {
 
     private hashDeepSync: Map<number, FileSystemListener> = new Map();
@@ -36,6 +39,10 @@ export class FileSystemScanConnector {
 
     }
 
+    /**
+     * Scan the complete structure of the given path
+     * @param listener
+     */
     syncFolder(listener: FileSystemListener): void {
 
         this.hashDeepSync.set(listener.getID(), listener);
@@ -53,7 +60,7 @@ export class FileSystemScanConnector {
     }
 
     /**
-     * 
+     * Starts a scanning of the content of an collection node.
      * @param listener 
      * @param path Absolute path to the folder that you want to sync
      * @param depth 

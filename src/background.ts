@@ -73,7 +73,7 @@ function createDragImage() {
  * @returns true: activates some debugging outputs.
  */
 function isDevMode() {
-  return true || !app.isPackaged;
+  return !true || !app.isPackaged;
 }
 
 /**

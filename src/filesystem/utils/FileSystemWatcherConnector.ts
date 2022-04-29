@@ -10,7 +10,8 @@ interface WatcherListener {
 interface MapCallbacks extends Map<string, WatcherListener[]> { }
 
 /**
- * This class connects to the FileSystemWatcher instance in the other thread via ipc Messages.
+ * This class connects the app to the FileSystemWatcher instance in the other thread via ipc Messages.
+ * The FileSystemWatcher watches for changes in the folders that are used in the app to refresh its list of files/folders.
  */
 class FileSystemWatcherConnector {
 
@@ -92,8 +93,8 @@ class FileSystemWatcherConnector {
         listCallbacks.push(callback);
 
         /**
-     * Ein neuer ordner wurde hinzugefügt, wir scannen ihn komplett.
-     */
+         * A new folder was added, scan it.
+         */
         let msg: FileWatcherSend = {
             type: "register",
             path: path,

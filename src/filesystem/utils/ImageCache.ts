@@ -1,7 +1,10 @@
 import { doBenchmark, logTime } from "@/core/utils/Benchmark";
-import { IframeParenthesesOutline } from "mdue";
 import _ from "underscore";
+import { removeFromList } from "../../core/utils/ListUtils";
 
+/**
+ * The different preview types of an image, plus some feedback types.
+ */
 export enum ImageSize {
     preview = "preview",
     tiny = "tiny",
@@ -13,6 +16,11 @@ export enum ImageSize {
     size = "size"
 }
 
+/**
+ * The file types that chrome can display as images. 
+ * @param path
+ * @returns 
+ */
 export function isImageTypeSupported(path: string): boolean {
     return ['.apng', '.png', '.jpg', '.jpeg', '.avif', '.gif', '.svg', '.webp', '.bmp', '.tiff', '.tif'].some(char => path.toLowerCase().endsWith(char));
 }
@@ -28,7 +36,9 @@ export interface ImageDim {
     ratio: number;
 }
 
-import { removeFromList } from "../../core/utils/ListUtils";
+/**
+ * The Cache connects the app with the WebWorkers (ImageCacheWorker.ts) that create the image previews.
+ */
 export class Cache {
 
     private hashDim: Map<string, ImageDim> = new Map();
@@ -55,7 +65,7 @@ export class Cache {
 
         this.deleteWorkers();
         this.createWorkers();
-  
+
     }
 
     private deleteWorkers() {
@@ -68,14 +78,14 @@ export class Cache {
 
     private constructor() {
         this.createWorkers();
-
-
     }
 
+    /**
+     * Create the WebWorker Instances.
+     */
     private createWorkers() {
         const _this = this;
 
-        // cpuCount
         for (let index = 0; index < 3; index++) {
             let w = new Worker("@/filesystem/utils/ImageCacheWorker", {
                 type: "module",
@@ -142,7 +152,6 @@ export class Cache {
                     imageEntry?.set(ImageSize.medium, mediumURL);
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + mediumURL + "')", e.data.type);
-                        // l.callback( mediumURL , e.data.type);
                     });
                 }
 
@@ -152,7 +161,6 @@ export class Cache {
                     imageEntry?.set(ImageSize.original, origURL);
                     this.doCallback(e.data.path, (l: ImageListener) => {
                         l.callback("url('" + origURL + "')", e.data.type);
-                        // l.callback(origURL, e.data.type);
                     });
                 }
 
@@ -213,6 +221,10 @@ export class Cache {
         }
     }
 
+    /**
+     * 
+     * @param p The absolute path to the image file.
+     */
     createPreview(p: string) {
 
         if (doBenchmark && this.listQueue.length == 0) logTime("images");
@@ -237,6 +249,14 @@ export class Cache {
     private static delay = 33;
     private timeStack = 0;
 
+    /**
+     * Creates Image Previews for the given path or use the already created previews. Returns the data to the given callback function.
+     * @param path The absolute path to the image file.
+     * @param callback The callback that retrieves the image data
+     * @param recreate Recreate the previews, although they already exists.
+     * @param eventsToFire define which events should be fired when the image data already exists. 
+     * @returns 
+     */
     public registerPath = (path: string, callback: ImageListener, recreate: boolean = false, eventsToFire: ImageSize[] = Object.values(ImageSize) as ImageSize[]) => {
 
         let imageEntry: Map<ImageSize, String> | undefined = this.hash.get(path);
@@ -249,8 +269,6 @@ export class Cache {
             this.createPreview(path);
 
         } else {
-
-            //  wenn es schon existiert angeben was gefeuert werden soll beim registrieren
 
             let dim = this.hashDim.get(path);
             if (dim && eventsToFire.includes(ImageSize.size)) {

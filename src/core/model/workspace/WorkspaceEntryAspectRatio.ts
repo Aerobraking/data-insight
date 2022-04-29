@@ -6,6 +6,7 @@ import { ImageDim } from "@/filesystem/utils/ImageCache";
  * possible for the user to recover this default aspect ratio by an action in the WorkspaceView.
  */
 export default interface WorkspaceEntryAspectRatio {
+    
     /**
      * The default aspectratio for this WorkspaceEntry. Only the ratio property inside ImageDim
      * is required for that to work.

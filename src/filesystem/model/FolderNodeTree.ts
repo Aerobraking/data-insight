@@ -7,6 +7,10 @@ import FolderNode from "./FolderNode";
 import * as watcher from "../utils/FileSystemWatcherConnector";
 import { doBenchmark } from "@/core/utils/Benchmark";
 
+/**
+ * Implements the AbstractNodeTree for creating a directory tree structure.
+ * It uses a webworker which watches for changes in the file system to keep the structure synchronized. 
+ */
 export class FolderNodeTree extends AbstractNodeTree<FolderNode> implements FileSystemListener {
 
     constructor(path: string | undefined) {
@@ -23,8 +27,16 @@ export class FolderNodeTree extends AbstractNodeTree<FolderNode> implements File
     @Exclude()
     renameMap: Map<string, NodeJS.Timeout> = new Map();
 
+    /**
+     * How quickly are the events from the WebWorker processed.
+     */
     @Exclude()
     interval: any = setInterval(this.handleEvents.bind(this), 55);
+
+    /**
+     * We use Stacks for storing the events from the WebWorker. This way we can process them one by one
+     * without blocking the main thread for too long.
+     */
     @Exclude()
     eventStack: (FolderSyncResult)[] = [];
     @Exclude()

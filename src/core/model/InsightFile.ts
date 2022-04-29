@@ -23,6 +23,7 @@ export class InsightFileSettings {
  * It contains all the data that is represented directly or indirectly by the Vue View. 
  */
 export class InsightFile {
+
     /**
      * The list of views. In the Moment this are only Workspaces but this can be extendes by implementing the View class.
      * Each View is represented by a Tab in the View.
@@ -37,6 +38,7 @@ export class InsightFile {
         },
     })
     views: Array<Activity> = [new Workspace("Default").setActive(true)];
+    
     // Some settings paramenters
     settings: InsightFileSettings = new InsightFileSettings();
 
