@@ -1,9 +1,9 @@
 import _ from "underscore";
 
 import * as f from "@/filesystem/utils/FileStringFormatter";
-import AbstractWorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import AbstractWorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 import { Exclude } from "class-transformer";
-import WorkspaceEntryAspectRatio from "@/core/model/workspace/WorkspaceEntryAspectRatio";
+import WorkspaceEntryAspectRatio from "@/core/model/fileactivity/workspace/WorkspaceEntryAspectRatio";
 import { ImageDim } from "@/filesystem/utils/ImageCache";
 const fs = require("fs");
 const path = require("path");

@@ -1,5 +1,5 @@
 import { OverviewEngine } from "@/core/components/overview/OverviewEngine";
-import { Workspace } from "../Workspace";
+import { FileActivity } from "../FileActivity";
 import { AbstractNodeTree } from "./AbstractNodeTree";
 
 /**
@@ -39,7 +39,7 @@ export class OverviewTransferHandler {
      * Transfers the data of the overview into our handler and removes it from the overview afterwards.
      * @param w The workspace with the overview data.
      */
-    storeData(w: Workspace) {
+    storeData(w: FileActivity) {
         if (!this.mapData.has(w.id)) {
             let newArray: AbstractNodeTree[] = [];
             newArray.push(...w.overview.trees);
@@ -52,7 +52,7 @@ export class OverviewTransferHandler {
      * Transfers the data of the overview back to the overview object. 
      * @param w The workspace with the overview data.
      */
-    restoreData(w: Workspace) {
+    restoreData(w: FileActivity) {
         let newArray: AbstractNodeTree[] | undefined = this.mapData.get(w.id);
         if (newArray) {
             w.overview.trees = newArray;
@@ -64,7 +64,7 @@ export class OverviewTransferHandler {
      * @param obj The ID of the Workspace or the Workspace Object itself.
      * @returns The List of AbstractNodeTree of the overview.
      */
-    getData(obj: number | { workspace: Workspace }): AbstractNodeTree[] {
+    getData(obj: number | { workspace: FileActivity }): AbstractNodeTree[] {
         let a = (typeof obj == 'number') ? this.mapData.get(obj) : this.mapData.get(obj.workspace.id);
         if (!a) {
             a = [];
@@ -91,7 +91,7 @@ export class OverviewTransferHandler {
      * @param ws The workspace instance.
      * @returns the workspace instance that was passed as a parameter.
      */
-    createEngine(id: number, div: HTMLElement, ws: Workspace): Workspace {
+    createEngine(id: number, div: HTMLElement, ws: FileActivity): FileActivity {
         let overviewEngine = new OverviewEngine(div, ws);
         this.mapEngines.set(id, overviewEngine);
         return ws;
@@ -104,7 +104,7 @@ export class OverviewTransferHandler {
      * @param id 
      * @returns 
      */
-    getEngine(id: number | { workspace: Workspace }): OverviewEngine {
+    getEngine(id: number | { workspace: FileActivity }): OverviewEngine {
         if (typeof id == 'number') return this.mapEngines.get(id) as OverviewEngine;
         else return this.mapEngines.get(id.workspace.id) as OverviewEngine;
     }

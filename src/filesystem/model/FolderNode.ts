@@ -1,4 +1,4 @@
-import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
+import { AbstractNode } from "@/core/model/fileactivity/overview/AbstractNode";
 import { Type } from "class-transformer"; 
 
 /**

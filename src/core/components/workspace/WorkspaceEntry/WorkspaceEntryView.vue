@@ -20,7 +20,7 @@ import { setupEntry } from "@/core/utils/WorkspaceUtils";
 import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
 import { ResizeBottomRight } from "mdue";
 import { ResizerComplex } from "@/core/utils/ResizeUtils";
-import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import WorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 
 export default defineComponent({
   el: ".ws-entry",

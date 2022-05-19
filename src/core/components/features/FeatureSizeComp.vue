@@ -48,11 +48,11 @@ import _ from "underscore";
 import noUiSlider, { API, PipsMode } from "nouislider";
 import ColorGradient from "@/core/components/overview/ColorGradient.vue";
 import { CogOutline, ArrowExpandVertical } from "mdue";
-import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
-import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
-import { AbstractFeatureGradient } from "@/core/model/workspace/overview/AbstractFeature";
-import { Workspace } from "@/core/model/workspace/Workspace";
-import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
+import { AbstractNode } from "@/core/model/fileactivity/overview/AbstractNode";
+import { FeatureType } from "@/core/model/fileactivity/overview/FeatureType";
+import { AbstractFeatureGradient } from "@/core/model/fileactivity/overview/AbstractFeature";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity";
+import { Instance } from "@/core/model/fileactivity/overview/OverviewDataCache";
 
 export default defineComponent({
   name: FeatureType.FolderSize,
@@ -64,7 +64,7 @@ export default defineComponent({
   },
   props: {
     workspace: {
-      type: Workspace,
+      type: FileActivity,
       required: true,
     },
     selection: {

@@ -10,7 +10,7 @@
   >
     <div
       class="filter-settings"
-      :class="{ 'filter-settings-hide': !model.showFeatureSettings }"
+      :class="{ 'filter-settings-hide': !model.overview.showFeatureSettings }"
     >
       <select
         class="feature-select-list"
@@ -28,11 +28,11 @@
       </select>
       <button class="show-filter-settings">
         <TuneVerticalVariant
-          @click="model.showFeatureSettings = !model.showFeatureSettings"
+          @click="model.overview.showFeatureSettings = !model.overview.showFeatureSettings"
         />
       </button>
 
-      <div v-show="model.showFeatureSettings" class="feature-view-list">
+      <div v-show="model.overview.showFeatureSettings" class="feature-view-list">
         <keep-alive>
           <component
             class="feature-view"
@@ -150,7 +150,7 @@
 import fs from "fs";
 import { Tippy, TippySingleton } from "vue-tippy";
 import { ipcRenderer } from "electron";
-import { Workspace } from "@/core/model/workspace/Workspace";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity";
 import { defineComponent } from "vue";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import ColorGradient from "./ColorGradient.vue";
@@ -167,16 +167,16 @@ import {
   FileTree,
   ArrowCollapseRight,
 } from "mdue";
-import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
+import { AbstractNode } from "@/core/model/fileactivity/overview/AbstractNode";
 import {
   AbstractFeature,
   getFeatureList,
-} from "@/core/model/workspace/overview/AbstractFeature";
-import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
-import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
+} from "@/core/model/fileactivity/overview/AbstractFeature";
+import { AbstractNodeTree } from "@/core/model/fileactivity/overview/AbstractNodeTree";
+import { Instance } from "@/core/model/fileactivity/overview/OverviewDataCache";
 import FolderNode from "@/filesystem/model/FolderNode";
 import { FolderNodeTree } from "@/filesystem/model/FolderNodeTree";
-import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
+import { FeatureType } from "@/core/model/fileactivity/overview/FeatureType";
 import {
   createKeyboardInputContext,
   PluginShortCutHandler,
@@ -188,7 +188,7 @@ import { removeFromList } from "@/core/utils/ListUtils";
 /**
  * This import loads Instances for all Feature Classes, so don't remove it.
  */
-import { initAllFeatures } from "../../model/workspace/overview/FeatureList";
+import { initAllFeatures } from "../../model/fileactivity/overview/FeatureList";
 
 export default defineComponent({
   name: "App",
@@ -209,7 +209,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Workspace,
+      type: FileActivity,
       required: true,
     },
     searchstring: {
@@ -726,7 +726,7 @@ export default defineComponent({
       ipcRenderer.send("select-files", {
         target: "o" + this.model.id,
         type: "folders",
-        path: this.model.folderSelectionPath,
+        path: this.model.workspace.folderSelectionPath,
       });
     },
     /**

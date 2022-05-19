@@ -193,14 +193,14 @@ import { defineComponent } from "vue";
 import { getPlugins } from "../../plugins/PluginList";
 import AbstractPlugin from "../plugin/AbstractPlugin";
 import { InsightFile } from "@/core/model/InsightFile";
-import View from "../model/AbstractView";
+import View from "../model/AbstractActivity";
 import { MutationTypes } from "@/core/store/mutation-types";
 import Tabs from "@/core/components/Tabs.vue";
 import ModalDialog from "@/core/components/ModalDialog.vue";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import * as cache from "../../filesystem/utils/ImageCache";
 import { FSWatcherConnectorInstance } from "../../filesystem/utils/FileSystemWatcherConnector";
-import * as ovdata from "../model/workspace/overview/OverviewDataCache";
+import * as ovdata from "../model/fileactivity/overview/OverviewDataCache";
 
 var fs = require("fs");
 

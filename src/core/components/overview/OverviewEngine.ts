@@ -4,12 +4,12 @@ import * as d3 from "d3";
 import { D3DragEvent, ZoomTransform } from "d3";
 import _ from "underscore";
 import TWEEN from "@tweenjs/tween.js";
-import { Overview, Workspace } from "@/core/model/workspace/Workspace";
-import { AbstractNodeTree, NodeTreeListener } from "@/core/model/workspace/overview/AbstractNodeTree";
+import { Overview, FileActivity } from "@/core/model/fileactivity/FileActivity";
+import { AbstractNodeTree, NodeTreeListener } from "@/core/model/fileactivity/overview/AbstractNodeTree";
 import { ipcRenderer } from "electron";
-import { AbstractFeature } from "@/core/model/workspace/overview/AbstractFeature";
-import { Layouter, MIN_TREE_COLUMN_WIDTH } from "@/core/model/workspace/overview/NodeLayout";
-import { AbstractLink, AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
+import { AbstractFeature } from "@/core/model/fileactivity/overview/AbstractFeature";
+import { Layouter, MIN_TREE_COLUMN_WIDTH } from "@/core/model/fileactivity/overview/NodeLayout";
+import { AbstractLink, AbstractNode } from "@/core/model/fileactivity/overview/AbstractNode";
 import { doBenchmark, logTime as logTime, tickEnd, tickStart } from "@/core/utils/Benchmark";
 import { removeFromList } from "@/core/utils/ListUtils";
 
@@ -152,7 +152,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
      * The overview and workspace Instances this Engine uses for rendering.
      */
     overview: Overview;
-    workspace: Workspace;
+    workspace: FileActivity;
 
     /**
      * The size of the Canvas Element.
@@ -303,7 +303,7 @@ export class OverviewEngine implements NodeTreeListener<AbstractNode>{
      */
     readonly textMaxWidth: number = 440;
 
-    constructor(div: HTMLElement, workspace: Workspace) {
+    constructor(div: HTMLElement, workspace: FileActivity) {
 
         var _this = this;
 

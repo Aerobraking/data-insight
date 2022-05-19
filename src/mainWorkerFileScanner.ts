@@ -6,10 +6,10 @@ import 'reflect-metadata';
 import fs from 'fs';
 import { ipcRenderer } from "electron";
 import { FolderSync, FolderSyncResult, FolderFeatureResult, SyncMessageType } from './filesystem/utils/FileSystemMessages';
-import { FeatureDataList, FeatureDataSum, FeatureDataMedian } from './core/model/workspace/overview/FeatureData';
+import { FeatureDataList, FeatureDataSum, FeatureDataMedian } from './core/model/fileactivity/overview/FeatureData';
 import path from "path";
 import { Dirent } from 'fs-extra';
-import { FeatureType } from './core/model/workspace/overview/FeatureType';
+import { FeatureType } from './core/model/fileactivity/overview/FeatureType';
 import IPCMessageType from './IpcMessageTypes';
 
 /**

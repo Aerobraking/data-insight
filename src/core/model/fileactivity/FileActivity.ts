@@ -1,20 +1,25 @@
 import * as _ from "underscore";
 import { Expose, Type } from "class-transformer";
-import Activity from "../AbstractView";
+import AbstractActivity from "../AbstractActivity";
 import { AbstractNodeTree } from "./overview/AbstractNodeTree";
 import { Instance } from "./overview/OverviewDataCache";
 import { FeatureSettingsList } from "./overview/AbstractFeature";
 import { FeatureType } from "./overview/FeatureType";
-import { WorkspaceEntryFrame } from "./WorkspaceEntryFrame";
+import { WorkspaceEntryFrame } from "./workspace/WorkspaceEntryFrame";
 import { WorkspaceEntryFile, WorkspaceEntryImage, WorkspaceEntryYoutube, WorkspaceEntryVideo, WorkspaceEntryTextArea, WorkspaceEntryFolderWindow } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import { FolderNodeTree as FolderNodeTree } from "@/filesystem/model/FolderNodeTree";
-import AbstractWorkspaceEntry from "./WorkspaceEntry";
+import AbstractWorkspaceEntry from "./workspace/WorkspaceEntry";
 
 /**
  * All data belonging to the overview are inside this class.
  * The overview is a "subview" of the workspace.
  */
 export class Overview {
+
+    /**
+     * wether the settings for the features are shown or hidden in the overview ui.
+     */
+    showFeatureSettings: boolean = true;
 
     /**
      * Transformation of the view of the overview (a canvas element)
@@ -68,19 +73,12 @@ export class Overview {
 
 }
 
+
 /**
  * Represents one Workspace inside an InsightFile. A Workspace is a list of WorkspaceEntry Objects
  * that can be placed on an infinite sized zoomable and pannable area.
  */
-export class Workspace extends Activity {
-
-    constructor(name: string = "New Workspace") {
-        super();
-        this.name = name;
-    }
-
-    @Type(() => Overview)
-    overview: Overview = new Overview();
+export class Workspace {
 
     /**
      * Transformation of the view of the workspace (a div element) 
@@ -89,35 +87,14 @@ export class Workspace extends Activity {
     viewportTransform: { x: number, y: number, scale: number } = { x: 1, y: 1, scale: 0.266 }
 
     /**
-     * percentage (0-100) of the size of the left pane in the workspace UI.
-     */
-    paneSize: number = 75;
-
-    /**
      * wether the bookmarks are shown or hidden.
      */
     showBookmarks: boolean = true;
 
     /**
-     * wether the settings for the features are shown or hidden in the overview ui.
-     */
-    showFeatureSettings: boolean = true;
-
-    /**
-     * true: paneSize<100, the overview Interface is visible
-     * false: paneSize=100, overview Interface is not visible
-     */
-    overviewOpen: boolean = true;
-
-    /**
      * The last path were files were selected for adding to the workspace.
      */
     folderSelectionPath: string | undefined = undefined;
-
-    /**
-     * used for loading the class again from json data with the class-transformer
-     */
-    type = "ws";
 
     /**
      * EXTEND APP: Register AbstractWorkspaceEntry Classes 
@@ -142,6 +119,42 @@ export class Workspace extends Activity {
         },
     })
     entries: Array<AbstractWorkspaceEntry> = [];
+
+}
+
+
+/**
+ * Represents one File Activity inside an InsightFile. A Workspace is a list of WorkspaceEntry Objects
+ * that can be placed on an infinite sized zoomable and pannable area.
+ */
+export class FileActivity extends AbstractActivity {
+
+    constructor(name: string = "New Activity") {
+        super();
+        this.name = name;
+    }
+
+    @Type(() => Overview)
+    overview: Overview = new Overview();
+
+    @Type(() => Workspace)
+    workspace: Workspace = new Workspace();
+
+    /**
+      * percentage (0-100) of the size of the left pane in the workspace UI.
+      */
+    paneSize: number = 100;
+ 
+    /**
+     * true: paneSize<100, the overview Interface is visible
+     * false: paneSize=100, overview Interface is not visible
+     */
+    overviewOpen: boolean = false;
+
+    /**
+     * used for loading the class again from json data with the class-transformer
+     */
+    type = "fileact";
 
     public initAfterLoading() {
         this.overview.initAfterLoading();

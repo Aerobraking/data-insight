@@ -1,5 +1,5 @@
-import { Workspace } from "@/core/model/workspace/Workspace";
-import AbstractWorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity";
+import AbstractWorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 import { ElementDimension } from "@/core/utils/ResizeUtils";
 import AbstractPlugin from "../plugin/AbstractPlugin";
 import WorkspaceViewIfc from "./WorkspaceViewIfc";
@@ -56,7 +56,7 @@ export default class WorkspaceViewIfcWrapper implements WorkspaceViewIfc {
     drawCanvas(): void {
         this.ws ? this.ws.drawCanvas() : "";
     }
-    getModel(): Workspace | undefined {
+    getModel(): FileActivity | undefined {
         return this.ws ? this.ws.getModel() : undefined;
     }
     finishPlugin(): void {

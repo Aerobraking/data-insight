@@ -2,9 +2,9 @@
 
 <script lang="ts"> 
 import { defineComponent } from "vue"; 
-import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
-import { Workspace } from "@/core/model/workspace/Workspace"; 
-import { NodeFeatureNone } from "@/core/model/workspace/overview/FeatureNone";
+import { FeatureType } from "@/core/model/fileactivity/overview/FeatureType";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity"; 
+import { NodeFeatureNone } from "@/core/model/fileactivity/overview/FeatureNone";
 
 export default defineComponent({
   name: FeatureType.None,
@@ -12,7 +12,7 @@ export default defineComponent({
   },
   props: {
     workspace: {
-      type: Workspace,
+      type: FileActivity,
       required: true,
     },
     model: {

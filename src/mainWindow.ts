@@ -18,7 +18,7 @@ import { ipcRenderer } from "electron";
 import fs from "fs";
 import { deserialize } from 'class-transformer';
 import { InsightFile } from './core/model/InsightFile';
-import { FeatureType } from './core/model/workspace/overview/FeatureType';
+import { FeatureType } from './core/model/fileactivity/overview/FeatureType';
 
 /**
  * Workspace Entry Internal Components

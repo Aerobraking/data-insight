@@ -1,5 +1,5 @@
-import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
-import AbstractWorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import { FeatureType } from "@/core/model/fileactivity/overview/FeatureType";
+import AbstractWorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 import { ElementDimension, getCoordinatesFromElement } from "@/core/utils/ResizeUtils";
 import {
     onBeforeUnmount,

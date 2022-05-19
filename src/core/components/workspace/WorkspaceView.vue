@@ -71,9 +71,9 @@
               maxZoom: 20,
               bounds: false,
               transformOrigin: null,
-              initialX: model.viewportTransform.x,
-              initialY: model.viewportTransform.y,
-              initialZoom: model.viewportTransform.scale,
+              initialX: model.workspace.viewportTransform.x,
+              initialY: model.workspace.viewportTransform.y,
+              initialZoom: model.workspace.viewportTransform.scale,
               beforeWheel: beforeWheelHandler,
               beforeMouseDown: beforeMouseDownHandler,
             }"
@@ -107,7 +107,7 @@
 
               <keep-alive>
                 <wsentry
-                  v-for="e in model.entries"
+                  v-for="e in model.workspace.entries"
                   :key="e.id"
                   :entry="e"
                   :name="e.id"
@@ -128,7 +128,7 @@
               </keep-alive>
 
               <div
-                :class="{ 'blend-out': model.entries.length > 0 }"
+                :class="{ 'blend-out': model.workspace.entries.length > 0 }"
                 class="welcome-message"
               >
                 <h2>
@@ -302,19 +302,19 @@ import {
   DeleteVariant,
   Grid,
 } from "mdue";
-import { Workspace } from "@/core/model/workspace/Workspace";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity";
 import ReArrange from "@/plugins/Rearrange";
 import wsentrydisplayname from "./WorkspaceEntry/WorkspaceEntryDisplayName.vue";
 import wsentry from "./WorkspaceEntry/WorkspaceEntryView.vue";
-import WorkspaceEntryCollection from "@/core/model/workspace/WorkspaceEntryCollection";
-import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import WorkspaceEntryCollection from "@/core/model/fileactivity/workspace/WorkspaceEntryCollection";
+import WorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 import { getPlugins } from "@/plugins/PluginList";
 import {
   createKeyboardInputContext,
   PluginShortCutHandler,
 } from "@/core/plugin/KeyboardShortcut";
 import AbstractPlugin from "@/core/plugin/AbstractPlugin";
-import { WorkspaceEntryFrame } from "@/core/model/workspace/WorkspaceEntryFrame";
+import { WorkspaceEntryFrame } from "@/core/model/fileactivity/workspace/WorkspaceEntryFrame";
 import { insideRect } from "@/core/utils/GeometryUtils";
 
 export default defineComponent({
@@ -354,7 +354,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Workspace,
+      type: FileActivity,
       required: true,
     },
   },
@@ -536,7 +536,7 @@ export default defineComponent({
       ) {
         if (_this.model.isActive && data.target == "w" + _this.model.id) {
           _this.addEntriesToWorkspace(data.files, [], "center");
-          _this.model.folderSelectionPath = data.directory;
+          _this.model.workspace.folderSelectionPath = data.directory;
         }
       }
     );
@@ -557,7 +557,7 @@ export default defineComponent({
     this.setFocusToWorkspace();
     this.paneButtonClicked(this.model.paneSize, false);
 
-    if (this.model.entries.length == 0) {
+    if (this.model.workspace.entries.length == 0) {
       this.panZoomInstance.moveTo(
         (window.innerWidth * (Math.max(2, this.model.paneSize) / 100)) / 2,
         window.innerHeight / 2
@@ -620,7 +620,7 @@ export default defineComponent({
   },
   inject: ["loadInsightFileFromPath"],
   methods: {
-    getModel(): Workspace | undefined {
+    getModel(): FileActivity | undefined {
       return this.model;
     },
     /**
@@ -711,7 +711,7 @@ export default defineComponent({
       }
     },
     searchUpdate(): void {
-      let models = this.model.entries;
+      let models = this.model.workspace.entries;
       let views = this.getEntries();
 
       if (this.searchString.trim().length > 0) {
@@ -772,7 +772,7 @@ export default defineComponent({
           c.h = c.h * currentC.scale;
         }
 
-        const models = this.model.entries;
+        const models = this.model.workspace.entries;
         const views = this.getEntries();
 
         for (let i = 0; i < models.length; i++) {
@@ -845,7 +845,7 @@ export default defineComponent({
         coordRect.w == 0 &&
         coordRect.h == 0
       ) {
-        const models = [...this.model.entries];
+        const models = [...this.model.workspace.entries];
         const views = this.getEntries();
 
         views.forEach((v, i) => {
@@ -903,7 +903,7 @@ export default defineComponent({
       let viewport = this.getViewport();
       let listFiles: Array<WorkspaceEntry> = [];
       let payload = {
-        model: <Workspace>this.model,
+        model: <FileActivity>this.model,
         listFiles,
       };
       let position: "center" | "mouse" | "none" = useMousePosition
@@ -915,7 +915,7 @@ export default defineComponent({
           ipcRenderer.send("select-files", {
             type: type,
             target: "w" + this.model.id,
-            path: this.model.folderSelectionPath,
+            path: this.model.workspace.folderSelectionPath,
           });
           break;
         case "image":
@@ -2027,7 +2027,7 @@ export default defineComponent({
       });
 
       let payload = {
-        model: <Workspace>this.model,
+        model: <FileActivity>this.model,
         listIndices,
       };
 
@@ -2090,7 +2090,7 @@ export default defineComponent({
       }
     },
     getNodes() {
-      return this.$props.model?.entries;
+      return this.$props.model.workspace.entries;
     },
     panHappen: function (p: any, id: String) {
       p.setTransformOrigin(null);
@@ -2123,7 +2123,7 @@ export default defineComponent({
       ) as HTMLElement[];
     },
     getModelEntries(): WorkspaceEntry[] {
-      return this.model.entries;
+      return this.model.workspace.entries;
     },
     getUnselectedEntries(): HTMLElement[] {
       return Array.from(
@@ -2139,7 +2139,7 @@ export default defineComponent({
       for (let index = 0; index < listViews.length; index++) {
         const v = listViews[index];
         let id = Number(v.getAttribute("name"));
-        let e = this.model.entries.find((e) => e.id === id);
+        let e = this.model.workspace.entries.find((e) => e.id === id);
         if (e != undefined) {
           list.push(e);
         }
@@ -2248,7 +2248,7 @@ export default defineComponent({
       this.drawCanvas(); // Todo: is also called handled by mousemove event, but that results in a delay. try to do not make a draw when the mouse move and the user is panning
 
       if (this.model != undefined) {
-        this.model.viewportTransform = this.getCurrentTransform();
+        this.model.workspace.viewportTransform = this.getCurrentTransform();
       }
     },
     onZoom(e: any) {
@@ -2258,7 +2258,7 @@ export default defineComponent({
 
       this.itemRefs.forEach((e: any) => {
         if (e.workspaceEvent)
-          e.workspaceEvent({ scale: this.model.viewportTransform.scale });
+          e.workspaceEvent({ scale: this.model.workspace.viewportTransform.scale });
       });
 
       WSUtils.Events.zoom(this);

@@ -1,7 +1,7 @@
 import { doBenchmark } from "@/core/utils/Benchmark";
 import { PluginAdapter, PluginDecorator } from "../core/plugin/AbstractPlugin"
-import { Instance as DataCache } from "@/core/model/workspace/overview/OverviewDataCache";
-import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
+import { Instance as DataCache } from "@/core/model/fileactivity/overview/OverviewDataCache";
+import { AbstractNode } from "@/core/model/fileactivity/overview/AbstractNode";
 
 /**
  * Only usable in the App when benchmarking is enabled. 

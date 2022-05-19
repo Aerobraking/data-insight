@@ -1,4 +1,4 @@
-import Gradient from "@/core/model/workspace/overview/Gradient";
+import Gradient from "@/core/model/fileactivity/overview/Gradient";
 import { AbstractNode } from "./AbstractNode";
 import { AbstractFeatureData } from "./FeatureData";
 import { AbstractNodeTree } from "./AbstractNodeTree";

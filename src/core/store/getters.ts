@@ -1,10 +1,10 @@
 import { GetterTree } from 'vuex'
-import Activity from '../model/AbstractView';
+import AbstractActivity from '../model/AbstractActivity';
 import { State } from './state'
 
 export type Getters = {
   getShowUI(state: State): boolean
-  getViewList(state: State): Array<Activity>
+  getViewList(state: State): Array<AbstractActivity>
   getActiveWorkspaceIndex(state: State): number
 }
 

@@ -1,4 +1,4 @@
-import { Features } from "../../core/model/workspace/overview/FeatureType";
+import { Features } from "../../core/model/fileactivity/overview/FeatureType";
 /**
  * These interfaces are used for sending data back and forth between the app and the Thread that scans
  * the file system.

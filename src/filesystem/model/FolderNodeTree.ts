@@ -1,6 +1,6 @@
 import { Exclude } from "class-transformer";
 import pathNodejs from "path";
-import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
+import { AbstractNodeTree } from "@/core/model/fileactivity/overview/AbstractNodeTree";
 import { FileSystemListener, FolderSyncResult, FolderFeatureResult, FolderSyncFinished, SyncMessageType } from "../utils/FileSystemMessages";
 import { Instance } from "../utils/FileSystemScanConnector";
 import FolderNode from "./FolderNode";

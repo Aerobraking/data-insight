@@ -1,9 +1,9 @@
 import { fileamountFormat, filesizeFormat, timeFormat } from "@/filesystem/utils/FileStringFormatter";
-import { FeatureDataSum, FeatureDataMedian } from "../../core/model/workspace/overview/FeatureData";
-import { AbstractFeatureGradient, FeatureGradientSettings, FeatureViewDecorator } from "../../core/model/workspace/overview/AbstractFeature";
-import { AbstractNodeTree } from "../../core/model/workspace/overview/AbstractNodeTree";
+import { FeatureDataSum, FeatureDataMedian } from "../../core/model/fileactivity/overview/FeatureData";
+import { AbstractFeatureGradient, FeatureGradientSettings, FeatureViewDecorator } from "../../core/model/fileactivity/overview/AbstractFeature";
+import { AbstractNodeTree } from "../../core/model/fileactivity/overview/AbstractNodeTree";
 import FolderNode from "./FolderNode";
-import { FeatureType } from "@/core/model/workspace/overview/FeatureType";
+import { FeatureType } from "@/core/model/fileactivity/overview/FeatureType";
 
 @FeatureViewDecorator()
 export class NodeFeatureSize extends AbstractFeatureGradient<FolderNode, FeatureDataSum> {

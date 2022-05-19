@@ -1,9 +1,9 @@
 import { MutationTree } from 'vuex'
 import { MutationTypes } from './mutation-types'
 import { State } from './state'
-import Activity from '@/core/model/AbstractView';
-import { Workspace } from '@/core/model/workspace/Workspace';
-import AbstractWorkspaceEntry from '@/core/model/workspace/WorkspaceEntry';
+import AbstractActivity from '@/core/model/AbstractActivity';
+import { FileActivity } from '@/core/model/fileactivity/FileActivity';
+import AbstractWorkspaceEntry from '@/core/model/fileactivity/workspace/WorkspaceEntry';
 import { InsightFile } from '../model/InsightFile';
 
 /**
@@ -12,14 +12,14 @@ import { InsightFile } from '../model/InsightFile';
 export type Mutations<S = State> = {
   [MutationTypes.CREATE_WORKSPACE](state: S): void
   [MutationTypes.ADD_ENTRIES](state: S, payload: {
-    model: Workspace,
+    model: FileActivity,
     entries: Array<AbstractWorkspaceEntry>,
   }): void
   [MutationTypes.SORT_WORKSPACES](state: S, payload: {
-    listWorkspaces: Array<Workspace>,
+    listWorkspaces: Array<FileActivity>,
   }): void
   [MutationTypes.REMOVE_ENTRIES](state: S, payload: {
-    model: Workspace,
+    model: FileActivity,
     listIndices: Array<Number>,
   }): void
   [MutationTypes.DELETE_WORKSPACE](state: S, payload: {
@@ -52,18 +52,18 @@ export const mutations: MutationTree<State> & Mutations = {
    * @param payload 
    */
   [MutationTypes.ADD_ENTRIES](state, payload: {
-    model: Workspace,
+    model: FileActivity,
     entries: Array<AbstractWorkspaceEntry>,
   }) {
     for (let i = 0; i < payload.entries.length; i++) {
       const entry = payload.entries[i];
       let id = 0;
-      while (payload.model.entries.find(e => e.id == id) || payload.entries.find(e => e.id == id)) { id++ };
+      while (payload.model.workspace.entries.find(e => e.id == id) || payload.entries.find(e => e.id == id)) { id++ };
       entry.id = id;
-      entry.order = payload.model.entries.length + i;
+      entry.order = payload.model.workspace.entries.length + i;
       // make id's unique in case of a copy/paste situation 
     }
-    payload.model.entries.push(...payload.entries);
+    payload.model.workspace.entries.push(...payload.entries);
   },
   /**
    * Removes the given WorkspaceEntry Instances from the Workspace.
@@ -71,15 +71,15 @@ export const mutations: MutationTree<State> & Mutations = {
    * @param payload 
    */
   [MutationTypes.REMOVE_ENTRIES](state, payload: {
-    model: Workspace,
+    model: FileActivity,
     listIndices: Array<number>,
   }) {
     payload.listIndices.forEach(id => {
-      let e = payload.model.entries.find((e) => e.id === id);
+      let e = payload.model.workspace.entries.find((e) => e.id === id);
       if (e) {
-        let index = payload.model.entries.indexOf(e);
+        let index = payload.model.workspace.entries.indexOf(e);
         if (index > -1) {
-          payload.model.entries.splice(index, 1);
+          payload.model.workspace.entries.splice(index, 1);
         }
       }
     });
@@ -91,7 +91,7 @@ export const mutations: MutationTree<State> & Mutations = {
    * @param payload 
    */
   [MutationTypes.SORT_WORKSPACES](state, payload: {
-    listWorkspaces: Array<Activity>,
+    listWorkspaces: Array<AbstractActivity>,
   }) {
     state.loadedFile.views = payload.listWorkspaces;
   },
@@ -118,7 +118,7 @@ export const mutations: MutationTree<State> & Mutations = {
 
     let w = state.loadedFile.views[activeindex];
 
-    let wCopy = new Workspace();
+    let wCopy = new FileActivity();
     Object.assign(wCopy, w);
 
     let id = 0;
@@ -128,7 +128,7 @@ export const mutations: MutationTree<State> & Mutations = {
     state.loadedFile.views.push(wCopy);
     let lastIndex = state.loadedFile.views.length - 1;
     state.loadedFile.views.forEach(
-      (entry: Activity, index: Number) => {
+      (entry: AbstractActivity, index: Number) => {
         entry.isActive = index === lastIndex;
       }
     );
@@ -142,7 +142,7 @@ export const mutations: MutationTree<State> & Mutations = {
     index: number,
   }) {
     payload.index = payload.index < 0 ? 0 : payload.index > state.loadedFile.views.length - 1 ? state.loadedFile.views.length - 1 : payload.index;
-    state.loadedFile.views.forEach((entry: Activity, index: Number) => {
+    state.loadedFile.views.forEach((entry: AbstractActivity, index: Number) => {
       entry.isActive = index === payload.index;
     });
   },
@@ -176,7 +176,7 @@ export const mutations: MutationTree<State> & Mutations = {
    * @param state 
    */
   [MutationTypes.CREATE_WORKSPACE](state) {
-    const w = new Workspace();
+    const w = new FileActivity();
     let id = 0;
     while (state.loadedFile.views.find(e => e.id == id)) { id++ };
     w.id = id;
@@ -185,7 +185,7 @@ export const mutations: MutationTree<State> & Mutations = {
     let lastIndex = state.loadedFile.views.length - 1;
 
     state.loadedFile.views.forEach(
-      (entry: Activity, index: Number) => {
+      (entry: AbstractActivity, index: Number) => {
         entry.isActive = index === lastIndex;
       }
     );

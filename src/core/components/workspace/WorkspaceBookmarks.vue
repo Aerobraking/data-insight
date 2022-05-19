@@ -8,7 +8,7 @@ import { PlaylistStar } from "mdue";
 import { Tippy } from "vue-tippy";
 import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc";
 import { PluginAdapter } from "@/core/plugin/AbstractPlugin";
-import { Workspace } from "@/core/model/workspace/Workspace";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity";
 
 class DragPlugin extends PluginAdapter {
   constructor() {
@@ -31,7 +31,7 @@ export default defineComponent({
   },
   props: {
     model: {
-      type: Workspace,
+      type: FileActivity,
       required: true,
     },
     viewId: Number,
@@ -86,10 +86,10 @@ export default defineComponent({
   computed: {
     myList: {
       get(): any {
-        return this.model.entries;
+        return this.model.workspace.entries;
       },
       set(value: any) {
-        this.model.entries = value;
+        this.model.workspace.entries = value;
       },
     },
     dragOptions() {

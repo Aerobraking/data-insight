@@ -2,11 +2,11 @@
 /**
  * This Component represents the search list
  */
-import { AbstractNode } from "@/core/model/workspace/overview/AbstractNode";
-import { AbstractNodeTree } from "@/core/model/workspace/overview/AbstractNodeTree";
-import { Instance } from "@/core/model/workspace/overview/OverviewDataCache";
-import { Workspace } from "@/core/model/workspace/Workspace";
-import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import { AbstractNode } from "@/core/model/fileactivity/overview/AbstractNode";
+import { AbstractNodeTree } from "@/core/model/fileactivity/overview/AbstractNodeTree";
+import { Instance } from "@/core/model/fileactivity/overview/OverviewDataCache";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity";
+import WorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 import { defineComponent } from "vue";
 
 export default defineComponent({
@@ -14,7 +14,7 @@ export default defineComponent({
   components: {},
   props: {
     model: {
-      type: Workspace,
+      type: FileActivity,
       required: true,
     },
     searchString: String,
@@ -95,7 +95,7 @@ export default defineComponent({
         const list: (WorkspaceEntry | AbstractNode)[] = [];
 
         list.push(
-          ...this.model.entries.filter(function (n) {
+          ...this.model.workspace.entries.filter(function (n) {
             return n.searchLogic(s);
           })
         );

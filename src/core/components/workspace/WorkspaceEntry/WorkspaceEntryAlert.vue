@@ -12,7 +12,7 @@
 import { Tippy } from "vue-tippy";
 import { AlertCircleOutline } from "mdue";
 import { defineComponent } from "vue";
-import WorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import WorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 export default defineComponent({
   el: ".wsentry-alert",
   components: {

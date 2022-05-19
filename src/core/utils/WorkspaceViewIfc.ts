@@ -1,5 +1,5 @@
-import { Workspace } from "@/core/model/workspace/Workspace";
-import AbstractWorkspaceEntry from "@/core/model/workspace/WorkspaceEntry";
+import { FileActivity } from "@/core/model/fileactivity/FileActivity";
+import AbstractWorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 import { ElementDimension } from "@/core/utils/ResizeUtils";
 import AbstractPlugin from "../plugin/AbstractPlugin";
 
@@ -12,7 +12,7 @@ export default interface WorkspaceViewIfc {
     /**
      * Returns the Workspace Model Object that the View uses.
      */
-    getModel(): Workspace | undefined;
+    getModel(): FileActivity | undefined;
     /**
      * 
      * @param e A HTMLElement for which the Dimensions are returned.

@@ -7,7 +7,7 @@ import { defineComponent } from "vue";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import WorkspaceViewIfc from "@/core/utils/WorkspaceViewIfc";
 import * as _ from "underscore";
-import { WorkspaceEntryFrame } from "@/core/model/workspace/WorkspaceEntryFrame";
+import { WorkspaceEntryFrame } from "@/core/model/fileactivity/workspace/WorkspaceEntryFrame";
 import { insideRect } from "@/core/utils/GeometryUtils";
 
 _.once(() => {

@@ -8,7 +8,7 @@
  */
 import { defineComponent } from "vue";
 import * as _ from "underscore";
-import Gradient from "@/core/model/workspace/overview/Gradient";
+import Gradient from "@/core/model/fileactivity/overview/Gradient";
 
 export default defineComponent({
   name: "ColorGradient",

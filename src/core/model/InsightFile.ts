@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
-import Activity from "./AbstractView";
-import { Workspace } from "./workspace/Workspace";
+import AbstractActivity from "./AbstractActivity";
+import { FileActivity } from "./fileactivity/FileActivity";
 
 /**
  * These settings are for things that influence global things of the app.
@@ -28,16 +28,16 @@ export class InsightFile {
      * The list of views. In the Moment this are only Workspaces but this can be extendes by implementing the View class.
      * Each View is represented by a Tab in the View.
      */
-    @Type(() => Activity, {
+    @Type(() => AbstractActivity, {
         keepDiscriminatorProperty: true,
         discriminator: {
             property: 'type',
             subTypes: [
-                { value: Workspace, name: 'workspace' }
+                { value: FileActivity, name: 'fileact' }
             ],
         },
     })
-    views: Array<Activity> = [new Workspace("Default").setActive(true)];
+    views: Array<AbstractActivity> = [new FileActivity("Default").setActive(true)];
     
     // Some settings paramenters
     settings: InsightFileSettings = new InsightFileSettings();
