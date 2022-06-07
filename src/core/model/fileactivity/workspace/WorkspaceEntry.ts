@@ -7,22 +7,44 @@ import { Exclude, Expose } from "class-transformer";
  * some methods you can overwrite to offer more functionality for the search
  * in the app and other things. 
  */
-export default class AbstractWorkspaceEntry {
+export default abstract class AbstractWorkspaceEntry {
 
-    constructor(entryType: `wsentry${string}`, isResizable: boolean) {
+    constructor(entryType: `wsentry${string}`, isResizable: boolean = true) {
         this.isResizable = isResizable;
         this.entryType = entryType;
-        this.typeNameReadable = entryType.replaceAll("wsentry", ""); this.typeNameReadable = this.typeNameReadable.charAt(0).toUpperCase() + this.typeNameReadable.slice(1);
     }
 
     // a unique ID for identifying an entry inside a workspace
     id: number = 0;
 
-    // x position in the workspace
-    x: number = 0;
+    /**
+     * true: this WorkspaceEntry (hence its View the HTMLDIVElement) is resizable by the user.
+     * false: It is not resizable and uses only the dimension that are set in the class.
+     */
+    @Expose({ name: 'r' })
+    isResizable: boolean = false;
 
-    // y position in the workspace
-    y: number = 0;
+    /**
+     * A unique string that describes the WorkspaceEntry Implementation. It has to be the same
+     * string that is used for the name of the Vue Component for this Entry.
+     */
+    @Expose({ name: 'et' })
+    readonly entryType: string = "";
+
+    // x and y position in the workspace
+    private _x: number = 0; public get x(): number {
+        return this._x;
+    }
+    public set x(value: number) {
+        this._x = value;
+    }
+    private _y: number = 0;
+    public get y(): number {
+        return this._y;
+    }
+    public set y(value: number) {
+        this._y = value;
+    }
 
     // width of the div element that contains the component for this entry 
     @Expose({ name: 'w' })
@@ -36,22 +58,15 @@ export default class AbstractWorkspaceEntry {
      * Not used in the moment. Should be used for sorting the entries in the workspace
      * in a specific order to define which entry is in the foreground.
      */
-    @Expose({ name: 'o' })
+    @Expose({ name: 'or' })
     order: number = 0;
 
     /**
      * A human readable string that describes the WorkspaceEntry. Is created from the entryType string
      * that is passed to the constructor. 
      */
-    @Expose({ name: 'tn' })
-    readonly typeNameReadable: string = "";
-
-    /**
-     * A unique string that describes the WorkspaceEntry Implementation. It has to be the same
-     * string that is used for the name of the Vue Component for this Entry.
-     */
-    @Expose({ name: 'et' })
-    readonly entryType: string = "";
+    @Exclude()
+    abstract readonly typeNameReadable: string;
 
     /**
      * The User can add a custom name to each Entry in the View, that is stored here.
@@ -74,13 +89,6 @@ export default class AbstractWorkspaceEntry {
      */
     @Expose({ name: 'ds' })
     displaynameShow: boolean = true;
-
-    /**
-     * true: this WorkspaceEntry (hence its View the HTMLDIVElement) is resizable by the user.
-     * false: It is not resizable and uses only the dimension that are set in the class.
-     */
-    @Expose({ name: 'r' })
-    isResizable: boolean = false;
 
     /**
      * When this string is NOT undefinied, are warning icon is shown right beside the WorkspaceEntry View.
@@ -127,4 +135,12 @@ export default class AbstractWorkspaceEntry {
     public getFilesForDragging(): string[] {
         return [];
     }
+}
+
+
+export class DefaultWorkspaceEntry extends AbstractWorkspaceEntry {
+
+    @Exclude()
+    readonly typeNameReadable: string = "";
+
 }

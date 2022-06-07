@@ -1,3 +1,4 @@
+import { Exclude } from "class-transformer";
 import AbstractWorkspaceEntry from "./WorkspaceEntry";
 
 /**
@@ -7,11 +8,14 @@ import AbstractWorkspaceEntry from "./WorkspaceEntry";
 export class WorkspaceEntryFrame extends AbstractWorkspaceEntry {
 
     public static viewid: string = "wsentryframe";
-    
+
     /**
      * The color of the frame. Should be made editable in the future.
      */
     color: string = "rgb(10,10,10)";
+
+    @Exclude()
+    readonly typeNameReadable: string = "Frame";
 
     /**
      * Disable making it selectable by clicking on it because this can be irritating when

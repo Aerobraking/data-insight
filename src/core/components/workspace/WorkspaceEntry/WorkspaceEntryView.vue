@@ -3,12 +3,8 @@
     <slot class="ws-entry-slot"></slot>
     <wsentrydisplayname :entry="entry" />
     <wsentryalert :entry="entry" />
-    <button
-      v-if="entry.isResizable"
-      @dblclick.capture.stop.prevent="dblclick"
-      @mousedown.stop
-      class="ws-entry-resize-button ws-zoom-fixed"
-    ></button>
+    <button v-if="entry.isResizable" @dblclick.capture.stop.prevent="dblclick" @mousedown.stop
+      class="ws-entry-resize-button ws-zoom-fixed"></button>
   </div>
 </template>
 
@@ -20,7 +16,7 @@ import { setupEntry } from "@/core/utils/WorkspaceUtils";
 import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
 import { ResizeBottomRight } from "mdue";
 import { ResizerComplex } from "@/core/utils/ResizeUtils";
-import WorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
+import WorkspaceEntry, { DefaultWorkspaceEntry } from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 
 export default defineComponent({
   el: ".ws-entry",
@@ -35,7 +31,8 @@ export default defineComponent({
   },
   props: {
     entry: {
-      type: WorkspaceEntry,
+      type: DefaultWorkspaceEntry,
+
       required: true,
     },
     workspace: {
@@ -81,7 +78,7 @@ export default defineComponent({
     );
   },
   methods: {
-    dblclick(e: MouseEvent) {},
+    dblclick(e: MouseEvent) { },
   },
 });
 </script>

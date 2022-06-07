@@ -4,7 +4,7 @@
     class="ws-entry-video-wrapper"
     @dblclick.capture.stop="doubleClick"
     @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('toggle')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
   >
     <div class="video-canvas">

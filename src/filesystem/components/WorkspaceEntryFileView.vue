@@ -1,12 +1,8 @@
 <template>
-  <div
-    @dblclick.capture.stop="doubleClick"
-    @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip', $event)"
-    @mousedown.left.stop.exact="entrySelectedLocal('single', $event)"
-    ref="el"
-    class="ws-entry-file-wrapper select-element"
-  >
+  <div @dblclick.capture.stop="doubleClick" @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('toggle', $event)"
+    @mousedown.left.stop.exact="entrySelectedLocal('single', $event)" ref="el"
+    class="ws-entry-file-wrapper select-element">
     <div class="file-symbol"></div>
     <p>{{ entry.name }}</p>
   </div>
@@ -16,15 +12,16 @@
 const { shell } = require("electron"); // deconstructing assignment
 
 import { defineComponent } from "vue";
-import {FSWatcherConnectorInstance} from "../utils/FileSystemWatcherConnector";
+import { FSWatcherConnectorInstance } from "../utils/FileSystemWatcherConnector";
 import { WorkspaceEntryFile } from "@/filesystem/model/FileSystemWorkspaceEntries";
 import * as icons from "../utils/IconHandler";
+import { DefaultWorkspaceEntry } from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 
 export default defineComponent({
   name: "wsentryfile",
   data() {
     return {};
-  }, 
+  },
   props: {
     entry: {
       type: WorkspaceEntryFile,
@@ -53,7 +50,7 @@ export default defineComponent({
           this.entry.alert = undefined;
       }
     },
-    entrySelectedLocal(type: "add" | "single" | "toggle", event: MouseEvent) {
+    entrySelectedLocal(type: "add" | "single" | "toggle", event: MouseEvent | undefined = undefined) {
       // @ts-ignore: Unreachable code error
       this.entrySelected(this.entry.id, type);
     },
@@ -63,7 +60,7 @@ export default defineComponent({
     },
   },
   computed: {},
-  created() {},
+  created() { },
 });
 </script>
  

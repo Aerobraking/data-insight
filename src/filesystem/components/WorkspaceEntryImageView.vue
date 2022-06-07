@@ -4,7 +4,7 @@
     class="ws-entry-image-wrapper"
     @dblclick.capture.stop="doubleClick"
     @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+    @mousedown.left.ctrl.stop.exact="entrySelectedLocal('toggle')"
     @mousedown.left.stop.exact="entrySelectedLocal('single')"
   >
     <div class="image-canvas"></div>
@@ -20,7 +20,6 @@ import WorkspaceViewIfcWrapper from "@/core/utils/WorkspaceViewIfcWrapper";
 import { WSZoomEvent } from "@/core/utils/WorkspaceViewEvents";
 export default defineComponent({
   name: "wsentryimage",
-
   data(): {
     cacheListener: any;
   } {

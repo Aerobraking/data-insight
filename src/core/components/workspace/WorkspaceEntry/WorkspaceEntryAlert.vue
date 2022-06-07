@@ -12,7 +12,7 @@
 import { Tippy } from "vue-tippy";
 import { AlertCircleOutline } from "mdue";
 import { defineComponent } from "vue";
-import WorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
+import WorkspaceEntry, { DefaultWorkspaceEntry } from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 export default defineComponent({
   el: ".wsentry-alert",
   components: {
@@ -25,14 +25,14 @@ export default defineComponent({
   },
   props: {
     entry: {
-      type: WorkspaceEntry,
+      type: DefaultWorkspaceEntry,
       required: true,
     },
   },
   watch: {
-    "entry.alert": function (newValue: boolean, oldValue: boolean) {},
+    "entry.alert": function (newValue: boolean, oldValue: boolean) { },
   },
-  mounted() {},
+  mounted() { },
   methods: {},
 });
 </script>
@@ -67,6 +67,7 @@ export default defineComponent({
     z-index: 1;
     transition: opacity 0.2s ease-out;
   }
+
   .tooltiptext::after {
     content: "";
     position: absolute;

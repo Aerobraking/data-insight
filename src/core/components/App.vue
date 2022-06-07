@@ -9,19 +9,14 @@
       can create in issue on github:
       <br />
       <br />
-      <a
-        @click.capture.stop="
-          openURL('https://github.com/Aerobraking/data-insight')
-        "
-        href="https://github.com/Aerobraking/data-insight"
-        >https://github.com/Aerobraking/data-insight</a
-      >
+      <a @click.capture.stop="
+        openURL('https://github.com/Aerobraking/data-insight')
+      " href="https://github.com/Aerobraking/data-insight">https://github.com/Aerobraking/data-insight</a>
       <br />
       <br />
       or contacting me directly:
       <a @click.capture.stop href="mailto:issues@aerobraking.de">
-        issues@aerobraking.de</a
-      >
+        issues@aerobraking.de</a>
 
       <br />
       <br />
@@ -36,18 +31,18 @@
     <template v-slot:body>
       <table style="margin-bottom: 80%">
         <tr>
-          <td><h4>General</h4></td>
+          <td>
+            <h4>General</h4>
+          </td>
           <td></td>
         </tr>
 
         <template v-for="p in plugins" :key="p.name">
-          <tr
-            v-if="
-              p.description &&
-              p.description.length > 0 &&
-              p.shortcut.startsWith('global')
-            "
-          >
+          <tr v-if="
+            p.description &&
+            p.description.length > 0 &&
+            p.shortcut.startsWith('global')
+          ">
             <td>{{ p.name }}</td>
             <td v-html="p.description"></td>
           </tr>
@@ -94,7 +89,9 @@
           <td><kbd>F</kbd></td>
         </tr>
         <tr>
-          <td><h4>Workspace</h4></td>
+          <td>
+            <h4>Workspace</h4>
+          </td>
           <td></td>
         </tr>
         <tr>
@@ -106,19 +103,19 @@
           <td><kbd>Ctrl</kbd> + <kbd>Tab</kbd></td>
         </tr>
         <template v-for="p in plugins" :key="p.name">
-          <tr
-            v-if="
-              p.description &&
-              p.description.length > 0 &&
-              p.shortcut.startsWith('ws')
-            "
-          >
+          <tr v-if="
+            p.description &&
+            p.description.length > 0 &&
+            p.shortcut.startsWith('ws')
+          ">
             <td>{{ p.name }}</td>
             <td v-html="p.description"></td>
           </tr>
         </template>
         <tr>
-          <td><h4>Folder Window</h4></td>
+          <td>
+            <h4>Folder Window</h4>
+          </td>
           <td></td>
         </tr>
         <tr>
@@ -139,7 +136,9 @@
         </tr>
 
         <tr>
-          <td><h4>Overview</h4></td>
+          <td>
+            <h4>Overview</h4>
+          </td>
           <td></td>
         </tr>
         <tr>
@@ -162,13 +161,11 @@
           </td>
         </tr>
         <template v-for="p in plugins" :key="p.name">
-          <tr
-            v-if="
-              p.description &&
-              p.description.length > 0 &&
-              p.shortcut.startsWith('ov')
-            "
-          >
+          <tr v-if="
+            p.description &&
+            p.description.length > 0 &&
+            p.shortcut.startsWith('ov')
+          ">
             <td>{{ p.name }}</td>
             <td v-html="p.description"></td>
           </tr>
@@ -234,7 +231,7 @@ export default defineComponent({
   },
   mounted() {
     const _this = this;
-
+ 
     /**
      * Load all plugins for creating the Keyboard Layout entries.
      */
@@ -422,8 +419,8 @@ export default defineComponent({
               activeIndex > listSize - 1
                 ? 0
                 : activeIndex < 0
-                ? listSize - 1
-                : activeIndex;
+                  ? listSize - 1
+                  : activeIndex;
             this.$store.commit(MutationTypes.SELECT_WORKSPACE, {
               index: activeIndex,
             });
@@ -557,6 +554,7 @@ button {
   padding: 0;
   margin: 0;
   background-color: transparent;
+
   svg {
     cursor: pointer;
     margin: 5px 15px 5px 15px;
@@ -599,6 +597,7 @@ kbd {
 
 a {
   color: white;
+
   &:hover {
     color: $color-Selection;
   }
@@ -606,7 +605,7 @@ a {
 
 .button-active {
   svg {
-    color: $color-Selection !important;
+    color: $color-Selection  !important;
   }
 }
 
@@ -664,9 +663,11 @@ a {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
+
 .noUi-target {
   position: relative;
 }
+
 .noUi-base,
 .noUi-connects {
   width: 100%;
@@ -674,12 +675,14 @@ a {
   position: relative;
   z-index: 1;
 }
+
 /* Wrapper for all connect elements.
  */
 .noUi-connects {
   overflow: hidden;
   z-index: 0;
 }
+
 .noUi-connect,
 .noUi-origin {
   will-change: transform;
@@ -693,70 +696,85 @@ a {
   transform-origin: 0 0;
   transform-style: flat;
 }
+
 .noUi-connect {
   height: 100%;
   width: 100%;
 }
+
 .noUi-origin {
   height: 100%;
   width: 10%;
 }
+
 /* Offset direction
  */
 .noUi-txt-dir-rtl.noUi-horizontal .noUi-origin {
   left: 0;
   right: auto;
 }
+
 /* Give origins 0 height/width so they don't interfere with clicking the
  * connect elements.
  */
 .noUi-vertical .noUi-origin {
   width: 0;
 }
+
 .noUi-horizontal .noUi-origin {
   height: 0;
 }
+
 .noUi-handle {
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   position: absolute;
 }
+
 .noUi-touch-area {
   height: 100%;
   width: 100%;
 }
+
 .noUi-state-tap .noUi-connect,
 .noUi-state-tap .noUi-origin {
   -webkit-transition: transform 0.3s;
   transition: transform 0.3s;
 }
+
 .noUi-state-drag * {
   cursor: inherit !important;
 }
+
 /* Slider size and handle placement;
  */
 .noUi-horizontal {
   height: 18px;
 }
+
 .noUi-horizontal .noUi-handle {
   width: 34px;
   height: 28px;
   right: -17px;
   top: -6px;
 }
+
 .noUi-vertical {
   width: 18px;
 }
+
 .noUi-vertical .noUi-handle {
   width: 28px;
   height: 20px; // 34
   right: -6px;
   top: -17px;
 }
+
 .noUi-txt-dir-rtl.noUi-horizontal .noUi-handle {
   left: -17px;
   right: auto;
 }
+
 /* Styling;
  * Giving the connect element a border radius causes issues with using transform: scale
  */
@@ -766,21 +784,26 @@ a {
   border: 1px solid #d3d3d3;
   box-shadow: inset 0 1px 1px #f0f0f0, 0 3px 6px -5px #bbb;
 }
+
 .noUi-connects {
   border-radius: 3px;
   background: #222;
 }
+
 .noUi-connect {
   background: #3fb8af;
 }
+
 /* Handles and cursors;
  */
 .noUi-draggable {
   cursor: ew-resize;
 }
+
 .noUi-vertical .noUi-draggable {
   cursor: ns-resize;
 }
+
 .noUi-handle {
   border: 1px solid #d9d9d9;
   border-radius: 3px;
@@ -788,9 +811,11 @@ a {
   cursor: default;
   box-shadow: inset 0 0 1px #fff, inset 0 1px 7px #ebebeb, 0 3px 6px -3px #bbb;
 }
+
 .noUi-active {
   box-shadow: inset 0 0 1px #fff, inset 0 1px 7px #ddd, 0 3px 6px -3px #bbb;
 }
+
 /* Handle stripes;
  */
 .noUi-handle:before,
@@ -804,9 +829,11 @@ a {
   left: 14px;
   top: 6px;
 }
+
 .noUi-handle:after {
   left: 17px;
 }
+
 .noUi-vertical .noUi-handle:before,
 .noUi-vertical .noUi-handle:after {
   width: 14px;
@@ -814,19 +841,23 @@ a {
   left: 6px;
   top: 14px;
 }
+
 .noUi-vertical .noUi-handle:after {
   top: 17px;
 }
+
 /* Disabled state;
  */
 [disabled] .noUi-connect {
   background: #b8b8b8;
 }
+
 [disabled].noUi-target,
 [disabled].noUi-handle,
 [disabled] .noUi-handle {
   cursor: not-allowed;
 }
+
 /* Base;
  *
  */
@@ -835,10 +866,12 @@ a {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
+
 .noUi-pips {
   position: absolute;
   color: #999;
 }
+
 /* Values;
  *
  */
@@ -847,10 +880,12 @@ a {
   white-space: nowrap;
   text-align: center;
 }
+
 .noUi-value-sub {
   color: #ccc;
   font-size: 10px;
 }
+
 /* Markings;
  *
  */
@@ -858,12 +893,15 @@ a {
   position: absolute;
   background: #ccc;
 }
+
 .noUi-marker-sub {
   background: #aaa;
 }
+
 .noUi-marker-large {
   background: #aaa;
 }
+
 /* Horizontal layout;
  *
  */
@@ -874,25 +912,31 @@ a {
   left: 0;
   width: 100%;
 }
+
 .noUi-value-horizontal {
   -webkit-transform: translate(-50%, 50%);
   transform: translate(-50%, 50%);
 }
+
 .noUi-rtl .noUi-value-horizontal {
   -webkit-transform: translate(50%, 50%);
   transform: translate(50%, 50%);
 }
+
 .noUi-marker-horizontal.noUi-marker {
   margin-left: -1px;
   width: 2px;
   height: 5px;
 }
+
 .noUi-marker-horizontal.noUi-marker-sub {
   height: 10px;
 }
+
 .noUi-marker-horizontal.noUi-marker-large {
   height: 15px;
 }
+
 /* Vertical layout;
  *
  */
@@ -902,23 +946,28 @@ a {
   top: 0;
   left: 100%;
 }
+
 .noUi-value-vertical {
   -webkit-transform: translate(0, -50%);
   transform: translate(0, -50%);
   padding-left: 25px;
 }
+
 .noUi-rtl .noUi-value-vertical {
   -webkit-transform: translate(0, 50%);
   transform: translate(0, 50%);
 }
+
 .noUi-marker-vertical.noUi-marker {
   width: 5px;
   height: 2px;
   margin-top: -1px;
 }
+
 .noUi-marker-vertical.noUi-marker-sub {
   width: 10px;
 }
+
 .noUi-marker-vertical.noUi-marker-large {
   width: 15px;
 }
@@ -933,12 +982,14 @@ Left Pips
   right: 150%;
   left: initial !important;
 }
+
 .noUi-marker-vertical.noUi-marker {
   width: 5px;
   height: 2px;
   margin-top: -1px;
   right: 0px !important;
 }
+
 .noUi-value-vertical {
   transform: translate(0, -50%);
   padding-left: 0;
@@ -946,6 +997,7 @@ Left Pips
   min-width: 200px !important;
   right: 21px !important;
 }
+
 .noUi-marker-vertical.noUi-marker-large {
   width: 15px !important;
 }
@@ -969,12 +1021,14 @@ Tooltips
   text-align: center;
   white-space: nowrap;
 }
+
 .noUi-horizontal .noUi-tooltip {
   -webkit-transform: translate(-50%, 0);
   transform: translate(-50%, 0);
   right: 50%;
   bottom: 120%;
 }
+
 .noUi-vertical .noUi-tooltip {
   -webkit-transform: translate(0, -50%);
   transform: translate(0, -50%);
@@ -982,13 +1036,15 @@ Tooltips
   right: 120%;
   //left: 120%;
 }
-.noUi-horizontal .noUi-origin > .noUi-tooltip {
+
+.noUi-horizontal .noUi-origin>.noUi-tooltip {
   -webkit-transform: translate(50%, 0);
   transform: translate(50%, 0);
   left: auto;
   bottom: 10px;
 }
-.noUi-vertical .noUi-origin > .noUi-tooltip {
+
+.noUi-vertical .noUi-origin>.noUi-tooltip {
   -webkit-transform: translate(0, -18px);
   transform: translate(0, -18px);
   top: auto;
@@ -1007,9 +1063,11 @@ Tooltips
 .tippy-box[data-animation="fade"][data-state="hidden"] {
   opacity: 0;
 }
+
 [data-tippy-root] {
   max-width: calc(100vw - 10px);
 }
+
 .tippy-box {
   position: relative;
   background-color: #333;
@@ -1021,58 +1079,70 @@ Tooltips
   outline: 0;
   transition-property: transform, visibility, opacity;
 }
-.tippy-box[data-placement^="top"] > .tippy-arrow {
+
+.tippy-box[data-placement^="top"]>.tippy-arrow {
   bottom: 0;
 }
-.tippy-box[data-placement^="top"] > .tippy-arrow:before {
+
+.tippy-box[data-placement^="top"]>.tippy-arrow:before {
   bottom: -7px;
   left: 0;
   border-width: 8px 8px 0;
   border-top-color: initial;
   transform-origin: center top;
 }
-.tippy-box[data-placement^="bottom"] > .tippy-arrow {
+
+.tippy-box[data-placement^="bottom"]>.tippy-arrow {
   top: 0;
 }
-.tippy-box[data-placement^="bottom"] > .tippy-arrow:before {
+
+.tippy-box[data-placement^="bottom"]>.tippy-arrow:before {
   top: -7px;
   left: 0;
   border-width: 0 8px 8px;
   border-bottom-color: initial;
   transform-origin: center bottom;
 }
-.tippy-box[data-placement^="left"] > .tippy-arrow {
+
+.tippy-box[data-placement^="left"]>.tippy-arrow {
   right: 0;
 }
-.tippy-box[data-placement^="left"] > .tippy-arrow:before {
+
+.tippy-box[data-placement^="left"]>.tippy-arrow:before {
   border-width: 8px 0 8px 8px;
   border-left-color: initial;
   right: -7px;
   transform-origin: center left;
 }
-.tippy-box[data-placement^="right"] > .tippy-arrow {
+
+.tippy-box[data-placement^="right"]>.tippy-arrow {
   left: 0;
 }
-.tippy-box[data-placement^="right"] > .tippy-arrow:before {
+
+.tippy-box[data-placement^="right"]>.tippy-arrow:before {
   left: -7px;
   border-width: 8px 8px 8px 0;
   border-right-color: initial;
   transform-origin: center right;
 }
+
 .tippy-box[data-inertia][data-state="visible"] {
   transition-timing-function: cubic-bezier(0.54, 1.5, 0.38, 1.11);
 }
+
 .tippy-arrow {
   width: 16px;
   height: 16px;
   color: #333;
 }
+
 .tippy-arrow:before {
   content: "";
   position: absolute;
   border-color: transparent;
   border-style: solid;
 }
+
 .tippy-content {
   position: relative;
   padding: 5px 9px;

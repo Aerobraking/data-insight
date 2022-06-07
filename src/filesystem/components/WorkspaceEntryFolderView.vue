@@ -15,7 +15,7 @@
   >
     <div
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('toggle')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
       @mouseup="mouseup"
       class="ws-window-bar-top select-element selectable-highlight"

@@ -48,7 +48,7 @@ import {
   EyeOffOutline,
 } from "mdue";
 import { defineComponent } from "vue";
-import WorkspaceEntry from "@/core/model/fileactivity/workspace/WorkspaceEntry";
+import WorkspaceEntry, { DefaultWorkspaceEntry } from "@/core/model/fileactivity/workspace/WorkspaceEntry";
 import { Events } from "@/core/utils/WorkspaceUtils";
 export default defineComponent({
   el: ".wsentry-displayname",
@@ -66,7 +66,7 @@ export default defineComponent({
   },
   props: {
     entry: {
-      type: WorkspaceEntry,
+      type: DefaultWorkspaceEntry,
       required: true,
     },
   },

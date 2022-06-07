@@ -2,135 +2,72 @@
   <div @keydown="keydownGlobal" class="wrapper">
     <div class="workspace-search prevent-input" v-show="getShowUI">
       <div class="prevent-input"></div>
-      <input
-        class="workspace-search-input"
-        type="search"
-        placeholder="Search..."
-        v-model="searchString"
-        @keydown.delete="searchString = ''"
-        @keydown.stop
-        @keyup.stop
-        @focus="searchfocusSet(true)"
-        @blur="searchfocusSet(false)"
-      />
+      <input class="workspace-search-input" type="search" placeholder="Search..." v-model="searchString"
+        @keydown.delete="searchString = ''" @keydown.stop @keyup.stop @focus="searchfocusSet(true)"
+        @blur="searchfocusSet(false)" />
       <div class="prevent-input"></div>
       <div class="search-results" v-show="searchActive">
-        <activitysearchlist
-          :model="model"
-          :searchString="searchString"
-          @bookmarkclicked="moveToEntry"
-        ></activitysearchlist>
+        <activitysearchlist :model="model" :searchString="searchString" @bookmarkclicked="moveToEntry">
+        </activitysearchlist>
       </div>
     </div>
 
-    <splitpanes
-      @ready="modifyPanes($event)"
-      :dbl-click-splitter="false"
-      @resize="model.paneSize = $event[0].size"
-      class="default-theme splitpane"
-    >
+    <splitpanes @ready="modifyPanes($event)" :dbl-click-splitter="false" @resize="model.paneSize = $event[0].size"
+      class="default-theme splitpane">
       <pane :size="model.paneSize">
-        <div
-          @mousedown="mousedown"
-          @mousemove="mousemove"
-          @mouseup="mouseup"
-          @mouseenter="setFocusToWorkspace()"
-          @keydown="keydown"
-          @keyup="keyup"
-          @wheel="wheel"
-          @click.stop
-          @dragover="dragover"
-          @dragleave="dragleave"
-          @drop="drop"
-          class="workspace-split-wrapper"
-        >
-          <div
-            v-if="overviewfolder != undefined"
-            class="workspace-folder-dialog"
-          >
-            <wsentryfolder
+        <div @mousedown="mousedown" @mousemove="mousemove" @mouseup="mouseup" @mouseenter="setFocusToWorkspace()"
+          @keydown="keydown" @keyup="keyup" @wheel="wheel" @click.stop @dragover="dragover" @dragleave="dragleave"
+          @drop="drop" class="workspace-split-wrapper">
+          <div v-if="overviewfolder != undefined" class="workspace-folder-dialog">
+            <!-- <wsentryfolder
               :name="98345930245"
               :key="98345930245"
               :entry="overviewfolder"
               :viewId="98345930245"
-              :workspace="this"
+              :workspace="getWorkspaceIfc()"
               :searchstring="searchString"
               style="width: 100%; height: 100%"
-            ></wsentryfolder>
+            ></wsentryfolder> -->
           </div>
           <canvas class="workspace-canvas"></canvas>
 
-          <panZoom
-            @init="panHappen"
-            @pan="onPanStart"
-            @zoom="onZoom"
-            tabIndex="0"
-            :options="{
-              zoomDoubleClickSpeed: 1,
-              minZoom: 0.01,
-              maxZoom: 20,
-              bounds: false,
-              transformOrigin: null,
-              initialX: model.workspace.viewportTransform.x,
-              initialY: model.workspace.viewportTransform.y,
-              initialZoom: model.workspace.viewportTransform.scale,
-              beforeWheel: beforeWheelHandler,
-              beforeMouseDown: beforeMouseDownHandler,
-            }"
-            selector=".zoomable"
-          >
-            <div
-              class="zoomable close-file-anim"
-              @paste="paste"
-              @input.stop.prevent
-            >
-              <div
-                class="rectangle-selection"
-                style="width: 1px; height: 1px"
-              ></div>
+          <panZoom @init="panHappen" @pan="onPanStart" @zoom="onZoom" tabIndex="0" :options="{
+            zoomDoubleClickSpeed: 1,
+            minZoom: 0.01,
+            maxZoom: 20,
+            bounds: false,
+            transformOrigin: null,
+            initialX: model.workspace.viewportTransform.x,
+            initialY: model.workspace.viewportTransform.y,
+            initialZoom: model.workspace.viewportTransform.scale,
+            beforeWheel: beforeWheelHandler,
+            beforeMouseDown: beforeMouseDownHandler,
+          }" selector=".zoomable">
+            <div class="zoomable close-file-anim">
+              <!--  @paste="paste" @input.stop.prevent -->
+              <div class="rectangle-selection" style="width: 1px; height: 1px"></div>
 
-              <div
-                class="rectangle-selection-wrapper"
-                style="width: 1px; height: 1px"
-              >
+              <div class="rectangle-selection-wrapper" style="width: 1px; height: 1px">
                 <button class="ws-zoom-fixed resizer-bottom-right">
                   <ResizeBottomRight />
                 </button>
-                <button
-                  class="ws-zoom-fixed selection-system-drag"
-                  @mousedown.capture.stop="startFileDrag()"
-                  @click.capture.stop
-                >
+                <button class="ws-zoom-fixed selection-system-drag" @mousedown.capture.stop="startFileDrag()"
+                  @click.capture.stop>
                   <FileOutline />
                 </button>
               </div>
 
               <keep-alive>
-                <wsentry
-                  v-for="e in model.workspace.entries"
-                  :key="e.id"
-                  :entry="e"
-                  :name="e.id"
-                  :workspace="workspaceInterface"
-                >
-                  <component
-                    :ref="setItemRef"
-                    :name="e.id"
-                    :entry="e"
-                    :workspace="workspaceInterface"
-                    @keydown="keydown"
-                    @zoomed="moveToEntry({ id: e.id, zoom: true })"
-                    :searchstring="searchString"
-                    :is="e.entryType"
-                  >
+                <wsentry v-for="e in model.workspace.entries" :key="e.id" :entry="e" :name="e.id"
+                  :workspace="workspaceInterface">
+                  <component :ref="setItemRef" :name="e.id" :entry="e" :workspace="workspaceInterface"
+                    @keydown="keydown" @zoomed="moveToEntry({ id: e.id, zoom: true })" :searchstring="searchString"
+                    :is="e.entryType">
                   </component>
                 </wsentry>
               </keep-alive>
 
-              <div
-                :class="{ 'blend-out': model.workspace.entries.length > 0 }"
-                class="welcome-message"
-              >
+              <div :class="{ 'blend-out': model.workspace.entries.length > 0 }" class="welcome-message">
                 <h2>
                   Let's drop some files to get going!
                   <EmoticonHappyOutline class="svg-smile" />
@@ -139,48 +76,33 @@
                   <FileOutline class="svg-file" />
                   <FolderOutline class="svg-folder" />
                 </p>
-                <p><Download class="svg-download" /></p>
+                <p>
+                  <Download class="svg-download" />
+                </p>
               </div>
             </div>
           </panZoom>
 
-          <wsentriesbookmarks
-            :model="model"
-            :workspace="getWorkspaceIfc()"
-            @bookmarkclicked="moveToEntry"
-          ></wsentriesbookmarks>
+          <wsentriesbookmarks :model="model" :workspace="getWorkspaceIfc()" @bookmarkclicked="moveToEntry">
+          </wsentriesbookmarks>
 
-          <button
-            class="pane-button-ws"
-            :class="{ 'workspace-menu-bar-hide': !getShowUI }"
-          >
-            <FormatHorizontalAlignCenter
-              v-show="model.paneSize >= 85"
-              @click="paneButtonClicked()"
-            />
-            <ArrowCollapseLeft
-              v-show="model.paneSize < 85"
-              @click="paneButtonClicked()"
-            />
+          <button class="pane-button-ws" :class="{ 'workspace-menu-bar-hide': !getShowUI }">
+            <FormatHorizontalAlignCenter v-show="model.paneSize >= 85" @click="paneButtonClicked()" />
+            <ArrowCollapseLeft v-show="model.paneSize < 85" @click="paneButtonClicked()" />
           </button>
 
-          <div
-            @mousedown.stop
-            class="workspace-menu-bar"
-            :class="{ 'workspace-menu-bar-hide': !getShowUI }"
-          >
-            <tippy-singleton
-              :moveTransition="'transform 0.2s ease-out'"
-              :offset="[0, 40]"
-            >
+          <div @mousedown.stop class="workspace-menu-bar" :class="{ 'workspace-menu-bar-hide': !getShowUI }">
+            <tippy-singleton :moveTransition="'transform 0.2s ease-out'" :offset="[0, 40]">
               <tippy :offset="[0, 40]">
-                <button><Overscan @click="showAll()" /></button>
-                <template #content
-                  >Show All <kbd>Ctrl</kbd>|<kbd>Space</kbd></template
-                >
+                <button>
+                  <Overscan @click="showAll()" />
+                </button>
+                <template #content>Show All <kbd>Ctrl</kbd>|<kbd>Space</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
-                <button><FileOutline @click="createEntry('files')" /></button>
+                <button>
+                  <FileOutline @click="createEntry('files')" />
+                </button>
                 <template #content>Add Files <kbd>X</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
@@ -190,11 +112,15 @@
                 <template #content>Add Folders <kbd>C</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
-                <button><Group @click="createEntry('frame')" /></button>
+                <button>
+                  <Group @click="createEntry('frame')" />
+                </button>
                 <template #content>Add Frame <kbd>F</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
-                <button><youtube @click="createEntry('youtube')" /></button>
+                <button>
+                  <youtube @click="createEntry('youtube')" />
+                </button>
                 <template #content>Add Youtube Video <kbd>Y</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
@@ -207,20 +133,13 @@
                 <button :disabled="selectedEntriesCount < 2">
                   <Grid @click="rearrange(false)" />
                 </button>
-                <template #content
-                  >Rearrange <kbd>Ctrl</kbd>|<kbd>R</kbd></template
-                >
+                <template #content>Rearrange <kbd>Ctrl</kbd>|<kbd>R</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
-                <button
-                  @click="setFocusOnNameInput(undefined)"
-                  :disabled="selectedEntriesCount != 1"
-                >
+                <button @click="setFocusOnNameInput(undefined)" :disabled="selectedEntriesCount != 1">
                   <FormTextbox />
                 </button>
-                <template #content
-                  >Edit Name <kbd>Ctrl</kbd>+<kbd>E</kbd></template
-                >
+                <template #content>Edit Name <kbd>Ctrl</kbd>+<kbd>E</kbd></template>
               </tippy>
               <tippy :offset="[0, 40]">
                 <button :disabled="selectedEntriesCount == 0">
@@ -234,13 +153,8 @@
       </pane>
 
       <pane :size="100 - model.paneSize">
-        <OverviewView
-          @folderSelected="updateOverviewFolderSelection"
-          class="overview"
-          :model="model"
-          @focusSearch="focusSearch"
-          :searchstring="searchString"
-        />
+        <OverviewView @folderSelected="updateOverviewFolderSelection" class="overview" :model="model"
+          @focusSearch="focusSearch" :searchstring="searchString" />
       </pane>
     </splitpanes>
   </div>
@@ -292,7 +206,6 @@ import {
   DeleteEmptyOutline,
   BorderAll,
   ResizeBottomRight,
-  FormatSize,
   Download,
   FolderOutline,
   FileOutline,
@@ -315,7 +228,7 @@ import {
 } from "@/core/plugin/KeyboardShortcut";
 import AbstractPlugin from "@/core/plugin/AbstractPlugin";
 import { WorkspaceEntryFrame } from "@/core/model/fileactivity/workspace/WorkspaceEntryFrame";
-import { insideRect } from "@/core/utils/GeometryUtils";
+import { insideRect, intersectRect } from "@/core/utils/GeometryUtils";
 
 export default defineComponent({
   el: ".wrapper",
@@ -335,7 +248,6 @@ export default defineComponent({
     FolderOutline,
     FileOutline,
     Grid,
-    FormatSize,
     ResizeBottomRight,
     BorderAll,
     Group,
@@ -387,8 +299,8 @@ export default defineComponent({
     workspaceInterface: WorkspaceViewIfcWrapper;
     skipInitialResize: number;
     eventOnMouseup:
-      | { entries: HTMLElement[]; type: "add" | "single" | "toggle" }
-      | undefined;
+    | { entries: HTMLElement[]; type: "add" | "single" | "toggle" }
+    | undefined;
     /**
      * Handles the activiation of the plugins by the
      * keyboard inputs.
@@ -459,14 +371,16 @@ export default defineComponent({
     });
 
     /**
-     * Somehow making it contenteditable in the beginning causes the paste litener to
-     * work when we then toggle the contenteditable in the keydown listener at an ctrl+v input
+     * Somehow making it contenteditable in the beginning causes the paste litener to work when we then toggle the contenteditable in the keydown listener at an ctrl+v input
      */
     (function () {
       const panzoomscene =
         _this.$el.getElementsByClassName("vue-pan-zoom-scene")[0];
-      panzoomscene.addEventListener("paste", (e: ClipboardEvent) =>
-        _this.paste(e)
+      panzoomscene.addEventListener("paste", (e: ClipboardEvent) => {
+        // debugger
+        // _this.paste(e)
+      }
+
       );
       panzoomscene.setAttribute("contenteditable", true);
       setTimeout(() => {
@@ -474,6 +388,7 @@ export default defineComponent({
       }, 100);
     })();
 
+ 
     getPlugins().forEach((p) => {
       const plugin = new p();
       if (this.c)
@@ -693,8 +608,8 @@ export default defineComponent({
       transition
         ? list.forEach((e) => e.classList.add("splitpanes__pane_transition"))
         : list.forEach((e) =>
-            e.classList.remove("splitpanes__pane_transition")
-          );
+          e.classList.remove("splitpanes__pane_transition")
+        );
 
       setTimeout(() => {
         this.model.paneSize =
@@ -1035,7 +950,7 @@ export default defineComponent({
           const item = e.clipboardData?.items[index];
 
           if (item.type.includes("image")) {
-            var blob = item.getAsFile();
+            var blob: any = item.getAsFile();
             const smallURl = URL.createObjectURL(blob);
             let imageEntry = this.createEntry<WorkspaceEntryImage>(
               "image",
@@ -1162,6 +1077,12 @@ export default defineComponent({
             this.$el
               .getElementsByClassName("vue-pan-zoom-scene")[0]
               .setAttribute("contenteditable", true);
+            console.log("enable contenteditable");
+
+            /*
+                class="zoomable close-file-anim"
+              @paste="paste" 
+            */
 
             // contenteditable on the focused div makes sure we can register a paste event by the user throug ctrl+v
             setTimeout(() => {
@@ -1171,6 +1092,7 @@ export default defineComponent({
               this.$el
                 .getElementsByClassName("vue-pan-zoom-scene")[0]
                 .setAttribute("contenteditable", false);
+              console.log("disable contenteditable");
             }, 250);
 
             if (clipboard && clipboard.entries.length > 0) {
@@ -1463,7 +1385,7 @@ export default defineComponent({
 
         entriesInside.push(
           ...this.getEntries().filter((el) => {
-            return insideRect(coordRect, comp.getCoordinatesFromElement(el));
+            return intersectRect(coordRect, comp.getCoordinatesFromElement(el));
           })
         );
         selectionRectangle.style.width = "0px";
@@ -1712,8 +1634,8 @@ export default defineComponent({
         this.getSelectedEntries().length > 0
           ? this.getSelectedEntries()
           : this.getEntries().length > 0
-          ? this.getEntries()
-          : this.$el.getElementsByClassName("welcome-message")[0]
+            ? this.getEntries()
+            : this.$el.getElementsByClassName("welcome-message")[0]
       );
 
       bounds.addPadding(padding / this.convertRectToTransform(bounds).scale);
@@ -1771,11 +1693,11 @@ export default defineComponent({
     convertRectToTransform(
       rect:
         | {
-            bottom: number;
-            left: number;
-            right: number;
-            top: number;
-          }
+          bottom: number;
+          left: number;
+          right: number;
+          top: number;
+        }
         | ElementDimensionInstance
     ) {
       if (rect instanceof ElementDimensionInstance) {
@@ -1821,11 +1743,11 @@ export default defineComponent({
 
         let x =
           (-coordinates.x - coordinates.w / 2) *
-            this.getCurrentTransform().scale +
+          this.getCurrentTransform().scale +
           this.getWorkspaceWrapper().clientWidth / 2;
         let y =
           (-coordinates.y - coordinates.w / 2) *
-            this.getCurrentTransform().scale +
+          this.getCurrentTransform().scale +
           this.getWorkspaceWrapper().clientHeight / 2;
 
         if (rect.bottom == rect.top || rect.left == rect.right) return;
@@ -2095,7 +2017,7 @@ export default defineComponent({
     panHappen: function (p: any, id: String) {
       p.setTransformOrigin(null);
       this.panZoomInstance = p;
-      p.on("panzoompan", function (e: any) {});
+      p.on("panzoompan", function (e: any) { });
       p.on("onDoubleClick", function (e: any) {
         return false;
       });
@@ -2239,9 +2161,8 @@ export default defineComponent({
       for (let index = 0; index < comp.dragSelection.length; index++) {
         const e: any = comp.dragSelection[index];
         let coord = comp.getCoordinatesFromElement(e);
-        e.style.transform = `translate3d(${coord.x - xOffT}px, ${
-          coord.y - yOffT
-        }px,0px)`;
+        e.style.transform = `translate3d(${coord.x - xOffT}px, ${coord.y - yOffT
+          }px,0px)`;
       }
     }, 16),
     onPanStart(e: any) {
@@ -2311,6 +2232,7 @@ export default defineComponent({
   width: 100%;
   height: initial !important;
 }
+
 .workspace-folder-dialog {
   position: absolute;
   z-index: 4000;
@@ -2320,9 +2242,11 @@ export default defineComponent({
   width: 98%;
   background: rgba(200, 0, 0, 0.2);
 }
+
 .vue-pan-zoom-scene {
   cursor: default !important;
 }
+
 .workspace-menu-bar {
   position: absolute;
   z-index: 800;
@@ -2342,6 +2266,7 @@ export default defineComponent({
     margin: 0;
     background-color: transparent;
   }
+
   svg {
     filter: drop-shadow(3px 3px 2px rgba(0, 0, 0, 0.7));
   }
@@ -2350,6 +2275,7 @@ export default defineComponent({
   button[disabled] {
     pointer-events: none;
     color: #ffffff50;
+
     svg {
       transform: scale(0.7);
     }
@@ -2367,6 +2293,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
   background: transparent;
   cursor: pointer;
   transition: background-color 0.4s ease-in-out !important;
+
   p {
     bottom: 150px;
     position: absolute;
@@ -2388,6 +2315,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
 .workspace-menu-bar-hide {
   svg {
     opacity: 0.02;
+
     &:hover {
       opacity: 1;
     }
@@ -2425,6 +2353,7 @@ Blocks input vor the content of an entry. When selected, this div will be made i
     font-size: 200px;
     margin-top: 190px;
   }
+
   .svg-folder {
     font-size: 200px;
     margin-top: 190px;
@@ -2442,13 +2371,16 @@ Blocks input vor the content of an entry. When selected, this div will be made i
     0% {
       transform: scale(1);
     }
+
     50% {
       transform: scale(1.3);
     }
+
     100% {
       transform: scale(1);
     }
   }
+
   .pulsating {
     animation-iteration-count: infinite;
     animation-name: pulse;
@@ -2465,6 +2397,7 @@ svg {
   opacity: 1;
   transition: color 0.2s ease-in-out;
   transition-property: opacity, transform;
+
   &:hover {
     color: #fff;
     transform: scale(1.2);
@@ -2491,10 +2424,13 @@ svg {
   min-width: 0px !important;
   border: none !important;
   transition: opacity 0.4s ease-out !important;
+
   &:hover {
     background: white !important;
   }
+
   opacity: 1;
+
   &.splitpanes__splitter-hide {
     opacity: 0.1 !important;
   }
@@ -2503,6 +2439,7 @@ svg {
 .splitpanes__splitter:after {
   background-color: rgb(255 255 255 / 38%) !important;
 }
+
 .splitpanes__splitter:before {
   background-color: rgb(255 255 255 / 38%) !important;
 }
@@ -2531,11 +2468,13 @@ svg {
   bottom: -6px;
   color: white;
   background: transparent;
+
   svg {
     transition: color 0.4s ease-out;
     margin: 0;
     font-size: 20px;
     color: #646464;
+
     &:hover {
       color: white;
     }
@@ -2575,6 +2514,7 @@ svg {
     outline: none;
 
     background-color: #fff;
+
     &:hover {
       background-color: #aaa;
     }
@@ -2603,10 +2543,12 @@ svg {
     &:hover {
       opacity: 1;
     }
+
     &:focus {
       opacity: 1;
     }
   }
+
   .search-results {
     pointer-events: all !important;
     background: #222;
@@ -2647,6 +2589,7 @@ svg {
   cursor: se-resize;
   width: auto;
   height: auto;
+
   svg {
     cursor: se-resize;
     font-size: 24px;
@@ -2655,6 +2598,7 @@ svg {
     padding: 0;
   }
 }
+
 div .selection-system-drag {
   @include theme;
   top: 35px;
@@ -2663,6 +2607,7 @@ div .selection-system-drag {
   cursor: grab;
   width: auto;
   height: auto;
+
   svg {
     cursor: grab;
     font-size: 24px;
@@ -2683,6 +2628,7 @@ div .resizer-bottom-left {
   left: 0;
   cursor: ne-resize;
 }
+
 div .resizer-top-left {
   @include theme;
   top: 0;
@@ -2731,9 +2677,11 @@ A top selection bar for entries to make them more easily selectable.
   0% {
     background-color: none;
   }
+
   50% {
     background-color: $color-Selection;
   }
+
   100% {
     background-color: none;
   }
@@ -2808,6 +2756,7 @@ visually highlights elements for selection with a hover effect
   0% {
     opacity: 0;
   }
+
   100% {
     opacity: 1;
   }

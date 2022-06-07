@@ -3,7 +3,7 @@
     <div
       class="editor-enabler-div"
       @mousedown.left.shift.stop.exact="entrySelectedLocal('add')"
-      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('flip')"
+      @mousedown.left.ctrl.stop.exact="entrySelectedLocal('toggle')"
       @mousedown.left.stop.exact="entrySelectedLocal('single')"
     >
       <span class="no-text" v-show="showEmpty()"># No Text</span>

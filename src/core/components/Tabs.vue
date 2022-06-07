@@ -1,11 +1,6 @@
 
 <template>
-  <div
-    id="tabs"
-    class="tabs-header"
-    :class="{ 'tab-collapse-true': !getShowUI }"
-    @mousewheel="scrollList"
-  >
+  <div id="tabs" class="tabs-header" :class="{ 'tab-collapse-true': !getShowUI }" @mousewheel="scrollList">
     <div class="tab-entry tab-create" @click="createWorkspaceTab()">
       <p>+</p>
     </div>
@@ -66,38 +61,16 @@
      -->
 
     <!-- Version without dragging -->
-    <div
-      v-for="(element, index) in getlist"
-      :key="element.id"
-      class="tab-entry close-file-anim"
-      :class="{ 'tab-selected': element.isActive }"
-      @click="selectTab(index)"
-      @dblclick.self="edit"
-    >
-      <input
-        @keydown.stop
-        @keyup.stop
-        @keyup.enter="$event.target.blur()"
-        @dblclick.self="edit"
-        v-on:keyup.enter="editFinish"
-        @blur="editFinish"
-        readonly="true"
-        v-model="element.name"
-        ondragstart="return false"
-        style="pointer-events: none"
-      />
-      <a class="delete" v-show="element.isActive" @click.self="deleteTab(index)"
-        >X</a
-      >
+    <div v-for="(element, index) in getlist" :key="element.id" class="tab-entry close-file-anim"
+      :class="{ 'tab-selected': element.isActive }" @click="selectTab(index)" @dblclick.self="edit">
+      <input @keydown.stop @keyup.stop @keyup.enter="$event.target ? ($event.target as HTMLElement).blur() : 0" @dblclick.self="edit"
+        v-on:keyup.enter="editFinish" @blur="editFinish" readonly="true" v-model="element.name"
+        ondragstart="return false" style="pointer-events: none" />
+      <a class="delete" v-show="element.isActive" @click.self="deleteTab(index)">X</a>
     </div>
   </div>
-  <workspaceview
-    v-for="(view, index) in getlist"
-    @click="selectTab(index)"
-    :key="view.id"
-    v-show="view.isActive"
-    :model="view"
-  >
+  <workspaceview :ref="setItemRef" v-for="(view, index) in getlist" @click="selectTab(index)" :key="view.id"
+    v-show="view.isActive" :model="view">
   </workspaceview>
 </template>
 
@@ -114,6 +87,7 @@ import _ from "underscore";
 import * as WSUtils from "@/core/utils/WorkspaceUtils";
 import { ArrowCollapseUp, EyeOutline, EyeOffOutline } from "mdue";
 import { ipcRenderer } from "electron";
+import WorkspaceViewIfc from "../utils/WorkspaceViewIfc";
 /**
  * When a modal plugin starts we prevent any input for the tabs so the user can not
  * change the workspace while using the plugin.
@@ -135,6 +109,16 @@ export default defineComponent({
     workspaceview,
     EyeOffOutline,
     EyeOutline,
+  },
+  data(): {
+    itemRefs: any[];
+  } {
+    return {
+      /**
+       * ignores a file drop once when true, then it is set to false.
+       */
+      itemRefs: [],
+    };
   },
   computed: {
     /**
@@ -167,8 +151,22 @@ export default defineComponent({
         _this.toggleShowUI();
       }
     );
+
+    window.addEventListener('paste', (event) => {
+      _this.itemRefs.forEach((workspace: any) => {
+        if ((workspace.getWorkspaceIfc() as WorkspaceViewIfc).getModel()?.isActive) {
+          workspace.paste(event);
+        }
+      });
+    });
+
   },
   methods: {
+    setItemRef(el: any) {
+      if (el) {
+        this.itemRefs.push(el);
+      }
+    },
     /**
      * Toggles the distract free mode boolean in the model which updates the view.
      */
@@ -205,13 +203,13 @@ export default defineComponent({
     /**
      * Finish the editing of the workpsace tab by making it uneditable again.
      */
-    editFinish(e: KeyboardEvent) {
+    editFinish(e: UIEvent) {
       let input: HTMLInputElement =
         e.target instanceof HTMLInputElement
           ? e.target
           : ((e.target as HTMLElement).getElementsByTagName(
-              "input"
-            )[0] as HTMLInputElement);
+            "input"
+          )[0] as HTMLInputElement);
       input.style.pointerEvents = "none";
       input.readOnly = true;
       e.preventDefault();
@@ -343,6 +341,7 @@ $base-color: rgb(100, 100, 100);
 
   transform: none !important;
   transition: height 0.2s ease-in-out;
+
   &.tab-collapse-true {
     transform: none !important;
     height: 0px;
@@ -390,8 +389,7 @@ $base-color: rgb(100, 100, 100);
     border: none;
     outline: none;
 
-    &:focus {
-    }
+    &:focus {}
   }
 
   p {
@@ -417,6 +415,7 @@ $base-color: rgb(100, 100, 100);
 .tab-entry:hover .delete {
   display: block;
 }
+
 .tab-entry:hover .copy {
   display: block;
 }
@@ -424,7 +423,7 @@ $base-color: rgb(100, 100, 100);
 .tab-selected {
   color: lavender;
   border-radius: 4px 4px 0 0;
-  background-color: $background !important;
+  background-color: $background  !important;
   box-shadow: 4px;
 }
 

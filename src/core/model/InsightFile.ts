@@ -24,6 +24,9 @@ export class InsightFileSettings {
  */
 export class InsightFile {
 
+    // Some settings paramenters
+    settings: InsightFileSettings = new InsightFileSettings();
+
     /**
      * The list of views. In the Moment this are only Workspaces but this can be extendes by implementing the View class.
      * Each View is represented by a Tab in the View.
@@ -38,10 +41,7 @@ export class InsightFile {
         },
     })
     views: Array<AbstractActivity> = [new FileActivity("Default").setActive(true)];
-    
-    // Some settings paramenters
-    settings: InsightFileSettings = new InsightFileSettings();
-
+ 
     /**
      * This is called when the InsightFile is loaded from a json string. Some parts of the data structure can not be
      * saved and restored from a json string, for example references to the parent object in a tree structure. So all

@@ -1,6 +1,6 @@
 {
   "name": "data-insight",
-  "version": "0.93.1",
+  "version": "0.94.0",
   "homepage": "https://github.com/Aerobraking/data-insight",
   "description": "An activity centric File Explorer",
   "license": "MIT",
@@ -53,7 +53,8 @@
     "vue-panzoom": "github:Aerobraking/vue-panzoom",
     "vue-tippy": "^6.0.0-alpha.37",
     "vuedraggable": "^4.0.3",
-    "vuex": "^4.0.2"
+    "vuex": "^4.0.2",
+    "youtube-iframe": "^1.0.3"
   },
   "devDependencies": {
     "@types/d3": "^6.7.5",
